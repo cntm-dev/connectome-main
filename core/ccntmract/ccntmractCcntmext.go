@@ -33,9 +33,7 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey crypto.P
 	//TODO: implement AddCcntmract()
 
 	//TODO: check ccntmract type for diff building
-
 	return  nil
-
 }
 
 

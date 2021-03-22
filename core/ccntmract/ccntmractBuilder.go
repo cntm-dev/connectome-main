@@ -9,3 +9,5 @@ func CreateSignatureCcntmract(ownerPubKey crypto.PubKey) (*Ccntmract,error){
 	//TODO: implement func CreateSignatureCcntmract
 	return nil,nil
 }
+
+

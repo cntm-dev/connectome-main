@@ -4,7 +4,9 @@ import (
 	"io"
 	"GoOnchain/common/serialization"
 	"GoOnchain/core/ccntmract/program"
-	"GoOnchain/common"
+	. "GoOnchain/common"
+	"errors"
+	sig "GoOnchain/core/signature"
 )
 
 //for different transaction types with different payload format
@@ -26,6 +28,8 @@ type Payload interface {
 
 	//Serialize payload data
 	Serialize(w io.Writer)
+
+	Deserialize(r io.Reader) error
 }
 
 //Transaction is used for carry information or action to Ledger
@@ -43,11 +47,11 @@ type Transaction struct {
 
 
 	//Inputs/Outputs map base on Asset (needn't serialize)
-	AssetUTXOInputs map[common.Uint256]*UTXOTxInput
-	AssetOutputs map[common.Uint256]*TxOutput
+	AssetUTXOInputs map[Uint256]*UTXOTxInput
+	AssetOutputs map[Uint256]*TxOutput
 
-	AssetInputAmount map[common.Uint256]*common.Fixed64
-	AssetOutputAmount map[common.Uint256]*common.Fixed64
+	AssetInputAmount map[Uint256]*Fixed64
+	AssetOutputAmount map[Uint256]*Fixed64
 
 	AssetInputOutputs map[*UTXOTxInput]*TxOutput
 
@@ -99,30 +103,101 @@ func (tx *Transaction) SerializeUnsigned(w io.Writer) error  {
 	return nil
 }
 
+//deserialize the Transaction
+func (tx *Transaction) Deserialize(r io.Reader)  error {
+	return tx.DeserializeUnsigned(r)
+	//TODO；Read Program
+}
 
-func (tx *Transaction) GetProgramHashes() ([]common.Uint160, error){
+
+func (tx *Transaction) DeserializeUnsigned(r io.Reader) error  {
+	var txType [1]byte
+	_, err := io.ReadFull(r, txType[:])
+	if err != nil {
+		return err
+	}
+
+	if(txType[0] != byte(tx.TxType)){
+		return errors.New("Transaction Type is different.")
+	}
+
+	return  tx.DeserializeUnsignedWithoutType(r)
+}
+
+func (tx *Transaction) DeserializeUnsignedWithoutType(r io.Reader) error  {
+	var payloadVersion [1]byte
+	_, err := io.ReadFull(r, payloadVersion[:])
+	if err != nil {
+		return err
+	}
+
+	//payload
+	tx.Payload.Deserialize(r)
+
+	//attributes
+	Len := serialization.ReadVarInt(r)
+	for i := 0; i < Len; i++ {
+		attr := new(TxAttribute)
+		err = attr.Deserialize(r)
+		if err != nil {
+			return err
+		}
+		tx.Attributes = append(tx.Attributes,attr)
+	}
+
+	//UTXOInputs
+	Len = serialization.ReadVarInt(r)
+	for i := 0; i < Len; i++ {
+		utxo := new(UTXOTxInput)
+		err = utxo.Deserialize(r)
+		if err != nil {
+			return err
+		}
+		tx.UTXOInputs = append(tx.UTXOInputs,utxo)
+	}
+
+	//balanceInputs
+	Len = serialization.ReadVarInt(r)
+	for i := 0; i < Len; i++ {
+		balanceInput := new(BalanceTxInput)
+		err = balanceInput.Deserialize(r)
+		if err != nil {
+			return err
+		}
+		tx.BalanceInputs = append(tx.BalanceInputs,balanceInput)
+	}
+	return nil
+}
+
+func (tx *Transaction) GetProgramHashes() ([]Uint160, error){
 
 	//Set Utxo Inputs' hashes
-	programHashes := []common.Uint160{}
+	programHashes := []Uint160{}
 	outputHashes,_ := tx.GetOutputHashes() //check error
 	programHashes = append(programHashes,outputHashes[:]...)
 
 	return programHashes, nil
 }
 
-
 func (tx *Transaction) SetPrograms(programs []*program.Program){
 	tx.Programs = programs
 }
 
-func  (tx *Transaction) GetOutputHashes()  ([]common.Uint160, error){
+func (tx *Transaction) GetPrograms() []*program.Program{
+	return  tx.Programs
+}
+
+func  (tx *Transaction) GetOutputHashes()  ([]Uint160, error){
 	//TODO: implement Transaction.GetOutputHashes()
 
 
-	return []common.Uint160{}, nil
+	return []Uint160{}, nil
 }
 
 func  (tx *Transaction) GenerateAssetMaps() {
 	//TODO: implement Transaction.GenerateAssetMaps()
 }
 
+func  (tx *Transaction) GetMessage() ([]byte){
+	return  sig.GetHashData(tx)
+}
