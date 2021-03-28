@@ -29,7 +29,7 @@ func NewCcntmractCcntmext(data sig.SignableData) *CcntmractCcntmext {
 	}
 }
 
-func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey crypto.PubKey,paramenter []byte ) error {
+func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.PubKey,paramenter []byte ) error {
 	//TODO: implement AddCcntmract()
 
 	//TODO: check ccntmract type for diff building
@@ -37,11 +37,9 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey crypto.P
 }
 
 
-func (cxt *CcntmractCcntmext) GetPrograms() ([]*program.Program,error) {
+func (cxt *CcntmractCcntmext) GetPrograms() ([]*program.Program) {
 	//TODO: implement GetProgram()
 
-	return  []*program.Program{},nil
+	return  []*program.Program{}
 
 }
-
-
