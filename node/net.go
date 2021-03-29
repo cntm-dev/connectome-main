@@ -4,61 +4,47 @@ import (
 	"log"
 	"time"
 	"os"
-	"bytes"
+	"fmt"
+	"errors"
 	"encoding/hex"
 	"GoOnchain/common"
 	"GoOnchain/config"
 )
+
+var cnt int = 0
 
 const (
 	HELLOTIMEOUT	 = 3	// Seconds
 	MAXHELLORETYR	 = 3
 	MAXBUFLEN	 = 1024 * 300 // Fixme The maximum buffer to receive message
 	MAXCHANBUF	 = 512
-	//NETMAGIC	 = 0x74746e41 // Keep the same as antshares only for testing
-	NETMAGIC	 = 0x414d5446 // Keep the same as antshares only for testing
+	NETMAGIC	 = 0x74746e41 // Keep the same as antshares only for testing
+	//NETMAGIC	 = 0x414d5446 // Keep the same as antshares only for testing
 	PROTOCOLVERSION  = 0
 
 	NODETESTPORT	 = 20333	// TODO get from config file
-	PERIODUPDATETIME = 15		// Time to update and sync information with other nodes
+	PERIODUPDATETIME = 3		// Time to update and sync information with other nodes
 )
 
 // The unconfirmed transaction queue
-var UnconfTrsCh = make(chan *Msg, MAXCHANBUF)
+var UnconfTrsCh = make(chan *msgCcntm, MAXCHANBUF)
 // Channel used to commnucate with ledger module
-var NetToLedgerCh = make(chan *Msg, MAXCHANBUF)
+var NetToLedgerCh = make(chan *msgCcntm, MAXCHANBUF)
 // Channel used to communicate with Consensus module
-var NetToConsensusCh = make(chan *Msg, MAXCHANBUF)
+var NetToConsensusCh = make(chan *msgCcntm, MAXCHANBUF)
 // Copntrol channel to send some module ccntmrol command
-var NetToLedgerCtlCh = make(chan *Msg, MAXCHANBUF)
+var NetToLedgerCtlCh = make(chan *msgCcntm, MAXCHANBUF)
 // Channel used to commnucate with ledger module
-var LedgerToNetCh = make(chan *Msg, MAXCHANBUF)
+var LedgerToNetCh = make(chan *msgCcntm, MAXCHANBUF)
 // Channel used to communicate with Consensus module
-var ConsensusToNetCh = make(chan *Msg, MAXCHANBUF)
+var ConsensusToNetCh = make(chan *msgCcntm, MAXCHANBUF)
 // Copntrol channel to send some module ccntmrol command
 var LedgerToNetCtlCh = make(chan string, MAXCHANBUF)
-
-// TODO update to slice for better function calling speed
-var funcMap = struct {
-	handles map[string] func(*node, *Msg)
-} {handles: map[string] func(*node, *Msg) {
-	"version":	rxVersion,
-	"verack":	rxVerack,
-	"getaddr":	rxGetaddr,
-	"addr":		rxAddr,
-	"getheaders":	rxGetHeaders,
-	"headers":	rxHeaders,
-	"getblocks":	rxGetBlocks,
-	"inv":		rxInv,
-	"getdata":	rxGetData,
-	"block":	rxBlock,
-	"tx":		rxTransaction,
-}}
 
 func Init() {
 }
 
-func rxLedgerMsg(msg *Msg) {
+func rxLedgerMsg(msg *msgCcntm) {
 	common.Trace()
 }
 
@@ -66,7 +52,7 @@ func rxLedgerCtlMsg(msg string) {
 	common.Trace()
 }
 
-func rxConsensusMsg(msg *Msg) {
+func rxConsensusMsg(msg *msgCcntm) {
 	common.Trace()
 }
 
@@ -86,6 +72,12 @@ func handleModuleMsg() {
 	}
 }
 
+func (hdr msgHdr) handle(node *node) error {
+	common.Trace()
+	// TBD
+	return nil
+}
+
 /*
  * The node state switch table after rx message, there is time limitation for each action
  * The Hanshark status will switch to INIT after TIMEOUT if not received the VerACK
@@ -94,7 +86,7 @@ func handleModuleMsg() {
  * |          |    INIT         | HANDSHAKE |  ESTABLISH | INACTIVITY      |
  * |-----------------------------------------------------------------------|
  * | version  | HANDSHAKE(timer)|           |            | HANDSHAKE(timer)|
- * |          | if hellotTime>3 | Tx verack | Depend on  | if hellotTime>3 |
+ * |          | if helloTime > 3| Tx verack | Depend on  | if helloTime > 3|
  * |          | Tx version      |           | node update| Tx version      |
  * |          | then Tx verack  |           |            | then Tx verack  |
  * |-----------------------------------------------------------------------|
@@ -112,23 +104,15 @@ func handleModuleMsg() {
  * |------------------------------------------------------------|
  */
 // TODO The process should be adjusted based on above table
-func rxVersion(node *node, msg *Msg) {
+func (msg version) handle(node *node) error {
 	common.Trace()
-
-	m, err := msg.serialization()
-	if (err != nil) {
-		log.Println("Error Convert rx version msg ", err.Error())
-	}
-
-	str := hex.EncodeToString(m)
-	log.Printf("The RX version message length is %d, %s", len(m), str)
-
 	t := time.Now()
 	// TODO check version compatible or not
 	s := node.getState()
 	if (s == HANDSHAKEING) {
 		node.setState(HANDSHAKED)
 		buf, _ := newVerack()
+		log.Println("TX verack")
 		go node.tx(buf)
 	} else if (s != ESTABLISH) {
 		node.setHandshakeTime(t)
@@ -138,17 +122,23 @@ func rxVersion(node *node, msg *Msg) {
 	}
 
 	// TODO Update other node information
-
-	log.Printf("Node %s state is %d", node.getID(), s)
+	log.Printf("Node %s state is %d", node.getID(), node.getState())
 	node.updateTime(t)
+
+	return nil
 }
 
-func rxVerack(node *node, msg *Msg) {
+func (msg verACK) handle(node *node) error {
 	common.Trace()
+
 	t := time.Now()
 	// TODO we loading the state&time without consider race case
 	th := node.getHandshakeTime()
 	s := node.getState()
+
+	m, _ := msg.serialization()
+	str := hex.EncodeToString(m)
+	log.Printf("The message rx verack length is %d, %s", len(m), str)
 
 	// TODO take care about the time duration overflow
 	tDelta := t.Sub(th)
@@ -162,113 +152,156 @@ func rxVerack(node *node, msg *Msg) {
 		}
 	}
 
+	log.Printf("Node %s state is %d", node.getID(), node.getState())
 	node.updateTime(t)
+
+	return nil
 }
 
-func rxGetHeaders (node *node, msg *Msg) {
+func (msg headersReq) handle(node *node) error {
 	common.Trace()
-	NetToLedgerCh <- msg
+	// TBD
+	return nil
 }
 
-func rxHeaders(node *node, msg *Msg) {
+func (msg blkHeader) handle(node *node) error {
 	common.Trace()
-	NetToLedgerCh <- msg
+	// TBD
+	return nil
 }
 
-func rxGetaddr(node *node, msg *Msg) {
+func (msg addrReq) handle(node *node) error {
 	common.Trace()
-	NetToLedgerCh <- msg
+	// TBD
+	return nil
 }
 
-func rxAddr(node *node, msg *Msg) {
+
+
+func (msg inv) handle(node *node) error {
 	common.Trace()
-	NetToLedgerCh <- msg
+	str := hex.EncodeToString(msg.p.blk)
+	log.Printf("The inv type: 0x%x block len: %d, %s",
+		msg.p.invType, len(msg.p.blk), str)
+
+	return nil
 }
 
-func rxConsensus(node *node, msg *Msg) {
-	common.Trace()
-	NetToConsensusCh <- msg
-}
+// func rxHeaders(node *node, msg *headerMsg) {
+// 	common.Trace()
+// 	NetToLedgerCh <- msg
+// }
 
-func rxFilteradd(node *node, msg *Msg) {
-	common.Trace()
-}
+// func rxGetaddr(node *node, msg *getAddrMsg) {
+// 	common.Trace()
+// 	NetToLedgerCh <- msg
+// }
 
-func rxFilterClear(node *node, msg *Msg) {
-	common.Trace()
-}
+// func rxAddr(node *node, msg *addr) {
+// 	common.Trace()
+// 	NetToLedgerCh <- msg
+// }
 
-func rxFilterLoad(node *node, msg *Msg) {
-	common.Trace()
-}
+// func rxConsensus(node *node, msg *consensusMsg) {
+// 	common.Trace()
+// 	NetToConsensusCh <- msg
+// }
 
-func rxGetBlocks(node *node, msg *Msg) {
-	common.Trace()
-	NetToLedgerCh <- msg
-}
+// func rxFilteradd(node *node, msg *filteraddMsg) {
+// 	common.Trace()
+// }
 
-func rxBlock(node *node, msg *Msg) {
-	common.Trace()
-	NetToLedgerCh <- msg
-}
+// func rxFilterClear(node *node, msg *Msg) {
+// 	common.Trace()
+// }
 
-func rxGetData(node *node, msg *Msg) {
-	common.Trace()
-}
+// func rxFilterLoad(node *node, msg *Msg) {
+// 	common.Trace()
+// }
 
-func rxInv(node *node, msg *Msg) {
-	common.Trace()
-}
+// func rxGetBlocks(node *node, msg *Msg) {
+// 	common.Trace()
+// 	NetToLedgerCh <- msg
+// }
 
-func rxMemPool(node *node, msg *Msg) {
-	common.Trace()
-}
+// func rxBlock(node *node, msg *Msg) {
+// 	common.Trace()
+// 	NetToLedgerCh <- msg
+// }
 
-// Receive the transaction
-func rxTransaction(node *node, msg *Msg) {
-	common.Trace()
-}
+// func rxGetData(node *node, msg *Msg) {
+// 	common.Trace()
+// }
 
-func rxAlert(node *node, msg *Msg) {
-	common.Trace()
-	// TODO Handle Alert
-	log.Printf("Alert get from node %s", node.getID())
-}
+// func rxInv(node *node, msg *Msg) {
+// 	common.Trace()
+// }
 
-func rxMerkleBlock(node *node, msg *Msg) {
-	common.Trace()
-}
+// func rxMemPool(node *node, msg *Msg) {
+// 	common.Trace()
+// }
 
-func rxNotFound(node *node, msg *Msg) {
-	common.Trace()
-}
+// // Receive the transaction
+// func rxTransaction(node *node, msg *Msg) {
+// 	common.Trace()
+// }
 
-func rxPing(node *node, msg *Msg) {
-	// TODO
-	common.Trace()
-}
+// func rxAlert(node *node, msg *Msg) {
+// 	common.Trace()
+// 	// TODO Handle Alert
+// 	log.Printf("Alert get from node %s", node.getID())
+// }
 
-func rxPcntm(node *node, msg *Msg) {
-	// TODO
-	common.Trace()
-}
+// func rxMerkleBlock(node *node, msg *Msg) {
+// 	common.Trace()
+// }
 
-func rxReject(node *node, msg *Msg) {
-	// TODO
-	common.Trace()
-}
+// func rxNotFound(node *node, msg *Msg) {
+// 	common.Trace()
+// }
 
-func handleNodeMsg(node *node, msg *Msg) {
-	// TODO Init parse and check
-	var cmd []byte = msg.CMD[:]
-	n := bytes.IndexByte(cmd, 0)
-	handle, ok := funcMap.handles[string(cmd[:n])]
+// func rxPing(node *node, msg *Msg) {
+// 	// TODO
+// 	common.Trace()
+// }
 
-	if ok == false {
-		log.Printf("Unknow node message recevied %s", msg.CMD)
-		return
+// func rxPcntm(node *node, msg *Msg) {
+// 	// TODO
+// 	common.Trace()
+// }
+
+// func rxReject(node *node, msg *Msg) {
+// 	// TODO
+// 	common.Trace()
+// }
+
+func handleNodeMsg(node *node, buf []byte, len uint64) error {
+	if (len < MSGHDRLEN) {
+		log.Println("Unexpected size of received message")
+		return errors.New("Unexpected size of received message")
 	}
-	handle(node, msg)
+
+	//str := hex.EncodeToString(buf[:len])
+	//log.Printf("Received data len %d : %s \"%v\" ",
+	//	len, str, string(buf[:len]))
+
+	//log.Printf("Received data len %d : \"%v\" ", len, string(buf[:len]))
+
+	s, err := msgType(buf)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+
+	msg, err := allocMsg(s, len)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+
+	msg.deserialization(buf[0 : len])
+	msg.verify(buf[MSGHDRLEN : len])
+	return msg.handle(node)
 }
 
 // Trigger handshake
@@ -313,7 +346,7 @@ func keepAlive(from *node, dst *node) {
 	// Need move to node function or keep here?
 }
 
-func periodUpdate() {
+func updateNodeInfo() {
 	ticker := time.NewTicker(time.Second * PERIODUPDATETIME)
 	quit := make(chan struct{})
 
@@ -325,7 +358,9 @@ func periodUpdate() {
 				h1 := node.getHeight()
 				h2 := nodes.node.getHeight()
 				if (node.getState() == ESTABLISH) && (h1 > h2) {
+					//buf, _ := newMsg("version")
 					buf, _ := newMsg("getheaders")
+					//buf, _ := newMsg("getaddr")
 					go node.tx(buf)
 				}
 			}
@@ -351,7 +386,5 @@ func StartProtocol() {
 		nodes.node.connect(nodeAddr)
 	}
 
-	log.Println("Run after go through seed nodes")
-	// TODO Housekeeping routine to keep node status update
-	periodUpdate()
+	updateNodeInfo()
 }
