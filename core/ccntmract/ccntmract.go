@@ -2,6 +2,7 @@ package ccntmract
 
 import (
 	"GoOnchain/common"
+	"GoOnchain/vm"
 )
 
 //Ccntmract address is the hash of ccntmract program .
@@ -26,4 +27,28 @@ type Ccntmract struct {
 
 }
 
+func (c *Ccntmract) IsStandard() bool {
+	if len(c.Code) != 35 {
+		return false
+	}
+	if c.Code[0] != 33 || c.Code[34] != byte(vm.OP_CHECKSIG) {
+		return false
+	}
+	return true
+}
+
+func (c *Ccntmract) IsMultiSigCcntmract() bool {
+	//TODO: IsMultiSigCcntmract
+	return false
+}
+
+func (c *Ccntmract) GetType() CcntmractType{
+	if c.IsStandard() {
+		return SignatureCcntmract
+	}
+	if c.IsMultiSigCcntmract() {
+		return MultiSigCcntmract
+	}
+	return CustomCcntmract
+}
 
