@@ -1,4 +1,4 @@
-package node
+package message
 
 import (
 	"fmt"
@@ -10,6 +10,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"GoOnchain/common"
+	"GoOnchain/node"
 )
 
 const (
@@ -22,9 +23,9 @@ const (
 
 // The Inventory type
 const (
-	TX	= 0x01
-	BLOCK	= 0x02
-	CONSENSUS = 0xe0
+	TXN		= 0x01	// Transaction
+	BLOCK		= 0x02
+	CONSENSUS	= 0xe0
 )
 
 type messager interface {
@@ -98,12 +99,14 @@ type addr struct {
 	// TBD
 }
 
+type invPayload struct {
+	invType uint8
+	blk     []byte
+}
+
 type inv struct {
 	hdr msgHdr
-	p struct {
-		invType uint8
-		blk     []byte
-	}
+	p  invPayload
 }
 
 type dataReq struct {
@@ -116,7 +119,8 @@ type block struct {
 	// TBD
 }
 
-type transaction struct {
+// Transaction message
+type trn struct {
 	msgHdr
 	// TBD
 }
@@ -164,7 +168,7 @@ func allocMsg(t string, length int) (messager, error) {
 		var msg block
 		return &msg, nil
 	case "tx":
-		var msg transaction
+		var msg trn
 		return &msg, nil
 	default:
 		return nil, errors.New("Unknown message type")
@@ -195,8 +199,8 @@ func (hdr *msgHdr) init(cmd string, checksum []byte, length uint32) {
 	copy(hdr.Checksum[:], checksum[:CHECKSUMLEN])
 	hdr.Length = length
 
-	fmt.Printf("The message payload length is %d", hdr.Length)
-	fmt.Printf("The message header length is %d", uint32(unsafe.Sizeof(*hdr)))
+	fmt.Printf("The message payload length is %d\n", hdr.Length)
+	fmt.Printf("The message header length is %d\n", uint32(unsafe.Sizeof(*hdr)))
 }
 
 
@@ -317,7 +321,7 @@ func checkSum(p []byte) []byte {
 	s := sha256.Sum256(t[:])
 
 	// Currently we only need the frcntm 4 bytes as checksum
-	return s[:CHECKSUMLEN]
+	return s[: CHECKSUMLEN]
 }
 
 func reverse(input []byte) []byte {
@@ -357,8 +361,20 @@ func newHeadersReq() ([]byte, error) {
 // Verify the message header information
 // @p payload of the message
 func (hdr msgHdr) verify(buf []byte) error {
-	// TODO verify the message header
-	// checksum,version magic number
+	if (hdr.Magic != NETMAGIC) {
+		fmt.Printf("Unmatched magic number 0x%d\n", hdr.Magic)
+		return errors.New("Unmatched magic number")
+	}
+
+	checkSum := checkSum(buf)
+	if (bytes.Equal(hdr.Checksum[:], checkSum[:]) == false) {
+		str1 := hex.EncodeToString(hdr.Checksum[:])
+		str2 := hex.EncodeToString(checkSum[:])
+		fmt.Printf("Message Checksum error, Received checksum %s Wanted checksum: %s\n",
+			str1, str2)
+		return errors.New("Message Checksum error")
+	}
+
 	return nil
 }
 
@@ -465,6 +481,7 @@ func (msg blkHeader) serialization() ([]byte, error) {
 		return nil, err
 	}
 
+	// TODO serilization the header, then the payload
 	return buf.Bytes(), err
 }
 
@@ -472,8 +489,8 @@ func (msg *blkHeader) deserialization(p []byte) error {
 	fmt.Printf("The size of messge is %d in deserialization\n",
 		uint32(unsafe.Sizeof(*msg)))
 
-	buf := bytes.NewBuffer(p)
-	err := binary.Read(buf, binary.LittleEndian, msg)
+	err := msg.hdr.deserialization(p)
+	msg.blkHdr = p[MSGHDRLEN : ]
 	return err
 }
 
@@ -504,6 +521,7 @@ func (msg inv) serialization() ([]byte, error) {
 
 	fmt.Printf("The size of messge is %d in serialization\n",
 		uint32(unsafe.Sizeof(msg)))
+
 	err := binary.Write(&buf, binary.LittleEndian, msg)
 	if err != nil {
 		return nil, err
@@ -516,8 +534,7 @@ func (msg *inv) deserialization(p []byte) error {
 	fmt.Printf("The size of messge is %d in deserialization\n",
 		uint32(unsafe.Sizeof(*msg)))
 
-	buf := bytes.NewBuffer(p[0 : MSGHDRLEN])
-	err := binary.Read(buf, binary.LittleEndian, msg.hdr)
+	err := msg.hdr.deserialization(p)
 
 	msg.p.invType = p[MSGHDRLEN]
 	msg.p.blk = p[MSGHDRLEN + 1 :]
