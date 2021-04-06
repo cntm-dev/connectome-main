@@ -5,7 +5,7 @@ import (
 	"GoOnchain/crypto"
 	tx "GoOnchain/core/transaction"
 	 "GoOnchain/core/ledger"
-	pl "GoOnchain/net/payload"
+	msg "GoOnchain/net/message"
 	ser "GoOnchain/common/serialization"
 	cl "GoOnchain/client"
 )
@@ -69,8 +69,11 @@ func (cxt *ConsensusCcntmext)  HasTxHash(txHash Uint256) bool {
 	return false
 }
 
-func (cxt *ConsensusCcntmext)  MakeChangeView() *pl.ConsensusPayload {
+func (cxt *ConsensusCcntmext)  MakeChangeView() *msg.ConsensusPayload {
 	cv := &ChangeView{
+		msgData: &ConsensusMessageData{
+			Type: ChangeViewMsg,
+		},
 		NewViewNumber: cxt.ExpectedView[cxt.MinerIndex],
 	}
 	return cxt.MakePayload(cv)
@@ -81,11 +84,14 @@ func (cxt *ConsensusCcntmext)  MakeHeader() *ledger.Block {
 		return nil
 	}
 
+	txRoot,_ := crypto.ComputeRoot(cxt.TransactionHashes)
+
+
 	if cxt.header == nil{
 		blockData := &ledger.Blockdata{
 			Version: CcntmextVersion,
 			PrevBlockHash: cxt.PrevHash,
-			TransactionsRoot: crypto.ComputeRoot(cxt.TransactionHashes),
+			TransactionsRoot: txRoot,
 			Timestamp: cxt.Timestamp,
 			Height: cxt.Height,
 			ConsensusData: cxt.Nonce,
@@ -99,9 +105,9 @@ func (cxt *ConsensusCcntmext)  MakeHeader() *ledger.Block {
 	return cxt.header
 }
 
-func (cxt *ConsensusCcntmext)  MakePayload(message ConsensusMessage) *pl.ConsensusPayload{
+func (cxt *ConsensusCcntmext)  MakePayload(message ConsensusMessage) *msg.ConsensusPayload{
 	message.ConsensusMessageData().ViewNumber = cxt.ViewNumber
-	return &pl.ConsensusPayload{
+	return &msg.ConsensusPayload{
 		Version: CcntmextVersion,
 		PrevHash: cxt.PrevHash,
 		Height: cxt.Height,
@@ -111,19 +117,25 @@ func (cxt *ConsensusCcntmext)  MakePayload(message ConsensusMessage) *pl.Consens
 	}
 }
 
-func (cxt *ConsensusCcntmext)  MakePerpareRequest() *pl.ConsensusPayload{
+func (cxt *ConsensusCcntmext)  MakePrepareRequest() *msg.ConsensusPayload{
 	preReq := &PrepareRequest{
+		msgData: &ConsensusMessageData{
+			Type: PrepareRequestMsg,
+		},
 		Nonce: cxt.Nonce,
 		NextMiner: cxt.NextMiner,
 		TransactionHashes: cxt.TransactionHashes,
-		//TODO: MinerTransaction:
+		BookkeepingTransaction: cxt.Transactions[cxt.TransactionHashes[0]],
 		Signature: cxt.Signatures[cxt.MinerIndex],
 	}
-	return cxt.MakePayload(preReq	)
+	return cxt.MakePayload(preReq)
 }
 
-func (cxt *ConsensusCcntmext)  MakePerpareResponse(signature []byte) *pl.ConsensusPayload{
+func (cxt *ConsensusCcntmext)  MakePerpareResponse(signature []byte) *msg.ConsensusPayload{
 	preRes := &PrepareResponse{
+		msgData: &ConsensusMessageData{
+			Type: PrepareResponseMsg,
+		},
 		Signature: signature,
 	}
 	return cxt.MakePayload(preRes)
