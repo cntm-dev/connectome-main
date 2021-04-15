@@ -6,6 +6,7 @@ import (
 	"GoOnchain/crypto"
 	pg "GoOnchain/core/ccntmract/program"
 	"errors"
+	. "GoOnchain/errors"
 	"math/big"
 	"sort"
 )
@@ -68,9 +69,12 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.
 		}
 
 		pkParaArray := cxt.MultiPubkeyPara[index]
-
+		temp, err := pubkey.EncodePoint(true)
+		if err !=nil{
+			return NewDetailErr(err, ErrNoCode, "[Ccntmract],AddCcntmract failed.")
+		}
 		pubkeyPara := PubkeyParameter{
-			PubKey: ToHexString(pubkey.EncodePoint(true)),
+			PubKey: ToHexString(temp),
 			Parameter: ToHexString(parameter),
 		}
 		pkParaArray = append(pkParaArray,pubkeyPara)
