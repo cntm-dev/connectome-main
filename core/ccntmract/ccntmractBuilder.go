@@ -21,10 +21,19 @@ func CreateSignatureCcntmract(ownerPubKey *crypto.PubKey) (*Ccntmract,error){
 	if err !=nil{
 		return nil,NewDetailErr(err, ErrNoCode, "[Ccntmract],CreateSignatureCcntmract failed.")
 	}
+	hash,err:= ToCodeHash(temp)
+	if err !=nil{
+		return nil,NewDetailErr(err, ErrNoCode, "[Ccntmract],CreateSignatureCcntmract failed.")
+	}
+	signatureRedeemScriptHashToCodeHash,err:= ToCodeHash(signatureRedeemScript)
+	if err !=nil{
+		return nil,NewDetailErr(err, ErrNoCode, "[Ccntmract],CreateSignatureCcntmract failed.")
+	}
 	return &Ccntmract{
 		Code: signatureRedeemScript,
 		Parameters: []CcntmractParameterType{Signature},
-		OwnerPubkeyHash: ToCodeHash(temp),
+		ProgramHash:signatureRedeemScriptHashToCodeHash,
+		OwnerPubkeyHash: hash,
 	},nil
 }
 

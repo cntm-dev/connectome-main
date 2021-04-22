@@ -83,7 +83,11 @@ func (cl *Client) GetAccount(pubKey *crypto.PubKey) (*Account,error){
 	if err !=nil{
 		return nil,NewDetailErr(err, ErrNoCode, "[Ccntmract],CreateSignatureCcntmract failed.")
 	}
-	return cl.GetAccountByKeyHash(ToCodeHash(temp)),nil
+	hash,err :=ToCodeHash(temp)
+	if err !=nil{
+		return nil,NewDetailErr(err, ErrNoCode, "[Ccntmract],CreateSignatureCcntmract failed.")
+	}
+	return cl.GetAccountByKeyHash(hash),nil
 }
 
 func (cl *Client) GetAccountByKeyHash(publicKeyHash Uint160) *Account{
@@ -161,7 +165,7 @@ func (cl *Client) ProcessBlocks() {
 
 			cl.mu.Lock()
 
-			block ,_:= ledger.DefaultLedger.Blockchain.GetBlockWithHeight(cl.currentHeight)
+			block ,_:= ledger.DefaultLedger.GetBlockWithHeight(cl.currentHeight)
 			if block != nil{
 				cl.ProcessNewBlock(block)
 			}
@@ -189,7 +193,10 @@ func (cl *Client) Sign(ccntmext *ct.CcntmractCcntmext) bool{
 		account := cl.GetAccountByProgramHash(hash)
 		if account == nil {ccntminue}
 
-		signature := sig.SignBySigner(ccntmext.Data,account)
+		signature,errx:= sig.SignBySigner(ccntmext.Data,account)
+		if errx != nil{
+			return false
+		}
 		err := ccntmext.AddCcntmract(ccntmract,account.PublicKey,signature)
 
 		if err != nil {
