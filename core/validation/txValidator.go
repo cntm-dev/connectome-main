@@ -106,5 +106,10 @@ func CheckAttributeProgram(Tx *tx.Transaction) error {
 }
 
 func CheckTransactionCcntmracts(Tx *tx.Transaction) error {
-	return VerifySignableData(Tx)
+	flag,err := VerifySignableData(Tx)
+	if ( flag && err == nil ) {
+		return nil
+	} else {
+		return err
+	}
 }

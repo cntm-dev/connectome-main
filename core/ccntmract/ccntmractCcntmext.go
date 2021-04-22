@@ -89,7 +89,11 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.
 			}
 			for ccntmract.Code[i] == 33 {
 				i++
-				pubkeys = append(pubkeys, crypto.DecodePoint(ccntmract.Code[i:33]))
+				temp,err:=crypto.DecodePoint(ccntmract.Code[i:33])
+				if err!=nil{
+					return NewDetailErr(err, ErrNoCode, "[Ccntmract],AddCcntmract DecodePoint failed.")
+				}
+				pubkeys = append(pubkeys,temp )
 				i += 33
 			}
 
@@ -102,9 +106,13 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.
 			//generate parameter/index map by pubkey parameter arrar
 			paraIndexs := make([]ParameterIndex, len(pkParaArray))
 			for _, pkPara := range pkParaArray {
+				temp,err :=crypto.DecodePoint(HexToBytes(pkPara.PubKey))
+				if err!=nil{
+					return NewDetailErr(err, ErrNoCode, "[Ccntmract],AddCcntmract DecodePoint failed.")
+				}
 				paraIndex := ParameterIndex{
 					Parameter: HexToBytes(pkPara.Parameter),
-					Index:     pkIndexMap[*crypto.DecodePoint(HexToBytes(pkPara.PubKey))],
+					Index:     pkIndexMap[*temp],
 				}
 				paraIndexs = append(paraIndexs, paraIndex)
 			}
