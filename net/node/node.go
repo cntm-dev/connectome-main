@@ -2,17 +2,17 @@ package node
 
 import (
 	"GoOnchain/common"
-	"GoOnchain/core/transaction"
 	"GoOnchain/core/ledger"
-	"math/rand"
+	"GoOnchain/core/transaction"
 	. "GoOnchain/net/message"
 	. "GoOnchain/net/protocol"
+	"errors"
 	"fmt"
+	"math/rand"
 	"net"
 	"runtime"
 	"sync/atomic"
 	"time"
-	"errors"
 )
 
 // The node capability flag
@@ -47,14 +47,14 @@ type node struct {
 	local  *node   // The pointer to local node
 	neighb nodeMap // The neighbor node connect with currently node except itself
 	//neighborNodes	*nodeMAP	// The node connect with it except the local node
-	eventQueue // The event queue to notice notice other modules
-	TXNPool    // Unconfirmed transaction pool
-	idCache    // The buffer to store the id of the items which already be processed
-	ledger  *ledger.Ledger	// The Local ledger 
-	private *uint // Reserver for future using
+	eventQueue                // The event queue to notice notice other modules
+	TXNPool                   // Unconfirmed transaction pool
+	idCache                   // The buffer to store the id of the items which already be processed
+	ledger     *ledger.Ledger // The Local ledger
+	private    *uint          // Reserver for future using
 }
 
-func (node node) dumpInfo() {
+func (node node) DumpInfo() {
 	fmt.Printf("Node info:\n")
 	fmt.Printf("\t state = %d\n", node.state)
 	fmt.Printf("\t id = %s\n", node.id)
@@ -66,6 +66,23 @@ func (node node) dumpInfo() {
 	fmt.Printf("\t services = %d\n", node.services)
 	fmt.Printf("\t port = %d\n", node.port)
 	fmt.Printf("\t relay = %v\n", node.relay)
+	fmt.Printf("\t height = %v\n", node.height)
+}
+
+func (node *node) UpdateInfo(t time.Time, version uint32, services uint64,
+	port uint16, nonce uint32, relay uint8, height uint32) {
+	// TODO need lock
+	node.UpdateTime(t)
+	node.nonce = nonce
+	node.version = version
+	node.services = services
+	node.port = port
+	if relay == 0 {
+		node.relay = false
+	} else {
+		node.relay = true
+	}
+	node.height = uint64(height)
 }
 
 func NewNode() *node {
@@ -220,14 +237,30 @@ func (node node) GetAddr() string {
 	return node.addr
 }
 
-func (node *node) GetAddrs() ([]string, uint) {
-	var addrstr []string
-	var i uint = 0
-	// TODO write lock
-	for _, node := range node.neighb.List {
+func (node node) GetAddress() [16]byte {
+	var result [16]byte
+	ip := net.ParseIP(node.addr).To16()
+	copy(result[:], ip[:16])
+	return result
+}
+
+func (node node) GetTime() int64 {
+	t := time.Now()
+	return t.UnixNano()
+}
+
+func (node node) GetAddrs() ([]NodeAddr, uint64) {
+	var addrstr []NodeAddr
+	var i uint64 = 0
+	// TODO read lock
+	for _, n := range node.local.neighb.List {
 		s := node.GetState()
 		if s == ESTABLISH {
-			addrstr[i] = node.addr
+			addrstr[i].IpAddr = n.GetAddress()
+			addrstr[i].Time = n.GetTime()
+			addrstr[i].Services = n.Services()
+			addrstr[i].Port = n.GetPort()
+
 			i++
 		}
 	}
