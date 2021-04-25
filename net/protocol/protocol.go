@@ -79,9 +79,9 @@ type Noder interface {
 	Connect(nodeAddr string)
 	//Xmit(inv Inventory) error // The transmit interface
 	Tx(buf []byte)
-	GetAddress() [16]byte
+	GetAddress() ([16]byte, error)
 	GetTime() int64
-	GetAddrs() ([]NodeAddr, uint64)
+	GetNeighborAddrs() ([]NodeAddr, uint64)
 }
 
 type Tmper interface {
