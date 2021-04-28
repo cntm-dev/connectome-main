@@ -4,6 +4,7 @@ import (
 	"GoOnchain/common"
 	. "GoOnchain/net/message"
 	. "GoOnchain/net/protocol"
+	. "GoOnchain/config"
 	"errors"
 	"fmt"
 	"io"
@@ -30,7 +31,7 @@ type link struct {
 func unpackNodeBuf(node *node, buf []byte) {
 	var msgLen int
 	var msgBuf []byte
-
+	common.Trace()
 	if node.rxBuf.p == nil {
 		if len(buf) < MSGHDRLEN {
 			fmt.Println("Unexpected size of received message")
@@ -44,7 +45,7 @@ func unpackNodeBuf(node *node, buf []byte) {
 		msgLen = node.rxBuf.len
 	}
 
-	//fmt.Printf("The msg length is %d, buf len is %d\n", msgLen, len(buf))
+	fmt.Printf("The msg length is %d, buf len is %d\n", msgLen, len(buf))
 	if len(buf) == msgLen {
 		msgBuf = append(node.rxBuf.p, buf[:]...)
 		go HandleNodeMsg(node, msgBuf, len(msgBuf))
@@ -107,7 +108,7 @@ func printIPAddr() {
 // Init the server port, should be run in another thread
 func (n *node) initConnection() {
 	common.Trace()
-	listener, err := net.Listen("tcp", ":"+strconv.Itoa(NODETESTPORT))
+	listener, err := net.Listen("tcp", ":"+strconv.Itoa(Parameters.NodePort))
 	if err != nil {
 		fmt.Println("Error listening\n", err.Error())
 		return

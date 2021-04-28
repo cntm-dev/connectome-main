@@ -2,13 +2,14 @@ package node
 
 import (
 	"GoOnchain/common"
+	. "GoOnchain/config"
 	"GoOnchain/core/ledger"
 	"GoOnchain/core/transaction"
 	. "GoOnchain/net/message"
 	. "GoOnchain/net/protocol"
-	"bytes"
-	"crypto/sha256"
-	"encoding/binary"
+	//"bytes"
+	//"crypto/sha256"
+	//"encoding/binary"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -105,20 +106,20 @@ func InitNode() Tmper {
 
 	n.version = PROTOCOLVERSION
 	n.services = NODESERVICES
-	n.port = NODETESTPORT
+	n.port = uint16(Parameters.NodePort)
 	n.relay = true
 	rand.Seed(time.Now().UTC().UnixNano())
 	// Fixme replace with the real random number
 	n.nonce = rand.Uint32()
-
+	fmt.Printf("Init node ID to %d \n", n.nonce)
 	n.neighb.init()
 	n.local = n
 	n.TXNPool.init()
 	n.eventQueue.init()
 	n.ledger, err = ledger.GetDefaultLedger()
 	if err != nil {
+		fmt.Printf("Get Default Ledger error\n")
 		errors.New("Get Default Ledger error")
-		// FIXME report the error
 	}
 
 	go n.initConnection()
@@ -223,52 +224,41 @@ func (node node) SynchronizeMemoryPool() {
 
 func (node node) Xmit(inv common.Inventory) error {
 
-	// Fixme here we only consider 1 inventory case
-	var msg Inv
-	msg.Hdr.Magic = NETMAGIC
-	t := "inv"
-	copy(msg.Hdr.CMD[0:len(t)], t)
-	msg.P.InvType = uint8(inv.Type())
-	tmpBuffer := bytes.NewBuffer([]byte{})
+	fmt.Println("****** node Xmit ********")
+	var buffer []byte
+	var err error
 	if inv.Type() == common.TRANSACTION {
-		fmt.Printf("TX transaction message\n")
+		fmt.Printf("****TX transaction message*****\n")
 		transaction, isTransaction := inv.(*transaction.Transaction)
 		if isTransaction {
-			transaction.Serialize(tmpBuffer)
+			//transaction.Serialize(tmpBuffer)
+			buffer, err = NewTx(transaction)
+			if err != nil {
+				fmt.Println("Error New Tx message ", err.Error())
+				return err
+			}
 		}
-		msg.P.Blk = tmpBuffer.Bytes()
+
 	} else if inv.Type() == common.BLOCK {
-		fmt.Printf("TX block message\n")
+		fmt.Printf("****TX block message****\n")
 		block, isBlock := inv.(*ledger.Block)
 		if isBlock {
-			block.Serialize(tmpBuffer)
+			buffer, err = NewBlock(block)
+			if err != nil {
+				fmt.Println("Error New Block message ", err.Error())
+				return err
+			}
 		}
-		msg.P.Blk = tmpBuffer.Bytes()
-	} else if inv.Type() == common.CONSENSUS {
-		fmt.Printf("TX consensus message\n")
+	} /*else if inv.Type() == common.CONSENSUS {
+		fmt.Printf("*****TX consensus message****\n")
 		payload, isConsensusPayload := inv.(*ConsensusPayload)
 		if isConsensusPayload {
 			payload.Serialize(tmpBuffer)
 		}
 		msg.P.Blk = tmpBuffer.Bytes()
-	}
+	}*/
 
-	b := new(bytes.Buffer)
-	err := binary.Write(b, binary.LittleEndian, &(msg.P))
-	if err != nil {
-		fmt.Println("Binary Write failed at new Msg")
-		return nil
-	}
-	s := sha256.Sum256(b.Bytes())
-	s2 := s[:]
-	s = sha256.Sum256(s2)
-	buf := bytes.NewBuffer(s[:4])
-	binary.Read(buf, binary.LittleEndian, &(msg.Hdr.Checksum))
-	msg.Hdr.Length = uint32(len(buf.Bytes()))
-	fmt.Printf("The message payload length is %d\n", msg.Hdr.Length)
-
-	buffer, _ := msg.Serialization()
-	go node.LocalNode().Tx(buffer)
+	node.neighb.Broadcast(buffer)
 
 	return nil
 }
