@@ -8,6 +8,7 @@ import (
 	msg "GoOnchain/net/message"
 	ser "GoOnchain/common/serialization"
 	cl "GoOnchain/client"
+	"fmt"
 )
 
 const CcntmextVersion uint32 = 0
@@ -35,15 +36,18 @@ type ConsensusCcntmext struct {
 }
 
 func (cxt *ConsensusCcntmext)  M() int {
+	Trace()
 	return len(cxt.Miners) - (len(cxt.Miners) - 1) / 3
 }
 
 func NewConsensusCcntmext() *ConsensusCcntmext {
+	Trace()
 	return  &ConsensusCcntmext{
 	}
 }
 
 func (cxt *ConsensusCcntmext)  ChangeView(viewNum byte)  {
+	Trace()
 	p := (cxt.Height - uint32(viewNum)) % uint32(len(cxt.Miners))
 	cxt.State &= SignatureSent
 	cxt.ViewNumber = viewNum
@@ -61,6 +65,7 @@ func (cxt *ConsensusCcntmext)  ChangeView(viewNum byte)  {
 }
 
 func (cxt *ConsensusCcntmext)  HasTxHash(txHash Uint256) bool {
+	Trace()
 	for _, hash :=  range cxt.TransactionHashes{
 		if hash == txHash {
 			return true
@@ -70,6 +75,7 @@ func (cxt *ConsensusCcntmext)  HasTxHash(txHash Uint256) bool {
 }
 
 func (cxt *ConsensusCcntmext)  MakeChangeView() *msg.ConsensusPayload {
+	Trace()
 	cv := &ChangeView{
 		msgData: &ConsensusMessageData{
 			Type: ChangeViewMsg,
@@ -80,6 +86,7 @@ func (cxt *ConsensusCcntmext)  MakeChangeView() *msg.ConsensusPayload {
 }
 
 func (cxt *ConsensusCcntmext)  MakeHeader() *ledger.Block {
+	Trace()
 	if cxt.TransactionHashes == nil {
 		return nil
 	}
@@ -106,6 +113,7 @@ func (cxt *ConsensusCcntmext)  MakeHeader() *ledger.Block {
 }
 
 func (cxt *ConsensusCcntmext)  MakePayload(message ConsensusMessage) *msg.ConsensusPayload{
+	Trace()
 	message.ConsensusMessageData().ViewNumber = cxt.ViewNumber
 	return &msg.ConsensusPayload{
 		Version: CcntmextVersion,
@@ -118,6 +126,8 @@ func (cxt *ConsensusCcntmext)  MakePayload(message ConsensusMessage) *msg.Consen
 }
 
 func (cxt *ConsensusCcntmext)  MakePrepareRequest() *msg.ConsensusPayload{
+	Trace()
+	fmt.Println("cxt.TransactionHashes[0]",cxt.TransactionHashes[0])
 	preReq := &PrepareRequest{
 		msgData: &ConsensusMessageData{
 			Type: PrepareRequestMsg,
@@ -132,6 +142,7 @@ func (cxt *ConsensusCcntmext)  MakePrepareRequest() *msg.ConsensusPayload{
 }
 
 func (cxt *ConsensusCcntmext)  MakePerpareResponse(signature []byte) *msg.ConsensusPayload{
+	Trace()
 	preRes := &PrepareResponse{
 		msgData: &ConsensusMessageData{
 			Type: PrepareResponseMsg,
@@ -142,6 +153,7 @@ func (cxt *ConsensusCcntmext)  MakePerpareResponse(signature []byte) *msg.Consen
 }
 
 func (cxt *ConsensusCcntmext)  GetSignaturesCount() (count int){
+	Trace()
 	count = 0
 	for _,sig := range cxt.Signatures {
 		if sig != nil {
@@ -152,16 +164,22 @@ func (cxt *ConsensusCcntmext)  GetSignaturesCount() (count int){
 }
 
 func (cxt *ConsensusCcntmext)  GetTransactionList()  []*tx.Transaction{
+	Trace()
 	if cxt.txlist == nil{
 		cxt.txlist = []*tx.Transaction{}
+		fmt.Println("cxt.Transactions=",cxt.Transactions)
 		for _,TX := range cxt.Transactions {
+			fmt.Println("transaction added to cxt.Transactions.",TX)
 			cxt.txlist = append(cxt.txlist,TX)
+			fmt.Println("transaction added to cxt.Transactions.",TX)
 		}
+		fmt.Println("len cxt.transacicntms",len(cxt.Transactions))
 	}
 	return cxt.txlist
 }
 
 func (cxt *ConsensusCcntmext)  GetTXByHashes()  []*tx.Transaction{
+	Trace()
 	TXs := []*tx.Transaction{}
 	for _,hash := range cxt.TransactionHashes {
 		if TX,ok:=cxt.Transactions[hash]; ok{
@@ -172,6 +190,7 @@ func (cxt *ConsensusCcntmext)  GetTXByHashes()  []*tx.Transaction{
 }
 
 func (cxt *ConsensusCcntmext)  CheckTxHashesExist() bool {
+	Trace()
 	for _,hash := range cxt.TransactionHashes {
 		if _,ok:=cxt.Transactions[hash]; !ok{
 			return false
@@ -181,6 +200,7 @@ func (cxt *ConsensusCcntmext)  CheckTxHashesExist() bool {
 }
 
 func (cxt *ConsensusCcntmext) Reset(client *cl.Client){
+	Trace()
 	cxt.State = Initial
 	cxt.PrevHash = ledger.DefaultLedger.Blockchain.CurrentBlockHash()
 	cxt.Height = ledger.DefaultLedger.Blockchain.BlockHeight + 1
@@ -189,16 +209,24 @@ func (cxt *ConsensusCcntmext) Reset(client *cl.Client){
 	cxt.MinerIndex = -1
 
 	minerLen := len(cxt.Miners)
+
 	cxt.PrimaryIndex = cxt.Height % uint32(minerLen)
 	cxt.TransactionHashes = nil
 	cxt.Signatures = make([][]byte,minerLen)
 	cxt.ExpectedView = make([]byte,minerLen)
 
+	fmt.Println("minerLen=",minerLen)
+	    for _, v := range cxt.Miners {
+		    pubkey, _ := v.EncodePoint(true)
+	           fmt.Println("Miners pub key =",pubkey)
+	        }
 	for i:=0;i<minerLen ;i++  {
 		if client.CcntmainsAccount(cxt.Miners[i]){
+			fmt.Println("Runed.")
 			cxt.MinerIndex = i
 			break
 		}
 	}
+	fmt.Println("cxt.MinerIndex = ",cxt.MinerIndex)
 	cxt.header = nil
 }
