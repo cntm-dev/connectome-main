@@ -39,12 +39,13 @@ type DbftService struct {
 	blockPersistCompletedSubscriber events.Subscriber
 }
 
-func NewDbftService(client *cl.Client,logDictionary string) *DbftService {
+func NewDbftService(client *cl.Client,logDictionary string,localNet net.Neter) *DbftService {
 	return &DbftService{
 		//localNode: localNode,
 		Client: client,
 		timer: time.NewTimer(time.Second*15),
 		started: false,
+		localNet:localNet,
 		logDictionary: logDictionary,
 	}
 }
@@ -311,7 +312,7 @@ func (ds *DbftService) PrepareRequestReceived(payload *msg.ConsensusPayload,mess
 	ds.ccntmext.TransactionHashes = message.TransactionHashes
 	ds.ccntmext.Transactions = make(map[Uint256]*tx.Transaction)
 
-	if err := va.VerifySignature(ds.ccntmext.MakeHeader(),ds.ccntmext.Miners[payload.MinerIndex],message.Signature); err != nil {
+	if _,err := va.VerifySignature(ds.ccntmext.MakeHeader(),ds.ccntmext.Miners[payload.MinerIndex],message.Signature); err != nil {
 		return
 	}
 
@@ -347,7 +348,7 @@ func (ds *DbftService) PrepareResponseReceived(payload *msg.ConsensusPayload,mes
 
 	header := ds.ccntmext.MakeHeader()
 	if  header == nil {return }
-	if err := va.VerifySignature(header,ds.ccntmext.Miners[payload.MinerIndex],message.Signature); err != nil {
+	if _,err := va.VerifySignature(header,ds.ccntmext.Miners[payload.MinerIndex],message.Signature); err != nil {
 		return
 	}
 
