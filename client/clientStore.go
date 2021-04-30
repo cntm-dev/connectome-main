@@ -2,7 +2,7 @@ package client
 
 import (
 	ct "GoOnchain/core/ccntmract"
-	. "GoOnchain/common"
+	//. "GoOnchain/common"
 	"fmt"
 	"database/sql"
 	"github.com/mattn/go-sqlite3"
@@ -264,6 +264,67 @@ func (cs * ClientStore) LoadAccountData(index int) ([]byte,[]byte,error) {
 	return nil,nil,NewDetailErr(errors.New("[LoadAccountData] Index not found"), ErrNoCode, "")
 }
 
-func (cs * ClientStore) LoadCcntmracts() map[Uint160]*ct.Ccntmract {
+func (cs * ClientStore) LoadCcntmractData( index int ) ([]byte,[]byte,[]byte,error) {
+
+	err := cs.OpenDB(cs.path)
+	defer cs.CloseDB()
+	if err != nil {
+		return nil,nil,nil,err
+	}
+
+	rows, _ := cs.db.Query("SELECT * FROM Ccntmract")
+	i := 0
+	for rows.Next() {
+		var sh []byte
+		var ph []byte
+		var rd []byte
+
+		rows.Scan(&sh, &ph, &rd)
+
+		if index == i {
+			return sh, ph, rd, nil
+		}
+
+		i ++
+	}
+
+	return nil,nil,nil,NewDetailErr(errors.New("[LoadCcntmractData] Index not found"), ErrNoCode, "")
+}
+
+func (cs * ClientStore) SaveCcntmractData( ct * ct.Ccntmract) error {
+
+	err := cs.OpenDB(cs.path)
+	defer cs.CloseDB()
+	if err != nil {
+		return err
+	}
+
+	// insert
+	stmt, err := cs.db.Prepare("INSERT INTO Ccntmract(ScriptHash,PublicKeyHash,RawData) values(?,?,?)")
+	if err != nil {
+		return err
+	}
+
+	sh := ct.ProgramHash.ToArray()
+	ph := ct.OwnerPubkeyHash.ToArray()
+	rd := ct.ToArray()
+
+	res, err := stmt.Exec(sh, ph, rd )
+	if err != nil {
+		return err
+	}
+
+	_, err = res.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	//fmt.Printf("INSERT Ccntmract: %x %x %x\n",  sh, ph, rd )
+	fmt.Printf("[SaveCcntmractData] ScriptHash: %x\n", sh)
+	fmt.Printf("[SaveCcntmractData] PublicKeyHash: %x\n", ph)
+	fmt.Printf("[SaveCcntmractData] RawData: %x\n", rd)
+	fmt.Printf("[SaveCcntmractData] Code: %x\n", ct.Code)
+	fmt.Printf("[SaveCcntmractData] Parameters: %x\n", ct.Parameters)
+
 	return nil
 }

@@ -5,6 +5,7 @@ type CcntmractParameterType byte
 
 const (
 	Signature CcntmractParameterType = iota
+	Boolean
 	Integer
 	Hash160
 	Hash256

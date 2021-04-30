@@ -10,6 +10,7 @@ import (
 	_ "fmt"
 	"math/big"
 	"sort"
+	"fmt"
 )
 
 type CcntmractCcntmext struct {
@@ -22,8 +23,10 @@ type CcntmractCcntmext struct {
 }
 
 func NewCcntmractCcntmext(data sig.SignableData) *CcntmractCcntmext {
-
+	Trace()
 	programHashes, _ := data.GetProgramHashes() //TODO: check error
+	fmt.Println("programHashes=",programHashes)
+	fmt.Println("hashLen := len(programHashes)",len(programHashes))
 	hashLen := len(programHashes)
 	return &CcntmractCcntmext{
 		Data:            data,
@@ -35,6 +38,7 @@ func NewCcntmractCcntmext(data sig.SignableData) *CcntmractCcntmext {
 }
 
 func (cxt *CcntmractCcntmext) Add(ccntmract *Ccntmract, index int, parameter []byte) error {
+	Trace()
 	i := cxt.GetIndex(ccntmract.ProgramHash)
 	if i < 0 {
 		return errors.New("Program Hash is not exist.")
@@ -50,8 +54,9 @@ func (cxt *CcntmractCcntmext) Add(ccntmract *Ccntmract, index int, parameter []b
 }
 
 func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.PubKey, parameter []byte) error {
-
+	Trace()
 	if ccntmract.GetType() == MultiSigCcntmract {
+		Trace()
 		// add multi sig ccntmract
 
 		index := cxt.GetIndex(ccntmract.ProgramHash)
@@ -77,6 +82,7 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.
 		pkParaArray = append(pkParaArray, pubkeyPara)
 
 		if len(pkParaArray) == len(ccntmract.Parameters) {
+			Trace()
 			i := 0
 			pubkeys := []*crypto.PubKey{}
 			switch ccntmract.Code[i] {
@@ -137,6 +143,7 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.
 		} //pkParaArray
 	} else {
 		//add non multi sig ccntmract
+		Trace()
 		index := -1
 		for i := 0; i < len(ccntmract.Parameters); i++ {
 			if ccntmract.Parameters[i] == Signature {
@@ -162,10 +169,17 @@ func (cxt *CcntmractCcntmext) GetIndex(programHash Uint160) int {
 }
 
 func (cxt *CcntmractCcntmext) GetPrograms() []*pg.Program {
+	Trace()
+	fmt.Println("!cxt.IsCompleted()=",!cxt.IsCompleted())
+	fmt.Println(cxt.Codes)
+	fmt.Println(cxt.Parameters)
 	if !cxt.IsCompleted() {
 		return nil
 	}
 	programs := make([]*pg.Program, len(cxt.Parameters))
+
+	fmt.Println(" len(cxt.Codes)", len(cxt.Codes))
+
 	for i := 0; i < len(cxt.Codes); i++ {
 		sb := pg.NewProgramBuilder()
 
@@ -176,6 +190,8 @@ func (cxt *CcntmractCcntmext) GetPrograms() []*pg.Program {
 				sb.PushData(parameter)
 			}
 		}
+		fmt.Println(" cxt.Codes[i])", cxt.Codes[i])
+		fmt.Println(" sb.ToArray()", sb.ToArray())
 		programs[i] = &pg.Program{
 			Code:      cxt.Codes[i],
 			Parameter: sb.ToArray(),

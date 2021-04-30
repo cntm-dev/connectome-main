@@ -3,6 +3,11 @@ package ccntmract
 import (
 	. "GoOnchain/common"
 	"GoOnchain/vm"
+	"io"
+	"bytes"
+	"GoOnchain/common/serialization"
+	. "GoOnchain/errors"
+	"errors"
 )
 
 //Ccntmract address is the hash of ccntmract program .
@@ -107,4 +112,71 @@ func (c *Ccntmract) GetType() CcntmractType{
 	}
 	return CustomCcntmract
 }
+
+func (c *Ccntmract) Deserialize(r io.Reader) error {
+	c.OwnerPubkeyHash.Deserialize(r)
+
+	p,err := serialization.ReadVarBytes(r)
+	if err != nil {
+		return err
+	}
+	c.Parameters = ByteToCcntmractParameterType(p)
+
+	c.Code,err = serialization.ReadVarBytes(r)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Ccntmract) Serialize(w io.Writer) error {
+	len,err := c.OwnerPubkeyHash.Serialize(w)
+	if err != nil {
+		return err
+	}
+	if len != 20 {
+		return NewDetailErr(errors.New("PubkeyHash.Serialize(): len != len(Uint160)"), ErrNoCode, "")
+	}
+
+	err = serialization.WriteVarBytes(w,CcntmractParameterTypeToByte(c.Parameters))
+	if err != nil {
+		return err
+	}
+
+	err = serialization.WriteVarBytes(w,c.Code)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Ccntmract) ToArray() []byte {
+	w := new(bytes.Buffer)
+	c.Serialize(w)
+
+	return w.Bytes()
+}
+
+func CcntmractParameterTypeToByte( c [] CcntmractParameterType ) []byte {
+	b := make( []byte, len(c) )
+
+	for i:=0; i<len(c); i++ {
+		b[i] = byte(c[i])
+	}
+
+	return b
+}
+
+func ByteToCcntmractParameterType( b []byte ) []CcntmractParameterType {
+	c := make( []CcntmractParameterType, len(b) )
+
+	for i:=0; i<len(b); i++ {
+		c[i] = CcntmractParameterType(b[i])
+	}
+
+	return c
+}
+
 
