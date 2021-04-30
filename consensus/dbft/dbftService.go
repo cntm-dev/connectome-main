@@ -205,6 +205,7 @@ func (ds *DbftService) InitializeConsensus(viewNum byte) error  {
 	fmt.Println("ds.ccntmext.MinerIndex",ds.ccntmext.MinerIndex)
 	fmt.Println("ds.ccntmext.PrimaryIndex",ds.ccntmext.PrimaryIndex)
 	if ds.ccntmext.MinerIndex == int(ds.ccntmext.PrimaryIndex) {
+		Trace()
 		ds.ccntmext.State |= Primary
 		ds.timerHeight = ds.ccntmext.Height
 		ds.timeView = viewNum

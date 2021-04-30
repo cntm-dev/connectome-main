@@ -3,6 +3,7 @@ package message
 import (
 	"GoOnchain/common"
 	"GoOnchain/core/ledger"
+	"GoOnchain/events"
 	//"GoOnchain/events"
 	. "GoOnchain/net/protocol"
 	"bytes"
@@ -29,17 +30,7 @@ func (msg block) Handle(node Noder) error {
 	common.Trace()
 
 	fmt.Printf("RX block message\n")
-	/*
-		if !node.ExistedID(msg.blk.Hash()) {
-			// TODO Update the currently ledger
-			// FIXME the relative event should be attached to the message
-
-			if msg.event != nil {
-				msg.event.Notify(events.EventSaveBlock, msg.blk)
-			}
-
-		}
-	*/
+	node.LocalNode().GetEvent("block").Notify(events.EventNewInventory, &msg.blk)
 	return nil
 }
 
@@ -137,6 +128,7 @@ func (msg *block) Deserialization(p []byte) error {
 		uint32(unsafe.Sizeof(*msg)))
 
 	buf := bytes.NewBuffer(p)
-	err := binary.Read(buf, binary.LittleEndian, msg)
+	err := binary.Read(buf, binary.LittleEndian, msg.msgHdr)
+	msg.blk.Deserialize(buf)
 	return err
 }
