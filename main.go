@@ -37,6 +37,8 @@ func init() {
 }
 
 func main() {
+	var path string = "./Log/"
+	log.CreatePrintLog(path)
 	fmt.Printf("Node version: %s\n", Version)
 	fmt.Println("//**************************************************************************")
 	fmt.Println("//*** 0. Client open                                                     ***")
@@ -111,14 +113,14 @@ func main() {
 		fmt.Println("//**************************************************************************")
 		fmt.Println("//*** neter Xmit completed                                               ***")
 		fmt.Println("//**************************************************************************")
-		for {
+		//for {
 			fmt.Println("ledger.DefaultLedger.Blockchain.BlockHeight", ledger.DefaultLedger.Blockchain.BlockHeight)
 			genesisBlockHash, _ := ledger.DefaultLedger.Store.GetBlockHash(0)
 			fmt.Println("gensisBlockGet =", genesisBlockHash)
 			firstblock, _ := ledger.DefaultLedger.Store.GetBlockHash(1)
 			fmt.Println("FirstBlockGet =", firstblock)
 			time.Sleep(10 * time.Second)
-		}
+		//}
 
 	}
 
