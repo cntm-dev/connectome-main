@@ -2,15 +2,14 @@ package message
 
 import (
 	"GoOnchain/common"
+	"GoOnchain/common/log"
 	"GoOnchain/common/serialization"
 	"GoOnchain/core/ccntmract/program"
-	//"GoOnchain/events"
 	. "GoOnchain/net/protocol"
 	"bytes"
 	"GoOnchain/events"
 	"crypto/sha256"
 	"encoding/binary"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -19,7 +18,6 @@ import (
 	"strconv"
 	. "GoOnchain/errors"
 	sig "GoOnchain/core/signature"
-	"unsafe"
 )
 
 type ConsensusPayload struct {
@@ -129,16 +127,18 @@ func (cp *ConsensusPayload) SerializeUnsigned(w io.Writer) error {
 	serialization.WriteUint32(w, cp.Height)
 	serialization.WriteUint16(w, cp.MinerIndex)
 	serialization.WriteUint32(w, cp.Timestamp)
+	err := serialization.WriteVarBytes(w, cp.Data)
+	if err != nil {
+		return err
+	}
 	return nil
 
 }
 
 func (cp *ConsensusPayload) Serialize(w io.Writer) error {
 	err := cp.SerializeUnsigned(w)
-	err = serialization.WriteVarBytes(w, cp.Data)
 	if cp.Program == nil {
-		common.Trace()
-		fmt.Println("Program is NULL")
+		log.Error("Program is NULL")
 		return errors.New("Program in consensus is NULL")
 	}
 	err = cp.Program.Serialize(w)
@@ -157,56 +157,66 @@ func (msg *consensus) Serialization() ([]byte, error) {
 }
 
 func (cp *ConsensusPayload) DeserializeUnsigned(r io.Reader) error {
+	common.Trace()
 	var err error
 	cp.Version, err = serialization.ReadUint32(r)
 	if err != nil {
+		log.Info("consensus item Version Deserialize failed.")
 		return errors.New("consensus item Version Deserialize failed.")
 	}
 
 	preBlock := new(common.Uint256)
 	err = preBlock.Deserialize(r)
 	if err != nil {
+		log.Info("consensus item preHash Deserialize failed.")
 		return errors.New("consensus item preHash Deserialize failed.")
 	}
 	cp.PrevHash = *preBlock
 
 	cp.Height, err = serialization.ReadUint32(r)
 	if err != nil {
+		log.Info("consensus item Height Deserialize failed.")
 		return errors.New("consensus item Height Deserialize failed.")
 	}
 
 	cp.MinerIndex, err = serialization.ReadUint16(r)
 	if err != nil {
+		log.Info("consensus item MinerIndex Deserialize failed.")
 		return errors.New("consensus item MinerIndex Deserialize failed.")
 	}
 
 	cp.Timestamp, err = serialization.ReadUint32(r)
 	if err != nil {
+		log.Info("consensus item Timestamp Deserialize failed.")
 		return errors.New("consensus item Timestamp Deserialize failed.")
 	}
 
 	cp.Data, err = serialization.ReadVarBytes(r)
-	fmt.Printf("The consensus payload data len is %d\n", len(cp.Data))
+	log.Info("The consensus payload data len is ", len(cp.Data))
 	if err != nil {
+		log.Info("consensus item Data Deserialize failed.")
 		return errors.New("consensus item Data Deserialize failed.")
 	}
+	common.Trace()
 	return nil
 }
 
 func (cp *ConsensusPayload) Deserialize(r io.Reader) error {
+	common.Trace()
 	err := cp.DeserializeUnsigned(r)
-	if cp.Program == nil {
-		common.Trace()
-		fmt.Println("Program is NULL")
-		return errors.New("Program in consensus is NULL")
+
+	pg := new(program.Program)
+	err = pg.Deserialize(r)
+	if err != nil {
+		log.Error("Blockdata item Program Deserialize failed")
+		return NewDetailErr(err, ErrNoCode, "Blockdata item Program Deserialize failed.")
 	}
-	err = cp.Program.Deserialize(r)
+	cp.Program = pg
 	return err
 }
 
 func (msg *consensus) Deserialization(p []byte) error {
-	fmt.Printf("The size of messge is %d in deserialization\n",
-		uint32(unsafe.Sizeof(*msg)))
+	common.Trace()
 	buf := bytes.NewBuffer(p)
 	err := binary.Read(buf, binary.LittleEndian, &(msg.msgHdr))
 	err = msg.cons.Deserialize(buf)
@@ -234,16 +244,12 @@ func NewConsensus(cp *ConsensusPayload) ([]byte, error) {
 	buf := bytes.NewBuffer(s[:4])
 	binary.Read(buf, binary.LittleEndian, &(msg.msgHdr.Checksum))
 	msg.msgHdr.Length = uint32(len(b.Bytes()))
-	fmt.Printf("The message payload length is %d\n", msg.msgHdr.Length)
+	fmt.Printf("NewConsensus The message payload length is %d\n", msg.msgHdr.Length)
 
 	m, err := msg.Serialization()
 	if err != nil {
 		fmt.Println("Error Convert net message ", err.Error())
 		return nil, err
 	}
-
-	str := hex.EncodeToString(m)
-	fmt.Printf("The message length is %d, %s\n", len(m), str)
-
 	return m, nil
 }

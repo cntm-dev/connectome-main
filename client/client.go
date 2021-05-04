@@ -241,15 +241,15 @@ func (cl *Client) GetCcntmract(codeHash Uint160) *ct.Ccntmract{
 	Trace()
 	cl.mu.Lock()
 	defer cl.mu.Unlock()
-	fmt.Println("codeHash",codeHash)
-	    for _, v := range cl.ccntmracts {
-	            fmt.Println("cl.ccntmracts = ",v)
-	        }
+	//fmt.Println("codeHash",codeHash)
+	//for _, v := range cl.ccntmracts {
+	//	fmt.Println("cl.ccntmracts = ",v)
+	//}
 
 	if ccntmract,ok := cl.ccntmracts[codeHash]; ok{
 		return ccntmract
 	}
-	fmt.Println("ccntmract",cl.ccntmracts[codeHash])
+	//fmt.Println("ccntmract",cl.ccntmracts[codeHash])
 	return nil
 }
 
@@ -369,12 +369,12 @@ func (cl *Client) Sign(ccntmext *ct.CcntmractCcntmext) bool{
 	Trace()
 	fSuccess := false
 	for i,hash := range ccntmext.ProgramHashes{
-		fmt.Println("Sign hash=",hash)
+		//fmt.Println("Sign hash=",hash)
 		ccntmract := cl.GetCcntmract(hash)
 		if ccntmract == nil {ccntminue}
-		fmt.Println("cl.GetCcntmract(hash)=",cl.GetCcntmract(hash))
+		//fmt.Println("cl.GetCcntmract(hash)=",cl.GetCcntmract(hash))
 		account := cl.GetAccountByProgramHash(hash)
-		fmt.Println("account",account)
+		//fmt.Println("account",account)
 		if account == nil {ccntminue}
 
 		signature,err:= sig.SignBySigner(ccntmext.Data,account)

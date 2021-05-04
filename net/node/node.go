@@ -2,6 +2,7 @@ package node
 
 import (
 	"GoOnchain/common"
+	"GoOnchain/common/log"
 	. "GoOnchain/config"
 	"GoOnchain/core/ledger"
 	"GoOnchain/core/transaction"
@@ -184,13 +185,12 @@ func (node node) SynchronizeMemoryPool() {
 }
 
 func (node node) Xmit(inv common.Inventory) error {
-
-	fmt.Println("****** node Xmit ********")
+	common.Trace()
 	var buffer []byte
 	var err error
 
 	if inv.Type() == common.TRANSACTION {
-		fmt.Printf("****TX transaction message*****\n")
+		log.Info("****TX transaction message*****\n")
 		transaction, isTransaction := inv.(*transaction.Transaction)
 		if isTransaction {
 			//transaction.Serialize(tmpBuffer)
@@ -202,7 +202,7 @@ func (node node) Xmit(inv common.Inventory) error {
 		}
 
 	} else if inv.Type() == common.BLOCK {
-		fmt.Printf("****TX block message****\n")
+		log.Info("****TX block message****\n")
 		block, isBlock := inv.(*ledger.Block)
 		if isBlock {
 			buffer, err = NewBlock(block)
@@ -212,7 +212,7 @@ func (node node) Xmit(inv common.Inventory) error {
 			}
 		}
 	} else if inv.Type() == common.CONSENSUS {
-		fmt.Printf("*****TX consensus message****\n")
+		log.Info("*****TX consensus message****\n")
 		payload, isConsensusPayload := inv.(*ConsensusPayload)
 		if isConsensusPayload {
 			buffer, err = NewConsensus(payload)
@@ -221,8 +221,13 @@ func (node node) Xmit(inv common.Inventory) error {
 				return err
 			}
 		}
-	}
-	node.neighb.Broadcast(buffer)
+	}  else {
+		log.Info("Unknow Xmit message type")
+		return errors.New("Unknow Xmit message type\n")
+ 	}
+
+	node.nbrNodes.Broadcast(buffer)
+
 	return nil
 }
 
@@ -231,7 +236,6 @@ func (node node) GetAddr() string {
 }
 
 func (node node) GetAddr16() ([16]byte, error) {
-	common.Trace()
 	var result [16]byte
 	ip := net.ParseIP(node.addr).To16()
 	if ip == nil {
