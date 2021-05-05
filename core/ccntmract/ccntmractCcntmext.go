@@ -60,7 +60,7 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.
 		// add multi sig ccntmract
 
 		index := cxt.GetIndex(ccntmract.ProgramHash)
-		if index <= 0 {
+		if index < 0 {
 			return errors.New("The program hash is not exist.")
 		}
 		if cxt.Codes[index] == nil {
@@ -69,7 +69,6 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.
 		if cxt.Parameters[index] == nil {
 			cxt.Parameters[index] = make([][]byte, len(ccntmract.Parameters))
 		}
-
 		pkParaArray := cxt.MultiPubkeyPara[index]
 		temp, err := pubkey.EncodePoint(true)
 		if err != nil {
@@ -104,6 +103,7 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.
 			}
 
 			//generate Pubkey/Index map by pubkey array
+			Trace()
 			pkIndexMap := make(map[crypto.PubKey]int)
 			for i, pk := range pubkeys {
 				pkIndexMap[*pk] = i
@@ -122,7 +122,7 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.
 				}
 				paraIndexs = append(paraIndexs, paraIndex)
 			}
-
+			Trace()
 			//sort parameter by Index
 			sort.Sort(sort.Reverse(ParameterIndexSlice(paraIndexs)))
 
@@ -170,9 +170,9 @@ func (cxt *CcntmractCcntmext) GetIndex(programHash Uint160) int {
 
 func (cxt *CcntmractCcntmext) GetPrograms() []*pg.Program {
 	Trace()
-	//fmt.Println("!cxt.IsCompleted()=",!cxt.IsCompleted())
-	//fmt.Println(cxt.Codes)
-	//fmt.Println(cxt.Parameters)
+	fmt.Println("!cxt.IsCompleted()=",!cxt.IsCompleted())
+	fmt.Println(cxt.Codes)
+	fmt.Println(cxt.Parameters)
 	if !cxt.IsCompleted() {
 		return nil
 	}

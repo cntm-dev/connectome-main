@@ -59,9 +59,14 @@ func CreateMultiSigCcntmract(publicKeyHash Uint160,m int, publicKeys []*crypto.P
 	if err !=nil{
 		return nil,NewDetailErr(err, ErrNoCode, "[Ccntmract],CreateSignatureRedeemScript failed.")
 	}
+	signatureRedeemScriptHashToCodeHash,err:= ToCodeHash(MultiSigRedeemScript)
+	if err !=nil{
+		return nil,NewDetailErr(err, ErrNoCode, "[Ccntmract],CreateSignatureCcntmract failed.")
+	}
 	return &Ccntmract{
 		Code: MultiSigRedeemScript,
 		Parameters: params,
+		ProgramHash:signatureRedeemScriptHashToCodeHash,
 		OwnerPubkeyHash: publicKeyHash,
 	},nil
 }

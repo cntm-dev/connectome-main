@@ -1,6 +1,8 @@
 package log
 
 import (
+	"GoOnchain/common"
+	"GoOnchain/config"
 	"bytes"
 	"fmt"
 	"io"
@@ -13,9 +15,13 @@ import (
 )
 
 const (
+	PRINTLEVEL = 0
+)
+
+const (
 	debugLog = iota
 	infoLog
-	warningLog
+	warnLog
 	errorLog
 	fatalLog
 	numSeverity = 5
@@ -23,11 +29,11 @@ const (
 
 var (
 	levels = map[int]string{
-		debugLog:   "DEBUG",
-		infoLog:    "INFO",
-		warningLog: "WARNING",
-		errorLog:   "ERROR",
-		fatalLog:   "FATAL",
+		debugLog: "DEBUG",
+		infoLog:  "INFO",
+		warnLog:  "WARN",
+		errorLog: "ERROR",
+		fatalLog: "FATAL",
 	}
 )
 
@@ -80,7 +86,13 @@ func New(out io.Writer, prefix string, flag, level int) *Logger {
 }
 
 func (l *Logger) output(level int, s string) error {
-	return l.logger.Output(callDepth, AddBracket(LevelName(level))+" "+s)
+	if (level == 0) || (level == 3) {
+		gid := common.GetGID()
+		gidStr := strconv.FormatUint(gid, 10)
+		return l.logger.Output(callDepth, AddBracket(LevelName(level))+" "+"GID"+" "+gidStr+", "+s)
+	} else {
+		return l.logger.Output(callDepth, AddBracket(LevelName(level))+" "+s)
+	}
 }
 
 func (l *Logger) Output(level int, a ...interface{}) error {
@@ -105,7 +117,7 @@ func (l *Logger) Info(a ...interface{}) {
 func (l *Logger) Warn(a ...interface{}) {
 	lock.Lock()
 	defer lock.Unlock()
-	l.Output(warningLog, a...)
+	l.Output(warnLog, a...)
 }
 
 func (l *Logger) Error(a ...interface{}) {
@@ -171,7 +183,7 @@ func CreatePrintLog(path string) {
 	if err != nil {
 		fmt.Printf("%s\n", err.Error)
 	}
-	var printlevel int = 1
+	var printlevel int = config.Parameters.PrintLevel
 	writers := []io.Writer{
 		logfile,
 		os.Stdout,
