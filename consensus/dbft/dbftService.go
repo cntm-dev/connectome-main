@@ -142,7 +142,6 @@ func (ds *DbftService) CheckSignatures() error{
 				j++
 			}
 		}
-
 		cxt.Data.SetPrograms(cxt.GetPrograms())
 		block.Transcations = ds.ccntmext.GetTXByHashes()
 
@@ -153,8 +152,9 @@ func (ds *DbftService) CheckSignatures() error{
 		if err := ds.localNet.Xmit(block); err != nil{
 			con.Log(fmt.Sprintf("reject block: %s", block.Hash()))
 		}
-
+		Trace()
 		ds.ccntmext.State |= BlockSent
+
 	}
 	return nil
 }

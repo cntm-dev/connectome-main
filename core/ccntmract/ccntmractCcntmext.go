@@ -69,6 +69,7 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.
 		if cxt.Parameters[index] == nil {
 			cxt.Parameters[index] = make([][]byte, len(ccntmract.Parameters))
 		}
+
 		pkParaArray := cxt.MultiPubkeyPara[index]
 		temp, err := pubkey.EncodePoint(true)
 		if err != nil {
@@ -103,7 +104,6 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.
 			}
 
 			//generate Pubkey/Index map by pubkey array
-			Trace()
 			pkIndexMap := make(map[crypto.PubKey]int)
 			for i, pk := range pubkeys {
 				pkIndexMap[*pk] = i
@@ -122,7 +122,7 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.
 				}
 				paraIndexs = append(paraIndexs, paraIndex)
 			}
-			Trace()
+
 			//sort parameter by Index
 			sort.Sort(sort.Reverse(ParameterIndexSlice(paraIndexs)))
 
