@@ -5,12 +5,12 @@ import (
 	pg "GoOnchain/core/ccntmract/program"
 	sig "GoOnchain/core/signature"
 	"GoOnchain/crypto"
-	. "GoOnchain/errors"
+	_ "GoOnchain/errors"
 	"errors"
+	"fmt"
 	_ "fmt"
 	"math/big"
 	"sort"
-	"fmt"
 )
 
 type CcntmractCcntmext struct {
@@ -20,13 +20,16 @@ type CcntmractCcntmext struct {
 	Parameters    [][][]byte
 
 	MultiPubkeyPara [][]PubkeyParameter
+
+	//temp index for multi sig
+	tempParaIndex int
 }
 
 func NewCcntmractCcntmext(data sig.SignableData) *CcntmractCcntmext {
 	Trace()
 	programHashes, _ := data.GetProgramHashes() //TODO: check error
-	fmt.Println("programHashes=",programHashes)
-	fmt.Println("hashLen := len(programHashes)",len(programHashes))
+	fmt.Println("programHashes=", programHashes)
+	fmt.Println("hashLen := len(programHashes)", len(programHashes))
 	hashLen := len(programHashes)
 	return &CcntmractCcntmext{
 		Data:            data,
@@ -34,6 +37,7 @@ func NewCcntmractCcntmext(data sig.SignableData) *CcntmractCcntmext {
 		Codes:           make([][]byte, hashLen),
 		Parameters:      make([][][]byte, hashLen),
 		MultiPubkeyPara: make([][]PubkeyParameter, hashLen),
+		tempParaIndex:   0,
 	}
 }
 
@@ -59,88 +63,52 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.
 		Trace()
 		// add multi sig ccntmract
 
+		fmt.Println("Multi Sig: ccntmract.ProgramHash:", ccntmract.ProgramHash)
+		fmt.Println("Multi Sig: cxt.ProgramHashes:", cxt.ProgramHashes)
+
 		index := cxt.GetIndex(ccntmract.ProgramHash)
+
+		fmt.Println("Multi Sig: GetIndex:", index)
+
 		if index < 0 {
 			return errors.New("The program hash is not exist.")
 		}
+
+		fmt.Println("Multi Sig: ccntmract.Code:", cxt.Codes[index])
+
 		if cxt.Codes[index] == nil {
 			cxt.Codes[index] = ccntmract.Code
 		}
+		fmt.Println("Multi Sig: cxt.Codes[index]:", cxt.Codes[index])
+
 		if cxt.Parameters[index] == nil {
 			cxt.Parameters[index] = make([][]byte, len(ccntmract.Parameters))
 		}
+		fmt.Println("Multi Sig: cxt.Parameters[index]:", cxt.Parameters[index])
 
-		pkParaArray := cxt.MultiPubkeyPara[index]
-		temp, err := pubkey.EncodePoint(true)
-		if err != nil {
-			return NewDetailErr(err, ErrNoCode, "[Ccntmract],AddCcntmract failed.")
+		if err := cxt.Add(ccntmract, cxt.tempParaIndex, parameter); err != nil {
+			return err
 		}
-		pubkeyPara := PubkeyParameter{
-			PubKey:    ToHexString(temp),
-			Parameter: ToHexString(parameter),
+
+		cxt.tempParaIndex++
+
+		//all paramenters added, sort the parameters
+		if cxt.tempParaIndex == len(ccntmract.Parameters) {
+			cxt.tempParaIndex = 0
 		}
-		pkParaArray = append(pkParaArray, pubkeyPara)
 
-		if len(pkParaArray) == len(ccntmract.Parameters) {
-			Trace()
-			i := 0
-			pubkeys := []*crypto.PubKey{}
-			switch ccntmract.Code[i] {
-			case 1:
-				i += 2
-				break
-			case 2:
-				i += 3
-				break
-			}
-			for ccntmract.Code[i] == 33 {
-				i++
-				temp,err:=crypto.DecodePoint(ccntmract.Code[i:33])
-				if err!=nil{
-					return NewDetailErr(err, ErrNoCode, "[Ccntmract],AddCcntmract DecodePoint failed.")
-				}
-				pubkeys = append(pubkeys,temp )
-				i += 33
-			}
+		//TODO: Sort the parameter according ccntmract's PK list sequence
+		//if err := cxt.AddSignatureToMultiList(index,ccntmract,pubkey,parameter); err != nil {
+		//	return err
+		//}
+		//
+		//if(cxt.tempParaIndex == len(ccntmract.Parameters)){
+		//	//all multi sigs added, sort the sigs and add to ccntmext
+		//	if err := cxt.AddMultiSignatures(index,ccntmract,pubkey,parameter);err != nil {
+		//		return err
+		//	}
+		//}
 
-			//generate Pubkey/Index map by pubkey array
-			pkIndexMap := make(map[crypto.PubKey]int)
-			for i, pk := range pubkeys {
-				pkIndexMap[*pk] = i
-			}
-
-			//generate parameter/index map by pubkey parameter arrar
-			paraIndexs := make([]ParameterIndex, len(pkParaArray))
-			for _, pkPara := range pkParaArray {
-				temp,err :=crypto.DecodePoint(HexToBytes(pkPara.PubKey))
-				if err!=nil{
-					return NewDetailErr(err, ErrNoCode, "[Ccntmract],AddCcntmract DecodePoint failed.")
-				}
-				paraIndex := ParameterIndex{
-					Parameter: HexToBytes(pkPara.Parameter),
-					Index:     pkIndexMap[*temp],
-				}
-				paraIndexs = append(paraIndexs, paraIndex)
-			}
-
-			//sort parameter by Index
-			sort.Sort(sort.Reverse(ParameterIndexSlice(paraIndexs)))
-
-			//generate sorted parameter list
-			paras := make([][]byte, len(pkParaArray))
-			for _, paIndex := range paraIndexs {
-				paras = append(paras, paIndex.Parameter)
-			}
-
-			for i, para := range paras {
-				if err := cxt.Add(ccntmract, i, para); err != nil {
-					return err
-				}
-			}
-
-			cxt.MultiPubkeyPara[index] = nil
-
-		} //pkParaArray
 	} else {
 		//add non multi sig ccntmract
 		Trace()
@@ -159,6 +127,91 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.
 	return nil
 }
 
+func (cxt *CcntmractCcntmext) AddSignatureToMultiList(ccntmractIndex int, ccntmract *Ccntmract, pubkey *crypto.PubKey, parameter []byte) error {
+	if cxt.MultiPubkeyPara[ccntmractIndex] == nil {
+		cxt.MultiPubkeyPara[ccntmractIndex] = make([]PubkeyParameter, len(ccntmract.Parameters))
+	}
+	pk, err := pubkey.EncodePoint(true)
+	if err != nil {
+		return err
+	}
+
+	pubkeyPara := PubkeyParameter{
+		PubKey:    ToHexString(pk),
+		Parameter: ToHexString(parameter),
+	}
+	cxt.MultiPubkeyPara[ccntmractIndex] = append(cxt.MultiPubkeyPara[ccntmractIndex], pubkeyPara)
+
+	return nil
+}
+
+func (cxt *CcntmractCcntmext) AddMultiSignatures(index int, ccntmract *Ccntmract, pubkey *crypto.PubKey, parameter []byte) error {
+	pkIndexs, err := cxt.ParseCcntmractPubKeys(ccntmract)
+	if err != nil {
+		return errors.New("Ccntmract Parameters are not supported.")
+	}
+
+	paraIndexs := []ParameterIndex{}
+	for _, pubkeyPara := range cxt.MultiPubkeyPara[index] {
+		pubKeyBytes, err := HexToBytes(pubkeyPara.Parameter)
+		if err != nil {
+			return errors.New("Ccntmract AddCcntmract pubKeyBytes HexToBytes failed.")
+		}
+
+		paraIndex := ParameterIndex{
+			Parameter: pubKeyBytes,
+			Index:     pkIndexs[pubkeyPara.PubKey],
+		}
+		paraIndexs = append(paraIndexs, paraIndex)
+	}
+
+	//sort parameter by Index
+	sort.Sort(sort.Reverse(ParameterIndexSlice(paraIndexs)))
+
+	//generate sorted parameter list
+	for i, paraIndex := range paraIndexs {
+		if err := cxt.Add(ccntmract, i, paraIndex.Parameter); err != nil {
+			return err
+		}
+	}
+
+	cxt.MultiPubkeyPara[index] = nil
+
+	return nil
+}
+
+func (cxt *CcntmractCcntmext) ParseCcntmractPubKeys(ccntmract *Ccntmract) (map[string]int, error) {
+
+	pubkeyIndex := make(map[string]int)
+
+	Index := 0
+	//parse ccntmract's pubkeys
+	i := 0
+	switch ccntmract.Code[i] {
+	case 1:
+		i += 2
+		break
+	case 2:
+		i += 3
+		break
+	}
+	for ccntmract.Code[i] == 33 {
+		i++
+		//pubkey, err := crypto.DecodePoint(ccntmract.Code[i:33])
+		//if err != nil {
+		//	return nil, errors.New("[Ccntmract],AddCcntmract DecodePoint failed.")
+		//}
+
+		//add to parameter index
+		pubkeyIndex[ToHexString(ccntmract.Code[i:33])] = Index
+
+		i += 33
+		Index++
+	}
+
+	return pubkeyIndex, nil
+}
+
 func (cxt *CcntmractCcntmext) GetIndex(programHash Uint160) int {
 	for i := 0; i < len(cxt.ProgramHashes); i++ {
 		if cxt.ProgramHashes[i] == programHash {
@@ -170,9 +223,9 @@ func (cxt *CcntmractCcntmext) GetIndex(programHash Uint160) int {
 
 func (cxt *CcntmractCcntmext) GetPrograms() []*pg.Program {
 	Trace()
-	fmt.Println("!cxt.IsCompleted()=",!cxt.IsCompleted())
-	fmt.Println(cxt.Codes)
-	fmt.Println(cxt.Parameters)
+	//fmt.Println("!cxt.IsCompleted()=",!cxt.IsCompleted())
+	//fmt.Println(cxt.Codes)
+	//fmt.Println(cxt.Parameters)
 	if !cxt.IsCompleted() {
 		return nil
 	}
