@@ -46,14 +46,22 @@ type DbftService struct {
 
 func NewDbftService(client cl.Client,logDictionary string,localNet net.Neter) *DbftService {
 	Trace()
-	return &DbftService{
+
+	ds := &DbftService{
 		//localNode: localNode,
 		Client: client,
-		timer: time.NewTimer(time.Second*15),
+		timer: time.NewTimer(time.Second * 15),
 		started: false,
 		localNet:localNet,
 		logDictionary: logDictionary,
 	}
+
+	if !ds.timer.Stop() {
+		<-ds.timer.C
+	}
+	Trace()
+	go ds.timerRoutine()
+	return ds
 }
 
 func (ds *DbftService) AddTransaction(TX *tx.Transaction) error{
@@ -226,12 +234,13 @@ func (ds *DbftService) InitializeConsensus(viewNum byte) error  {
 	} else {
 		ds.ccntmext.ChangeView(viewNum)
 	}
-	fmt.Println("ds.ccntmext.MinerIndex= ",ds.ccntmext.MinerIndex)
+
 	if ds.ccntmext.MinerIndex < 0 {
-		return NewDetailErr(errors.New("Miner Index incorrect"),ErrNoCode,"")
+		log.Error("Miner Index incorrect ", ds.ccntmext.MinerIndex)
+		return NewDetailErr(errors.New("Miner Index incorrect"), ErrNoCode, "")
 	}
-	fmt.Println("ds.ccntmext.MinerIndex",ds.ccntmext.MinerIndex)
-	fmt.Println("ds.ccntmext.PrimaryIndex",ds.ccntmext.PrimaryIndex)
+	log.Debug("ds.ccntmext.MinerIndex ", ds.ccntmext.MinerIndex)
+	log.Debug("ds.ccntmext.PrimaryIndex ", ds.ccntmext.PrimaryIndex)
 	if ds.ccntmext.MinerIndex == int(ds.ccntmext.PrimaryIndex) {
 		Trace()
 		ds.ccntmext.State |= Primary
@@ -239,9 +248,16 @@ func (ds *DbftService) InitializeConsensus(viewNum byte) error  {
 		ds.timeView = viewNum
 		span := time.Now().Sub(ds.blockReceivedTime)
 		if span > TimePerBlock {
-			go ds.Timeout()
+			Trace()
+			ds.timer.Stop()
+			Trace()
+			ds.timer.Reset(0)
+			//go ds.Timeout()
 		} else {
-			time.AfterFunc((TimePerBlock - span), ds.Timeout)
+			Trace()
+			ds.timer.Stop()
+			log.Debug("The reset value is ", TimePerBlock - span)
+			ds.timer.Reset(TimePerBlock - span)
 		}
 	} else {
 		ds.ccntmext.State = Backup
@@ -403,7 +419,7 @@ func (ds *DbftService) PrepareRequestReceived(payload *msg.ConsensusPayload, mes
 	//TODO: LocalNode allow hashes (add Except method)
 	//AllowHashes(ds.ccntmext.TransactionHashes)
 	log.Info("Prepare Requst finished")
-	if len(ds.ccntmext.Transactions) < len(ds.ccntmext.TransactionHashes){
+	if len(ds.ccntmext.Transactions) < len(ds.ccntmext.TransactionHashes) {
 		ds.localNet.SynchronizeMemoryPool()
 	}
 }
@@ -438,7 +454,9 @@ func  (ds *DbftService) RequestChangeView() {
 	ds.ccntmext.ExpectedView[ds.ccntmext.MinerIndex]++
 	log.Info(fmt.Sprintf("Request change view: height=%d View=%d nv=%d state=%d",ds.ccntmext.Height,ds.ccntmext.ViewNumber,ds.ccntmext.MinerIndex,ds.ccntmext.State))
 
-	time.AfterFunc(SecondsPerBlock << (ds.ccntmext.ExpectedView[ds.ccntmext.MinerIndex]+1), ds.Timeout)
+	ds.timer.Stop()
+	ds.timer.Reset(SecondsPerBlock << (ds.ccntmext.ExpectedView[ds.ccntmext.MinerIndex]+1))
+
 	ds.SignAndRelay(ds.ccntmext.MakeChangeView())
 	ds.CheckExpectedView(ds.ccntmext.ExpectedView[ds.ccntmext.MinerIndex])
 }
@@ -447,8 +465,15 @@ func (ds *DbftService) SignAndRelay(payload *msg.ConsensusPayload){
 	Trace()
 	ctCxt := ct.NewCcntmractCcntmext(payload)
 
-	ds.Client.Sign(ctCxt)
-	ctCxt.Data.SetPrograms(ctCxt.GetPrograms())
+	ret := ds.Client.Sign(ctCxt)
+	if (ret == false) {
+		log.Warn("Sign ccntmract failure")
+	}
+	prog := ctCxt.GetPrograms()
+	if (prog == nil) {
+		log.Warn("Get programe failure")
+	}
+	payload.SetPrograms(prog)
 	ds.localNet.Xmit(payload)
 }
 
@@ -470,14 +495,14 @@ func (ds *DbftService) Timeout() {
 	if ds.timerHeight != ds.ccntmext.Height || ds.timeView != ds.ccntmext.ViewNumber {
 		return
 	}
-	log.Info("Timeout: height: ", ds.timerHeight, "View: ", ds.timeView, "State: ", ds.ccntmext.State)
-	con.Log(fmt.Sprintf("Timeout: height=%d View=%d state=%d",ds.timerHeight,ds.timeView,ds.ccntmext.State))
-	fmt.Println("ds.ccntmext.State.HasFlag(Primary)=",ds.ccntmext.State.HasFlag(Primary))
-	fmt.Println("ds.ccntmext.State.HasFlag(RequestSent)=",ds.ccntmext.State.HasFlag(RequestSent))
-	fmt.Println("ds.ccntmext.State.HasFlag(Backup)=",ds.ccntmext.State.HasFlag(Backup))
+	log.Info("Timeout: height: ", ds.timerHeight, " View: ", ds.timeView, " State: ", ds.ccntmext.State)
+	fmt.Printf(" ds.ccntmext.State %x\n", ds.ccntmext.State)
+	fmt.Println("ds.ccntmext.State.HasFlag(Primary) ",ds.ccntmext.State.HasFlag(Primary))
+	fmt.Println("ds.ccntmext.State.HasFlag(RequestSent) ",ds.ccntmext.State.HasFlag(RequestSent))
+	fmt.Println("ds.ccntmext.State.HasFlag(Backup) ",ds.ccntmext.State.HasFlag(Backup))
 
 	if ds.ccntmext.State.HasFlag(Primary) && !ds.ccntmext.State.HasFlag(RequestSent) {
-		log.Info("Send prepare request: height: ", ds.timerHeight, "View: ", ds.timeView, "State: ", ds.ccntmext.State)
+		log.Info("Send prepare request: height: ", ds.timerHeight, " View: ", ds.timeView, " State: ", ds.ccntmext.State)
 		ds.ccntmext.State |= RequestSent
 		if !ds.ccntmext.State.HasFlag(SignatureSent) {
 
@@ -524,9 +549,20 @@ func (ds *DbftService) Timeout() {
 		}
 		payload := ds.ccntmext.MakePrepareRequest()
 		ds.SignAndRelay(payload)
-		time.AfterFunc(SecondsPerBlock << (ds.timeView + 1), ds.Timeout)
-
+		ds.timer.Stop()
+		ds.timer.Reset(SecondsPerBlock << (ds.timeView + 1))
 	} else if ds.ccntmext.State.HasFlag(Primary) && ds.ccntmext.State.HasFlag(RequestSent) || ds.ccntmext.State.HasFlag(Backup){
 		ds.RequestChangeView()
+	}
+}
+
+func (ds *DbftService) timerRoutine () {
+	Trace()
+	for {
+		select {
+		case <-ds.timer.C:
+			log.Debug("******Get a timeout notice")
+			go ds.Timeout()
+		}
 	}
 }
