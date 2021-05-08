@@ -2,6 +2,7 @@ package ccntmract
 
 import (
 	. "GoOnchain/common"
+	"GoOnchain/common/log"
 	pg "GoOnchain/core/ccntmract/program"
 	sig "GoOnchain/core/signature"
 	"GoOnchain/crypto"
@@ -28,8 +29,8 @@ type CcntmractCcntmext struct {
 func NewCcntmractCcntmext(data sig.SignableData) *CcntmractCcntmext {
 	Trace()
 	programHashes, _ := data.GetProgramHashes() //TODO: check error
-	fmt.Println("programHashes=", programHashes)
-	fmt.Println("hashLen := len(programHashes)", len(programHashes))
+	log.Debug("programHashes= ", programHashes)
+	log.Debug("hashLen := len(programHashes) ", len(programHashes))
 	hashLen := len(programHashes)
 	return &CcntmractCcntmext{
 		Data:            data,

@@ -91,7 +91,6 @@ func (cxt *ConsensusCcntmext)  MakeHeader() *ledger.Block {
 
 	txRoot,_ := crypto.ComputeRoot(cxt.TransactionHashes)
 
-
 	if cxt.header == nil{
 		blockData := &ledger.Blockdata{
 			Version: CcntmextVersion,
