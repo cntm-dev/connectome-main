@@ -10,6 +10,7 @@ import (
 	ser "GoOnchain/common/serialization"
 	cl "GoOnchain/client"
 	"fmt"
+	"sync"
 )
 
 const CcntmextVersion uint32 = 0
@@ -31,8 +32,9 @@ type ConsensusCcntmext struct {
 	ExpectedView []byte
 
 	txlist []*tx.Transaction
-
 	header *ledger.Block
+
+	ccntmextMu    sync.Mutex
 }
 
 func (cxt *ConsensusCcntmext)  M() int {
@@ -169,6 +171,20 @@ func (cxt *ConsensusCcntmext) GetTransactionList() []*tx.Transaction{
 	return cxt.txlist
 }
 
+func  (cxt *ConsensusCcntmext) GetStateDetail() string{
+
+	return  fmt.Sprintf("Initial: %t, Primary: %t, Backup: %t, RequestSent: %t, RequestReceived: %t, SignatureSent: %t, BlockSent: %t, ",
+		cxt.State.HasFlag(Initial),
+		cxt.State.HasFlag(Primary),
+		cxt.State.HasFlag(Backup),
+		cxt.State.HasFlag(RequestSent),
+		cxt.State.HasFlag(RequestReceived),
+		cxt.State.HasFlag(SignatureSent),
+		cxt.State.HasFlag(BlockSent))
+
+}
+
+
 func (cxt *ConsensusCcntmext)  GetTXByHashes()  []*tx.Transaction{
 	Trace()
 	TXs := []*tx.Transaction{}
@@ -205,17 +221,18 @@ func (cxt *ConsensusCcntmext) Reset(client cl.Client){
 	cxt.Signatures = make([][]byte,minerLen)
 	cxt.ExpectedView = make([]byte,minerLen)
 
-	fmt.Println("minerLen=",minerLen)
-	    for _, v := range cxt.Miners {
-		    pubkey, _ := v.EncodePoint(true)
-	           fmt.Println("Miners pub key =",pubkey)
-	        }
-	for i:=0;i<minerLen ;i++  {
+	log.Debug("[Consensus Reset] minerLen= ", minerLen)
+	for _, v := range cxt.Miners {
+		pubkey, _ := v.EncodePoint(true)
+		log.Debug("[Consensus Reset] Miners pub key = ", pubkey)
+	}
+
+	for i := 0; i < minerLen; i++  {
 		if client.CcntmainsAccount(cxt.Miners[i]){
 			cxt.MinerIndex = i
 			break
 		}
 	}
-	log.Info("cxt.MinerIndex = ", cxt.MinerIndex)
+	log.Debug("cxt.MinerIndex = ", cxt.MinerIndex)
 	cxt.header = nil
 }
