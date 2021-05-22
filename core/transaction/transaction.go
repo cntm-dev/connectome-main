@@ -6,7 +6,6 @@ import (
 	"GoOnchain/core/ccntmract"
 	"GoOnchain/core/ccntmract/program"
 	sig "GoOnchain/core/signature"
-	msg "GoOnchain/node/message"
 	"GoOnchain/core/transaction/payload"
 	. "GoOnchain/errors"
 	"crypto/sha256"

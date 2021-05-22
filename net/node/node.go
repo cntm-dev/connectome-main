@@ -6,6 +6,7 @@ import (
 	. "GoOnchain/config"
 	"GoOnchain/core/ledger"
 	"GoOnchain/core/transaction"
+	"GoOnchain/crypto"
 	. "GoOnchain/net/message"
 	. "GoOnchain/net/protocol"
 	"errors"
@@ -249,7 +250,7 @@ func (node node) GetAddr16() ([16]byte, error) {
 	var result [16]byte
 	ip := net.ParseIP(node.addr).To16()
 	if ip == nil {
-		fmt.Printf("Parse IP address error\n")
+		log.Error("Parse IP address error\n")
 		return result, errors.New("Parse IP address error")
 	}
 

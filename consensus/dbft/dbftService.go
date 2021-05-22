@@ -4,6 +4,7 @@ import (
 	cl "GoOnchain/client"
 	. "GoOnchain/common"
 	"GoOnchain/common/log"
+	"GoOnchain/config"
 	con "GoOnchain/consensus"
 	ct "GoOnchain/core/ccntmract"
 	"GoOnchain/core/ccntmract/program"
@@ -22,10 +23,7 @@ import (
 	"time"
 )
 
-const (
-	TimePerBlock    = (2 * time.Second)
-	SecondsPerBlock = (2 * time.Second)
-)
+var GenBlockTime = (2 * time.Second)
 
 type DbftService struct {
 	ccntmext           ConsensusCcntmext
@@ -46,7 +44,6 @@ func NewDbftService(client cl.Client, logDictionary string, localNet net.Neter) 
 	Trace()
 
 	ds := &DbftService{
-		//localNode: localNode,
 		Client:        client,
 		timer:         time.NewTimer(time.Second * 15),
 		started:       false,
@@ -91,9 +88,7 @@ func (ds *DbftService) AddTransaction(TX *tx.Transaction, needVerify bool) error
 	//if enough TXs already added to ccntmext, build block and sign/relay
 	if len(ds.ccntmext.TransactionHashes) == len(ds.ccntmext.Transactions) {
 
-		//Get Miner list
-		txlist := ds.ccntmext.GetTransactionList()
-		minerAddress, err := ledger.GetMinerAddress(ledger.DefaultLedger.Blockchain.GetMinersByTXs(txlist))
+		minerAddress, err := ledger.GetMinerAddress(ds.ccntmext.Miners)
 		if err != nil {
 			return NewDetailErr(err, ErrNoCode, "[DbftService] ,GetMinerAddress failed")
 		}
@@ -135,7 +130,6 @@ func (ds *DbftService) BlockPersistCompleted(v interface{}) {
 	ds.blockReceivedTime = time.Now()
 
 	go ds.InitializeConsensus(0)
-	//ds.InitializeConsensus(0)
 }
 
 func (ds *DbftService) CheckExpectedView(viewNumber byte) {
@@ -296,14 +290,14 @@ func (ds *DbftService) InitializeConsensus(viewNum byte) error {
 		ds.timerHeight = ds.ccntmext.Height
 		ds.timeView = viewNum
 		span := time.Now().Sub(ds.blockReceivedTime)
-		if span > TimePerBlock {
+		if span > GenBlockTime {
 			//TODO: double check the is the stop necessary
 			ds.timer.Stop()
 			ds.timer.Reset(0)
 			//go ds.Timeout()
 		} else {
 			ds.timer.Stop()
-			ds.timer.Reset(TimePerBlock - span)
+			ds.timer.Reset(GenBlockTime - span)
 		}
 	} else {
 
@@ -313,7 +307,7 @@ func (ds *DbftService) InitializeConsensus(viewNum byte) error {
 		ds.timeView = viewNum
 
 		ds.timer.Stop()
-		ds.timer.Reset(SecondsPerBlock << (viewNum + 1))
+		ds.timer.Reset(GenBlockTime << (viewNum + 1))
 	}
 	return nil
 }
@@ -514,7 +508,7 @@ func (ds *DbftService) RequestChangeView() {
 	log.Info(fmt.Sprintf("Request change view: height=%d View=%d nv=%d state=%s", ds.ccntmext.Height, ds.ccntmext.ViewNumber, ds.ccntmext.ExpectedView[ds.ccntmext.MinerIndex], ds.ccntmext.GetStateDetail()))
 
 	ds.timer.Stop()
-	ds.timer.Reset(SecondsPerBlock << (ds.ccntmext.ExpectedView[ds.ccntmext.MinerIndex] + 1))
+	ds.timer.Reset(GenBlockTime << (ds.ccntmext.ExpectedView[ds.ccntmext.MinerIndex] + 1))
 
 	ds.SignAndRelay(ds.ccntmext.MakeChangeView())
 	ds.CheckExpectedView(ds.ccntmext.ExpectedView[ds.ccntmext.MinerIndex])
@@ -624,7 +618,7 @@ func (ds *DbftService) Timeout() {
 			ds.ccntmext.Transactions = txMap
 
 			//build block and sign
-			ds.ccntmext.NextMiner, _ = ledger.GetMinerAddress(ledger.DefaultLedger.Blockchain.GetMinersByTXs(transactions))
+			ds.ccntmext.NextMiner, _ = ledger.GetMinerAddress(ds.ccntmext.Miners)
 			block := ds.ccntmext.MakeHeader()
 			account, _ := ds.Client.GetAccount(ds.ccntmext.Miners[ds.ccntmext.MinerIndex]) //TODO: handle error
 			ds.ccntmext.Signatures[ds.ccntmext.MinerIndex], _ = sig.SignBySigner(block, account)
@@ -633,7 +627,7 @@ func (ds *DbftService) Timeout() {
 		payload := ds.ccntmext.MakePrepareRequest()
 		ds.SignAndRelay(payload)
 		ds.timer.Stop()
-		ds.timer.Reset(SecondsPerBlock << (ds.timeView + 1))
+		ds.timer.Reset(GenBlockTime << (ds.timeView + 1))
 	} else if (ds.ccntmext.State.HasFlag(Primary) && ds.ccntmext.State.HasFlag(RequestSent)) || ds.ccntmext.State.HasFlag(Backup) {
 		ds.RequestChangeView()
 	}

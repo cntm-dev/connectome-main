@@ -31,11 +31,11 @@ const (
 
 var (
 	levels = map[int]string{
-		debugLog: "DEBUG",
-		infoLog:  "INFO ",
-		warnLog:  "WARN ",
-		errorLog: "ERROR",
-		fatalLog: "FATAL",
+		debugLog: Color(Green, "[DEBUG]"),
+		infoLog:  Color(Green, "[INFO ]"),
+		warnLog:  Color(Yellow, "[WARN ]"),
+		errorLog: Color(Red, "[ERROR]"),
+		fatalLog: Color(Red, "[FATAL]"),
 	}
 )
 
@@ -65,14 +65,6 @@ func NameLevel(name string) int {
 		level, _ = strconv.Atoi(name[len(namePrefix):])
 	}
 	return level
-}
-
-func AddBracket(s string) string {
-	b := bytes.Buffer{}
-	b.WriteString("[")
-	b.WriteString(s)
-	b.WriteString("]")
-	return b.String()
 }
 
 type Logger struct {

@@ -4,6 +4,7 @@ import (
 	"GoOnchain/common"
 	"GoOnchain/config"
 	"GoOnchain/core/transaction"
+	"GoOnchain/crypto"
 	"GoOnchain/events"
 	"GoOnchain/net/node"
 	"GoOnchain/net/protocol"
