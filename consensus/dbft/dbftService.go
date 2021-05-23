@@ -279,9 +279,6 @@ func (ds *DbftService) InitializeConsensus(viewNum byte) error {
 		return NewDetailErr(errors.New("Miner Index incorrect"), ErrNoCode, "")
 	}
 
-	log.Debug("ds.ccntmext.MinerIndex ", ds.ccntmext.MinerIndex)
-	log.Debug("ds.ccntmext.PrimaryIndex ", ds.ccntmext.PrimaryIndex)
-
 	if ds.ccntmext.MinerIndex == int(ds.ccntmext.PrimaryIndex) {
 
 		//primary peer
@@ -357,10 +354,6 @@ func (ds *DbftService) NewConsensusPayload(payload *msg.ConsensusPayload) {
 	}
 
 	if message.ViewNumber() != ds.ccntmext.ViewNumber && message.Type() != ChangeViewMsg {
-		fmt.Printf("message.ViewNumber()=%d\n", message.ViewNumber())
-		fmt.Printf("ds.ccntmext.ViewNumber=%d\n", ds.ccntmext.ViewNumber)
-		fmt.Printf("message.Type()=%d\n", message.Type())
-		fmt.Printf("ChangeViewMsg=%d\n", ChangeViewMsg)
 		return
 	}
 
@@ -407,19 +400,15 @@ func (ds *DbftService) PrepareRequestReceived(payload *msg.ConsensusPayload, mes
 	log.Info(fmt.Sprintf("Prepare Request Received: height=%d View=%d index=%d tx=%d", payload.Height, message.ViewNumber(), payload.MinerIndex, len(message.TransactionHashes)))
 
 	if !ds.ccntmext.State.HasFlag(Backup) || ds.ccntmext.State.HasFlag(RequestReceived) {
-		log.Debug("PrepareRequestReceived ds.ccntmext.State.HasFlag(Backup)=", ds.ccntmext.State.HasFlag(Backup))
-		log.Debug("PrepareRequestReceived ds.ccntmext.State.HasFlag(RequestReceived)=", ds.ccntmext.State.HasFlag(RequestReceived))
 		return
 	}
 
 	if uint32(payload.MinerIndex) != ds.ccntmext.PrimaryIndex {
-		log.Debug("PrepareRequestReceived uint32(payload.MinerIndex)=", uint32(payload.MinerIndex))
-		log.Debug("PrepareRequestReceived ds.ccntmext.PrimaryIndex=", ds.ccntmext.PrimaryIndex)
 		return
 	}
 	header, err := ledger.DefaultLedger.Blockchain.GetHeader(ds.ccntmext.PrevHash)
 	if err != nil {
-		fmt.Println("PrepareRequestReceived GetHeader failed with ds.ccntmext.PrevHash", ds.ccntmext.PrevHash)
+		log.Info("PrepareRequestReceived GetHeader failed with ds.ccntmext.PrevHash", ds.ccntmext.PrevHash)
 	}
 
 	Trace()
@@ -450,7 +439,7 @@ func (ds *DbftService) PrepareRequestReceived(payload *msg.ConsensusPayload, mes
 	for _, hash := range ds.ccntmext.TransactionHashes[1:] {
 		if transaction, ok := mempool[hash]; ok {
 			if err := ds.AddTransaction(transaction, false); err != nil {
-				fmt.Println("PrepareRequestReceived AddTransaction failed.")
+				log.Info("PrepareRequestReceived AddTransaction failed.")
 				return
 			}
 		}
@@ -574,11 +563,8 @@ func (ds *DbftService) Timeout() {
 		if !ds.ccntmext.State.HasFlag(SignatureSent) {
 
 			//do signature
-
 			now := uint32(time.Now().Unix())
-			fmt.Println("ds.ccntmext.PrevHash", ds.ccntmext.PrevHash)
 			header, _ := ledger.DefaultLedger.Blockchain.GetHeader(ds.ccntmext.PrevHash)
-			fmt.Println(" ledger.DefaultLedger.Blockchain.GetHeader(ds.ccntmext.PrevHash)", header)
 
 			//set ccntmext Timestamp
 			blockTime := header.Blockdata.Timestamp + 1
