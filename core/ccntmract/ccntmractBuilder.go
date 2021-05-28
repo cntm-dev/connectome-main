@@ -1,12 +1,12 @@
 package ccntmract
 
 import (
-	"GoOnchain/crypto"
-	"GoOnchain/vm"
-	. "GoOnchain/common"
-	pg "GoOnchain/core/ccntmract/program"
+	"DNA/crypto"
+	"DNA/vm"
+	. "DNA/common"
+	pg "DNA/core/ccntmract/program"
 	"math/big"
-	. "GoOnchain/errors"
+	. "DNA/errors"
 	"sort"
 )
 

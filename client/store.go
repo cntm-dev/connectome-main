@@ -1,8 +1,8 @@
 package client
 
 import (
-	ct "GoOnchain/core/ccntmract"
-	. "GoOnchain/common"
+	ct "DNA/core/ccntmract"
+	. "DNA/common"
 )
 
 type IClientStore interface {

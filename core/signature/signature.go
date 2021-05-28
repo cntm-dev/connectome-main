@@ -1,11 +1,11 @@
 package signature
 
 import (
-	"GoOnchain/common"
-	"GoOnchain/core/ccntmract/program"
-	"GoOnchain/crypto"
-	. "GoOnchain/errors"
-	"GoOnchain/vm"
+	"DNA/common"
+	"DNA/core/ccntmract/program"
+	"DNA/crypto"
+	. "DNA/errors"
+	"DNA/vm"
 	"bytes"
 	"crypto/sha256"
 	"io"

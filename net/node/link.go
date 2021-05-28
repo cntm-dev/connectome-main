@@ -1,11 +1,11 @@
 package node
 
 import (
-	"GoOnchain/common"
-	"GoOnchain/common/log"
-	. "GoOnchain/config"
-	. "GoOnchain/net/message"
-	. "GoOnchain/net/protocol"
+	"DNA/common"
+	"DNA/common/log"
+	. "DNA/config"
+	. "DNA/net/message"
+	. "DNA/net/protocol"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/hex"

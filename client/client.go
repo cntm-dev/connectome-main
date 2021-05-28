@@ -1,21 +1,21 @@
 package client
 
 import (
-	"GoOnchain/crypto"
-	ct "GoOnchain/core/ccntmract"
-	. "GoOnchain/common"
+	"DNA/crypto"
+	ct "DNA/core/ccntmract"
+	. "DNA/common"
 	"sync"
-	sig "GoOnchain/core/signature"
-	. "GoOnchain/errors"
+	sig "DNA/core/signature"
+	. "DNA/errors"
 	"errors"
-	"GoOnchain/core/ledger"
+	"DNA/core/ledger"
 	"time"
 	"fmt"
 	"crypto/sha256"
 	"math/rand"
 	"bytes"
-	"GoOnchain/common/serialization"
-	"GoOnchain/core/ccntmract"
+	"DNA/common/serialization"
+	"DNA/core/ccntmract"
 )
 
 type ClientVersion struct {

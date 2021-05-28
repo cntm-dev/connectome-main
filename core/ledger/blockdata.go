@@ -1,11 +1,11 @@
 package ledger
 
 import (
-	. "GoOnchain/common"
-	"GoOnchain/common/serialization"
-	"GoOnchain/core/ccntmract/program"
-	sig "GoOnchain/core/signature"
-	. "GoOnchain/errors"
+	. "DNA/common"
+	"DNA/common/serialization"
+	"DNA/core/ccntmract/program"
+	sig "DNA/core/signature"
+	. "DNA/errors"
 	"crypto/sha256"
 	"errors"
 	"io"

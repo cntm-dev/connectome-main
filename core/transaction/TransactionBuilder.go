@@ -2,11 +2,11 @@ package transaction
 
 
 import (
-	"GoOnchain/core/asset"
-	"GoOnchain/common"
-	"GoOnchain/crypto"
-	"GoOnchain/core/transaction/payload"
-	"GoOnchain/core/ccntmract/program"
+	"DNA/core/asset"
+	"DNA/common"
+	"DNA/crypto"
+	"DNA/core/transaction/payload"
+	"DNA/core/ccntmract/program"
 )
 
 //initial a new transaction with asset registration payload

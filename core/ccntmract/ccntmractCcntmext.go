@@ -1,12 +1,12 @@
 package ccntmract
 
 import (
-	. "GoOnchain/common"
-	"GoOnchain/common/log"
-	pg "GoOnchain/core/ccntmract/program"
-	sig "GoOnchain/core/signature"
-	"GoOnchain/crypto"
-	_ "GoOnchain/errors"
+	. "DNA/common"
+	"DNA/common/log"
+	pg "DNA/core/ccntmract/program"
+	sig "DNA/core/signature"
+	"DNA/crypto"
+	_ "DNA/errors"
 	"errors"
 	"fmt"
 	_ "fmt"
