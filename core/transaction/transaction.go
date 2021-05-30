@@ -1,13 +1,13 @@
 package transaction
 
 import (
-	. "DNA/common"
-	"DNA/common/serialization"
-	"DNA/core/ccntmract"
-	"DNA/core/ccntmract/program"
-	sig "DNA/core/signature"
-	"DNA/core/transaction/payload"
-	. "DNA/errors"
+	. "github.com/DNAProject/DNA/common"
+	"github.com/DNAProject/DNA/common/serialization"
+	"github.com/DNAProject/DNA/core/ccntmract"
+	"github.com/DNAProject/DNA/core/ccntmract/program"
+	sig "github.com/DNAProject/DNA/core/signature"
+	"github.com/DNAProject/DNA/core/transaction/payload"
+	. "github.com/DNAProject/DNA/errors"
 	"crypto/sha256"
 	"errors"
 	"io"

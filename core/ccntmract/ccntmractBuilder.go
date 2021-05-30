@@ -1,12 +1,12 @@
 package ccntmract
 
 import (
-	"DNA/crypto"
-	"DNA/vm"
-	. "DNA/common"
-	pg "DNA/core/ccntmract/program"
+	"github.com/DNAProject/DNA/crypto"
+	"github.com/DNAProject/DNA/vm"
+	. "github.com/DNAProject/DNA/common"
+	pg "github.com/DNAProject/DNA/core/ccntmract/program"
 	"math/big"
-	. "DNA/errors"
+	. "github.com/DNAProject/DNA/errors"
 	"sort"
 )
 
