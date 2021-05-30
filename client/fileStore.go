@@ -1,10 +1,10 @@
 package client
 
 import (
-	ct "github.com/DNAProject/DNA/core/ccntmract"
+	ct "DNA/core/ccntmract"
 	"fmt"
 	"os"
-	. "github.com/DNAProject/DNA/errors"
+	. "DNA/errors"
 	"errors"
 	"encoding/json"
 	"io/ioutil"

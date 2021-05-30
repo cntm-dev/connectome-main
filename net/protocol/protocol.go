@@ -27,6 +27,7 @@ const (
 	NETMAGIC     = 0x74746e41
 	MAXBLKHDRCNT = 2000
 	MAXINVHDRCNT = 500
+	DIVHASHLEN   = 5
 )
 const (
 	HELLOTIMEOUT     = 3 // Seconds

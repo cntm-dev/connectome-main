@@ -1,8 +1,8 @@
 package client
 
 import (
-	ct "github.com/DNAProject/DNA/core/ccntmract"
-	. "github.com/DNAProject/DNA/common"
+	ct "DNA/core/ccntmract"
+	. "DNA/common"
 )
 
 type IClientStore interface {

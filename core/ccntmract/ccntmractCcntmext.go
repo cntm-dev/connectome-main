@@ -1,12 +1,12 @@
 package ccntmract
 
 import (
-	. "github.com/DNAProject/DNA/common"
-	"github.com/DNAProject/DNA/common/log"
-	pg "github.com/DNAProject/DNA/core/ccntmract/program"
-	sig "github.com/DNAProject/DNA/core/signature"
-	"github.com/DNAProject/DNA/crypto"
-	_ "github.com/DNAProject/DNA/errors"
+	. "DNA/common"
+	"DNA/common/log"
+	pg "DNA/core/ccntmract/program"
+	sig "DNA/core/signature"
+	"DNA/crypto"
+	_ "DNA/errors"
 	"errors"
 	"fmt"
 	_ "fmt"

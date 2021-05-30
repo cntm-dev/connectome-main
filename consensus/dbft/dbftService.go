@@ -1,23 +1,23 @@
 package dbft
 
 import (
-	cl "github.com/DNAProject/DNA/client"
-	. "github.com/DNAProject/DNA/common"
-	"github.com/DNAProject/DNA/common/log"
-	"github.com/DNAProject/DNA/config"
-	con "github.com/DNAProject/DNA/consensus"
-	ct "github.com/DNAProject/DNA/core/ccntmract"
-	"github.com/DNAProject/DNA/core/ccntmract/program"
-	"github.com/DNAProject/DNA/core/ledger"
-	_ "github.com/DNAProject/DNA/core/signature"
-	sig "github.com/DNAProject/DNA/core/signature"
-	tx "github.com/DNAProject/DNA/core/transaction"
-	"github.com/DNAProject/DNA/core/transaction/payload"
-	va "github.com/DNAProject/DNA/core/validation"
-	. "github.com/DNAProject/DNA/errors"
-	"github.com/DNAProject/DNA/events"
-	"github.com/DNAProject/DNA/net"
-	msg "github.com/DNAProject/DNA/net/message"
+	cl "DNA/client"
+	. "DNA/common"
+	"DNA/common/log"
+	"DNA/config"
+	con "DNA/consensus"
+	ct "DNA/core/ccntmract"
+	"DNA/core/ccntmract/program"
+	"DNA/core/ledger"
+	_ "DNA/core/signature"
+	sig "DNA/core/signature"
+	tx "DNA/core/transaction"
+	"DNA/core/transaction/payload"
+	va "DNA/core/validation"
+	. "DNA/errors"
+	"DNA/events"
+	"DNA/net"
+	msg "DNA/net/message"
 	"errors"
 	"fmt"
 	"time"
@@ -223,7 +223,7 @@ func (ds *DbftService) CreateBookkeepingTransaction(nonce uint64) *tx.Transactio
 	return &tx.Transaction{
 		TxType:         tx.BookKeeping,
 		PayloadVersion: 0x2,
-		Payload:        &payload.MinerPayload{},
+		Payload:        &payload.BookKeeping{},
 		Nonce:          nonce, //TODO: update the nonce
 		Attributes:     []*tx.TxAttribute{},
 		UTXOInputs:     []*tx.UTXOTxInput{},
