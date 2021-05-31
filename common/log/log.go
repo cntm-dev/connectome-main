@@ -31,6 +31,7 @@ const (
 
 var (
 	levels = map[int]string{
+		traceLog: Color(Pink, "[TRACE]"),
 		debugLog: Color(Green, "[DEBUG]"),
 		infoLog:  Color(Green, "[INFO ]"),
 		warnLog:  Color(Yellow, "[WARN ]"),
@@ -43,6 +44,15 @@ const (
 	namePrefix = "LEVEL"
 	callDepth  = 2
 )
+
+func GetGID() uint64 {
+	b := make([]byte, 64)
+	b = b[:runtime.Stack(b, false)]
+	b = bytes.TrimPrefix(b, []byte("goroutine "))
+	b = b[:bytes.IndexByte(b, ' ')]
+	n, _ := strconv.ParseUint(string(b), 10, 64)
+	return n
+}
 
 var Log *Logger
 var lock = sync.Mutex{}
@@ -106,6 +116,12 @@ func (l *Logger) Output(level int, a ...interface{}) error {
 	return nil
 }
 
+func (l *Logger) Trace(a ...interface{}) {
+	lock.Lock()
+	defer lock.Unlock()
+	l.Output(traceLog, a...)
+}
+
 func (l *Logger) Debug(a ...interface{}) {
 	lock.Lock()
 	defer lock.Unlock()
@@ -134,6 +150,17 @@ func (l *Logger) Fatal(a ...interface{}) {
 	lock.Lock()
 	defer lock.Unlock()
 	l.Output(fatalLog, a...)
+}
+
+func Trace(a ...interface{}) {
+	pc := make([]uintptr, 10)
+	runtime.Callers(2, pc)
+	f := runtime.FuncForPC(pc[0])
+	file, line := f.FileLine(pc[0])
+	fileName := filepath.Base(file)
+
+	Log.Trace(fmt.Sprint(f.Name(), " ", fileName, ":", line))
+
 }
 
 func Debug(a ...interface{}) {

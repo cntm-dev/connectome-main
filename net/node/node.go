@@ -202,7 +202,7 @@ func (node node) Xmit(inv common.Inventory) error {
 				return err
 			}
 		}
-
+		node.txnCnt++
 	} else if inv.Type() == common.BLOCK {
 		log.Info("****TX block message****\n")
 		block, isBlock := inv.(*ledger.Block)

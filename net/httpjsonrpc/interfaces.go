@@ -156,6 +156,8 @@ func getNodeState(req *http.Request, cmd map[string]interface{}) map[string]inte
 		Services: node.Services(),
 		Relay:    node.GetRelay(),
 		Height:   node.GetHeight(),
+		TxnCnt:	  node.GetTxnCnt(),
+		RxTxnCnt: node.GetRxTxnCnt(),
 	}
 	return responsePacking(n, id)
 }
@@ -195,8 +197,11 @@ func sendSampleTransaction(req *http.Request, cmd map[string]interface{}) map[st
 		return response
 	}
 
+	txhash := t.Hash()
+	txHashArray := txhash.ToArray()
+	txHashHex := ToHexString(txHashArray)
 	log.Debug("---------------------------")
-	log.Debug("Transaction Hash:", t.Hash())
+	log.Debug("Transaction Hash:", txHashHex)
 	for _, v := range t.Programs {
 		log.Debug("Transaction Program Code:", v.Code)
 		log.Debug("Transaction Program Parameter:", v.Parameter)
@@ -209,5 +214,5 @@ func sendSampleTransaction(req *http.Request, cmd map[string]interface{}) map[st
 	if err = node.Xmit(&t); err != nil {
 		return responsePacking("Xmit Sample TX error", id)
 	}
-	return responsePacking("Transaction Sended", id)
+	return responsePacking(txHashHex, id)
 }

@@ -125,7 +125,7 @@ func (msg headersReq) Handle(node Noder) error {
 }
 
 func (msg blkHeader) Handle(node Noder) error {
-	common.Trace()
+	log.Trace()
 	for i := 0; i < int(msg.cnt); i++ {
 		var header ledger.Header
 		header.Blockdata = &msg.blkHdr[i]
