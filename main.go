@@ -3,6 +3,7 @@ package main
 import (
 	. "DNA/client"
 	"DNA/common/log"
+	"DNA/config"
 	"DNA/consensus/dbft"
 	"DNA/core/ledger"
 	"DNA/core/store"
