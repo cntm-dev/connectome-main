@@ -26,7 +26,8 @@ const (
 	warnLog
 	errorLog
 	fatalLog
-	numSeverity = 5
+	printLog
+	maxLevelLog
 )
 
 var (
@@ -37,6 +38,7 @@ var (
 		warnLog:  Color(Yellow, "[WARN ]"),
 		errorLog: Color(Red, "[ERROR]"),
 		fatalLog: Color(Red, "[FATAL]"),
+		printLog: Color(Cyan, "[ForcePrint]"),
 	}
 )
 
@@ -55,7 +57,6 @@ func GetGID() uint64 {
 }
 
 var Log *Logger
-var lock = sync.Mutex{}
 
 func LevelName(level int) string {
 	if name, ok := levels[level]; ok {
@@ -78,6 +79,7 @@ func NameLevel(name string) int {
 }
 
 type Logger struct {
+	sync.Mutex
 	level  int
 	logger *log.Logger
 }
@@ -117,38 +119,44 @@ func (l *Logger) Output(level int, a ...interface{}) error {
 }
 
 func (l *Logger) Trace(a ...interface{}) {
-	lock.Lock()
-	defer lock.Unlock()
+	l.Lock()
+	defer l.Unlock()
 	l.Output(traceLog, a...)
 }
 
+func (l *Logger) Print(a ...interface{}) {
+	l.Lock()
+	defer l.Unlock()
+	l.Output(printLog, a...)
+}
+
 func (l *Logger) Debug(a ...interface{}) {
-	lock.Lock()
-	defer lock.Unlock()
+	l.Lock()
+	defer l.Unlock()
 	l.Output(debugLog, a...)
 }
 
 func (l *Logger) Info(a ...interface{}) {
-	lock.Lock()
-	defer lock.Unlock()
+	l.Lock()
+	defer l.Unlock()
 	l.Output(infoLog, a...)
 }
 
 func (l *Logger) Warn(a ...interface{}) {
-	lock.Lock()
-	defer lock.Unlock()
+	l.Lock()
+	defer l.Unlock()
 	l.Output(warnLog, a...)
 }
 
 func (l *Logger) Error(a ...interface{}) {
-	lock.Lock()
-	defer lock.Unlock()
+	l.Lock()
+	defer l.Unlock()
 	l.Output(errorLog, a...)
 }
 
 func (l *Logger) Fatal(a ...interface{}) {
-	lock.Lock()
-	defer lock.Unlock()
+	l.Lock()
+	defer l.Unlock()
 	l.Output(fatalLog, a...)
 }
 
@@ -181,6 +189,10 @@ func Error(a ...interface{}) {
 
 func Fatal(a ...interface{}) {
 	Log.Fatal(fmt.Sprint(a...))
+}
+
+func Print(a ...interface{}) {
+	Log.Print(fmt.Sprint(a...))
 }
 
 func FileOpen(path string) (*os.File, error) {

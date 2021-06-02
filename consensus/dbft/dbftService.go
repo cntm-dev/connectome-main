@@ -205,7 +205,7 @@ func (ds *DbftService) CheckSignatures() error {
 		//set signed program to the block
 		cxt.Data.SetPrograms(cxt.GetPrograms())
 
-		block.Transcations = ds.ccntmext.GetTXByHashes()
+		block.Transactions = ds.ccntmext.GetTXByHashes()
 
 		if err := ds.localNet.Xmit(block); err != nil {
 			log.Info(fmt.Sprintf("[CheckSignatures] Xmit block Error: %s, blockHash: %d", err.Error(), block.Hash()))
