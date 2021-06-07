@@ -1,16 +1,20 @@
 package httpjsonrpc
 
 import (
+	"DNA/client"
 	. "DNA/common"
 	"DNA/common/log"
-	_ "DNA/core/ccntmract/program"
 	"DNA/core/ledger"
 	tx "DNA/core/transaction"
 	"bytes"
-	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"net/http"
+	"math/rand"
+	"time"
+)
+
+const (
+	RANDBYTELEN = 4
 )
 
 func TransArryByteToHexString(ptx *tx.Transaction) *Transactions {
@@ -63,7 +67,7 @@ func TransArryByteToHexString(ptx *tx.Transaction) *Transactions {
 		trans.Programs[n].Parameter = ToHexString(v.Parameter)
 		n++
 	}
-	
+
 	n = 0
 	trans.AssetOutputs = make([]TxoutputMap, len(ptx.AssetOutputs))
 	for k, v := range ptx.AssetOutputs {
@@ -99,14 +103,14 @@ func TransArryByteToHexString(ptx *tx.Transaction) *Transactions {
 	return trans
 }
 
-func getBestBlockHash(req *http.Request, cmd map[string]interface{}) map[string]interface{} {
+func getBestBlockHash(cmd map[string]interface{}) map[string]interface{} {
 	id := cmd["id"]
 	hash := ledger.DefaultLedger.Blockchain.CurrentBlockHash()
 	response := responsePacking(ToHexString(hash.ToArray()), id)
 	return response
 }
 
-func getBlock(req *http.Request, cmd map[string]interface{}) map[string]interface{} {
+func getBlock(cmd map[string]interface{}) map[string]interface{} {
 	id := cmd["id"]
 	params := cmd["params"]
 	var err error
@@ -157,13 +161,13 @@ func getBlock(req *http.Request, cmd map[string]interface{}) map[string]interfac
 	return responsePacking(b, id)
 }
 
-func getBlockCount(req *http.Request, cmd map[string]interface{}) map[string]interface{} {
+func getBlockCount(cmd map[string]interface{}) map[string]interface{} {
 	id := cmd["id"]
 	count := ledger.DefaultLedger.Blockchain.BlockHeight + 1
 	return responsePacking(count, id)
 }
 
-func getBlockHash(req *http.Request, cmd map[string]interface{}) map[string]interface{} {
+func getBlockHash(cmd map[string]interface{}) map[string]interface{} {
 	id := cmd["id"]
 	index := cmd["params"]
 	var hash Uint256
@@ -175,7 +179,7 @@ func getBlockHash(req *http.Request, cmd map[string]interface{}) map[string]inte
 	return responsePacking(hashhex, id)
 }
 
-func getTxn(req *http.Request, cmd map[string]interface{}) map[string]interface{} {
+func getTxn(cmd map[string]interface{}) map[string]interface{} {
 	id := cmd["id"]
 	params := cmd["params"]
 	var hash Uint256
@@ -233,7 +237,7 @@ func getRawTransaction(req *http.Request, cmd map[string]interface{}) map[string
 	return responsePacking(txBuffer.Bytes(), id)
 }
 
-func getTxout(req *http.Request, cmd map[string]interface{}) map[string]interface{} {
+func getTxout(cmd map[string]interface{}) map[string]interface{} {
 	id := cmd["id"]
 	//params := cmd["params"]
 	//txid := params.([]interface{})[0].(string)
@@ -249,7 +253,7 @@ func getTxout(req *http.Request, cmd map[string]interface{}) map[string]interfac
 	return responsePacking(to, id)
 }
 
-func sendRawTransaction(req *http.Request, cmd map[string]interface{}) map[string]interface{} {
+func sendRawTransaction(cmd map[string]interface{}) map[string]interface{} {
 	id := cmd["id"]
 	hexValue := cmd["params"].(string)
 	hexSlice, _ := hex.DecodeString(hexValue)
@@ -259,7 +263,7 @@ func sendRawTransaction(req *http.Request, cmd map[string]interface{}) map[strin
 	return responsePacking(err, id)
 }
 
-func submitBlock(req *http.Request, cmd map[string]interface{}) map[string]interface{} {
+func submitBlock(cmd map[string]interface{}) map[string]interface{} {
 	id := cmd["id"]
 	hexValue := cmd["params"].(string)
 	hexSlice, _ := hex.DecodeString(hexValue)
@@ -293,7 +297,7 @@ func getNodeState(req *http.Request, cmd map[string]interface{}) map[string]inte
 	return responsePacking(n, id)
 }
 
-func startConsensus(req *http.Request, cmd map[string]interface{}) map[string]interface{} {
+func startConsensus(cmd map[string]interface{}) map[string]interface{} {
 	var response map[string]interface{}
 	id := cmd["id"]
 	err := dBFT.Start()
@@ -305,7 +309,7 @@ func startConsensus(req *http.Request, cmd map[string]interface{}) map[string]in
 	return response
 }
 
-func stopConsensus(req *http.Request, cmd map[string]interface{}) map[string]interface{} {
+func stopConsensus(cmd map[string]interface{}) map[string]interface{} {
 	var response map[string]interface{}
 	id := cmd["id"]
 	err := dBFT.Halt()
@@ -317,38 +321,58 @@ func stopConsensus(req *http.Request, cmd map[string]interface{}) map[string]int
 	return response
 }
 
-func sendSampleTransaction(req *http.Request, cmd map[string]interface{}) map[string]interface{} {
-	var response map[string]interface{}
+func sendSampleTransaction(cmd map[string]interface{}) map[string]interface{} {
 	id := cmd["id"]
-	params, err := base64.StdEncoding.DecodeString(cmd["params"].([]interface{})[0].(string))
-	buf := bytes.NewBuffer(params)
-	var t tx.Transaction
-	if err = t.Deserialize(buf); err != nil {
-		response = responsePacking("Unmarshal Sample TX error", id)
-		return response
+	txType := cmd["params"].([]interface{})[0].(string)
+	issuer, err := client.NewAccount()
+	if err != nil {
+		return responsePacking("Failed to create account", id)
 	}
+	admin := issuer
 
-	txhash := t.Hash()
-	txHashArray := txhash.ToArray()
-	txHashHex := ToHexString(txHashArray)
-	log.Debug("---------------------------")
-	log.Debug("Transaction Hash:", txHashHex)
-	for _, v := range t.Programs {
-		log.Debug("Transaction Program Code:", v.Code)
-		log.Debug("Transaction Program Parameter:", v.Parameter)
-	}
-	log.Debug("---------------------------")
+	var regHash, issueHash, transferHash Uint256
+	rbuf := make([]byte, RANDBYTELEN)
+	rand.Read(rbuf)
+	switch string(txType) {
+	case "perf":
+		txNum := cmd["params"].([]interface{})[1].(float64)
+		nosign := cmd["params"].([]interface{})[2].(bool)
+		num := int(txNum)
+		for i := 0; i < num; i++ {
+			regTx := NewRegTx(ToHexString(rbuf), i, admin, issuer)
+			regHash = regTx.Hash()
+			if !nosign {
+				SignTx(admin, regTx)
+			}
+			SendTx(regTx)
+		}
+		return responsePacking(fmt.Sprintf("%d transactions was sended", num), id)
+	case "full":
+		regTx := NewRegTx(ToHexString(rbuf), 0, admin, issuer)
+		regHash = regTx.Hash()
+		SignTx(admin, regTx)
+		SendTx(regTx)
 
-	if !node.AppendTxnPool(&t) {
-		log.Warn("Can NOT add the transaction to TxnPool")
+		// wait for the block
+		time.Sleep(3 * time.Second)
+		issueTx := NewIssueTx(admin, regHash)
+		issueHash = issueTx.Hash()
+		SignTx(admin, issueTx)
+		SendTx(issueTx)
+
+		// wait for the block
+		time.Sleep(3 * time.Second)
+		transferTx := NewTransferTx(regHash, issueHash, admin)
+		transferHash = transferTx.Hash()
+		SignTx(admin, transferTx)
+		SendTx(transferTx)
+		return responsePacking(fmt.Sprintf("regist: %x, issue: %x, transfer: %x", regHash, issueHash, transferHash), id)
+	default:
+		return responsePacking("Invalid transacion type", id)
 	}
-	if err = node.Xmit(&t); err != nil {
-		return responsePacking("Xmit Sample TX error", id)
-	}
-	return responsePacking(txHashHex, id)
 }
 
-func setDebugInfo(req *http.Request, cmd map[string]interface{}) map[string]interface{} {
+func setDebugInfo(cmd map[string]interface{}) map[string]interface{} {
 	id := cmd["id"]
 	param := cmd["params"].([]interface{})[0].(float64)
 	level := int(param)
