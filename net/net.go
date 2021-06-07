@@ -3,6 +3,7 @@ package net
 import (
 	"DNA/common"
 	"DNA/config"
+	"DNA/core/ledger"
 	"DNA/core/transaction"
 	"DNA/crypto"
 	"DNA/events"

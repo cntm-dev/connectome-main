@@ -125,6 +125,11 @@ func (ds *DbftService) BlockPersistCompleted(v interface{}) {
 	log.Trace()
 	if block, ok := v.(*ledger.Block); ok {
 		log.Info(fmt.Sprintf("persist block: %d", block.Hash()))
+		err := ds.localNet.CleanSubmittedTransactions(block)
+		if err != nil {
+			log.Warn(err)
+		}
+		//log.Debug(fmt.Sprintf("persist block: %d with %d transactions\n", block.Hash(),len(trxHashToBeDelete)))
 	}
 
 	ds.blockReceivedTime = time.Now()
@@ -134,7 +139,7 @@ func (ds *DbftService) BlockPersistCompleted(v interface{}) {
 
 func (ds *DbftService) CheckExpectedView(viewNumber byte) {
 	log.Trace()
-	if ds.ccntmext.State.HasFlag(BlockSent){
+	if ds.ccntmext.State.HasFlag(BlockSent) {
 		return
 	}
 	if ds.ccntmext.ViewNumber == viewNumber {
