@@ -254,13 +254,20 @@ func getTxout(cmd map[string]interface{}) map[string]interface{} {
 }
 
 func sendRawTransaction(cmd map[string]interface{}) map[string]interface{} {
+	retFlag := false
 	id := cmd["id"]
-	hexValue := cmd["params"].(string)
+	params := cmd["params"]
+	//hexValue := cmd["params"].(string)
+	hexValue := params.([]interface{})[0].(string)
+
 	hexSlice, _ := hex.DecodeString(hexValue)
 	var txTransaction tx.Transaction
 	txTransaction.Deserialize(bytes.NewReader(hexSlice[:]))
 	err := node.Xmit(&txTransaction)
-	return responsePacking(err, id)
+	if err == nil {
+		retFlag = true
+	}
+	return responsePacking(retFlag, id)
 }
 
 func submitBlock(cmd map[string]interface{}) map[string]interface{} {
@@ -330,7 +337,7 @@ func sendSampleTransaction(cmd map[string]interface{}) map[string]interface{} {
 	}
 	admin := issuer
 
-	var regHash, issueHash, transferHash Uint256
+	var regHash, issueHash, transferHash, recordHash Uint256
 	rbuf := make([]byte, RANDBYTELEN)
 	rand.Read(rbuf)
 	switch string(txType) {
@@ -366,7 +373,15 @@ func sendSampleTransaction(cmd map[string]interface{}) map[string]interface{} {
 		transferHash = transferTx.Hash()
 		SignTx(admin, transferTx)
 		SendTx(transferTx)
-		return responsePacking(fmt.Sprintf("regist: %x, issue: %x, transfer: %x", regHash, issueHash, transferHash), id)
+
+		// wait for the block
+		time.Sleep(5 * time.Second)
+		NewRecordTx := NewRecordTx(ToHexString(rbuf))
+		recordHash = NewRecordTx.Hash()
+		SignTx(admin, NewRecordTx)
+		SendTx(NewRecordTx)
+
+		return responsePacking(fmt.Sprintf("regist: %x, issue: %x, transfer: x%, record: %x", regHash, issueHash, transferHash, recordHash), id)
 	default:
 		return responsePacking("Invalid transacion type", id)
 	}

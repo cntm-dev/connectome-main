@@ -34,7 +34,7 @@ func (node node) updateNodeInfo() {
 	for {
 		select {
 		case <-ticker.C:
-			//log.Trace()
+			//GetHeaders process haven't finished yet. So comment it now.
 			node.GetBlkHdrs()
 		case <-quit:
 			ticker.Stop()
