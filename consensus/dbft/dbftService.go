@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"sync"
 )
 
 var GenBlockTime = (2 * time.Second)
@@ -427,6 +428,7 @@ func (ds *DbftService) PrepareRequestReceived(payload *msg.ConsensusPayload, mes
 		return
 	}
 
+	//ds.ccntmext copy
 	ds.ccntmext.State |= RequestReceived
 	ds.ccntmext.Timestamp = payload.Timestamp
 	ds.ccntmext.Nonce = message.Nonce
