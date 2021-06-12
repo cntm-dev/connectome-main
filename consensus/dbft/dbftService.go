@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"time"
-	"sync"
 )
 
 var GenBlockTime = (2 * time.Second)
@@ -72,11 +71,22 @@ func (ds *DbftService) AddTransaction(TX *tx.Transaction, needVerify bool) error
 
 	//verify the TX
 	if needVerify {
-		err := va.VerifyTransaction(TX, ledger.DefaultLedger, ds.ccntmext.GetTransactionList())
-		if err != nil {
+		if err := va.VerifyTransaction(TX); err != nil {
 			log.Warn(fmt.Sprintf("[AddTransaction] TX Verfiy failed: %v", TX.Hash()))
 			ds.RequestChangeView()
 			return errors.New("TX Verfiy failed.")
+		}
+
+		if err := va.VerifyTransactionWithTxPool(TX, ds.ccntmext.GetTransactionList()); err != nil {
+			log.Warn(fmt.Sprintf("[AddTransaction] TX Verfiy with Txpool failed: %v", TX.Hash()))
+			ds.RequestChangeView()
+			return errors.New("TX Verfiy with txpool failed.")
+		}
+
+		if err := va.VerifyTransactionWithLedger(TX, ledger.DefaultLedger); err != nil {
+			log.Warn(fmt.Sprintf("[AddTransaction] TX Verfiy with Ledger failed: %v", TX.Hash()))
+			ds.RequestChangeView()
+			return errors.New("TX Verfiy with ledger failed.")
 		}
 	}
 
@@ -436,6 +446,7 @@ func (ds *DbftService) PrepareRequestReceived(payload *msg.ConsensusPayload, mes
 	ds.ccntmext.TransactionHashes = message.TransactionHashes
 	ds.ccntmext.Transactions = make(map[Uint256]*tx.Transaction)
 
+	//block header verification
 	_, err = va.VerifySignature(ds.ccntmext.MakeHeader(), ds.ccntmext.Miners[payload.MinerIndex], message.Signature)
 	if err != nil {
 		log.Warn("PrepareRequestReceived VerifySignature failed.", err)
