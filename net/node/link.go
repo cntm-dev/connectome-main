@@ -150,7 +150,7 @@ func (n *node) initConnection() {
 }
 
 func initNonTlsListen() (net.Listener, error) {
-	log.Trace()
+	log.Debug()
 	listener, err := net.Listen("tcp", ":"+strconv.Itoa(Parameters.NodePort))
 	if err != nil {
 		log.Error("Error listening\n", err.Error())
@@ -247,7 +247,7 @@ func (node *node) Connect(nodeAddr string) {
 }
 
 func NonTLSDial(nodeAddr string) (net.Conn, error) {
-	log.Trace()
+	log.Debug()
 	conn, err := net.Dial("tcp", nodeAddr)
 	if err != nil {
 		log.Error("Error dialing\n", err.Error())

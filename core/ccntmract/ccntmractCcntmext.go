@@ -25,7 +25,7 @@ type CcntmractCcntmext struct {
 }
 
 func NewCcntmractCcntmext(data sig.SignableData) *CcntmractCcntmext {
-	log.Trace()
+	log.Debug()
 	programHashes, _ := data.GetProgramHashes() //TODO: check error
 	log.Debug("programHashes= ", programHashes)
 	log.Debug("hashLen := len(programHashes) ", len(programHashes))
@@ -41,7 +41,7 @@ func NewCcntmractCcntmext(data sig.SignableData) *CcntmractCcntmext {
 }
 
 func (cxt *CcntmractCcntmext) Add(ccntmract *Ccntmract, index int, parameter []byte) error {
-	log.Trace()
+	log.Debug()
 	i := cxt.GetIndex(ccntmract.ProgramHash)
 	if i < 0 {
 		return errors.New("Program Hash is not exist.")
@@ -57,9 +57,9 @@ func (cxt *CcntmractCcntmext) Add(ccntmract *Ccntmract, index int, parameter []b
 }
 
 func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.PubKey, parameter []byte) error {
-	log.Trace()
+	log.Debug()
 	if ccntmract.GetType() == MultiSigCcntmract {
-		log.Trace()
+		log.Debug()
 		// add multi sig ccntmract
 
 		log.Debug("Multi Sig: ccntmract.ProgramHash:", ccntmract.ProgramHash)
@@ -110,7 +110,7 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.
 
 	} else {
 		//add non multi sig ccntmract
-		log.Trace()
+		log.Debug()
 		index := -1
 		for i := 0; i < len(ccntmract.Parameters); i++ {
 			if ccntmract.Parameters[i] == Signature {
@@ -221,7 +221,7 @@ func (cxt *CcntmractCcntmext) GetIndex(programHash Uint160) int {
 }
 
 func (cxt *CcntmractCcntmext) GetPrograms() []*pg.Program {
-	log.Trace()
+	log.Debug()
 	//log.Debug("!cxt.IsCompleted()=",!cxt.IsCompleted())
 	//log.Debug(cxt.Codes)
 	//log.Debug(cxt.Parameters)

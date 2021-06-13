@@ -41,7 +41,7 @@ type DbftService struct {
 }
 
 func NewDbftService(client cl.Client, logDictionary string, localNet net.Neter) *DbftService {
-	log.Trace()
+	log.Debug()
 
 	ds := &DbftService{
 		Client:        client,
@@ -54,13 +54,13 @@ func NewDbftService(client cl.Client, logDictionary string, localNet net.Neter) 
 	if !ds.timer.Stop() {
 		<-ds.timer.C
 	}
-	log.Trace()
+	log.Debug()
 	go ds.timerRoutine()
 	return ds
 }
 
 func (ds *DbftService) AddTransaction(TX *tx.Transaction, needVerify bool) error {
-	log.Trace()
+	log.Debug()
 
 	//check whether the new TX already exist in ledger
 	if ledger.DefaultLedger.Blockchain.CcntmainsTransaction(TX.Hash()) {
@@ -133,7 +133,7 @@ func (ds *DbftService) AddTransaction(TX *tx.Transaction, needVerify bool) error
 }
 
 func (ds *DbftService) BlockPersistCompleted(v interface{}) {
-	log.Trace()
+	log.Debug()
 	if block, ok := v.(*ledger.Block); ok {
 		log.Info(fmt.Sprintf("persist block: %d", block.Hash()))
 		err := ds.localNet.CleanSubmittedTransactions(block)
@@ -149,7 +149,7 @@ func (ds *DbftService) BlockPersistCompleted(v interface{}) {
 }
 
 func (ds *DbftService) CheckExpectedView(viewNumber byte) {
-	log.Trace()
+	log.Debug()
 	if ds.ccntmext.State.HasFlag(BlockSent) {
 		return
 	}
@@ -185,7 +185,7 @@ func (ds *DbftService) CheckPolicy(transaction *tx.Transaction) error {
 }
 
 func (ds *DbftService) CheckSignatures() error {
-	log.Trace()
+	log.Debug()
 
 	//check have enought signatures and all required TXs already in ccntmext
 	if ds.ccntmext.GetSignaturesCount() >= ds.ccntmext.M() && ds.ccntmext.CheckTxHashesExist() {
@@ -235,7 +235,7 @@ func (ds *DbftService) CheckSignatures() error {
 }
 
 func (ds *DbftService) CreateBookkeepingTransaction(nonce uint64) *tx.Transaction {
-	log.Trace()
+	log.Debug()
 
 	//TODO: sysfee
 
@@ -253,7 +253,7 @@ func (ds *DbftService) CreateBookkeepingTransaction(nonce uint64) *tx.Transactio
 }
 
 func (ds *DbftService) ChangeViewReceived(payload *msg.ConsensusPayload, message *ChangeView) {
-	log.Trace()
+	log.Debug()
 	log.Info(fmt.Sprintf("Change View Received: height=%d View=%d index=%d nv=%d", payload.Height, message.ViewNumber(), payload.MinerIndex, message.NewViewNumber))
 
 	if message.NewViewNumber <= ds.ccntmext.ExpectedView[payload.MinerIndex] {
@@ -266,7 +266,7 @@ func (ds *DbftService) ChangeViewReceived(payload *msg.ConsensusPayload, message
 }
 
 func (ds *DbftService) Halt() error {
-	log.Trace()
+	log.Debug()
 	log.Info("DBFT Stop")
 	if ds.timer != nil {
 		ds.timer.Stop()
@@ -281,7 +281,7 @@ func (ds *DbftService) Halt() error {
 
 func (ds *DbftService) InitializeConsensus(viewNum byte) error {
 	log.Debug("[InitializeConsensus] Start InitializeConsensus.")
-	log.Trace()
+	log.Debug()
 	ds.ccntmext.ccntmextMu.Lock()
 	defer ds.ccntmext.ccntmextMu.Unlock()
 
@@ -301,7 +301,7 @@ func (ds *DbftService) InitializeConsensus(viewNum byte) error {
 	if ds.ccntmext.MinerIndex == int(ds.ccntmext.PrimaryIndex) {
 
 		//primary peer
-		log.Trace()
+		log.Debug()
 		ds.ccntmext.State |= Primary
 		ds.timerHeight = ds.ccntmext.Height
 		ds.timeView = viewNum
@@ -329,7 +329,7 @@ func (ds *DbftService) InitializeConsensus(viewNum byte) error {
 }
 
 func (ds *DbftService) LocalNodeNewInventory(v interface{}) {
-	log.Trace()
+	log.Debug()
 	if inventory, ok := v.(Inventory); ok {
 		if inventory.Type() == CONSENSUS {
 			payload, ret := inventory.(*msg.ConsensusPayload)
@@ -348,7 +348,7 @@ func (ds *DbftService) LocalNodeNewInventory(v interface{}) {
 //TODO: add invenory receiving
 
 func (ds *DbftService) NewConsensusPayload(payload *msg.ConsensusPayload) {
-	log.Trace()
+	log.Debug()
 	ds.ccntmext.ccntmextMu.Lock()
 	defer ds.ccntmext.ccntmextMu.Unlock()
 
@@ -396,7 +396,7 @@ func (ds *DbftService) NewConsensusPayload(payload *msg.ConsensusPayload) {
 }
 
 func (ds *DbftService) NewTransactionPayload(transaction *tx.Transaction) error {
-	log.Trace()
+	log.Debug()
 	ds.ccntmext.ccntmextMu.Lock()
 	defer ds.ccntmext.ccntmextMu.Unlock()
 
@@ -415,7 +415,7 @@ func (ds *DbftService) NewTransactionPayload(transaction *tx.Transaction) error 
 }
 
 func (ds *DbftService) PrepareRequestReceived(payload *msg.ConsensusPayload, message *PrepareRequest) {
-	log.Trace()
+	log.Debug()
 	log.Info(fmt.Sprintf("Prepare Request Received: height=%d View=%d index=%d tx=%d", payload.Height, message.ViewNumber(), payload.MinerIndex, len(message.TransactionHashes)))
 
 	if !ds.ccntmext.State.HasFlag(Backup) || ds.ccntmext.State.HasFlag(RequestReceived) {
@@ -430,7 +430,7 @@ func (ds *DbftService) PrepareRequestReceived(payload *msg.ConsensusPayload, mes
 		log.Info("PrepareRequestReceived GetHeader failed with ds.ccntmext.PrevHash", ds.ccntmext.PrevHash)
 	}
 
-	log.Trace()
+	log.Debug()
 	//TODO Add Error Catch
 	prevBlockTimestamp := header.Blockdata.Timestamp
 	if payload.Timestamp <= prevBlockTimestamp || payload.Timestamp > uint32(time.Now().Add(time.Minute*10).Unix()) {
@@ -480,7 +480,7 @@ func (ds *DbftService) PrepareRequestReceived(payload *msg.ConsensusPayload, mes
 }
 
 func (ds *DbftService) PrepareResponseReceived(payload *msg.ConsensusPayload, message *PrepareResponse) {
-	log.Trace()
+	log.Debug()
 
 	log.Info(fmt.Sprintf("Prepare Response Received: height=%d View=%d index=%d", payload.Height, message.ViewNumber(), payload.MinerIndex))
 
@@ -507,12 +507,12 @@ func (ds *DbftService) PrepareResponseReceived(payload *msg.ConsensusPayload, me
 }
 
 func (ds *DbftService) RefreshPolicy() {
-	log.Trace()
+	log.Debug()
 	con.DefaultPolicy.Refresh()
 }
 
 func (ds *DbftService) RequestChangeView() {
-	log.Trace()
+	log.Debug()
 	// FIXME if there is no save block notifcation, when the timeout call this function it will crash
 	ds.ccntmext.ExpectedView[ds.ccntmext.MinerIndex] = ds.ccntmext.ExpectedView[ds.ccntmext.MinerIndex] + 1
 	log.Info(fmt.Sprintf("Request change view: height=%d View=%d nv=%d state=%s", ds.ccntmext.Height, ds.ccntmext.ViewNumber, ds.ccntmext.ExpectedView[ds.ccntmext.MinerIndex], ds.ccntmext.GetStateDetail()))
@@ -525,7 +525,7 @@ func (ds *DbftService) RequestChangeView() {
 }
 
 func (ds *DbftService) SignAndRelay(payload *msg.ConsensusPayload) {
-	log.Trace()
+	log.Debug()
 
 	prohash, err := payload.GetProgramHashes()
 	if err != nil {
@@ -561,7 +561,7 @@ func (ds *DbftService) Start() error {
 }
 
 func (ds *DbftService) Timeout() {
-	log.Trace()
+	log.Debug()
 	ds.ccntmext.ccntmextMu.Lock()
 	defer ds.ccntmext.ccntmextMu.Unlock()
 	if ds.timerHeight != ds.ccntmext.Height || ds.timeView != ds.ccntmext.ViewNumber {
@@ -643,7 +643,7 @@ func (ds *DbftService) Timeout() {
 }
 
 func (ds *DbftService) timerRoutine() {
-	log.Trace()
+	log.Debug()
 	for {
 		select {
 		case <-ds.timer.C:
