@@ -19,7 +19,8 @@ import (
 
 const (
 	// The number of the CPU cores for parallel optimization,TODO set from config file
-	NCPU = 4
+	NCPU              = 4
+	DefaultMinerCount = 4
 )
 
 var Version string
@@ -46,7 +47,11 @@ func main() {
 	fmt.Println("//**************************************************************************")
 	fmt.Println("//*** 1. Generate [Account]                                              ***")
 	fmt.Println("//**************************************************************************")
-	localclient := OpenClientAndGetAccount()
+	var minerCount uint32 = DefaultMinerCount
+	if config.Parameters.MinerCount != 0 {
+		minerCount = config.Parameters.MinerCount
+	}
+	localclient := OpenClientAndGetAccount(minerCount)
 	if localclient == nil {
 		fmt.Println("Can't get local client.")
 		os.Exit(1)
@@ -62,10 +67,10 @@ func main() {
 	fmt.Println("//*** 2. Set Miner                                                     ***")
 	fmt.Println("//**************************************************************************")
 	miner := []*crypto.PubKey{}
-	miner = append(miner, getMiner1().PublicKey)
-	miner = append(miner, getMiner4().PublicKey)
-	miner = append(miner, getMiner3().PublicKey)
-	miner = append(miner, getMiner2().PublicKey)
+	var i uint32
+	for i = 0; i < minerCount; i++ {
+		miner = append(miner, getMiner(i+1).PublicKey)
+	}
 	ledger.StandbyMiners = miner
 	fmt.Println("miner1.PublicKey", issuer.PublicKey)
 
