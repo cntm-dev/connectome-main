@@ -1,7 +1,7 @@
 package node
 
 import (
-	"DNA/common"
+	. "DNA/common"
 	"DNA/common/log"
 	. "DNA/config"
 	"DNA/core/ledger"
@@ -9,6 +9,7 @@ import (
 	"DNA/crypto"
 	. "DNA/net/message"
 	. "DNA/net/protocol"
+	"bytes"
 	"errors"
 	"fmt"
 	"math/rand"
