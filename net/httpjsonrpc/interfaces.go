@@ -103,34 +103,45 @@ func TransArryByteToHexString(ptx *tx.Transaction) *Transactions {
 	return trans
 }
 
-func getBestBlockHash(cmd map[string]interface{}) map[string]interface{} {
-	id := cmd["id"]
+func getBestBlockHash(params []interface{}) map[string]interface{} {
 	hash := ledger.DefaultLedger.Blockchain.CurrentBlockHash()
-	response := responsePacking(ToHexString(hash.ToArray()), id)
-	return response
+	return DnaRpc(ToHexString(hash.ToArray()))
 }
 
-func getBlock(cmd map[string]interface{}) map[string]interface{} {
-	id := cmd["id"]
-	params := cmd["params"]
+// Input JSON string examples for getblock method as following:
+//   {"jsonrpc": "2.0", "method": "getblock", "params": [1], "id": 0}
+//   {"jsonrpc": "2.0", "method": "getblock", "params": ["aabbcc.."], "id": 0}
+func getBlock(params []interface{}) map[string]interface{} {
+	if len(params) < 1 {
+		return DnaRpcNil
+	}
 	var err error
 	var hash Uint256
-	switch (params.([]interface{})[0]).(type) {
-	// the value type is float64 after unmarshal JSON number into an interface value
+	switch (params[0]).(type) {
+	// block height
 	case float64:
-		index := uint32(params.([]interface{})[0].(float64))
+		index := uint32(params[0].(float64))
 		hash, err = ledger.DefaultLedger.Store.GetBlockHash(index)
 		if err != nil {
-			return responsePacking([]interface{}{-100, "Unknown block hash"}, id)
+			return DnaRpcUnknownBlock
 		}
+	// block hash
 	case string:
-		hashstr := params.([]interface{})[0].(string)
-		hashslice, _ := hex.DecodeString(hashstr)
-		hash.Deserialize(bytes.NewReader(hashslice[0:32]))
+		str := params[0].(string)
+		hex, err := hex.DecodeString(str)
+		if err != nil {
+			return DnaRpcInvalidParameter
+		}
+		if err := hash.Deserialize(bytes.NewReader(hex)); err != nil {
+			return DnaRpcInvalidTransaction
+		}
+	default:
+		return DnaRpcInvalidParameter
 	}
+
 	block, err := ledger.DefaultLedger.Store.GetBlock(hash)
 	if err != nil {
-		return responsePacking([]interface{}{-100, "Unknown block"}, id)
+		return DnaRpcUnknownBlock
 	}
 
 	blockHead := &BlockHead{
@@ -140,7 +151,7 @@ func getBlock(cmd map[string]interface{}) map[string]interface{} {
 		Timestamp:        block.Blockdata.Timestamp,
 		Height:           block.Blockdata.Height,
 		ConsensusData:    block.Blockdata.ConsensusData,
-		NextMiner:        ToHexString(block.Blockdata.NextMiner.ToArray()),
+		NextBookKeeper:   ToHexString(block.Blockdata.NextBookKeeper.ToArray()),
 		Program: ProgramInfo{
 			Code:      ToHexString(block.Blockdata.Program.Code),
 			Parameter: ToHexString(block.Blockdata.Program.Parameter),
@@ -305,39 +316,38 @@ func getNodeState(req *http.Request, cmd map[string]interface{}) map[string]inte
 		TxnCnt:   node.GetTxnCnt(),
 		RxTxnCnt: node.GetRxTxnCnt(),
 	}
-	return responsePacking(n, id)
+	return DnaRpc(n)
 }
 
-func startConsensus(cmd map[string]interface{}) map[string]interface{} {
-	var response map[string]interface{}
-	id := cmd["id"]
-	err := dBFT.Start()
-	if err != nil {
-		response = responsePacking("Failed to start", id)
-	} else {
-		response = responsePacking("Consensus Started", id)
+func startConsensus(params []interface{}) map[string]interface{} {
+	if err := dBFT.Start(); err != nil {
+		return DnaRpcFailed
 	}
-	return response
+	return DnaRpcSuccess
 }
 
-func stopConsensus(cmd map[string]interface{}) map[string]interface{} {
-	var response map[string]interface{}
-	id := cmd["id"]
-	err := dBFT.Halt()
-	if err != nil {
-		response = responsePacking("Failed to stop", id)
-	} else {
-		response = responsePacking("Consensus Stopped", id)
+func stopConsensus(params []interface{}) map[string]interface{} {
+	if err := dBFT.Halt(); err != nil {
+		return DnaRpcFailed
 	}
-	return response
+	return DnaRpcSuccess
 }
 
-func sendSampleTransaction(cmd map[string]interface{}) map[string]interface{} {
-	id := cmd["id"]
-	txType := cmd["params"].([]interface{})[0].(string)
+func sendSampleTransaction(params []interface{}) map[string]interface{} {
+	if len(params) < 1 {
+		return DnaRpcNil
+	}
+	var txType string
+	switch params[0].(type) {
+	case string:
+		txType = params[0].(string)
+	default:
+		return DnaRpcInvalidParameter
+	}
+
 	issuer, err := client.NewAccount()
 	if err != nil {
-		return responsePacking("Failed to create account", id)
+		return DnaRpc("Failed to create account")
 	}
 	admin := issuer
 
@@ -346,18 +356,20 @@ func sendSampleTransaction(cmd map[string]interface{}) map[string]interface{} {
 	rand.Read(rbuf)
 	switch string(txType) {
 	case "perf":
-		txNum := cmd["params"].([]interface{})[1].(float64)
-		nosign := cmd["params"].([]interface{})[2].(bool)
-		num := int(txNum)
+		num := 1
+		if len(params) == 2 {
+			switch params[1].(type) {
+			case float64:
+				num = int(params[1].(float64))
+			}
+		}
 		for i := 0; i < num; i++ {
 			regTx := NewRegTx(ToHexString(rbuf), i, admin, issuer)
 			regHash = regTx.Hash()
-			if !nosign {
-				SignTx(admin, regTx)
-			}
+			SignTx(admin, regTx)
 			SendTx(regTx)
 		}
-		return responsePacking(fmt.Sprintf("%d transactions was sended", num), id)
+		return DnaRpc(fmt.Sprintf("%d transactions was sended", num))
 	case "full":
 		regTx := NewRegTx(ToHexString(rbuf), 0, admin, issuer)
 		regHash = regTx.Hash()
@@ -385,19 +397,24 @@ func sendSampleTransaction(cmd map[string]interface{}) map[string]interface{} {
 		SignTx(admin, NewRecordTx)
 		SendTx(NewRecordTx)
 
-		return responsePacking(fmt.Sprintf("regist: %x, issue: %x, transfer: %x, record: %x", regHash, issueHash, transferHash, recordHash), id)
+		return DnaRpc(fmt.Sprintf("regist: %x, issue: %x, transfer: %x, record: %x", regHash, issueHash, transferHash, recordHash))
 	default:
-		return responsePacking("Invalid transacion type", id)
+		return DnaRpc("Invalid transacion type")
 	}
 }
 
-func setDebugInfo(cmd map[string]interface{}) map[string]interface{} {
-	id := cmd["id"]
-	param := cmd["params"].([]interface{})[0].(float64)
-	level := int(param)
-	err := log.Log.SetDebugLevel(level)
-	if err != nil {
-		return responsePacking("Invaild Debug Level", id)
+func setDebugInfo(params []interface{}) map[string]interface{} {
+	if len(params) < 1 {
+		return DnaRpcInvalidParameter
 	}
-	return responsePacking("debug level is set successfully", id)
+	switch params[0].(type) {
+	case float64:
+		level := params[0].(float64)
+		if err := log.Log.SetDebugLevel(int(level)); err != nil {
+			return DnaRpcInvalidParameter
+		}
+	default:
+		return DnaRpcInvalidParameter
+	}
+	return DnaRpcSuccess
 }

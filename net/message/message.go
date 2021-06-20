@@ -146,11 +146,13 @@ func AllocMsg(t string, length int) Messager {
 		log.Warn("Not supported message type - notfound")
 		return nil
 	case "ping":
-		log.Warn("Not supported message type - ping")
-		return nil
+		var msg ping
+		copy(msg.msgHdr.CMD[0:len(t)], t)
+		return &msg
 	case "pcntm":
-		log.Warn("Not supported message type - pcntm")
-		return nil
+		var msg pcntm
+		copy(msg.msgHdr.CMD[0:len(t)], t)
+		return &msg
 	case "reject":
 		log.Warn("Not supported message type - reject")
 		return nil

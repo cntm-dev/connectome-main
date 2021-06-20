@@ -63,75 +63,6 @@ func NewDbftService(client cl.Client, logDictionary string, localNet net.Neter) 
 	return ds
 }
 
-func (ds *DbftService) AddTransaction(TX *tx.Transaction, needVerify bool) error {
-	log.Debug()
-
-	//check whether the new TX already exist in ledger
-	if ledger.DefaultLedger.Blockchain.CcntmainsTransaction(TX.Hash()) {
-		log.Warn(fmt.Sprintf("[AddTransaction] TX already Exist: %v", TX.Hash()))
-		ds.RequestChangeView()
-		return errors.New("TX already Exist.")
-	}
-
-	//verify the TX
-	if needVerify {
-		if err := va.VerifyTransaction(TX); err != nil {
-			log.Warn(fmt.Sprintf("[AddTransaction] TX Verfiy failed: %v", TX.Hash()))
-			ds.RequestChangeView()
-			return errors.New("TX Verfiy failed.")
-		}
-
-		if err := va.VerifyTransactionWithTxPool(TX, ds.ccntmext.GetTransactionList()); err != nil {
-			log.Warn(fmt.Sprintf("[AddTransaction] TX Verfiy with Txpool failed: %v", TX.Hash()))
-			ds.RequestChangeView()
-			return errors.New("TX Verfiy with txpool failed.")
-		}
-
-		if err := va.VerifyTransactionWithLedger(TX, ledger.DefaultLedger); err != nil {
-			log.Warn(fmt.Sprintf("[AddTransaction] TX Verfiy with Ledger failed: %v", TX.Hash()))
-			ds.RequestChangeView()
-			return errors.New("TX Verfiy with ledger failed.")
-		}
-	}
-
-	//check the TX policy
-	//checkPolicy :=  ds.CheckPolicy(TX)
-
-	//set TX to current ccntmext
-	ds.ccntmext.Transactions[TX.Hash()] = TX
-
-	//if enough TXs already added to ccntmext, build block and sign/relay
-	if len(ds.ccntmext.TransactionHashes) == len(ds.ccntmext.Transactions) {
-
-		minerAddress, err := ledger.GetMinerAddress(ds.ccntmext.Miners)
-		if err != nil {
-			return NewDetailErr(err, ErrNoCode, "[DbftService] ,GetMinerAddress failed")
-		}
-
-		if minerAddress == ds.ccntmext.NextMiner {
-			log.Info("send prepare response")
-			ds.ccntmext.State |= SignatureSent
-			miner, err := ds.Client.GetAccount(ds.ccntmext.Miners[ds.ccntmext.MinerIndex])
-			if err != nil {
-				return NewDetailErr(err, ErrNoCode, "[DbftService] ,GetAccount failed.")
-			}
-			//sig.SignBySigner(ds.ccntmext.MakeHeader(), miner)
-			ds.ccntmext.Signatures[ds.ccntmext.MinerIndex], err = sig.SignBySigner(ds.ccntmext.MakeHeader(), miner)
-			if err != nil {
-				log.Error("[DbftService], SignBySigner failed.")
-				return NewDetailErr(err, ErrNoCode, "[DbftService], SignBySigner failed.")
-			}
-			payload := ds.ccntmext.MakePrepareResponse(ds.ccntmext.Signatures[ds.ccntmext.MinerIndex])
-			ds.SignAndRelay(payload)
-		} else {
-			ds.RequestChangeView()
-			return errors.New("No valid Next Miner.")
-
-		}
-	}
-	return nil
-}
-
 func (ds *DbftService) BlockPersistCompleted(v interface{}) {
 	log.Debug()
 	if block, ok := v.(*ledger.Block); ok {
@@ -187,11 +118,11 @@ func (ds *DbftService) CheckPolicy(transaction *tx.Transaction) error {
 func (ds *DbftService) CheckSignatures() error {
 	log.Debug()
 
-	//check have enought signatures and all required TXs already in ccntmext
-	if ds.ccntmext.GetSignaturesCount() >= ds.ccntmext.M() && ds.ccntmext.CheckTxHashesExist() {
+	//check if get enough signatures
+	if ds.ccntmext.GetSignaturesCount() >= ds.ccntmext.M() {
 
 		//get current index's hash
-		ep, err := ds.ccntmext.Miners[ds.ccntmext.MinerIndex].EncodePoint(true)
+		ep, err := ds.ccntmext.BookKeepers[ds.ccntmext.BookKeeperIndex].EncodePoint(true)
 		if err != nil {
 			return NewDetailErr(err, ErrNoCode, "[DbftService] ,EncodePoint failed")
 		}
@@ -200,20 +131,19 @@ func (ds *DbftService) CheckSignatures() error {
 			return NewDetailErr(err, ErrNoCode, "[DbftService] ,ToCodeHash failed")
 		}
 
-		//create multi-sig ccntmract with all miners
-		ccntmract, err := ct.CreateMultiSigCcntmract(codehash, ds.ccntmext.M(), ds.ccntmext.Miners)
+		//create multi-sig ccntmract with all bookKeepers
+		ccntmract, err := ct.CreateMultiSigCcntmract(codehash, ds.ccntmext.M(), ds.ccntmext.BookKeepers)
 		if err != nil {
 			return err
 		}
 
 		//build block
 		block := ds.ccntmext.MakeHeader()
-
-		//sign the block with all miners and add signed ccntmract to ccntmext
+		//sign the block with all bookKeepers and add signed ccntmract to ccntmext
 		cxt := ct.NewCcntmractCcntmext(block)
-		for i, j := 0, 0; i < len(ds.ccntmext.Miners) && j < ds.ccntmext.M(); i++ {
+		for i, j := 0, 0; i < len(ds.ccntmext.BookKeepers) && j < ds.ccntmext.M(); i++ {
 			if ds.ccntmext.Signatures[i] != nil {
-				err := cxt.AddCcntmract(ccntmract, ds.ccntmext.Miners[i], ds.ccntmext.Signatures[i])
+				err := cxt.AddCcntmract(ccntmract, ds.ccntmext.BookKeepers[i], ds.ccntmext.Signatures[i])
 				if err != nil {
 					log.Error("[CheckSignatures] Multi-sign add ccntmract error:", err.Error())
 					return NewDetailErr(err, ErrNoCode, "[DbftService], CheckSignatures AddCcntmract failed.")
@@ -221,10 +151,10 @@ func (ds *DbftService) CheckSignatures() error {
 				j++
 			}
 		}
+		//fill transactions
+		block.Transactions = ds.ccntmext.Transactions
 		//set signed program to the block
 		cxt.Data.SetPrograms(cxt.GetPrograms())
-
-		block.Transactions = ds.ccntmext.GetTXByHashes()
 
 		hash := block.Hash()
 		if !ledger.DefaultLedger.BlockInLedger(hash) {
@@ -270,13 +200,13 @@ func (ds *DbftService) CreateBookkeepingTransaction(nonce uint64) *tx.Transactio
 
 func (ds *DbftService) ChangeViewReceived(payload *msg.ConsensusPayload, message *ChangeView) {
 	log.Debug()
-	log.Info(fmt.Sprintf("Change View Received: height=%d View=%d index=%d nv=%d", payload.Height, message.ViewNumber(), payload.MinerIndex, message.NewViewNumber))
+	log.Info(fmt.Sprintf("Change View Received: height=%d View=%d index=%d nv=%d", payload.Height, message.ViewNumber(), payload.BookKeeperIndex, message.NewViewNumber))
 
-	if message.NewViewNumber <= ds.ccntmext.ExpectedView[payload.MinerIndex] {
+	if message.NewViewNumber <= ds.ccntmext.ExpectedView[payload.BookKeeperIndex] {
 		return
 	}
 
-	ds.ccntmext.ExpectedView[payload.MinerIndex] = message.NewViewNumber
+	ds.ccntmext.ExpectedView[payload.BookKeeperIndex] = message.NewViewNumber
 
 	ds.CheckExpectedView(message.NewViewNumber)
 }
@@ -309,12 +239,12 @@ func (ds *DbftService) InitializeConsensus(viewNum byte) error {
 		ds.ccntmext.ChangeView(viewNum)
 	}
 
-	if ds.ccntmext.MinerIndex < 0 {
-		log.Error("Miner Index incorrect ", ds.ccntmext.MinerIndex)
-		return NewDetailErr(errors.New("Miner Index incorrect"), ErrNoCode, "")
+	if ds.ccntmext.BookKeeperIndex < 0 {
+		log.Error("BookKeeper Index incorrect ", ds.ccntmext.BookKeeperIndex)
+		return NewDetailErr(errors.New("BookKeeper Index incorrect"), ErrNoCode, "")
 	}
 
-	if ds.ccntmext.MinerIndex == int(ds.ccntmext.PrimaryIndex) {
+	if ds.ccntmext.BookKeeperIndex == int(ds.ccntmext.PrimaryIndex) {
 
 		//primary peer
 		log.Debug()
@@ -352,11 +282,6 @@ func (ds *DbftService) LocalNodeNewInventory(v interface{}) {
 			if ret == true {
 				ds.NewConsensusPayload(payload)
 			}
-		} else if inventory.Type() == TRANSACTION {
-			transaction, isTransaction := inventory.(*tx.Transaction)
-			if isTransaction {
-				ds.NewTransactionPayload(transaction)
-			}
 		}
 	}
 }
@@ -369,7 +294,7 @@ func (ds *DbftService) NewConsensusPayload(payload *msg.ConsensusPayload) {
 	defer ds.ccntmext.ccntmextMu.Unlock()
 
 	//if payload from current peer, ignore it
-	if int(payload.MinerIndex) == ds.ccntmext.MinerIndex {
+	if int(payload.BookKeeperIndex) == ds.ccntmext.BookKeeperIndex {
 		return
 	}
 
@@ -378,7 +303,7 @@ func (ds *DbftService) NewConsensusPayload(payload *msg.ConsensusPayload) {
 		return
 	}
 
-	if int(payload.MinerIndex) >= len(ds.ccntmext.Miners) {
+	if int(payload.BookKeeperIndex) >= len(ds.ccntmext.BookKeepers) {
 		return
 	}
 
@@ -411,42 +336,50 @@ func (ds *DbftService) NewConsensusPayload(payload *msg.ConsensusPayload) {
 	}
 }
 
-func (ds *DbftService) NewTransactionPayload(transaction *tx.Transaction) error {
-	log.Debug()
-	ds.ccntmext.ccntmextMu.Lock()
-	defer ds.ccntmext.ccntmextMu.Unlock()
-
-	if !ds.ccntmext.State.HasFlag(Backup) || !ds.ccntmext.State.HasFlag(RequestReceived) || ds.ccntmext.State.HasFlag(SignatureSent) {
-		return NewDetailErr(errors.New("Consensus State is incorrect."), ErrNoCode, "")
+func (ds *DbftService) GetUnverifiedTxs(txs []*tx.Transaction) []*tx.Transaction {
+	if len(ds.ccntmext.Transactions) == 0 {
+		return nil
 	}
-
-	if _, hasTx := ds.ccntmext.Transactions[transaction.Hash()]; hasTx {
-		return NewDetailErr(errors.New("The transaction already exist."), ErrNoCode, "")
+	txpool := ds.localNet.GetTxnPool(false)
+	ret := []*tx.Transaction{}
+	for _, t := range txs {
+		if _, ok := txpool[t.Hash()]; !ok {
+			ret = append(ret, t)
+		}
 	}
+	return ret
+}
 
-	if !ds.ccntmext.HasTxHash(transaction.Hash()) {
-		return NewDetailErr(errors.New("The transaction hash is not exist."), ErrNoCode, "")
+func VerifyTxs(txs []*tx.Transaction) error {
+	for _, t := range txs {
+		//TODO verify tx with transaction pool
+		if err := va.VerifyTransaction(t); err != nil {
+			return errors.New("Transaction verification failed")
+		}
+		if err := va.VerifyTransactionWithLedger(t, ledger.DefaultLedger); err != nil {
+			return errors.New("Transaction verification with ledger failed")
+		}
 	}
-	return ds.AddTransaction(transaction, true)
+	return nil
 }
 
 func (ds *DbftService) PrepareRequestReceived(payload *msg.ConsensusPayload, message *PrepareRequest) {
 	log.Debug()
-	log.Info(fmt.Sprintf("Prepare Request Received: height=%d View=%d index=%d tx=%d", payload.Height, message.ViewNumber(), payload.MinerIndex, len(message.TransactionHashes)))
+	log.Info(fmt.Sprintf("Prepare Request Received: height=%d View=%d index=%d tx=%d", payload.Height, message.ViewNumber(), payload.BookKeeperIndex, len(message.Transactions)))
 
 	if !ds.ccntmext.State.HasFlag(Backup) || ds.ccntmext.State.HasFlag(RequestReceived) {
 		return
 	}
 
-	if uint32(payload.MinerIndex) != ds.ccntmext.PrimaryIndex {
+	if uint32(payload.BookKeeperIndex) != ds.ccntmext.PrimaryIndex {
 		return
 	}
+
 	header, err := ledger.DefaultLedger.Blockchain.GetHeader(ds.ccntmext.PrevHash)
 	if err != nil {
 		log.Info("PrepareRequestReceived GetHeader failed with ds.ccntmext.PrevHash", ds.ccntmext.PrevHash)
 	}
 
-	log.Debug()
 	//TODO Add Error Catch
 	prevBlockTimestamp := header.Blockdata.Timestamp
 	if payload.Timestamp <= prevBlockTimestamp || payload.Timestamp > uint32(time.Now().Add(time.Minute*10).Unix()) {
@@ -513,11 +446,11 @@ func (ds *DbftService) PrepareResponseReceived(payload *msg.ConsensusPayload, me
 	if header == nil {
 		return
 	}
-	if _, err := va.VerifySignature(header, ds.ccntmext.Miners[payload.MinerIndex], message.Signature); err != nil {
+	if _, err := va.VerifySignature(header, ds.ccntmext.BookKeepers[payload.BookKeeperIndex], message.Signature); err != nil {
 		return
 	}
 
-	ds.ccntmext.Signatures[payload.MinerIndex] = message.Signature
+	ds.ccntmext.Signatures[payload.BookKeeperIndex] = message.Signature
 	ds.CheckSignatures()
 	log.Info("Prepare Response finished")
 }
@@ -530,14 +463,15 @@ func (ds *DbftService) RefreshPolicy() {
 func (ds *DbftService) RequestChangeView() {
 	log.Debug()
 	// FIXME if there is no save block notifcation, when the timeout call this function it will crash
-	ds.ccntmext.ExpectedView[ds.ccntmext.MinerIndex] = ds.ccntmext.ExpectedView[ds.ccntmext.MinerIndex] + 1
-	log.Info(fmt.Sprintf("Request change view: height=%d View=%d nv=%d state=%s", ds.ccntmext.Height, ds.ccntmext.ViewNumber, ds.ccntmext.ExpectedView[ds.ccntmext.MinerIndex], ds.ccntmext.GetStateDetail()))
+	ds.ccntmext.ExpectedView[ds.ccntmext.BookKeeperIndex] = ds.ccntmext.ExpectedView[ds.ccntmext.BookKeeperIndex] + 1
+	log.Info(fmt.Sprintf("Request change view: height=%d View=%d nv=%d state=%s", ds.ccntmext.Height,
+		ds.ccntmext.ViewNumber, ds.ccntmext.ExpectedView[ds.ccntmext.BookKeeperIndex], ds.ccntmext.GetStateDetail()))
 
 	ds.timer.Stop()
-	ds.timer.Reset(GenBlockTime << (ds.ccntmext.ExpectedView[ds.ccntmext.MinerIndex] + 1))
+	ds.timer.Reset(GenBlockTime << (ds.ccntmext.ExpectedView[ds.ccntmext.BookKeeperIndex] + 1))
 
 	ds.SignAndRelay(ds.ccntmext.MakeChangeView())
-	ds.CheckExpectedView(ds.ccntmext.ExpectedView[ds.ccntmext.MinerIndex])
+	ds.CheckExpectedView(ds.ccntmext.ExpectedView[ds.ccntmext.BookKeeperIndex])
 }
 
 func (ds *DbftService) SignAndRelay(payload *msg.ConsensusPayload) {

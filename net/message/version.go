@@ -53,7 +53,7 @@ func NewVersion(n Noder) ([]byte, error) {
 		msg.P.Relay = 0
 	}
 
-	msg.pk = n.GetMinerAddr()
+	msg.pk = n.GetBookKeeperAddr()
 	log.Debug("new version msg.pk is ", msg.pk)
 	// TODO the function to wrap below process
 	// msg.HDR.init("version", n.GetID(), uint32(len(p.Bytes())))

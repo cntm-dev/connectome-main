@@ -38,6 +38,8 @@ const (
 	MAXCHANBUF       = 512
 	PROTOCOLVERSION  = 0
 	PERIODUPDATETIME = 3 // Time to update and sync information with other nodes
+	HEARTBEAT        = 2
+	KEEPALIVETIMEOUT = 3
 )
 
 // The node state
