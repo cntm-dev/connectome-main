@@ -44,7 +44,8 @@ func (cxt *CcntmractCcntmext) Add(ccntmract *Ccntmract, index int, parameter []b
 	log.Debug()
 	i := cxt.GetIndex(ccntmract.ProgramHash)
 	if i < 0 {
-		return errors.New("Program Hash is not exist.")
+		log.Warn("Program Hash is not exist, using 0 by default")
+		i = 0
 	}
 	if cxt.Codes[i] == nil {
 		cxt.Codes[i] = ccntmract.Code

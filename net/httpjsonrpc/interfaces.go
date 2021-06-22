@@ -10,7 +10,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/rand"
-	"time"
+	"strconv"
 )
 
 const (
@@ -351,7 +351,6 @@ func sendSampleTransaction(params []interface{}) map[string]interface{} {
 	}
 	admin := issuer
 
-	var regHash, issueHash, transferHash, recordHash Uint256
 	rbuf := make([]byte, RANDBYTELEN)
 	rand.Read(rbuf)
 	switch string(txType) {
@@ -365,39 +364,10 @@ func sendSampleTransaction(params []interface{}) map[string]interface{} {
 		}
 		for i := 0; i < num; i++ {
 			regTx := NewRegTx(ToHexString(rbuf), i, admin, issuer)
-			regHash = regTx.Hash()
 			SignTx(admin, regTx)
 			SendTx(regTx)
 		}
-		return DnaRpc(fmt.Sprintf("%d transactions was sended", num))
-	case "full":
-		regTx := NewRegTx(ToHexString(rbuf), 0, admin, issuer)
-		regHash = regTx.Hash()
-		SignTx(admin, regTx)
-		SendTx(regTx)
-
-		// wait for the block
-		time.Sleep(5 * time.Second)
-		issueTx := NewIssueTx(admin, regHash)
-		issueHash = issueTx.Hash()
-		SignTx(admin, issueTx)
-		SendTx(issueTx)
-
-		// wait for the block
-		time.Sleep(5 * time.Second)
-		transferTx := NewTransferTx(regHash, issueHash, issuer)
-		transferHash = transferTx.Hash()
-		SignTx(admin, transferTx)
-		SendTx(transferTx)
-
-		// wait for the block
-		time.Sleep(5 * time.Second)
-		NewRecordTx := NewRecordTx(ToHexString(rbuf))
-		recordHash = NewRecordTx.Hash()
-		SignTx(admin, NewRecordTx)
-		SendTx(NewRecordTx)
-
-		return DnaRpc(fmt.Sprintf("regist: %x, issue: %x, transfer: %x, record: %x", regHash, issueHash, transferHash, recordHash))
+		return DnaRpc(fmt.Sprintf("%d transaction(s) was sent", num))
 	default:
 		return DnaRpc("Invalid transacion type")
 	}
