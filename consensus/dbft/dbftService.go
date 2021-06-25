@@ -3,8 +3,8 @@ package dbft
 import (
 	cl "DNA/client"
 	. "DNA/common"
-	"DNA/common/log"
 	"DNA/common/config"
+	"DNA/common/log"
 	con "DNA/consensus"
 	ct "DNA/core/ccntmract"
 	"DNA/core/ccntmract/program"
@@ -14,6 +14,7 @@ import (
 	tx "DNA/core/transaction"
 	"DNA/core/transaction/payload"
 	va "DNA/core/validation"
+	"DNA/crypto"
 	. "DNA/errors"
 	"DNA/events"
 	"DNA/net"
@@ -27,7 +28,7 @@ const (
 	INVDELAYTIME = 20 * time.Millisecond
 )
 
-var GenBlockTime = (2 * time.Second)
+var GenBlockTime = (6 * time.Second)
 
 type DbftService struct {
 	ccntmext           ConsensusCcntmext
@@ -134,6 +135,7 @@ func (ds *DbftService) CheckSignatures() error {
 		//create multi-sig ccntmract with all bookKeepers
 		ccntmract, err := ct.CreateMultiSigCcntmract(codehash, ds.ccntmext.M(), ds.ccntmext.BookKeepers)
 		if err != nil {
+			log.Error("CheckSignatures CreateMultiSigCcntmract error: ", err)
 			return err
 		}
 
@@ -160,8 +162,8 @@ func (ds *DbftService) CheckSignatures() error {
 		if !ledger.DefaultLedger.BlockInLedger(hash) {
 			// save block
 			if err := ledger.DefaultLedger.Blockchain.AddBlock(block); err != nil {
-				log.Warn("Block saving error: ", hash)
-				return err
+				log.Error(fmt.Sprintf("[CheckSignatures] Xmit block Error: %s, blockHash: %d", err.Error(), block.Hash()))
+				return NewDetailErr(err, ErrNoCode, "[DbftService], CheckSignatures AddCcntmract failed.")
 			}
 
 			// wait peers for saving block
@@ -451,7 +453,11 @@ func (ds *DbftService) PrepareResponseReceived(payload *msg.ConsensusPayload, me
 	}
 
 	ds.ccntmext.Signatures[payload.BookKeeperIndex] = message.Signature
-	ds.CheckSignatures()
+	err := ds.CheckSignatures()
+	if err != nil {
+		log.Error("CheckSignatures failed")
+		return
+	}
 	log.Info("Prepare Response finished")
 }
 

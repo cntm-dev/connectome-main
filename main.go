@@ -2,11 +2,11 @@ package main
 
 import (
 	. "DNA/client"
-	"DNA/common/log"
 	"DNA/common/config"
+	"DNA/common/log"
 	"DNA/consensus/dbft"
 	"DNA/core/ledger"
-	"DNA/core/store"
+	"DNA/core/store/ChainStore"
 	"DNA/core/transaction"
 	"DNA/crypto"
 	"DNA/net"
@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -39,7 +40,7 @@ func main() {
 	fmt.Println("//*** 0. Client open                                                     ***")
 	fmt.Println("//**************************************************************************")
 	ledger.DefaultLedger = new(ledger.Ledger)
-	ledger.DefaultLedger.Store = store.NewLedgerStore()
+	ledger.DefaultLedger.Store = ChainStore.NewLedgerStore()
 	ledger.DefaultLedger.Store.InitLedgerStore(ledger.DefaultLedger)
 	transaction.TxStore = ledger.DefaultLedger.Store
 	crypto.SetAlg(crypto.P256R1)
@@ -47,11 +48,8 @@ func main() {
 	fmt.Println("//**************************************************************************")
 	fmt.Println("//*** 1. Generate [Account]                                              ***")
 	fmt.Println("//**************************************************************************")
-	var bookKeeperCount uint32 = DefaultBookKeeperCount
-	if config.Parameters.BookKeeperCount != 0 {
-		bookKeeperCount = config.Parameters.BookKeeperCount
-	}
-	localclient := OpenClientAndGetAccount(bookKeeperCount)
+
+	localclient := OpenClientAndGetAccount()
 	if localclient == nil {
 		fmt.Println("Can't get local client.")
 		os.Exit(1)
