@@ -2,8 +2,8 @@ package node
 
 import (
 	. "DNA/common"
-	"DNA/common/log"
 	. "DNA/common/config"
+	"DNA/common/log"
 	"DNA/core/ledger"
 	"DNA/core/transaction"
 	"DNA/crypto"

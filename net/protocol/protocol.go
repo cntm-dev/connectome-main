@@ -130,7 +130,7 @@ func GetRelayFlag() int {
 func IsNodeTypeVerify(nodeType int) bool {
 	if nodeType == VERIFY {
 		return true
-	}  else {
+	} else {
 		return false
 	}
 }
