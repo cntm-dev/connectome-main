@@ -11,6 +11,7 @@ import (
 	"DNA/crypto"
 	"DNA/net"
 	"DNA/net/httpjsonrpc"
+	"DNA/net/protocol"
 	"fmt"
 	"os"
 	"runtime"
@@ -49,13 +50,13 @@ func main() {
 	fmt.Println("//*** 1. Generate [Account]                                              ***")
 	fmt.Println("//**************************************************************************")
 
-	localclient := OpenClientAndGetAccount()
-	if localclient == nil {
+	localClient, nodeType := OpenClientAndGetAccount()
+	if localClient == nil {
 		fmt.Println("Can't get local client.")
 		os.Exit(1)
 	}
 
-	issuer, err := localclient.GetDefaultAccount()
+	issuer, err := localClient.GetDefaultAccount()
 	if err != nil {
 		fmt.Println(err)
 	}

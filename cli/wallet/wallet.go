@@ -37,11 +37,15 @@ func walletAction(c *cli.Ccntmext) (err error) {
 					os.Exit(1)
 				}
 				account, _ := wallet.GetDefaultAccount()
-				signatureRedeemScript, _ := ccntmract.CreateSignatureRedeemScript(account.PubKey())
+				pubKey := account.PubKey()
+				signatureRedeemScript, _ := ccntmract.CreateSignatureRedeemScript(pubKey)
 				programHash, _ := ToCodeHash(signatureRedeemScript)
 				asset := c.String("asset")
 				if asset == "" {
-					fmt.Println("ProgramHash: ", ToHexString(programHash.ToArray()))
+					encodedPubKey, _ := pubKey.EncodePoint(true)
+					fmt.Println("public key:   ", ToHexString(encodedPubKey))
+					fmt.Println("program hash: ", ToHexString(programHash.ToArray()))
+					fmt.Println("address:      ", programHash.ToAddress())
 				} else {
 					var buffer bytes.Buffer
 					_, err := programHash.Serialize(&buffer)

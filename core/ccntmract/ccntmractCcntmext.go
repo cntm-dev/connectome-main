@@ -71,6 +71,7 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.
 		log.Debug("Multi Sig: GetIndex:", index)
 
 		if index < 0 {
+			log.Error("The program hash is not exist.")
 			return errors.New("The program hash is not exist.")
 		}
 

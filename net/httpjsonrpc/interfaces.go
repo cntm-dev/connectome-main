@@ -365,7 +365,7 @@ func sendSampleTransaction(params []interface{}) map[string]interface{} {
 		for i := 0; i < num; i++ {
 			regTx := NewRegTx(ToHexString(rbuf), i, admin, issuer)
 			SignTx(admin, regTx)
-			SendTx(regTx)
+			VerifyAndSendTx(regTx)
 		}
 		return DnaRpc(fmt.Sprintf("%d transaction(s) was sent", num))
 	default:
