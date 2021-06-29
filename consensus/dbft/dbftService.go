@@ -25,10 +25,11 @@ import (
 )
 
 const (
-	INVDELAYTIME = 20 * time.Millisecond
+	INVDELAYTIME    = 20 * time.Millisecond
+	MINGENBLOCKTIME = 6
 )
 
-var GenBlockTime = (6 * time.Second)
+var GenBlockTime = (MINGENBLOCKTIME * time.Second)
 
 type DbftService struct {
 	ccntmext           ConsensusCcntmext

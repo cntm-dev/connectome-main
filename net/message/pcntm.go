@@ -51,7 +51,6 @@ func (msg pcntm) Verify(buf []byte) error {
 
 func (msg pcntm) Handle(node Noder) error {
 	node.SetHeight(msg.height)
-	node.SetLastCcntmact()
 	return nil
 }
 
