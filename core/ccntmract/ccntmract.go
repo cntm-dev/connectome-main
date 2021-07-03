@@ -1,17 +1,18 @@
 package ccntmract
 
 import (
+	"bytes"
+	"errors"
+	"io"
+
 	. "DNA/common"
 	"DNA/common/serialization"
 	. "DNA/errors"
 	"DNA/vm"
-	"bytes"
-	"errors"
-	"io"
 )
 
 //Ccntmract address is the hash of ccntmract program .
-//which be used to ccntmrol asset or indicate the smart ccntmract address �?
+//which be used to ccntmrol asset or indicate the smart ccntmract address
 
 //Ccntmract include the program codes with parameters which can be executed on specific evnrioment
 type Ccntmract struct {

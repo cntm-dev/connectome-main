@@ -244,7 +244,6 @@ func NonTLSDial(nodeAddr string) (net.Conn, error) {
 	log.Debug()
 	conn, err := net.Dial("tcp", nodeAddr)
 	if err != nil {
-		log.Error("Error dialing\n", err.Error())
 		return nil, err
 	}
 	return conn, nil
@@ -260,7 +259,6 @@ func TLSDial(nodeAddr string) (net.Conn, error) {
 	cacert, err := ioutil.ReadFile(CAPath)
 	cert, err := tls.LoadX509KeyPair(CertPath, KeyPath)
 	if err != nil {
-		log.Error("ReadFile err: ", err)
 		return nil, err
 	}
 
@@ -276,7 +274,6 @@ func TLSDial(nodeAddr string) (net.Conn, error) {
 
 	conn, err := tls.Dial("tcp", nodeAddr, conf)
 	if err != nil {
-		log.Error("Dial failed: ", err)
 		return nil, err
 	}
 	return conn, nil
