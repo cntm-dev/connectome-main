@@ -1,7 +1,7 @@
 package httpjsonrpc
 
 import (
-	"DNA/client"
+	"DNA/account"
 	. "DNA/common"
 	"DNA/common/config"
 	"DNA/common/log"
@@ -30,8 +30,7 @@ func TransArryByteToHexString(ptx *tx.Transaction) *Transactions {
 	trans.Attributes = make([]TxAttributeInfo, len(ptx.Attributes))
 	for _, v := range ptx.Attributes {
 		trans.Attributes[n].Usage = v.Usage
-		trans.Attributes[n].Date = ToHexString(v.Date)
-		trans.Attributes[n].Size = v.Size
+		trans.Attributes[n].Data = ToHexString(v.Data)
 		n++
 	}
 
@@ -346,7 +345,7 @@ func sendSampleTransaction(params []interface{}) map[string]interface{} {
 		return DnaRpcInvalidParameter
 	}
 
-	issuer, err := client.NewAccount()
+	issuer, err := account.NewAccount()
 	if err != nil {
 		return DnaRpc("Failed to create account")
 	}

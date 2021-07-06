@@ -9,6 +9,7 @@ import (
 	"DNA/crypto"
 	. "DNA/net/message"
 	. "DNA/net/protocol"
+	"encoding/binary"
 	"bytes"
 	"errors"
 	"fmt"

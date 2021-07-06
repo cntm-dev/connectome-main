@@ -1,9 +1,10 @@
-package client
+package account
 
 import (
 	. "DNA/common"
 	"DNA/common/log"
-	"DNA/common/serialization"
+	"DNA/common/config"
+	"DNA/net/protocol"
 	"DNA/core/ccntmract"
 	ct "DNA/core/ccntmract"
 	"DNA/core/ledger"
@@ -16,25 +17,17 @@ import (
 	"fmt"
 	"math/rand"
 	"sync"
+	"strings"
 	"time"
+	"sort"
+	"encoding/hex"
 )
 
-type ClientVersion struct {
-	Major    uint32
-	Minor    uint32
-	Build    uint32
-	Revision uint32
-}
-
-func (v *ClientVersion) ToArray() []byte {
-	vbuf := bytes.NewBuffer(nil)
-	serialization.WriteUint32(vbuf, v.Major)
-	serialization.WriteUint32(vbuf, v.Minor)
-	serialization.WriteUint32(vbuf, v.Build)
-	serialization.WriteUint32(vbuf, v.Revision)
-
-	return vbuf.Bytes()
-}
+const (
+	DefaultBookKeeperCount = 4
+	WalletFileName	       = "wallet.dat"
+)
+var DefaultPin = "passwordtest"
 
 type Client interface {
 	Sign(ccntmext *ct.CcntmractCcntmext) bool
@@ -61,8 +54,7 @@ type ClientImpl struct {
 }
 
 //TODO: adjust ccntmract folder structure
-
-func CreateClient(path string, passwordKey []byte) *ClientImpl {
+func Create(path string, passwordKey []byte) *ClientImpl {
 	cl := NewClient(path, passwordKey, true)
 
 	_, err := cl.CreateAccount()
@@ -73,17 +65,22 @@ func CreateClient(path string, passwordKey []byte) *ClientImpl {
 	return cl
 }
 
-func OpenClient(path string, passwordKey []byte) *ClientImpl {
+func Open(path string, passwordKey []byte) *ClientImpl {
 	cl := NewClient(path, passwordKey, false)
-
-	if cl != nil {
-		cl.accounts = cl.LoadAccount()
-		cl.ccntmracts = cl.LoadCcntmracts()
-
-		return cl
+	if cl == nil {
+		log.Error("Alloc new client failure")
+		return nil
 	}
 
-	return nil
+	cl.accounts = cl.LoadAccount()
+	if cl.accounts == nil {
+		log.Error("Load accounts failure")
+	}
+	cl.ccntmracts = cl.LoadCcntmracts()
+	if cl.ccntmracts == nil {
+		log.Error("Load ccntmracts failure")
+	}
+	return cl
 }
 
 func NewClient(path string, passwordKey []byte, create bool) *ClientImpl {
@@ -120,12 +117,12 @@ func NewClient(path string, passwordKey []byte, create bool) *ClientImpl {
 		pwdhash := sha256.Sum256(passwordKey)
 		err := newClient.store.SaveStoredData("PasswordHash", pwdhash[:])
 		if err != nil {
-			fmt.Println(err)
+			log.Error(err)
 			return nil
 		}
 		err = newClient.store.SaveStoredData("IV", newClient.iv[:])
 		if err != nil {
-			fmt.Println(err)
+			log.Error(err)
 			return nil
 		}
 
@@ -158,8 +155,6 @@ func NewClient(path string, passwordKey []byte, create bool) *ClientImpl {
 			log.Error("ERROR: password wrcntm!")
 			return nil
 		}
-
-		log.Info("[OpenClient] Password Verify.")
 
 		newClient.iv, err = newClient.store.LoadStoredData("IV")
 		if err != nil {
@@ -270,7 +265,7 @@ func (cl *ClientImpl) CreateAccount() (*Account, error) {
 	ct, err := ccntmract.CreateSignatureCcntmract(ac.PublicKey)
 	if err == nil {
 		cl.AddCcntmract(ct)
-		log.Info("[CreateCcntmract] Address: %s\n", ct.ProgramHash.ToAddress())
+		log.Info("[CreateCcntmract] Address: ", ct.ProgramHash.ToAddress())
 	}
 
 	log.Info("Create account Success")
@@ -390,7 +385,6 @@ func (cl *ClientImpl) DecryptPrivateKey(prikey []byte) ([]byte, error) {
 }
 
 func (cl *ClientImpl) SaveAccount(ac *Account) error {
-
 	decryptedPrivateKey := make([]byte, 96)
 	temp, err := ac.PublicKey.EncodePoint(false)
 	if err != nil {
@@ -401,7 +395,7 @@ func (cl *ClientImpl) SaveAccount(ac *Account) error {
 	}
 
 	for i := len(ac.PrivateKey) - 1; i >= 0; i-- {
-		decryptedPrivateKey[64+i] = ac.PrivateKey[i]
+		decryptedPrivateKey[96+i-len(ac.PrivateKey)] = ac.PrivateKey[i]
 	}
 
 	encryptedPrivateKey, err := cl.EncryptPrivateKey(decryptedPrivateKey)
@@ -420,7 +414,6 @@ func (cl *ClientImpl) SaveAccount(ac *Account) error {
 }
 
 func (cl *ClientImpl) LoadAccount() map[Uint160]*Account {
-
 	i := 0
 	accounts := map[Uint160]*Account{}
 	for true {
@@ -445,7 +438,6 @@ func (cl *ClientImpl) LoadAccount() map[Uint160]*Account {
 }
 
 func (cl *ClientImpl) LoadCcntmracts() map[Uint160]*ct.Ccntmract {
-
 	i := 0
 	ccntmracts := map[Uint160]*ct.Ccntmract{}
 
@@ -469,6 +461,7 @@ func (cl *ClientImpl) LoadCcntmracts() map[Uint160]*ct.Ccntmract {
 
 	return ccntmracts
 }
+
 func (cl *ClientImpl) AddCcntmract(ct *ccntmract.Ccntmract) error {
 	cl.mu.Lock()
 	defer cl.mu.Unlock()
@@ -481,4 +474,56 @@ func (cl *ClientImpl) AddCcntmract(ct *ccntmract.Ccntmract) error {
 
 	err := cl.store.SaveCcntmractData(ct)
 	return err
+}
+
+func clientIsDefaultBookKeeper(publicKey string) bool {
+	for _, bookKeeper := range config.Parameters.BookKeepers {
+		if strings.Compare(bookKeeper, publicKey) == 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func nodeType(typeName string) int {
+	if "service" == config.Parameters.NodeType {
+		return protocol.SERVICENODE
+	} else {
+		return protocol.VERIFYNODE
+	}
+}
+
+func GetClient() Client {
+	if (protocol.SERVICENODENAME != config.Parameters.NodeType) &&
+		(len(config.Parameters.BookKeepers) < DefaultBookKeeperCount) {
+		log.Error("At least ", DefaultBookKeeperCount, " BookKeepers should be set at config.json")
+		return nil
+	}
+
+	var sc Client
+	if FileExisted(WalletFileName) {
+		sc = Open(WalletFileName, []byte(DefaultPin))
+	} else {
+		sc = Create(WalletFileName, []byte(DefaultPin))
+	}
+
+	return  sc
+}
+
+func GetBookKeepers() []*crypto.PubKey {
+	var pubKeys = []*crypto.PubKey{}
+	sort.Strings(config.Parameters.BookKeepers)
+	for _, key := range config.Parameters.BookKeepers {
+		pubKey := []byte(key)
+		pubKey, err := hex.DecodeString(key)
+		// TODO Convert the key string to byte
+		k, err := crypto.DecodePoint(pubKey)
+		if err != nil {
+			log.Error("Incorrectly book keepers key")
+			return nil
+		}
+		pubKeys = append(pubKeys, k)
+	}
+
+	return pubKeys
 }
