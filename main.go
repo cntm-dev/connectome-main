@@ -1,8 +1,8 @@
 package main
 
 import (
-	"DNA/common/config"
 	"DNA/account"
+	"DNA/common/config"
 	"DNA/common/log"
 	"DNA/consensus/dbft"
 	"DNA/core/ledger"

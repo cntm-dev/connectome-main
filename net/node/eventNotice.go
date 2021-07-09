@@ -26,6 +26,8 @@ func (eq *eventQueue) GetEvent(eventName string) *events.Event {
 		return eq.Consensus
 	case "block":
 		return eq.Block
+	case "disconnect":
+		return eq.Disconnect
 	default:
 		fmt.Printf("Unknow event registe")
 		return nil

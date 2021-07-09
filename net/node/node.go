@@ -7,10 +7,11 @@ import (
 	"DNA/core/ledger"
 	"DNA/core/transaction"
 	"DNA/crypto"
+	"DNA/events"
 	. "DNA/net/message"
 	. "DNA/net/protocol"
-	"encoding/binary"
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -162,7 +163,7 @@ func (node *node) LocalNode() Noder {
 	return node.local
 }
 
-func (node node) GetHeight() uint64 {
+func (node *node) GetHeight() uint64 {
 	return node.height
 }
 
@@ -244,11 +245,11 @@ func (node node) Xmit(inv common.Inventory) error {
 	return nil
 }
 
-func (node node) GetAddr() string {
+func (node *node) GetAddr() string {
 	return node.addr
 }
 
-func (node node) GetAddr16() ([16]byte, error) {
+func (node *node) GetAddr16() ([16]byte, error) {
 	var result [16]byte
 	ip := net.ParseIP(node.addr).To16()
 	if ip == nil {

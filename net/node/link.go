@@ -1,8 +1,9 @@
 package node
 
 import (
-	"DNA/common/log"
 	. "DNA/common/config"
+	"DNA/common/log"
+	"DNA/events"
 	. "DNA/net/message"
 	. "DNA/net/protocol"
 	"crypto/tls"
@@ -68,7 +69,7 @@ func unpackNodeBuf(node *node, buf []byte) {
 	}
 }
 
-func (node *node) rx() error {
+func (node *node) rx() {
 	conn := node.getConn()
 	buf := make([]byte, MAXBUFLEN)
 	for {
@@ -103,7 +104,7 @@ func printIPAddr() {
 	}
 }
 
-func (link link) CloseConn() {
+func (link *link) CloseConn() {
 	link.conn.Close()
 }
 
