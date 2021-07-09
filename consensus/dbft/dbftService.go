@@ -14,7 +14,6 @@ import (
 	tx "DNA/core/transaction"
 	"DNA/core/transaction/payload"
 	va "DNA/core/validation"
-	"DNA/crypto"
 	. "DNA/errors"
 	"DNA/events"
 	"DNA/net"
