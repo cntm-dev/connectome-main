@@ -62,9 +62,21 @@ func (msg blkHeader) Verify(buf []byte) error {
 }
 
 func (msg headersReq) Serialization() ([]byte, error) {
-	var buf bytes.Buffer
+	hdrBuf, err := msg.hdr.Serialization()
+	if err != nil {
+		return nil, err
+	}
+	buf := bytes.NewBuffer(hdrBuf)
+	err = binary.Write(buf, binary.LittleEndian, msg.p.len)
+	if err != nil {
+		return nil, err
+	}
+	err = binary.Write(buf, binary.LittleEndian, msg.p.hashStart)
+	if err != nil {
+		return nil, err
+	}
 
-	err := binary.Write(&buf, binary.LittleEndian, msg)
+	err = binary.Write(buf, binary.LittleEndian, msg.p.hashEnd)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +86,22 @@ func (msg headersReq) Serialization() ([]byte, error) {
 
 func (msg *headersReq) Deserialization(p []byte) error {
 	buf := bytes.NewBuffer(p)
-	err := binary.Read(buf, binary.LittleEndian, &msg)
+	err := binary.Read(buf, binary.LittleEndian, &(msg.hdr))
+	if err != nil {
+		return err
+	}
+
+	err = binary.Read(buf, binary.LittleEndian, &(msg.p.len))
+	if err != nil {
+		return err
+	}
+
+	err = binary.Read(buf, binary.LittleEndian, &(msg.p.hashStart))
+	if err != nil {
+		return err
+	}
+
+	err = binary.Read(buf, binary.LittleEndian, &(msg.p.hashEnd))
 	return err
 }
 
@@ -84,7 +111,10 @@ func (msg blkHeader) Serialization() ([]byte, error) {
 		return nil, err
 	}
 	buf := bytes.NewBuffer(hdrBuf)
-	binary.Write(buf, binary.LittleEndian, msg.cnt)
+	err = binary.Write(buf, binary.LittleEndian, msg.cnt)
+	if err != nil {
+		return nil, err
+	}
 
 	for _, header := range msg.blkHdr {
 		header.Serialize(buf)
@@ -191,7 +221,7 @@ func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]le
 			}
 			stopHeight = bkstop.Blockdata.Height
 			count = curHeight - stopHeight
-			if curHeight > MAXBLKHDRCNT {
+			if count > MAXBLKHDRCNT {
 				count = MAXBLKHDRCNT
 			}
 		}
@@ -210,7 +240,7 @@ func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]le
 			count = startHeight - stopHeight
 			if count >= MAXBLKHDRCNT {
 				count = MAXBLKHDRCNT
-				stopHeight = startHeight + MAXBLKHDRCNT
+				stopHeight = startHeight - MAXBLKHDRCNT
 			}
 		} else {
 
