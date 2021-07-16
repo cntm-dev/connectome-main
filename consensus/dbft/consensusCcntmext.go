@@ -23,7 +23,6 @@ type ConsensusCcntmext struct {
 	ViewNumber      byte
 	BookKeepers     []*crypto.PubKey
 	NextBookKeepers []*crypto.PubKey
-	PreBookKeepers  []*crypto.PubKey
 	Owner           *crypto.PubKey
 	BookKeeperIndex int
 	PrimaryIndex    uint32

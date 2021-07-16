@@ -39,6 +39,7 @@ var (
 		fatalLog: Color(Red, "[FATAL]"),
 		traceLog: Color(Pink, "[TRACE]"),
 	}
+	Stdout = os.Stdout
 )
 
 const (
@@ -214,28 +215,36 @@ func FileOpen(path string) (*os.File, error) {
 
 	logfile, err := os.OpenFile(path+currenttime+"_LOG.log", os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
-		fmt.Printf("%s\n", err.Error())
-		//os.Exit(-1)
+		return nil, err
 	}
-
-	//defer logfile.Close()
-
 	return logfile, nil
 }
 
-func CreatePrintLog(path string) {
-	logFile, err := FileOpen(path)
-	if err != nil {
-		fmt.Printf("%s\n", err.Error)
-	}
-
-	var printlevel int = config.Parameters.PrintLevel
-	writers := []io.Writer{
-		logFile,
-		os.Stdout,
+func Init(a ...interface{}) {
+	writers := []io.Writer{}
+	var logFile *os.File
+	if len(a) == 0 {
+		writers = append(writers, ioutil.Discard)
+	} else {
+		for _, o := range a {
+			switch o.(type) {
+			case string:
+				logFile, err := FileOpen(o.(string))
+				if err != nil {
+					fmt.Println("error: open log file failed")
+					os.Exit(1)
+				}
+				writers = append(writers, logFile)
+			case *os.File:
+				writers = append(writers, o.(*os.File))
+			default:
+				fmt.Println("error: invalid log location")
+				os.Exit(1)
+			}
+		}
 	}
 	fileAndStdoutWrite := io.MultiWriter(writers...)
-
+	var printlevel int = config.Parameters.PrintLevel
 	Log = New(fileAndStdoutWrite, "", log.Lmicroseconds, printlevel, logFile)
 }
 
