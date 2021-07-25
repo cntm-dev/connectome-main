@@ -12,7 +12,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -52,8 +51,8 @@ const (
 )
 
 func GetGID() uint64 {
-	b := make([]byte, 64)
-	b = b[:runtime.Stack(b, false)]
+	var buf [64]byte
+	b := buf[:runtime.Stack(buf[:], false)]
 	b = bytes.TrimPrefix(b, []byte("goroutine "))
 	b = b[:bytes.IndexByte(b, ' ')]
 	n, _ := strconv.ParseUint(string(b), 10, 64)
@@ -83,7 +82,6 @@ func NameLevel(name string) int {
 }
 
 type Logger struct {
-	sync.Mutex
 	level   int
 	logger  *log.Logger
 	logFile *os.File
@@ -170,32 +168,74 @@ func Trace(a ...interface{}) {
 	nameFull := f.Name()
 	nameEnd := filepath.Ext(nameFull)
 	funcName := strings.TrimPrefix(nameEnd, ".")
-	Log.Trace(fmt.Sprint(funcName, "() ", fileName, ":", line, " ", fmt.Sprint(a...)))
+
+	a = append([]interface{}{funcName, fileName, line}, a...)
+
+	Log.Tracef("%s() %s:%d "+format, a...)
 }
 
 func Debug(a ...interface{}) {
+	if debugLog < Log.level {
+		return
+	}
+
 	pc := make([]uintptr, 10)
 	runtime.Callers(2, pc)
 	f := runtime.FuncForPC(pc[0])
 	file, line := f.FileLine(pc[0])
 	fileName := filepath.Base(file)
-	Log.Debug(fmt.Sprint(f.Name(), " ", fileName, ":", line, " ", fmt.Sprint(a...)))
+
+	a = append([]interface{}{f.Name(), fileName + ":" + strconv.Itoa(line)}, a...)
+
+	Log.Debug(a...)
+}
+
+func Debugf(format string, a ...interface{}) {
+	if debugLog < Log.level {
+		return
+	}
+
+	pc := make([]uintptr, 10)
+	runtime.Callers(2, pc)
+	f := runtime.FuncForPC(pc[0])
+	file, line := f.FileLine(pc[0])
+	fileName := filepath.Base(file)
+
+	a = append([]interface{}{f.Name(), fileName, line}, a...)
+
+	Log.Debugf("%s %s:%d "+format, a...)
 }
 
 func Info(a ...interface{}) {
-	Log.Info(fmt.Sprint(a...))
+	Log.Info(a...)
 }
 
 func Warn(a ...interface{}) {
-	Log.Warn(fmt.Sprint(a...))
+	Log.Warn(a...)
 }
 
 func Error(a ...interface{}) {
-	Log.Error(fmt.Sprint(a...))
+	Log.Error(a...)
 }
 
 func Fatal(a ...interface{}) {
-	Log.Fatal(fmt.Sprint(a...))
+	Log.Fatal(a...)
+}
+
+func Infof(format string, a ...interface{}) {
+	Log.Infof(format, a...)
+}
+
+func Warnf(format string, a ...interface{}) {
+	Log.Warnf(format, a...)
+}
+
+func Errorf(format string, a ...interface{}) {
+	Log.Errorf(format, a...)
+}
+
+func Fatalf(format string, a ...interface{}) {
+	Log.Fatalf(format, a...)
 }
 
 func FileOpen(path string) (*os.File, error) {

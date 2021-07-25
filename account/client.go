@@ -281,7 +281,8 @@ func (cl *ClientImpl) CreateAccount() (*Account, error) {
 	ct, err := ccntmract.CreateSignatureCcntmract(ac.PublicKey)
 	if err == nil {
 		cl.AddCcntmract(ct)
-		log.Info("[CreateCcntmract] Address: ", ct.ProgramHash.ToAddress())
+		address, _ := ct.ProgramHash.ToAddress()
+		log.Info("[CreateCcntmract] Address: ", address)
 	}
 
 	log.Info("Create account Success")
