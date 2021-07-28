@@ -153,6 +153,7 @@ func (msg version) Handle(node Noder) error {
 	// Exclude the node itself
 	if msg.P.Nonce == localNode.GetID() {
 		log.Warn("The node handshark with itself")
+		node.CloseConn()
 		return errors.New("The node handshark with itself")
 	}
 
