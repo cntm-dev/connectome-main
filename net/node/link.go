@@ -242,7 +242,7 @@ func (node *node) Connect(nodeAddr string) {
 
 func NonTLSDial(nodeAddr string) (net.Conn, error) {
 	log.Debug()
-	conn, err := net.Dial("tcp", nodeAddr)
+	conn, err := net.DialTimeout("tcp", nodeAddr, time.Second*DIALTIMEOUT)
 	if err != nil {
 		return nil, err
 	}
@@ -272,7 +272,9 @@ func TLSDial(nodeAddr string) (net.Conn, error) {
 		Certificates: []tls.Certificate{cert},
 	}
 
-	conn, err := tls.Dial("tcp", nodeAddr, conf)
+	var dialer net.Dialer
+	dialer.Timeout = time.Second * DIALTIMEOUT
+	conn, err := tls.DialWithDialer(&dialer, "tcp", nodeAddr, conf)
 	if err != nil {
 		return nil, err
 	}
