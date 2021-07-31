@@ -241,8 +241,8 @@ func (ds *DbftService) InitializeConsensus(viewNum byte) error {
 	}
 
 	if ds.ccntmext.BookKeeperIndex < 0 {
-		log.Error("BookKeeper Index incorrect ", ds.ccntmext.BookKeeperIndex)
-		return NewDetailErr(errors.New("BookKeeper Index incorrect"), ErrNoCode, "")
+		log.Info("You aren't bookkeeper")
+		return nil
 	}
 
 	if ds.ccntmext.BookKeeperIndex == int(ds.ccntmext.PrimaryIndex) {
