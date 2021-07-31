@@ -4,7 +4,7 @@ import (
 	. "DNA/common/config"
 	"DNA/common/log"
 	"DNA/events"
-	. "DNA/net/message"
+	msg "DNA/net/message"
 	. "DNA/net/protocol"
 	"crypto/tls"
 	"crypto/x509"
@@ -60,7 +60,7 @@ func unpackNodeBuf(node *node, buf []byte) {
 		node.rxBuf.len = msgLen - len(buf)
 	} else {
 		msgBuf = append(node.rxBuf.p, buf[0:msgLen]...)
-		go HandleNodeMsg(node, msgBuf, len(msgBuf))
+		go msg.HandleNodeMsg(node, msgBuf, len(msgBuf))
 		node.rxBuf.p = nil
 		node.rxBuf.len = 0
 
