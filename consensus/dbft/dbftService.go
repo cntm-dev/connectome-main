@@ -24,7 +24,6 @@ import (
 )
 
 const (
-	INVDELAYTIME    = 20 * time.Millisecond
 	MINGENBLOCKTIME = 6
 )
 
@@ -67,12 +66,14 @@ func NewDbftService(client cl.Client, logDictionary string, localNet net.Neter) 
 func (ds *DbftService) BlockPersistCompleted(v interface{}) {
 	log.Debug()
 	if block, ok := v.(*ledger.Block); ok {
-		log.Info(fmt.Sprintf("persist block: %d", block.Hash()))
+		log.Infof("persist block: %x", block.Hash())
 		err := ds.localNet.CleanSubmittedTransactions(block)
 		if err != nil {
 			log.Warn(err)
 		}
-		//log.Debug(fmt.Sprintf("persist block: %d with %d transactions\n", block.Hash(),len(trxHashToBeDelete)))
+
+		ds.localNet.Xmit(block.Hash())
+		//log.Debug(fmt.Sprintf("persist block: %x with %d transactions\n", block.Hash(),len(trxHashToBeDelete)))
 	}
 
 	ds.blockReceivedTime = time.Now()
@@ -82,7 +83,7 @@ func (ds *DbftService) BlockPersistCompleted(v interface{}) {
 
 func (ds *DbftService) CheckExpectedView(viewNumber byte) {
 	log.Debug()
-	if ds.ccntmext.State.HasFlag(BlockSent) {
+	if ds.ccntmext.State.HasFlag(BlockGenerated) {
 		return
 	}
 	if ds.ccntmext.ViewNumber == viewNumber {
@@ -166,17 +167,7 @@ func (ds *DbftService) CheckSignatures() error {
 				return NewDetailErr(err, ErrNoCode, "[DbftService], CheckSignatures AddCcntmract failed.")
 			}
 
-			// wait peers for saving block
-			t := time.NewTimer(INVDELAYTIME)
-			select {
-			case <-t.C:
-				// broadcast block hash
-				if err := ds.localNet.Xmit(hash); err != nil {
-					log.Warn("Block hash transmitting error: ", hash)
-					return err
-				}
-			}
-			ds.ccntmext.State |= BlockSent
+			ds.ccntmext.State |= BlockGenerated
 		}
 	}
 	return nil
@@ -184,13 +175,14 @@ func (ds *DbftService) CheckSignatures() error {
 
 func (ds *DbftService) CreateBookkeepingTransaction(nonce uint64) *tx.Transaction {
 	log.Debug()
-
 	//TODO: sysfee
-
+	bookKeepingPayload := &payload.BookKeeping{
+		Nonce: uint64(time.Now().UnixNano()),
+	}
 	return &tx.Transaction{
 		TxType:         tx.BookKeeping,
-		PayloadVersion: 0x2,
-		Payload:        &payload.BookKeeping{},
+		PayloadVersion: payload.BookKeepingPayloadVersion,
+		Payload:        bookKeepingPayload,
 		Attributes:     []*tx.TxAttribute{},
 		UTXOInputs:     []*tx.UTXOTxInput{},
 		BalanceInputs:  []*tx.BalanceTxInput{},
