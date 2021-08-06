@@ -90,8 +90,8 @@ func signTransaction(signer *account.Account, tx *transaction.Transaction) error
 	return nil
 }
 
-func makeRegTransaction(admin, issuer *account.Account, name string, value Fixed64) (string, error) {
-	asset := &Asset{name, byte(MaxPrecision), AssetType(Share), UTXO}
+func makeRegTransaction(admin, issuer *account.Account, name string, description string, value Fixed64) (string, error) {
+	asset := &Asset{name, description, byte(MaxPrecision), AssetType(Share), UTXO}
 	transactionCcntmract, err := ccntmract.CreateSignatureCcntmract(admin.PubKey())
 	if err != nil {
 		fmt.Println("CreateSignatureCcntmract failed")
@@ -264,7 +264,8 @@ func assetAction(c *cli.Ccntmext) error {
 			name = "DNA-" + ToHexString(rbuf)
 		}
 		issuer := admin
-		txHex, err = makeRegTransaction(admin, issuer, name, Fixed64(value))
+		description := "description"
+		txHex, err = makeRegTransaction(admin, issuer, name, description, Fixed64(value))
 	} else {
 		asset := c.String("asset")
 		to := c.String("to")
