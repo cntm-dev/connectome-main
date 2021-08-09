@@ -5,6 +5,7 @@ import (
 	"DNA/core/ledger"
 	"DNA/core/transaction"
 	"DNA/crypto"
+	. "DNA/errors"
 	"DNA/events"
 	"DNA/net/node"
 	"DNA/net/protocol"
