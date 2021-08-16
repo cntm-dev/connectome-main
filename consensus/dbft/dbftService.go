@@ -23,11 +23,7 @@ import (
 	"time"
 )
 
-const (
-	MINGENBLOCKTIME = 6
-)
-
-var GenBlockTime = (MINGENBLOCKTIME * time.Second)
+var GenBlockTime = (config.DEFAULTGENBLOCKTIME * time.Second)
 
 type DbftService struct {
 	ccntmext           ConsensusCcntmext
