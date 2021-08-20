@@ -1,8 +1,8 @@
 package httpjsonrpc
 
 import (
-	"DNA/common/log"
 	"fmt"
+	"github.com/Ontology/common/log"
 	"os"
 	"os/exec"
 	"testing"

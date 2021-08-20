@@ -1,13 +1,13 @@
 package httpjsonrpc
 
 import (
-	. "DNA/common"
-	"DNA/common/log"
-	"DNA/consensus/dbft"
-	. "DNA/core/transaction"
-	tx "DNA/core/transaction"
-	. "DNA/errors"
-	. "DNA/net/protocol"
+	. "github.com/Ontology/common"
+	"github.com/Ontology/common/log"
+	"github.com/Ontology/consensus/dbft"
+	. "github.com/Ontology/core/transaction"
+	tx "github.com/Ontology/core/transaction"
+	. "github.com/Ontology/errors"
+	. "github.com/Ontology/net/protocol"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -15,6 +15,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"github.com/Ontology/core/transaction/utxo"
 )
 
 func init() {
@@ -115,7 +116,7 @@ type TxInfo struct {
 type TxoutInfo struct {
 	High  uint32
 	Low   uint32
-	Txout tx.TxOutput
+	Txout utxo.TxOutput
 }
 
 type NodeInfo struct {

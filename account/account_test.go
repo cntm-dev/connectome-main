@@ -1,8 +1,8 @@
 package account
 
 import (
-	"DNA/crypto"
 	"fmt"
+	"github.com/Ontology/crypto"
 	"os"
 	"path"
 	"testing"

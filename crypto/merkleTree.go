@@ -1,11 +1,11 @@
 package crypto
 
 import (
-	. "DNA/common"
-	. "DNA/errors"
 	"bytes"
 	"crypto/sha256"
 	"errors"
+	. "github.com/Ontology/common"
+	. "github.com/Ontology/errors"
 )
 
 var (

@@ -1,12 +1,12 @@
 package payload
 
 import (
-	"DNA/common/serialization"
-	"DNA/crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"errors"
+	"github.com/Ontology/common/serialization"
+	"github.com/Ontology/crypto"
 	"io"
 	mrand "math/rand"
 	"time"

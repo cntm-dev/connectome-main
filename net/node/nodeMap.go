@@ -1,8 +1,8 @@
 package node
 
 import (
-	. "DNA/net/protocol"
 	"fmt"
+	. "github.com/Ontology/net/protocol"
 	"sync"
 )
 

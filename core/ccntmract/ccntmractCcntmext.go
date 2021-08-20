@@ -1,13 +1,13 @@
 package ccntmract
 
 import (
-	. "DNA/common"
-	"DNA/common/log"
-	pg "DNA/core/ccntmract/program"
-	sig "DNA/core/signature"
-	"DNA/crypto"
-	_ "DNA/errors"
 	"errors"
+	. "github.com/Ontology/common"
+	"github.com/Ontology/common/log"
+	pg "github.com/Ontology/core/ccntmract/program"
+	sig "github.com/Ontology/core/signature"
+	"github.com/Ontology/crypto"
+	_ "github.com/Ontology/errors"
 	"math/big"
 	"sort"
 )

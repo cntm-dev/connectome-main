@@ -1,19 +1,19 @@
 package privpayload
 
 import (
-	"DNA/account"
-	. "DNA/cli/common"
-	"DNA/core/ccntmract"
-	"DNA/core/signature"
-	"DNA/core/transaction"
-	"DNA/core/transaction/payload"
-	"DNA/crypto"
-	"DNA/net/httpjsonrpc"
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Ontology/account"
+	. "github.com/Ontology/cli/common"
+	"github.com/Ontology/core/ccntmract"
+	"github.com/Ontology/core/signature"
+	"github.com/Ontology/core/transaction"
+	"github.com/Ontology/core/transaction/payload"
+	"github.com/Ontology/crypto"
+	"github.com/Ontology/net/httpjsonrpc"
 	"math/rand"
 	"os"
 

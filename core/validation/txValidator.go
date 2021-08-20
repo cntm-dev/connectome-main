@@ -1,14 +1,15 @@
 package validation
 
 import (
-	"DNA/common"
-	"DNA/common/log"
-	"DNA/core/asset"
-	"DNA/core/ledger"
-	tx "DNA/core/transaction"
-	"DNA/core/transaction/payload"
-	"DNA/crypto"
-	. "DNA/errors"
+	"github.com/Ontology/common"
+	"github.com/Ontology/common/log"
+	"github.com/Ontology/core/asset"
+	"github.com/Ontology/core/ledger"
+	tx "github.com/Ontology/core/transaction"
+	"github.com/Ontology/core/transaction/payload"
+	"github.com/Ontology/core/transaction/utxo"
+	"github.com/Ontology/crypto"
+	. "github.com/Ontology/errors"
 	"errors"
 	"fmt"
 	"math"
@@ -176,7 +177,7 @@ func CheckAssetPrecision(Tx *tx.Transaction) error {
 	if len(Tx.Outputs) == 0 {
 		return nil
 	}
-	assetOutputs := make(map[common.Uint256][]*tx.TxOutput, len(Tx.Outputs))
+	assetOutputs := make(map[common.Uint256][]*utxo.TxOutput, len(Tx.Outputs))
 
 	for _, v := range Tx.Outputs {
 		assetOutputs[v.AssetID] = append(assetOutputs[v.AssetID], v)

@@ -1,11 +1,11 @@
 package common
 
 import (
-	. "DNA/common/config"
-	"DNA/common/log"
-	Err "DNA/net/httprestful/error"
 	"bytes"
 	"encoding/json"
+	. "github.com/Ontology/common/config"
+	"github.com/Ontology/common/log"
+	Err "github.com/Ontology/net/httprestful/error"
 	"io/ioutil"
 	"net"
 	"net/http"

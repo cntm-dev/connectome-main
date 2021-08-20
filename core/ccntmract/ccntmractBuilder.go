@@ -1,11 +1,11 @@
 package ccntmract
 
 import (
-	. "DNA/common"
-	pg "DNA/core/ccntmract/program"
-	"DNA/crypto"
-	. "DNA/errors"
-	"DNA/vm"
+	. "github.com/Ontology/common"
+	pg "github.com/Ontology/core/ccntmract/program"
+	"github.com/Ontology/crypto"
+	. "github.com/Ontology/errors"
+	"github.com/Ontology/vm"
 	"math/big"
 	"sort"
 )

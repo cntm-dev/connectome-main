@@ -1,12 +1,12 @@
 package account
 
 import (
-	ct "DNA/core/ccntmract"
-	. "DNA/errors"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	ct "github.com/Ontology/core/ccntmract"
+	. "github.com/Ontology/errors"
 	"io/ioutil"
 	"os"
 )

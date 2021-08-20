@@ -1,8 +1,8 @@
 package asset
 
 import (
-	"DNA/common/serialization"
-	. "DNA/errors"
+	"github.com/Ontology/common/serialization"
+	. "github.com/Ontology/errors"
 	"errors"
 	"io"
 )
@@ -24,13 +24,13 @@ const (
 
 type AssetRecordType byte
 
-//cntm DNA is planed to support UTXO and Balance
+//Ontology is planed to support UTXO and Balance
 const (
 	UTXO    AssetRecordType = 0x00
 	Balance AssetRecordType = 0x01
 )
 
-//define the asset stucture in cntm DNA
+//define the asset stucture in Ontology
 //registered asset will be assigned to ccntmract address
 type Asset struct {
 	Name        string

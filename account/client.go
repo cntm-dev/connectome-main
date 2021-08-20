@@ -13,17 +13,17 @@ import (
 	"sync"
 	"time"
 
-	. "DNA/common"
-	"DNA/common/config"
-	"DNA/common/log"
-	"DNA/common/password"
-	"DNA/core/ccntmract"
-	ct "DNA/core/ccntmract"
-	"DNA/core/ledger"
-	sig "DNA/core/signature"
-	"DNA/crypto"
-	. "DNA/errors"
-	"DNA/net/protocol"
+	. "github.com/Ontology/common"
+	"github.com/Ontology/common/config"
+	"github.com/Ontology/common/log"
+	"github.com/Ontology/common/password"
+	"github.com/Ontology/core/ccntmract"
+	ct "github.com/Ontology/core/ccntmract"
+	"github.com/Ontology/core/ledger"
+	sig "github.com/Ontology/core/signature"
+	"github.com/Ontology/crypto"
+	. "github.com/Ontology/errors"
+	"github.com/Ontology/net/protocol"
 )
 
 const (

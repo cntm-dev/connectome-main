@@ -1,14 +1,14 @@
 package ledger
 
 import (
-	"DNA/common"
-	. "DNA/common"
-	"DNA/core/asset"
-	"DNA/core/ccntmract"
-	tx "DNA/core/transaction"
-	"DNA/crypto"
-	. "DNA/errors"
 	"errors"
+	"github.com/Ontology/common"
+	. "github.com/Ontology/common"
+	"github.com/Ontology/core/asset"
+	"github.com/Ontology/core/ccntmract"
+	tx "github.com/Ontology/core/transaction"
+	"github.com/Ontology/crypto"
+	. "github.com/Ontology/errors"
 )
 
 var DefaultLedger *Ledger

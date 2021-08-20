@@ -1,9 +1,9 @@
 package crypto
 
 import (
-	. "DNA/common"
 	"crypto/sha256"
 	"fmt"
+	. "github.com/Ontology/common"
 	"testing"
 )
 

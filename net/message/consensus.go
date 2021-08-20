@@ -1,21 +1,21 @@
 package message
 
 import (
-	"DNA/common"
-	"DNA/common/log"
-	"DNA/common/serialization"
-	"DNA/core/ccntmract"
-	"DNA/core/ccntmract/program"
-	"DNA/core/ledger"
-	sig "DNA/core/signature"
-	"DNA/crypto"
-	. "DNA/errors"
-	"DNA/events"
-	. "DNA/net/protocol"
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+	"github.com/Ontology/common"
+	"github.com/Ontology/common/log"
+	"github.com/Ontology/common/serialization"
+	"github.com/Ontology/core/ccntmract"
+	"github.com/Ontology/core/ccntmract/program"
+	"github.com/Ontology/core/ledger"
+	sig "github.com/Ontology/core/signature"
+	"github.com/Ontology/crypto"
+	. "github.com/Ontology/errors"
+	"github.com/Ontology/events"
+	. "github.com/Ontology/net/protocol"
 	"io"
 )
 

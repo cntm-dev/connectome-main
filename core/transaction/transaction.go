@@ -1,18 +1,19 @@
 package transaction
 
 import (
-	. "DNA/common"
-	"DNA/common/serialization"
-	"DNA/core/ccntmract"
-	"DNA/core/ccntmract/program"
-	sig "DNA/core/signature"
-	"DNA/core/transaction/payload"
-	. "DNA/errors"
+	. "github.com/Ontology/common"
+	"github.com/Ontology/common/serialization"
+	"github.com/Ontology/core/ccntmract"
+	"github.com/Ontology/core/ccntmract/program"
+	sig "github.com/Ontology/core/signature"
+	"github.com/Ontology/core/transaction/payload"
+	. "github.com/Ontology/errors"
 	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
 	"sort"
+	. "github.com/Ontology/core/transaction/utxo"
 )
 
 //for different transaction types with different payload format
@@ -23,6 +24,7 @@ const (
 	BookKeeping    TransactionType = 0x00
 	IssueAsset     TransactionType = 0x01
 	BookKeeper     TransactionType = 0x02
+	Claim          TransactionType = 0x03
 	PrivacyPayload TransactionType = 0x20
 	RegisterAsset  TransactionType = 0x40
 	TransferAsset  TransactionType = 0x80

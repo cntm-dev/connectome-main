@@ -1,26 +1,27 @@
 package dbft
 
 import (
-	cl "DNA/account"
-	. "DNA/common"
-	"DNA/common/config"
-	"DNA/common/log"
-	con "DNA/consensus"
-	ct "DNA/core/ccntmract"
-	"DNA/core/ccntmract/program"
-	"DNA/core/ledger"
-	_ "DNA/core/signature"
-	sig "DNA/core/signature"
-	tx "DNA/core/transaction"
-	"DNA/core/transaction/payload"
-	va "DNA/core/validation"
-	. "DNA/errors"
-	"DNA/events"
-	"DNA/net"
-	msg "DNA/net/message"
+	cl "github.com/Ontology/account"
+	. "github.com/Ontology/common"
+	"github.com/Ontology/common/config"
+	"github.com/Ontology/common/log"
+	con "github.com/Ontology/consensus"
+	ct "github.com/Ontology/core/ccntmract"
+	"github.com/Ontology/core/ccntmract/program"
+	"github.com/Ontology/core/ledger"
+	_ "github.com/Ontology/core/signature"
+	sig "github.com/Ontology/core/signature"
+	tx "github.com/Ontology/core/transaction"
+	"github.com/Ontology/core/transaction/payload"
+	va "github.com/Ontology/core/validation"
+	. "github.com/Ontology/errors"
+	"github.com/Ontology/events"
+	"github.com/Ontology/net"
+	msg "github.com/Ontology/net/message"
 	"errors"
 	"fmt"
 	"time"
+	"github.com/Ontology/core/transaction/utxo"
 )
 
 var GenBlockTime = (config.DEFAULTGENBLOCKTIME * time.Second)
@@ -180,9 +181,9 @@ func (ds *DbftService) CreateBookkeepingTransaction(nonce uint64) *tx.Transactio
 		PayloadVersion: payload.BookKeepingPayloadVersion,
 		Payload:        bookKeepingPayload,
 		Attributes:     []*tx.TxAttribute{},
-		UTXOInputs:     []*tx.UTXOTxInput{},
+		UTXOInputs:     []*utxo.UTXOTxInput{},
 		BalanceInputs:  []*tx.BalanceTxInput{},
-		Outputs:        []*tx.TxOutput{},
+		Outputs:        []*utxo.TxOutput{},
 		Programs:       []*program.Program{},
 	}
 }

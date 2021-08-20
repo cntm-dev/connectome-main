@@ -1,7 +1,7 @@
 package signature
 
 import (
-	"DNA/crypto"
+	"github.com/Ontology/crypto"
 )
 
 //Signer is the abstract interface of user's information(Keys) for signing data.
@@ -12,6 +12,4 @@ type Signer interface {
 
 	//get signer's public key
 	PubKey() *crypto.PubKey
-
 }
-

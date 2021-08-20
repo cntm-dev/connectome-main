@@ -1,12 +1,12 @@
 package p256r1
 
 import (
-	"DNA/crypto/util"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"github.com/Ontology/crypto/util"
 	"math/big"
 )
 

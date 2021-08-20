@@ -1,11 +1,11 @@
 package account
 
 import (
-	. "DNA/common"
-	"DNA/core/ccntmract"
-	"DNA/crypto"
-	. "DNA/errors"
 	"errors"
+	. "github.com/Ontology/common"
+	"github.com/Ontology/core/ccntmract"
+	"github.com/Ontology/crypto"
+	. "github.com/Ontology/errors"
 )
 
 type Account struct {

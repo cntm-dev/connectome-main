@@ -1,16 +1,16 @@
 package message
 
 import (
-	"DNA/common"
-	"DNA/common/log"
-	"DNA/core/ledger"
-	"DNA/core/transaction"
-	. "DNA/errors"
-	. "DNA/net/protocol"
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+	"github.com/Ontology/common"
+	"github.com/Ontology/common/log"
+	"github.com/Ontology/core/ledger"
+	"github.com/Ontology/core/transaction"
+	. "github.com/Ontology/errors"
+	. "github.com/Ontology/net/protocol"
 )
 
 type dataReq struct {

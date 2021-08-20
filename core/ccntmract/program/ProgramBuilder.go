@@ -1,9 +1,9 @@
 package program
 
 import (
-	. "DNA/common"
-	"DNA/vm"
 	"bytes"
+	. "github.com/Ontology/common"
+	"github.com/Ontology/vm"
 	"math/big"
 )
 

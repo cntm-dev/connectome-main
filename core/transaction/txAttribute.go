@@ -1,9 +1,9 @@
 package transaction
 
 import (
-	"DNA/common/serialization"
-	. "DNA/errors"
 	"errors"
+	"github.com/Ontology/common/serialization"
+	. "github.com/Ontology/errors"
 	"io"
 )
 

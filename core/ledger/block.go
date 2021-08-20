@@ -1,16 +1,17 @@
 package ledger
 
 import (
-	. "DNA/common"
-	"DNA/common/log"
-	"DNA/common/serialization"
-	"DNA/core/ccntmract/program"
-	sig "DNA/core/signature"
-	tx "DNA/core/transaction"
-	"DNA/core/transaction/payload"
-	"DNA/crypto"
-	. "DNA/errors"
-	"DNA/vm"
+	. "github.com/Ontology/common"
+	"github.com/Ontology/common/log"
+	"github.com/Ontology/common/serialization"
+	"github.com/Ontology/core/ccntmract/program"
+	sig "github.com/Ontology/core/signature"
+	tx "github.com/Ontology/core/transaction"
+	"github.com/Ontology/core/transaction/payload"
+	"github.com/Ontology/core/transaction/utxo"
+	"github.com/Ontology/crypto"
+	. "github.com/Ontology/errors"
+	"github.com/Ontology/vm"
 	"io"
 	"time"
 )
@@ -175,9 +176,9 @@ func GenesisBlockInit(defaultBookKeeper []*crypto.PubKey) (*Block, error) {
 			Nonce: GenesisNonce,
 		},
 		Attributes:    []*tx.TxAttribute{},
-		UTXOInputs:    []*tx.UTXOTxInput{},
+		UTXOInputs:    []*utxo.UTXOTxInput{},
 		BalanceInputs: []*tx.BalanceTxInput{},
-		Outputs:       []*tx.TxOutput{},
+		Outputs:       []*utxo.TxOutput{},
 		Programs:      []*program.Program{},
 	}
 	//block

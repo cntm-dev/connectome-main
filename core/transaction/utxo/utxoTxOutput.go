@@ -1,7 +1,7 @@
-package transaction
+package utxo
 
 import (
-	"DNA/common"
+	"github.com/Ontology/common"
 	"io"
 )
 

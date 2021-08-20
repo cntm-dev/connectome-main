@@ -1,10 +1,10 @@
 package dbft
 
 import (
-	"DNA/common/log"
-	ser "DNA/common/serialization"
 	"bytes"
 	"errors"
+	"github.com/Ontology/common/log"
+	ser "github.com/Ontology/common/serialization"
 	"io"
 )
 

@@ -1,13 +1,13 @@
 package httpjsonrpc
 
 import (
-	. "DNA/account"
-	. "DNA/common"
-	"DNA/common/log"
-	. "DNA/core/asset"
-	"DNA/core/ccntmract"
-	"DNA/core/signature"
-	"DNA/core/transaction"
+	. "github.com/Ontology/account"
+	. "github.com/Ontology/common"
+	"github.com/Ontology/common/log"
+	. "github.com/Ontology/core/asset"
+	"github.com/Ontology/core/ccntmract"
+	"github.com/Ontology/core/signature"
+	"github.com/Ontology/core/transaction"
 	"strconv"
 )
 
