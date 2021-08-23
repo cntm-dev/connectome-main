@@ -15,10 +15,10 @@ import (
 type headersReq struct {
 	hdr msgHdr
 	p   struct {
-		len       uint8
-		hashStart [HASHLEN]byte
-		hashEnd   [HASHLEN]byte
-	}
+		    len       uint8
+		    hashStart [HASHLEN]byte
+		    hashEnd   [HASHLEN]byte
+	    }
 }
 
 type blkHeader struct {
@@ -144,7 +144,7 @@ func (msg *blkHeader) Deserialization(p []byte) error {
 		}
 	}
 
-blkHdrErr:
+	blkHdrErr:
 	return err
 }
 

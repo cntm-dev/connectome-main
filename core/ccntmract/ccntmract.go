@@ -16,16 +16,15 @@ import (
 
 //Ccntmract include the program codes with parameters which can be executed on specific evnrioment
 type Ccntmract struct {
-
 	//the ccntmract program code,which will be run on VM or specific envrionment
-	Code []byte
+	Code            []byte
 
 	//the Ccntmract Parameter type list
 	// describe the number of ccntmract program parameters and the parameter type
-	Parameters []CcntmractParameterType
+	Parameters      []CcntmractParameterType
 
 	//The program hash as ccntmract address
-	ProgramHash Uint160
+	ProgramHash     Uint160
 
 	//owner's pubkey hash indicate the owner of ccntmract
 	OwnerPubkeyHash Uint160

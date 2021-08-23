@@ -42,12 +42,12 @@ var (
 )
 
 const (
-	namePrefix        = "LEVEL"
-	callDepth         = 2
+	namePrefix = "LEVEL"
+	callDepth = 2
 	defaultMaxLogSize = 20
-	byteToMb          = 1024 * 1024
-	byteToKb          = 1024
-	Path              = "./Log/"
+	byteToMb = 1024 * 1024
+	byteToKb = 1024
+	Path = "./Log/"
 )
 
 func GetGID() uint64 {
@@ -171,7 +171,7 @@ func Trace(a ...interface{}) {
 
 	a = append([]interface{}{funcName, fileName, line}, a...)
 
-	Log.Tracef("%s() %s:%d "+format, a...)
+	Log.Tracef("%s() %s:%d " + format, a...)
 }
 
 func Debug(a ...interface{}) {
@@ -203,7 +203,7 @@ func Debugf(format string, a ...interface{}) {
 
 	a = append([]interface{}{f.Name(), fileName, line}, a...)
 
-	Log.Debugf("%s %s:%d "+format, a...)
+	Log.Debugf("%s %s:%d " + format, a...)
 }
 
 func Info(a ...interface{}) {
@@ -253,7 +253,7 @@ func FileOpen(path string) (*os.File, error) {
 
 	var currenttime string = time.Now().Format("2006-01-02_15.04.05")
 
-	logfile, err := os.OpenFile(path+currenttime+"_LOG.log", os.O_RDWR|os.O_CREATE, 0666)
+	logfile, err := os.OpenFile(path + currenttime + "_LOG.log", os.O_RDWR | os.O_CREATE, 0666)
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +286,7 @@ func Init(a ...interface{}) {
 	}
 	fileAndStdoutWrite := io.MultiWriter(writers...)
 	var printlevel int = config.Parameters.PrintLevel
-	Log = New(fileAndStdoutWrite, "", log.Ldate|log.Lmicroseconds, printlevel, logFile)
+	Log = New(fileAndStdoutWrite, "", log.Ldate | log.Lmicroseconds, printlevel, logFile)
 }
 
 func GetLogFileSize() (int64, error) {

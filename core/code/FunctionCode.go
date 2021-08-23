@@ -12,15 +12,15 @@ import (
 
 type FunctionCode struct {
 	// Ccntmract Code
-	Code []byte
+	Code           []byte
 
 	// Ccntmract parameter type list
 	ParameterTypes []CcntmractParameterType
 
 	// Ccntmract return type
-	ReturnType CcntmractParameterType
+	ReturnType     CcntmractParameterType
 
-	codeHash Uint160
+	codeHash       Uint160
 }
 
 // method of SerializableData
@@ -74,7 +74,7 @@ func (fc *FunctionCode) CodeHash() Uint160 {
 	if fc.codeHash == u160 {
 		u160, err := ToCodeHash(fc.Code)
 		if err != nil {
-			log.Debug( fmt.Sprintf("[FunctionCode] ToCodeHash err=%s",err) )
+			log.Debug(fmt.Sprintf("[FunctionCode] ToCodeHash err=%s", err))
 			return u160
 		}
 		fc.codeHash = u160

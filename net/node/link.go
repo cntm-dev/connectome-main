@@ -145,7 +145,7 @@ func (n *node) initConnection() {
 
 func initNonTlsListen() (net.Listener, error) {
 	log.Debug()
-	listener, err := net.Listen("tcp", ":"+strconv.Itoa(Parameters.NodePort))
+	listener, err := net.Listen("tcp", ":" + strconv.Itoa(Parameters.NodePort))
 	if err != nil {
 		log.Error("Error listening\n", err.Error())
 		return nil, err
@@ -184,7 +184,7 @@ func initTlsListen() (net.Listener, error) {
 	}
 
 	log.Info("TLS listen port is ", strconv.Itoa(Parameters.NodePort))
-	listener, err := tls.Listen("tcp", ":"+strconv.Itoa(Parameters.NodePort), tlsConfig)
+	listener, err := tls.Listen("tcp", ":" + strconv.Itoa(Parameters.NodePort), tlsConfig)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -242,7 +242,7 @@ func (node *node) Connect(nodeAddr string) {
 
 func NonTLSDial(nodeAddr string) (net.Conn, error) {
 	log.Debug()
-	conn, err := net.DialTimeout("tcp", nodeAddr, time.Second*DIALTIMEOUT)
+	conn, err := net.DialTimeout("tcp", nodeAddr, time.Second * DIALTIMEOUT)
 	if err != nil {
 		return nil, err
 	}

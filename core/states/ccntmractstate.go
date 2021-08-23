@@ -7,7 +7,6 @@ import (
 	"github.com/Ontology/core/code"
 	"github.com/Ontology/smartccntmract/types"
 	. "github.com/Ontology/errors"
-
 )
 
 type CcntmractState struct {

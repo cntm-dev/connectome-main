@@ -45,10 +45,10 @@ func validateDivMod(e *ExecutionEngine) error {
 
 func validatorPushData4(e *ExecutionEngine) error {
 	index := e.ccntmext.GetInstructionPointer()
-	if index+4 >= len(e.ccntmext.Code) {
+	if index + 4 >= len(e.ccntmext.Code) {
 		return ErrOverCodeLen
 	}
-	bytesBuffer := bytes.NewBuffer(e.ccntmext.Code[index : index+4])
+	bytesBuffer := bytes.NewBuffer(e.ccntmext.Code[index : index + 4])
 	var l uint32
 	binary.Read(bytesBuffer, binary.LittleEndian, &l)
 	if l > MaxItemSize {
@@ -172,7 +172,7 @@ func validateSubStr(e *ExecutionEngine) error {
 		return ErrBadValue
 	}
 	arr := PeekNByteArray(2, e)
-	if len(arr) < index+count {
+	if len(arr) < index + count {
 		log.Error("[validateSubStr] len(arr) < index + count")
 		return ErrOverMaxArraySize
 	}

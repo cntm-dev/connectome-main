@@ -13,15 +13,15 @@ import (
 )
 
 type CcntmractCcntmext struct {
-	Data          sig.SignableData
-	ProgramHashes []Uint160
-	Codes         [][]byte
-	Parameters    [][][]byte
+	Data            sig.SignableData
+	ProgramHashes   []Uint160
+	Codes           [][]byte
+	Parameters      [][][]byte
 
 	MultiPubkeyPara [][]PubkeyParameter
 
 	//temp index for multi sig
-	tempParaIndex int
+	tempParaIndex   int
 }
 
 func NewCcntmractCcntmext(data sig.SignableData) *CcntmractCcntmext {

@@ -103,7 +103,7 @@ func (sc *SmartCcntmract) InvokeResult() (interface{}, error) {
 			case ccntmract.ByteArray:
 				return common.ToHexString(neovm.PopByteArray(engine)), nil
 			//bs := neovm.PopByteArray(engine)
-				//return common.BytesToInt(bs), nil
+			//return common.BytesToInt(bs), nil
 			case ccntmract.String:
 				return string(neovm.PopByteArray(engine)), nil
 			case ccntmract.Hash160, ccntmract.Hash256:
@@ -117,7 +117,7 @@ func (sc *SmartCcntmract) InvokeResult() (interface{}, error) {
 				return nil, nil
 			case ccntmract.Array:
 				var strs []string
-				for _, v := range neovm.PopArray(engine){
+				for _, v := range neovm.PopArray(engine) {
 					strs = append(strs, common.ToHexString(v.GetByteArray()))
 				}
 				return strs, nil
