@@ -305,7 +305,7 @@ func (ds *DbftService) NewConsensusPayload(payload *msg.ConsensusPayload) {
 
 	err = payload.Verify()
 	if err != nil {
-		log.Error(err.Error())
+		log.Warn(err.Error())
 		return
 	}
 
@@ -454,7 +454,9 @@ func (ds *DbftService) RefreshPolicy() {
 }
 
 func (ds *DbftService) RequestChangeView() {
-	log.Debug()
+	if ds.ccntmext.State.HasFlag(BlockGenerated) {
+		return
+	}
 	// FIXME if there is no save block notifcation, when the timeout call this function it will crash
 	if ds.ccntmext.ViewNumber > ds.ccntmext.ExpectedView[ds.ccntmext.BookKeeperIndex] {
 		ds.ccntmext.ExpectedView[ds.ccntmext.BookKeeperIndex] = ds.ccntmext.ViewNumber + 1

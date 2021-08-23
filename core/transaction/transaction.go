@@ -14,6 +14,7 @@ import (
 	"io"
 	"sort"
 	. "github.com/Ontology/core/transaction/utxo"
+	"bytes"
 )
 
 //for different transaction types with different payload format
@@ -29,7 +30,8 @@ const (
 	RegisterAsset  TransactionType = 0x40
 	TransferAsset  TransactionType = 0x80
 	Record         TransactionType = 0x81
-	DeployCode     TransactionType = 0xd0
+	Deploy         TransactionType = 0xd0
+	Invoke         TransactionType = 0xd1
 	DataFile       TransactionType = 0x12
 )
 
@@ -201,6 +203,10 @@ func (tx *Transaction) DeserializeUnsignedWithoutType(r io.Reader) error {
 		tx.Payload = new(payload.PrivacyPayload)
 	case DataFile:
 		tx.Payload = new(payload.DataFile)
+	case Deploy:
+		tx.Payload = new(payload.DeployCode)
+	case Invoke:
+		tx.Payload = new(payload.InvokeCode)
 	default:
 		return errors.New("[Transaction],invalide transaction type.")
 	}
@@ -385,6 +391,12 @@ func (tx *Transaction) GenerateAssetMaps() {
 
 func (tx *Transaction) GetMessage() []byte {
 	return sig.GetHashData(tx)
+}
+
+func (tx *Transaction) ToArray() []byte {
+	b := new(bytes.Buffer)
+	tx.Serialize(b)
+	return b.Bytes()
 }
 
 func (tx *Transaction) Hash() Uint256 {
