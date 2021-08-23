@@ -91,10 +91,12 @@ func (cxt *ConsensusCcntmext) MakeHeader() *ledger.Block {
 		if err != nil {
 			return nil
 		}
+		blockRoot := ledger.DefaultLedger.Store.GetBlockRootWithNewTxRoot(txRoot)
 		blockData := &ledger.Blockdata{
 			Version:          CcntmextVersion,
 			PrevBlockHash:    cxt.PrevHash,
 			TransactionsRoot: txRoot,
+			BlockRoot:        blockRoot,
 			Timestamp:        cxt.Timestamp,
 			Height:           cxt.Height,
 			ConsensusData:    cxt.Nonce,

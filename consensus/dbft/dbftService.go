@@ -42,7 +42,6 @@ type DbftService struct {
 }
 
 func NewDbftService(client cl.Client, logDictionary string, localNet net.Neter) *DbftService {
-	log.Debug()
 
 	ds := &DbftService{
 		Client:        client,
@@ -55,7 +54,6 @@ func NewDbftService(client cl.Client, logDictionary string, localNet net.Neter) 
 	if !ds.timer.Stop() {
 		<-ds.timer.C
 	}
-	log.Debug()
 	go ds.timerRoutine()
 	return ds
 }
@@ -217,7 +215,6 @@ func (ds *DbftService) Halt() error {
 
 func (ds *DbftService) InitializeConsensus(viewNum byte) error {
 	log.Debug("[InitializeConsensus] Start InitializeConsensus.")
-	log.Debug()
 	ds.ccntmext.ccntmextMu.Lock()
 	defer ds.ccntmext.ccntmextMu.Unlock()
 
@@ -237,7 +234,6 @@ func (ds *DbftService) InitializeConsensus(viewNum byte) error {
 	if ds.ccntmext.BookKeeperIndex == int(ds.ccntmext.PrimaryIndex) {
 
 		//primary peer
-		log.Debug()
 		ds.ccntmext.State |= Primary
 		ds.timerHeight = ds.ccntmext.Height
 		ds.timeView = viewNum
@@ -307,6 +303,12 @@ func (ds *DbftService) NewConsensusPayload(payload *msg.ConsensusPayload) {
 		return
 	}
 
+	err = payload.Verify()
+	if err != nil {
+		log.Error(err.Error())
+		return
+	}
+
 	switch message.Type() {
 	case ChangeViewMsg:
 		if cv, ok := message.(*ChangeView); ok {
@@ -352,7 +354,6 @@ func (ds *DbftService) VerifyTxs(txs []*tx.Transaction) error {
 }
 
 func (ds *DbftService) PrepareRequestReceived(payload *msg.ConsensusPayload, message *PrepareRequest) {
-	log.Debug()
 	log.Info(fmt.Sprintf("Prepare Request Received: height=%d View=%d index=%d tx=%d", payload.Height, message.ViewNumber(), payload.BookKeeperIndex, len(message.Transactions)))
 
 	if !ds.ccntmext.State.HasFlag(Backup) || ds.ccntmext.State.HasFlag(RequestReceived) {
