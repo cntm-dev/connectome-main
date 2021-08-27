@@ -1,9 +1,11 @@
 package ChainStore
 
 import (
+	"github.com/Ontology/core/states"
 	"github.com/Ontology/core/store"
 	"github.com/Ontology/errors"
-	"github.com/Ontology/core/states"
+
+	"fmt"
 )
 
 type CacheCodeTable struct {
@@ -11,9 +13,10 @@ type CacheCodeTable struct {
 }
 
 func (table *CacheCodeTable) GetCode(codeHash []byte) ([]byte, error) {
-	value, err := table.store.TryGet(store.ST_Ccntmract, codeHash)
-	if err != nil {
-		return nil, errors.NewErr("[GetCode] TryGet ccntmract error!")
+	value, _ := table.store.TryGet(store.ST_Ccntmract, codeHash)
+	if value == nil {
+		return nil, errors.NewErr(fmt.Sprintf("[GetCode] TryGet ccntmract error! codeHash:%x", codeHash))
 	}
+
 	return value.Value.(*states.CcntmractState).Code.Code, nil
 }
