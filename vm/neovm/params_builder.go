@@ -3,7 +3,7 @@ package neovm
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/Ontology/common"
+	. "github.com/Ontology/vm/neovm/types"
 	"math/big"
 )
 
@@ -41,24 +41,7 @@ func (p *ParamsBuilder) EmitPushInteger(data *big.Int) {
 		return
 	}
 
-	bytes := data.Bytes()
-	b := bytes[0]
-	if data.Sign() < 0 {
-		for i, b := range bytes {
-			bytes[i] = ^b
-		}
-		temp := big.NewInt(0)
-		temp.SetBytes(bytes)
-		temp2 := big.NewInt(0)
-		temp2.Add(temp, big.NewInt(1))
-		bytes = temp2.Bytes()
-		common.BytesReverse(bytes)
-	} else if data.Sign() > 0 && b >> 7 == 1 {
-		common.BytesReverse(bytes)
-		bytes = append(bytes, 0)
-	} else {
-		common.BytesReverse(bytes)
-	}
+	bytes := ConvertBigIntegerToBytes(data)
 	p.EmitPushByteArray(bytes)
 }
 
@@ -90,39 +73,4 @@ func (p *ParamsBuilder) EmitPushCall(codeHash []byte) {
 
 func (p *ParamsBuilder) ToArray() []byte {
 	return p.buffer.Bytes()
-}
-
-func ConvertBigIntegerToBytes(data *big.Int) []byte {
-	if data.Int64() == -1 {
-		return []byte{byte(PUSHM1)}
-	}
-	if data.Int64() == 0 {
-		return []byte{byte(PUSH0)}
-	}
-	if data.Int64() > 0 && data.Int64() < 16 {
-		return []byte{byte((int(PUSH1) - 1 + int(data.Int64())))}
-	}
-
-	bs := data.Bytes()
-	b := bs[0]
-	if data.Sign() < 0 {
-		for i, b := range bs {
-			bs[i] = ^b
-		}
-		temp := big.NewInt(0)
-		temp.SetBytes(bs)
-		temp2 := big.NewInt(0)
-		temp2.Add(temp, big.NewInt(1))
-		bs = temp2.Bytes()
-		common.BytesReverse(bs)
-		if b >> 7 == 1 {
-			bs = append(bs, 255)
-		}
-	} else {
-		common.BytesReverse(bs)
-		if b >> 7 == 1 {
-			bs = append(bs, 0)
-		}
-	}
-	return bs
 }

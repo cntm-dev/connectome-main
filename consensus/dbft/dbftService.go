@@ -5,7 +5,6 @@ import (
 	. "github.com/Ontology/common"
 	"github.com/Ontology/common/config"
 	"github.com/Ontology/common/log"
-	con "github.com/Ontology/consensus"
 	ct "github.com/Ontology/core/ccntmract"
 	"github.com/Ontology/core/ccntmract/program"
 	"github.com/Ontology/core/ledger"
@@ -450,7 +449,7 @@ func (ds *DbftService) PrepareResponseReceived(payload *msg.ConsensusPayload, me
 
 func (ds *DbftService) RefreshPolicy() {
 	log.Debug()
-	con.DefaultPolicy.Refresh()
+	//con.DefaultPolicy.Refresh()
 }
 
 func (ds *DbftService) RequestChangeView() {
