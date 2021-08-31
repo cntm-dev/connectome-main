@@ -57,7 +57,6 @@ func NewSmartCcntmract(ccntmext *Ccntmext) (*SmartCcntmract, error) {
 			new(neovm.ECDsaCrypto),
 			ccntmext.CacheCodeTable,
 			ccntmext.StateMachine,
-			ccntmext.Gas,
 		)
 	default:
 		return nil, errors.NewErr("[NewSmartCcntmract] Invalid vm type!")
