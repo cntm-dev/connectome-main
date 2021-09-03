@@ -2,6 +2,8 @@ package neovm
 
 import (
 	. "github.com/Ontology/vm/neovm/errors"
+	"github.com/Ontology/common/log"
+	"fmt"
 )
 
 func opNop(e *ExecutionEngine) (VMState, error) {
@@ -13,18 +15,21 @@ func opJmp(e *ExecutionEngine) (VMState, error) {
 
 	offset = e.ccntmext.GetInstructionPointer() + offset - 3
 
-	if offset > len(e.ccntmext.Code) {
+	if offset < 0 || offset > len(e.ccntmext.Code) {
+		log.Error(fmt.Sprintf("[opJmp] offset:%v > e.ccntmex.Code len:%v error", offset, len(e.ccntmext.Code)))
 		return FAULT, ErrFault
-	}
-	if EvaluationStackCount(e) < 1 {
-		return FAULT, ErrUnderStackLen
 	}
 	var fValue = true
 
-	if e.opCode == JMPIF {
+	if e.opCode > JMP {
+		if EvaluationStackCount(e) < 1 {
+			log.Error(fmt.Sprintf("[opJmp] stack count:%v > 1 error", EvaluationStackCount(e)))
+			return FAULT, ErrUnderStackLen
+		}
 		fValue = PopBoolean(e)
-	} else if e.opCode == JMPIFNOT {
-		fValue = !PopBoolean(e)
+		if e.opCode == JMPIFNOT {
+			fValue = !fValue
+		}
 	}
 
 	if fValue {
