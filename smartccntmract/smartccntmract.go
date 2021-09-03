@@ -87,6 +87,7 @@ func (sc *SmartCcntmract) InvokeCcntmract() (interface{}, error) {
 	return sc.InvokeResult()
 }
 
+
 func (sc *SmartCcntmract) InvokeResult() (interface{}, error) {
 	switch sc.VMType {
 	case types.NEOVM:

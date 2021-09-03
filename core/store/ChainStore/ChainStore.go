@@ -28,6 +28,7 @@ import (
 	"sort"
 	"sync"
 	"time"
+	"github.com/Ontology/smartccntmract/types"
 )
 
 const (
@@ -755,7 +756,7 @@ func (bd *ChainStore) persist(b *Block) error {
 				ccntminue
 			}
 			ccntmract := cs.Value.(*states.CcntmractState)
-			stateMachine := service.NewStateMachine(stateStore)
+			stateMachine := service.NewStateMachine(stateStore, types.Application, b)
 			smc, err := sc.NewSmartCcntmract(&sc.Ccntmext{
 				VmType:         ccntmract.VmType,
 				StateMachine:   stateMachine,
@@ -1176,3 +1177,16 @@ func (bd *ChainStore) SetIdentity(cntmId, ddo []byte) error {
 	idKey := append(idPrefix, cntmId...)
 	return bd.st.BatchPut(idKey, ddo)
 }
+
+func (bd *ChainStore) GetStorageItem(key *states.StorageKey) (*states.StorageItem, error) {
+	v, err := bd.st.Get(append(append([]byte{byte(ST_Storage)}, key.ToArray()...)))
+	if err != nil {
+		return nil, err
+	}
+	item := new(states.StorageItem)
+	if err := item.Deserialize(bytes.NewBuffer(v)); err != nil {
+		return nil, err
+	}
+	return item, nil
+}
+

@@ -23,8 +23,6 @@ import (
 	"github.com/Ontology/core/transaction/utxo"
 )
 
-var GenBlockTime = (config.DEFAULTGENBLOCKTIME * time.Second)
-
 type DbftService struct {
 	ccntmext                         ConsensusCcntmext
 	Client                          cl.Client
@@ -237,14 +235,14 @@ func (ds *DbftService) InitializeConsensus(viewNum byte) error {
 		ds.timerHeight = ds.ccntmext.Height
 		ds.timeView = viewNum
 		span := time.Now().Sub(ds.blockReceivedTime)
-		if span > GenBlockTime {
+		if span > ledger.GenBlockTime {
 			//TODO: double check the is the stop necessary
 			ds.timer.Stop()
 			ds.timer.Reset(0)
 			//go ds.Timeout()
 		} else {
 			ds.timer.Stop()
-			ds.timer.Reset(GenBlockTime - span)
+			ds.timer.Reset(ledger.GenBlockTime - span)
 		}
 	} else {
 
@@ -254,7 +252,7 @@ func (ds *DbftService) InitializeConsensus(viewNum byte) error {
 		ds.timeView = viewNum
 
 		ds.timer.Stop()
-		ds.timer.Reset(GenBlockTime << (viewNum + 1))
+		ds.timer.Reset(ledger.GenBlockTime << (viewNum + 1))
 	}
 	return nil
 }
@@ -466,7 +464,7 @@ func (ds *DbftService) RequestChangeView() {
 		ds.ccntmext.ViewNumber, ds.ccntmext.ExpectedView[ds.ccntmext.BookKeeperIndex], ds.ccntmext.GetStateDetail()))
 
 	ds.timer.Stop()
-	ds.timer.Reset(GenBlockTime << (ds.ccntmext.ExpectedView[ds.ccntmext.BookKeeperIndex] + 1))
+	ds.timer.Reset(ledger.GenBlockTime << (ds.ccntmext.ExpectedView[ds.ccntmext.BookKeeperIndex] + 1))
 
 	ds.SignAndRelay(ds.ccntmext.MakeChangeView())
 	ds.CheckExpectedView(ds.ccntmext.ExpectedView[ds.ccntmext.BookKeeperIndex])
@@ -582,7 +580,7 @@ func (ds *DbftService) Timeout() {
 		payload := ds.ccntmext.MakePrepareRequest()
 		ds.SignAndRelay(payload)
 		ds.timer.Stop()
-		ds.timer.Reset(GenBlockTime << (ds.timeView + 1))
+		ds.timer.Reset(ledger.GenBlockTime << (ds.timeView + 1))
 	} else if (ds.ccntmext.State.HasFlag(Primary) && ds.ccntmext.State.HasFlag(RequestSent)) || ds.ccntmext.State.HasFlag(Backup) {
 		ds.RequestChangeView()
 	}
