@@ -18,6 +18,7 @@ import (
 	vm "github.com/Ontology/vm/neovm"
 	"math"
 	"github.com/Ontology/smartccntmract/types"
+	"github.com/Ontology/common/log"
 )
 
 type StateMachine struct {
@@ -46,6 +47,7 @@ func NewStateMachine(dbCache store.IStateStore, trigger types.TriggerType, block
 	stateMachine.StateReader.Register("Neo.Ccntmract.GetScript", stateMachine.CcntmractGetCode)
 	stateMachine.StateReader.Register("Neo.Ccntmract.Destroy", stateMachine.CcntmractDestory)
 
+	stateMachine.StateReader.Register("Neo.Storage.Get", stateMachine.StorageGet)
 	stateMachine.StateReader.Register("Neo.Storage.Put", stateMachine.StoragePut)
 	stateMachine.StateReader.Register("Neo.Storage.Delete", stateMachine.StorageDelete)
 	return &stateMachine
@@ -62,62 +64,81 @@ func (s *StateMachine) RuntimeGetTime(engine *vm.ExecutionEngine) (bool, error) 
 }
 
 func (s *StateMachine) CreateAsset(engine *vm.ExecutionEngine) (bool, error) {
-	tx := engine.GetCodeCcntmainer().(*transaction.Transaction)
-	assetId := tx.Hash()
+	ccntmainer := engine.GetCodeCcntmainer()
+	if ccntmainer == nil {
+		log.Error("[CreateAsset] Get ccntmainer fail!")
+		return false, errors.NewErr("[CreateAsset] Get ccntmainer fail!")
+	}
+	tran, ok := ccntmainer.(*transaction.Transaction)
+	if !ok {
+		log.Error("[CreateAsset] Ccntmainer not transaction!")
+		return false, errors.NewErr("[CreateAsset] Ccntmainer not transaction!")
+	}
+	assetId := tran.Hash()
 	if vm.EvaluationStackCount(engine) < 7 {
+		log.Error("[CreateAsset] Too few input parameters ")
 		return false, errors.NewErr("[CreateAsset] Too few input parameters ")
 	}
 	assertType := asset.AssetType(vm.PopInt(engine))
 	name := vm.PopByteArray(engine)
 	if len(name) > 1024 {
+		log.Error("[CreateAsset] Asset name invalid, too lcntm")
 		return false, ErrAssetNameInvalid
 	}
 	amount := vm.PopBigInt(engine)
-	if amount.Int64() == 0 {
+	if amount.Sign() == 0 {
+		log.Error("[CreateAsset] Asset amount invalid")
 		return false, ErrAssetAmountInvalid
 	}
 	precision := vm.PopBigInt(engine)
 	if precision.Int64() > 8 {
+		log.Error("[CreateAsset] Asset precision invalid")
 		return false, ErrAssetPrecisionInvalid
 	}
 	if amount.Int64() % int64(math.Pow(10, 8 - float64(precision.Int64()))) != 0 {
+		log.Error("[CreateAsset] Asset precision invalid")
 		return false, ErrAssetAmountInvalid
 	}
 	ownerByte := vm.PopByteArray(engine)
 	owner, err := crypto.DecodePoint(ownerByte)
 	if err != nil {
+		log.Error("[CreateAsset] Decode publickey fail!")
 		return false, err
 	}
-	if result, err := s.StateReader.CheckWitnessPublicKey(engine, owner); !result {
-		return result, err
+	if result, _ := s.StateReader.CheckWitnessPublicKey(engine, owner); !result {
+		log.Error("[CreateAsset] Check publickey fail!")
+		return result, ErrAssetCheckOwnerInvalid
 	}
 	adminByte := vm.PopByteArray(engine)
 	admin, err := common.Uint160ParseFromBytes(adminByte)
 	if err != nil {
+		log.Error("[CreateAsset] Convert admin fail!")
 		return false, err
 	}
-
 	assetState := &states.AssetState{
 		AssetId:    assetId,
 		AssetType:  asset.AssetType(assertType),
 		Name:       string(name),
 		Amount:     common.Fixed64(amount.Int64()),
 		Precision:  byte(precision.Int64()),
-		Admin:      admin,
 		Owner:      owner,
+		Admin:      admin,
+		Issuer:     admin,
 		Expiration: ledger.DefaultLedger.Store.GetHeight() + 1 + 2000000,
 		IsFrozen:   false,
 	}
 	state, err := s.CloneCache.GetOrAdd(store.ST_Asset, assetId.ToArray(), assetState); if err != nil {
+		log.Error("[CreateAsset] GetOrAdd asset fail!")
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[CreateAsset] GetOrAdd error!")
 	}
+	fmt.Printf("state:%+v\n", state)
 	vm.PushData(engine, state)
 	return true, nil
 }
 
 func (s *StateMachine) CcntmractCreate(engine *vm.ExecutionEngine) (bool, error) {
 	if vm.EvaluationStackCount(engine) < 8 {
-		return false, errors.NewErr("[CcntmractCreate] Too few input parameters ")
+		return false, errors.NewErr("[CcntmractCreate] Too few input parameters")
 	}
 	codeByte := vm.PopByteArray(engine)
 	if len(codeByte) > 1024 * 1024 {
@@ -355,6 +376,36 @@ func (s *StateMachine) StorageDelete(engine *vm.ExecutionEngine) (bool, error) {
 	s.CloneCache.Delete(store.ST_Storage, k)
 	return true, nil
 }
+
+func (s *StateMachine) StorageGet(engine *vm.ExecutionEngine) (bool, error) {
+	if vm.EvaluationStackCount(engine) < 2 {
+		return false, errors.NewErr("[StorageGet] Too few input parameters ")
+	}
+	opInterface := vm.PopInteropInterface(engine)
+	if opInterface == nil {
+		return false, errors.NewErr("[StorageGet] Get StorageCcntmext error!")
+	}
+	ccntmext := opInterface.(*StorageCcntmext)
+	if exist, err := s.CheckStorageCcntmext(ccntmext); !exist {
+		return false, err
+	}
+	key := vm.PopByteArray(engine)
+	k, err := serializeStorageKey(ccntmext.codeHash, key)
+	if err != nil {
+		return false, err
+	}
+	item, err := s.CloneCache.Get(store.ST_Storage, k)
+	if err != nil {
+		return false, err
+	}
+	if item == nil {
+		vm.PushData(engine, []byte{})
+	} else {
+		vm.PushData(engine, item.(*states.StorageItem).Value)
+	}
+	return true, nil
+}
+
 
 func (s *StateMachine) GetStorageCcntmext(engine *vm.ExecutionEngine) (bool, error) {
 	if vm.EvaluationStackCount(engine) < 1 {

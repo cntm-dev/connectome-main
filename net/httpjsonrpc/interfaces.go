@@ -16,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"github.com/Ontology/core/states"
 )
 
 const (
