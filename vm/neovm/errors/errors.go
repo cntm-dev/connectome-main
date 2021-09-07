@@ -21,4 +21,9 @@ var (
 	ErrServiceIsNil          = errors.New("service is nil")
 	ErrDivModByZero          = errors.New("div or mod by zore")
 	ErrShiftByNeg            = errors.New("shift by negtive value")
+	ErrExecutionCcntmextNil   = errors.New("execution ccntmext is nil")
+	ErrCurrentCcntmextNil     = errors.New("current ccntmext is nil")
+	ErrCallingCcntmextNil     = errors.New("calling ccntmext is nil")
+	ErrEntryCcntmextNil       = errors.New("entry ccntmext is nil")
+
 )

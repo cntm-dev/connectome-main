@@ -300,7 +300,11 @@ func (s *StateMachine) AssetRenew(engine *vm.ExecutionEngine) (bool, error) {
 }
 
 func (s *StateMachine) CcntmractDestory(engine *vm.ExecutionEngine) (bool, error) {
-	data := engine.CurrentCcntmext().CodeHash
+	ccntmext, err := engine.CurrentCcntmext()
+	if err != nil {
+		return false, err
+	}
+	data := ccntmext.CodeHash
 	if data != nil {
 		return false, nil
 	}
@@ -421,10 +425,14 @@ func (s *StateMachine) GetStorageCcntmext(engine *vm.ExecutionEngine) (bool, err
 	if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[GetStorageCcntmext] Get StorageCcntmext nil")
 	}
+	ccntmext, err := engine.CurrentCcntmext()
+	if err != nil {
+		return false, err
+	}
 	if item == nil {
 		return false, errors.NewErr(fmt.Sprintf("[GetStorageCcntmext] Get ccntmract by codehash:%v nil", codeHash))
 	}
-	currentHash, err := common.Uint160ParseFromBytes(engine.CurrentCcntmext().GetCodeHash())
+	currentHash, err := common.Uint160ParseFromBytes(ccntmext.GetCodeHash())
 	if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[GetStorageCcntmext] Get CurrentHash error")
 	}

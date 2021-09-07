@@ -101,9 +101,14 @@ func TransPayloadToHex(p Payload) PayloadInfo {
 
 		return obj
 	case *payload.IssueAsset:
+		obj := new(IssueAssetInfo)
+		return obj
 	case *payload.TransferAsset:
+		obj := new(TransferAssetInfo)
+		return obj
 	case *payload.DeployCode:
 		obj := new(DeployCodeInfo)
+		obj.Code = new(FunctionCodeInfo)
 		obj.Code.Code = ToHexString(object.Code.Code)
 		obj.Code.ParameterTypes = ToHexString(CcntmractParameterTypeToByte(object.Code.ParameterTypes))
 		obj.Code.ReturnType = uint8(object.Code.ReturnType)

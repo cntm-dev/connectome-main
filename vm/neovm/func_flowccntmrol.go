@@ -39,10 +39,15 @@ func opJmp(e *ExecutionEngine) (VMState, error) {
 }
 
 func opCall(e *ExecutionEngine) (VMState, error) {
+
 	e.invocationStack.Push(e.ccntmext.Clone())
 	e.ccntmext.SetInstructionPointer(int64(e.ccntmext.GetInstructionPointer() + 2))
 	e.opCode = JMP
-	e.ccntmext = e.CurrentCcntmext()
+	ccntmext, err := e.CurrentCcntmext()
+	if err != nil {
+		return FAULT, err
+	}
+	e.ccntmext = ccntmext
 	return opJmp(e)
 }
 

@@ -15,10 +15,13 @@ import (
 	"github.com/Ontology/core/states"
 	"github.com/Ontology/core/transaction/utxo"
 	"strings"
+	"github.com/Ontology/smartccntmract/event"
+	"github.com/Ontology/common/log"
 )
 
 var (
 	ErrDBNotFound = "leveldb: not found"
+	Notify = "Notify"
 )
 
 type StateReader struct {
@@ -120,7 +123,18 @@ func (s *StateReader) RuntimeGetTime(e *vm.ExecutionEngine) (bool, error) {
 }
 
 func (s *StateReader) RuntimeNotify(e *vm.ExecutionEngine) (bool, error) {
-	vm.PopStackItem(e)
+	item := vm.PopStackItem(e)
+	ccntmainer := e.GetCodeCcntmainer()
+	if ccntmainer == nil {
+		log.Error("[RuntimeNotify] Get ccntmainer fail!")
+		return false, errors.NewErr("[CreateAsset] Get ccntmainer fail!")
+	}
+	tran, ok := ccntmainer.(*tx.Transaction)
+	if !ok {
+		log.Error("[CreateAsset] Ccntmainer not transaction!")
+		return false, errors.NewErr("[CreateAsset] Ccntmainer not transaction!")
+	}
+	event.PushSmartCodeEvent(tran.Hash(), 0, Notify, item)
 	return true, nil
 }
 
@@ -808,7 +822,11 @@ func (s *StateReader) CcntmractGetCode(e *vm.ExecutionEngine) (bool, error) {
 }
 
 func (s *StateReader) StorageGetCcntmext(e *vm.ExecutionEngine) (bool, error) {
-	codeHash, err := common.Uint160ParseFromBytes(e.CurrentCcntmext().GetCodeHash())
+	ccntmext, err := e.CurrentCcntmext()
+	if err != nil {
+		return false, err
+	}
+	codeHash, err := common.Uint160ParseFromBytes(ccntmext.GetCodeHash())
 	if err != nil {
 		return false, err
 	}
