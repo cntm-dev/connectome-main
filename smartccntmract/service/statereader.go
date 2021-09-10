@@ -131,14 +131,42 @@ func (s *StateReader) RuntimeNotify(e *vm.ExecutionEngine) (bool, error) {
 	}
 	tran, ok := ccntmainer.(*tx.Transaction)
 	if !ok {
-		log.Error("[CreateAsset] Ccntmainer not transaction!")
+		log.Error("[RuntimeNotify] Ccntmainer not transaction!")
 		return false, errors.NewErr("[CreateAsset] Ccntmainer not transaction!")
 	}
-	event.PushSmartCodeEvent(tran.Hash(), 0, Notify, item)
+	ccntmext, err := e.CurrentCcntmext()
+	if err != nil {
+		return false, err
+	}
+	m := make(map[string]interface{})
+	m["txid"] = tran.Hash()
+	m["ccntmract"] = common.ToHexString(ccntmext.GetCodeHash())
+	m["state"] = item
+	event.PushSmartCodeEvent(tran.Hash(), 0, Notify, m)
 	return true, nil
 }
 
 func (s *StateReader) RuntimeLog(e *vm.ExecutionEngine) (bool, error) {
+	item := vm.PopByteArray(e)
+	ccntmainer := e.GetCodeCcntmainer()
+	if ccntmainer == nil {
+		log.Error("[RuntimeLog] Get ccntmainer fail!")
+		return false, errors.NewErr("[CreateAsset] Get ccntmainer fail!")
+	}
+	tran, ok := ccntmainer.(*tx.Transaction)
+	if !ok {
+		log.Error("[RuntimeLog] Ccntmainer not transaction!")
+		return false, errors.NewErr("[CreateAsset] Ccntmainer not transaction!")
+	}
+	ccntmext, err := e.CurrentCcntmext()
+	if err != nil {
+		return false, err
+	}
+	m := make(map[string]interface{})
+	m["txid"] = tran.Hash()
+	m["ccntmract"] = common.ToHexString(ccntmext.GetCodeHash())
+	m["state"] = string(item)
+	event.PushSmartCodeEvent(tran.Hash(), 0, Notify, m)
 	return true, nil
 }
 
