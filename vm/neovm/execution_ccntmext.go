@@ -4,6 +4,7 @@ import (
 	"github.com/Ontology/vm/neovm/utils"
 	"io"
 	"github.com/Ontology/vm/neovm/types"
+	"github.com/Ontology/common"
 )
 
 type ExecutionCcntmext struct {
@@ -12,7 +13,7 @@ type ExecutionCcntmext struct {
 	PushOnly           bool
 	BreakPoints        []uint
 	InstructionPointer int
-	CodeHash           []byte
+	CodeHash           common.Uint160
 	engine             *ExecutionEngine
 }
 
@@ -35,11 +36,15 @@ func (ec *ExecutionCcntmext) SetInstructionPointer(offset int64) {
 	ec.OpReader.Seek(offset, io.SeekStart)
 }
 
-func (ec *ExecutionCcntmext) GetCodeHash() []byte {
-	if ec.CodeHash == nil {
-		ec.CodeHash = ec.engine.crypto.Hash160(ec.Code)
+func (ec *ExecutionCcntmext) GetCodeHash() (common.Uint160, error) {
+	if ec.CodeHash.CompareTo(common.Uint160{}) == 0 {
+		codeHash, err := common.ToCodeHash(ec.Code)
+		if err != nil {
+			return common.Uint160{}, err
+		}
+		ec.CodeHash = codeHash
 	}
-	return ec.CodeHash
+	return ec.CodeHash, nil
 }
 
 func (ec *ExecutionCcntmext) NextInstruction() OpCode {

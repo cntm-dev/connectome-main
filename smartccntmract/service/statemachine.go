@@ -306,13 +306,9 @@ func (s *StateMachine) CcntmractDestory(engine *vm.ExecutionEngine) (bool, error
 	if err != nil {
 		return false, err
 	}
-	data := ccntmext.CodeHash
-	if data != nil {
-		return false, nil
-	}
-	hash, err := common.Uint160ParseFromBytes(data)
+	hash, err := ccntmext.GetCodeHash()
 	if err != nil {
-		return false, err
+		return false, nil
 	}
 	item, err := s.CloneCache.Store.TryGet(store.ST_Ccntmract, hash.ToArray())
 	if err != nil {
@@ -433,9 +429,9 @@ func (s *StateMachine) GetStorageCcntmext(engine *vm.ExecutionEngine) (bool, err
 	if item == nil {
 		return false, errors.NewErr(fmt.Sprintf("[GetStorageCcntmext] Get ccntmract by codehash:%v nil", codeHash))
 	}
-	currentHash, err := common.Uint160ParseFromBytes(ccntmext.GetCodeHash())
+	currentHash, err := ccntmext.GetCodeHash()
 	if err != nil {
-		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[GetStorageCcntmext] Get CurrentHash error")
+		return false, err
 	}
 	if codeHash.CompareTo(currentHash) != 0 {
 		return false, errors.NewErr("[GetStorageCcntmext] CodeHash not equal!")
