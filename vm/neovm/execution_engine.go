@@ -108,18 +108,6 @@ func (e *ExecutionEngine) GetExecuteResult() bool {
 	return e.evaluationStack.Pop().GetStackItem().GetBoolean()
 }
 
-func (e *ExecutionEngine) ExecutingCode() ([]byte, error) {
-	if e.invocationStack.Count() < 1 {
-		log.Error("[ExecutingCode], Get execution ccntmext fail!")
-		return nil, ErrOverStackLen
-	}
-	ccntmext := e.invocationStack.Peek(0).GetExecutionCcntmext()
-	if ccntmext == nil {
-		return nil, ErrExecutionCcntmextNil
-	}
-	return ccntmext.Code, nil
-}
-
 func (e *ExecutionEngine) CurrentCcntmext() (*ExecutionCcntmext, error) {
 	if e.invocationStack.Count() < 1 {
 		log.Error("[CurrentCcntmext], Get current ccntmext fail!")
@@ -229,6 +217,7 @@ func (e *ExecutionEngine) ExecuteOp() (VMState, error) {
 	if opExec.Exec == nil {
 		return FAULT, ErrNotSupportOpCode
 	}
+
 	if opExec.Validator != nil {
 		if err := opExec.Validator(e); err != nil {
 			return FAULT, err

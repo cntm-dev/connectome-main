@@ -138,15 +138,11 @@ func (s *StateReader) RuntimeNotify(e *vm.ExecutionEngine) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	m := make(map[string]interface{})
-	m["txid"] = tran.Hash()
 	hash, err := ccntmext.GetCodeHash()
 	if err != nil {
 		return false, err
 	}
-	m["ccntmract"] = common.ToHexString(hash.ToArray())
-	m["state"] = item
-	event.PushSmartCodeEvent(tran.Hash(), 0, Notify, m)
+	event.PushSmartCodeEvent(tran.Hash(), 0, Notify, &event.NotifyEventArgs{tran.Hash(), hash, item })
 	return true, nil
 }
 
@@ -166,15 +162,11 @@ func (s *StateReader) RuntimeLog(e *vm.ExecutionEngine) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	m := make(map[string]interface{})
-	m["txid"] = tran.Hash()
 	hash, err := ccntmext.GetCodeHash()
 	if err != nil {
 		return false, err
 	}
-	m["ccntmract"] = common.ToHexString(hash.ToArray())
-	m["state"] = string(item)
-	event.PushSmartCodeEvent(tran.Hash(), 0, Notify, m)
+	event.PushSmartCodeEvent(tran.Hash(), 0, Notify, &event.LogEventArgs{tran.Hash(), hash, string(item) })
 	return true, nil
 }
 
@@ -406,8 +398,11 @@ func (s *StateReader) HeaderGetVersion(e *vm.ExecutionEngine) (bool, error) {
 	if d == nil {
 		return false, errors.NewErr("[HeaderGetVersion] Pop blockdata nil!")
 	}
-	version := d.(*ledger.Header).Blockdata.Version
-	vm.PushData(e, version)
+	header, ok := d.(*ledger.Header)
+	if ok == false {
+		return false, errors.NewErr("[HeaderGetVersion] Wrcntm type!")
+	}
+	vm.PushData(e, header.Blockdata.Version)
 	return true, nil
 }
 
@@ -419,7 +414,11 @@ func (s *StateReader) HeaderGetPrevHash(e *vm.ExecutionEngine) (bool, error) {
 	if d == nil {
 		return false, errors.NewErr("[HeaderGetPrevHash] Pop blockdata nil!")
 	}
-	preHash := d.(*ledger.Header).Blockdata.PrevBlockHash
+	header, ok := d.(*ledger.Header)
+	if ok == false {
+		return false, errors.NewErr("[HeaderGetPrevHash] Wrcntm type!")
+	}
+	preHash := header.Blockdata.PrevBlockHash
 	vm.PushData(e, preHash.ToArray())
 	return true, nil
 }
@@ -432,7 +431,11 @@ func (s *StateReader) HeaderGetMerkleRoot(e *vm.ExecutionEngine) (bool, error) {
 	if d == nil {
 		return false, errors.NewErr("[HeaderGetMerkleRoot] Pop blockdata nil!")
 	}
-	root := d.(*ledger.Header).Blockdata.TransactionsRoot
+	header, ok := d.(*ledger.Header)
+	if ok == false {
+		return false, errors.NewErr("[HeaderGetMerkleRoot] Wrcntm type!")
+	}
+	root := header.Blockdata.TransactionsRoot
 	vm.PushData(e, root.ToArray())
 	return true, nil
 }
@@ -445,7 +448,11 @@ func (s *StateReader) HeaderGetTimestamp(e *vm.ExecutionEngine) (bool, error) {
 	if d == nil {
 		return false, errors.NewErr("[HeaderGetTimestamp] Pop blockdata nil!")
 	}
-	timeStamp := d.(*ledger.Header).Blockdata.Timestamp
+	header, ok := d.(*ledger.Header)
+	if ok == false {
+		return false, errors.NewErr("[HeaderGetTimestamp] Wrcntm type!")
+	}
+	timeStamp := header.Blockdata.Timestamp
 	vm.PushData(e, timeStamp)
 	return true, nil
 }
@@ -458,7 +465,11 @@ func (s *StateReader) HeaderGetConsensusData(e *vm.ExecutionEngine) (bool, error
 	if d == nil {
 		return false, errors.NewErr("[HeaderGetConsensusData] Pop blockdata nil!")
 	}
-	consensusData := d.(*ledger.Header).Blockdata.ConsensusData
+	header, ok := d.(*ledger.Header)
+	if ok == false {
+		return false, errors.NewErr("[HeaderGetTimestamp] Wrcntm type!")
+	}
+	consensusData := header.Blockdata.ConsensusData
 	vm.PushData(e, consensusData)
 	return true, nil
 }
@@ -471,7 +482,11 @@ func (s *StateReader) HeaderGetNextConsensus(e *vm.ExecutionEngine) (bool, error
 	if d == nil {
 		return false, errors.NewErr("[HeaderGetNextConsensus] Pop blockdata nil!")
 	}
-	nextBookKeeper := d.(*ledger.Header).Blockdata.NextBookKeeper
+	header, ok := d.(*ledger.Header)
+	if ok == false {
+		return false, errors.NewErr("[HeaderGetTimestamp] Wrcntm type!")
+	}
+	nextBookKeeper := header.Blockdata.NextBookKeeper
 	vm.PushData(e, nextBookKeeper.ToArray())
 	return true, nil
 }
@@ -484,7 +499,11 @@ func (s *StateReader) BlockGetTransactionCount(e *vm.ExecutionEngine) (bool, err
 	if d == nil {
 		return false, errors.NewErr("[BlockGetTransactionCount] Pop blockdata nil!")
 	}
-	transactions := d.(*ledger.Block).Transactions
+	block, ok := d.(*ledger.Block)
+	if ok == false {
+		return false, errors.NewErr("[BlockGetTransactionCount] Wrcntm type!")
+	}
+	transactions := block.Transactions
 	vm.PushData(e, len(transactions))
 	return true, nil
 }
@@ -497,7 +516,11 @@ func (s *StateReader) BlockGetTransactions(e *vm.ExecutionEngine) (bool, error) 
 	if d == nil {
 		return false, errors.NewErr("[BlockGetTransactions] Pop blockdata nil!")
 	}
-	transactions := d.(*ledger.Block).Transactions
+	block, ok := d.(*ledger.Block)
+	if ok == false {
+		return false, errors.NewErr("[BlockGetTransactions] Wrcntm type!")
+	}
+	transactions := block.Transactions
 	transactionList := make([]types.StackItemInterface, 0)
 	for _, v := range transactions {
 		transactionList = append(transactionList, types.NewInteropInterface(v))
@@ -518,7 +541,12 @@ func (s *StateReader) BlockGetTransaction(e *vm.ExecutionEngine) (bool, error) {
 	if index < 0 {
 		return false, errors.NewErr("[BlockGetTransaction] Pop index invalid!")
 	}
-	transactions := d.(*ledger.Block).Transactions
+
+	block, ok := d.(*ledger.Block)
+	if ok == false {
+		return false, errors.NewErr("[BlockGetTransactions] Wrcntm type!")
+	}
+	transactions := block.Transactions
 	if index >= len(transactions) {
 		return false, errors.NewErr("[BlockGetTransaction] index invalid!")
 	}
@@ -534,7 +562,12 @@ func (s *StateReader) TransactionGetHash(e *vm.ExecutionEngine) (bool, error) {
 	if d == nil {
 		return false, errors.NewErr("[TransactionGetHash] Pop transaction nil!")
 	}
-	txHash := d.(*tx.Transaction).Hash()
+
+	txn, ok := d.(*tx.Transaction)
+	if ok == false {
+		return false, errors.NewErr("[TransactionGetHash] Wrcntm type!")
+	}
+	txHash := txn.Hash()
 	vm.PushData(e, txHash.ToArray())
 	return true, nil
 }
@@ -547,7 +580,11 @@ func (s *StateReader) TransactionGetType(e *vm.ExecutionEngine) (bool, error) {
 	if d == nil {
 		return false, errors.NewErr("[TransactionGetType] Pop transaction nil!")
 	}
-	txType := d.(*tx.Transaction).TxType
+	txn, ok := d.(*tx.Transaction)
+	if ok == false {
+		return false, errors.NewErr("[TransactionGetHash] Wrcntm type!")
+	}
+	txType := txn.TxType
 	vm.PushData(e, int(txType))
 	return true, nil
 }
@@ -560,7 +597,11 @@ func (s *StateReader) TransactionGetAttributes(e *vm.ExecutionEngine) (bool, err
 	if d == nil {
 		return false, errors.NewErr("[TransactionGetAttributes] Pop transaction nil!")
 	}
-	attributes := d.(*tx.Transaction).Attributes
+	txn, ok := d.(*tx.Transaction)
+	if ok == false {
+		return false, errors.NewErr("[TransactionGetAttributes] Wrcntm type!")
+	}
+	attributes := txn.Attributes
 	attributList := make([]types.StackItemInterface, 0)
 	for _, v := range attributes {
 		attributList = append(attributList, types.NewInteropInterface(v))
@@ -577,7 +618,11 @@ func (s *StateReader) TransactionGetInputs(e *vm.ExecutionEngine) (bool, error) 
 	if d == nil {
 		return false, errors.NewErr("[TransactionGetInputs] Pop transaction nil!")
 	}
-	inputs := d.(*tx.Transaction).UTXOInputs
+	txn, ok := d.(*tx.Transaction)
+	if ok == false {
+		return false, errors.NewErr("[TransactionGetInputs] Wrcntm type!")
+	}
+	inputs := txn.UTXOInputs
 	inputList := make([]types.StackItemInterface, 0)
 	for _, v := range inputs {
 		inputList = append(inputList, types.NewInteropInterface(v))
@@ -594,7 +639,11 @@ func (s *StateReader) TransactionGetOutputs(e *vm.ExecutionEngine) (bool, error)
 	if d == nil {
 		return false, errors.NewErr("[TransactionGetOutputs] Pop transaction nil!")
 	}
-	outputs := d.(*tx.Transaction).Outputs
+	txn, ok := d.(*tx.Transaction)
+	if ok == false {
+		return false, errors.NewErr("[TransactionGetOutputs] Wrcntm type!")
+	}
+	outputs := txn.Outputs
 	outputList := make([]types.StackItemInterface, 0)
 	for _, v := range outputs {
 		outputList = append(outputList, types.NewInteropInterface(v))
@@ -683,7 +732,10 @@ func (s *StateReader) InputGetIndex(e *vm.ExecutionEngine) (bool, error) {
 	if d == nil {
 		return false, errors.NewErr("[InputGetIndex] Pop utxoTxInput nil!")
 	}
-	input := d.(*utxo.UTXOTxInput)
+	input, ok := d.(*utxo.UTXOTxInput)
+	if ok == false {
+		return false, errors.NewErr("[InputGetIndex] Wrcntm type!")
+	}
 	vm.PushData(e, input.ReferTxOutputIndex)
 	return true, nil
 }

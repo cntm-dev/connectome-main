@@ -3,7 +3,6 @@ package neovm
 import (
 	. "github.com/Ontology/vm/neovm/errors"
 	"github.com/Ontology/common/log"
-	"github.com/Ontology/common"
 )
 
 type IInteropService interface {
@@ -59,11 +58,11 @@ func (i *InteropService) GetCodeCcntmainer(engine *ExecutionEngine) (bool, error
 }
 
 func (i *InteropService) GetExecutingCodeHash(engine *ExecutionEngine) (bool, error) {
-	code, err := engine.ExecutingCode()
+	ccntmext, err := engine.CurrentCcntmext()
 	if err != nil {
 		return false, err
 	}
-	codeHash, err := common.ToCodeHash(code)
+	codeHash, err := ccntmext.GetCodeHash()
 	if err != nil {
 		return false, err
 	}
