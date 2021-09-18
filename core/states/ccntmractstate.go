@@ -7,6 +7,7 @@ import (
 	"github.com/Ontology/core/code"
 	"github.com/Ontology/smartccntmract/types"
 	. "github.com/Ontology/errors"
+	"github.com/Ontology/vm/neovm/interfaces"
 )
 
 type CcntmractState struct {
@@ -114,6 +115,11 @@ func (ccntmractState *CcntmractState) ToArray() []byte {
 	b := new(bytes.Buffer)
 	ccntmractState.Serialize(b)
 	return b.Bytes()
+}
+
+func (ccntmractState *CcntmractState) Clone() interfaces.IInteropInterface {
+	cs := *ccntmractState
+	return &cs
 }
 
 

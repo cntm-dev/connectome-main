@@ -25,5 +25,5 @@ var (
 	ErrCurrentCcntmextNil     = errors.New("current ccntmext is nil")
 	ErrCallingCcntmextNil     = errors.New("calling ccntmext is nil")
 	ErrEntryCcntmextNil       = errors.New("entry ccntmext is nil")
-
+	ErrAppendNotArray        = errors.New("append not array")
 )

@@ -133,7 +133,7 @@ func (e *ExecutionEngine) CallingCcntmext() (*ExecutionCcntmext, error) {
 }
 
 func (e *ExecutionEngine) EntryCcntmext() (*ExecutionCcntmext, error) {
-	if e.invocationStack.Count() < 3 {
+	if e.invocationStack.Count() < 1 {
 		log.Error("[EntryCcntmext], Get entry ccntmext fail!")
 		return nil, ErrOverStackLen
 	}
