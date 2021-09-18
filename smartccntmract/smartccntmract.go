@@ -12,6 +12,7 @@ import (
 	"github.com/Ontology/core/store"
 	"github.com/Ontology/errors"
 	"github.com/Ontology/common/log"
+	scommon "github.com/Ontology/smartccntmract/common"
 	"reflect"
 )
 
@@ -78,8 +79,6 @@ func (sc *SmartCcntmract) DeployCcntmract() ([]byte, error) {
 }
 
 func (sc *SmartCcntmract) InvokeCcntmract() (interface{}, error) {
-	log.Error("[InvokeCcntmract] code:", sc.Code)
-	log.Error("[InvokeCcntmract] input:", sc.Input)
 	_, err := sc.Engine.Call(sc.Caller, sc.Code, sc.Input)
 	if err != nil {
 		return nil, err
@@ -92,7 +91,6 @@ func (sc *SmartCcntmract) InvokeResult() (interface{}, error) {
 	switch sc.VMType {
 	case types.NEOVM:
 		engine := sc.Engine.(*neovm.ExecutionEngine)
-		log.Error("[InvokeResult]", engine.GetEvaluationStackCount(), reflect.TypeOf(neovm.Peek(engine).GetStackItem()), sc.ReturnType)
 		if engine.GetEvaluationStackCount() > 0 && neovm.Peek(engine).GetStackItem() != nil {
 			switch sc.ReturnType {
 			case ccntmract.Boolean:
@@ -102,8 +100,6 @@ func (sc *SmartCcntmract) InvokeResult() (interface{}, error) {
 				return neovm.PopBigInt(engine).Int64(), nil
 			case ccntmract.ByteArray:
 				return common.ToHexString(neovm.PopByteArray(engine)), nil
-			//bs := neovm.PopByteArray(engine)
-			//return common.BytesToInt(bs), nil
 			case ccntmract.String:
 				return string(neovm.PopByteArray(engine)), nil
 			case ccntmract.Hash160, ccntmract.Hash256:
@@ -116,11 +112,12 @@ func (sc *SmartCcntmract) InvokeResult() (interface{}, error) {
 				}
 				return nil, nil
 			case ccntmract.Array:
-				var strs []string
-				for _, v := range neovm.PopArray(engine) {
-					strs = append(strs, common.ToHexString(v.GetByteArray()))
+				var states []interface{}
+				arr := neovm.PeekArray(engine)
+				for _, v := range arr {
+					states = append(states, scommon.ConvertReturnTypes(v)...)
 				}
-				return strs, nil
+				return states, nil
 			default:
 				return common.ToHexString(neovm.PopByteArray(engine)), nil
 			}
