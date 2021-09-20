@@ -386,11 +386,15 @@ func (s *StateReader) HeaderGetHash(e *vm.ExecutionEngine) (bool, error) {
 	if d == nil {
 		return false, errors.NewErr("[HeaderGetHash] Pop blockdata nil!")
 	}
-	header, ok := d.(*ledger.Header)
-	if ok == false {
+	var data *ledger.Blockdata
+	if b, ok := d.(*ledger.Block); ok {
+		data = b.Blockdata
+	}else if h, ok := d.(*ledger.Header); ok {
+		data = h.Blockdata
+	}else {
 		return false, errors.NewErr("[HeaderGetHash] Wrcntm type!")
 	}
-	h := header.Blockdata.Hash()
+	h := data.Hash()
 	vm.PushData(e, h.ToArray())
 	return true, nil
 }
@@ -403,11 +407,15 @@ func (s *StateReader) HeaderGetVersion(e *vm.ExecutionEngine) (bool, error) {
 	if d == nil {
 		return false, errors.NewErr("[HeaderGetVersion] Pop blockdata nil!")
 	}
-	header, ok := d.(*ledger.Header)
-	if ok == false {
+	var data *ledger.Blockdata
+	if b, ok := d.(*ledger.Block); ok {
+		data = b.Blockdata
+	}else if h, ok := d.(*ledger.Header); ok {
+		data = h.Blockdata
+	}else {
 		return false, errors.NewErr("[HeaderGetVersion] Wrcntm type!")
 	}
-	vm.PushData(e, header.Blockdata.Version)
+	vm.PushData(e, data.Version)
 	return true, nil
 }
 
@@ -419,12 +427,15 @@ func (s *StateReader) HeaderGetPrevHash(e *vm.ExecutionEngine) (bool, error) {
 	if d == nil {
 		return false, errors.NewErr("[HeaderGetPrevHash] Pop blockdata nil!")
 	}
-	header, ok := d.(*ledger.Header)
-	if ok == false {
+	var data *ledger.Blockdata
+	if b, ok := d.(*ledger.Block); ok {
+		data = b.Blockdata
+	}else if h, ok := d.(*ledger.Header); ok {
+		data = h.Blockdata
+	}else {
 		return false, errors.NewErr("[HeaderGetPrevHash] Wrcntm type!")
 	}
-	preHash := header.Blockdata.PrevBlockHash
-	vm.PushData(e, preHash.ToArray())
+	vm.PushData(e, data.PrevBlockHash.ToArray())
 	return true, nil
 }
 
@@ -436,12 +447,15 @@ func (s *StateReader) HeaderGetMerkleRoot(e *vm.ExecutionEngine) (bool, error) {
 	if d == nil {
 		return false, errors.NewErr("[HeaderGetMerkleRoot] Pop blockdata nil!")
 	}
-	header, ok := d.(*ledger.Header)
-	if ok == false {
+	var data *ledger.Blockdata
+	if b, ok := d.(*ledger.Block); ok {
+		data = b.Blockdata
+	}else if h, ok := d.(*ledger.Header); ok {
+		data = h.Blockdata
+	}else {
 		return false, errors.NewErr("[HeaderGetMerkleRoot] Wrcntm type!")
 	}
-	root := header.Blockdata.TransactionsRoot
-	vm.PushData(e, root.ToArray())
+	vm.PushData(e, data.TransactionsRoot.ToArray())
 	return true, nil
 }
 
@@ -453,12 +467,15 @@ func (s *StateReader) HeaderGetIndex(e *vm.ExecutionEngine) (bool, error) {
 	if d == nil {
 		return false, errors.NewErr("[HeaderGetIndex] Pop blockdata nil!")
 	}
-	header, ok := d.(*ledger.Header)
-	if ok == false {
+	var data *ledger.Blockdata
+	if b, ok := d.(*ledger.Block); ok {
+		data = b.Blockdata
+	}else if h, ok := d.(*ledger.Header); ok {
+		data = h.Blockdata
+	}else {
 		return false, errors.NewErr("[HeaderGetIndex] Wrcntm type!")
 	}
-	height := header.Blockdata.Height
-	vm.PushData(e, height)
+	vm.PushData(e, data.Height)
 	return true, nil
 }
 
@@ -470,12 +487,15 @@ func (s *StateReader) HeaderGetTimestamp(e *vm.ExecutionEngine) (bool, error) {
 	if d == nil {
 		return false, errors.NewErr("[HeaderGetTimestamp] Pop blockdata nil!")
 	}
-	header, ok := d.(*ledger.Header)
-	if ok == false {
+	var data *ledger.Blockdata
+	if b, ok := d.(*ledger.Block); ok {
+		data = b.Blockdata
+	}else if h, ok := d.(*ledger.Header); ok {
+		data = h.Blockdata
+	}else {
 		return false, errors.NewErr("[HeaderGetTimestamp] Wrcntm type!")
 	}
-	timeStamp := header.Blockdata.Timestamp
-	vm.PushData(e, timeStamp)
+	vm.PushData(e, data.Timestamp)
 	return true, nil
 }
 
@@ -487,12 +507,15 @@ func (s *StateReader) HeaderGetConsensusData(e *vm.ExecutionEngine) (bool, error
 	if d == nil {
 		return false, errors.NewErr("[HeaderGetConsensusData] Pop blockdata nil!")
 	}
-	header, ok := d.(*ledger.Header)
-	if ok == false {
-		return false, errors.NewErr("[HeaderGetTimestamp] Wrcntm type!")
+	var data *ledger.Blockdata
+	if b, ok := d.(*ledger.Block); ok {
+		data = b.Blockdata
+	}else if h, ok := d.(*ledger.Header); ok {
+		data = h.Blockdata
+	}else {
+		return false, errors.NewErr("[HeaderGetConsensusData] Wrcntm type!")
 	}
-	consensusData := header.Blockdata.ConsensusData
-	vm.PushData(e, consensusData)
+	vm.PushData(e, data.ConsensusData)
 	return true, nil
 }
 
@@ -504,12 +527,15 @@ func (s *StateReader) HeaderGetNextConsensus(e *vm.ExecutionEngine) (bool, error
 	if d == nil {
 		return false, errors.NewErr("[HeaderGetNextConsensus] Pop blockdata nil!")
 	}
-	header, ok := d.(*ledger.Header)
-	if ok == false {
-		return false, errors.NewErr("[HeaderGetTimestamp] Wrcntm type!")
+	var data *ledger.Blockdata
+	if b, ok := d.(*ledger.Block); ok {
+		data = b.Blockdata
+	}else if h, ok := d.(*ledger.Header); ok {
+		data = h.Blockdata
+	}else {
+		return false, errors.NewErr("[HeaderGetNextConsensus] Wrcntm type!")
 	}
-	nextBookKeeper := header.Blockdata.NextBookKeeper
-	vm.PushData(e, nextBookKeeper.ToArray())
+	vm.PushData(e,  data.NextBookKeeper.ToArray())
 	return true, nil
 }
 
