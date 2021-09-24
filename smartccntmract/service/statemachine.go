@@ -186,10 +186,7 @@ func (s *StateMachine) CcntmractCreate(engine *vm.ExecutionEngine) (bool, error)
 		Email:       string(emailByte),
 		Description: string(descByte),
 	}
-	codeHash, err := common.Uint160ParseFromBytes(codeByte)
-	if err != nil {
-		return false, err
-	}
+	codeHash, _ := common.ToCodeHash(codeByte)
 	state, err := s.CloneCache.GetOrAdd(store.ST_Ccntmract, codeHash.ToArray(), ccntmractState)
 	if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractCreate] GetOrAdd error!")
