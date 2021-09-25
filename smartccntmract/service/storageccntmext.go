@@ -2,7 +2,6 @@ package service
 
 import (
 	"github.com/Ontology/common"
-	"github.com/Ontology/vm/neovm/interfaces"
 )
 
 type StorageCcntmext struct {
@@ -19,7 +18,3 @@ func (sc *StorageCcntmext) ToArray() []byte {
 	return sc.codeHash.ToArray()
 }
 
-func (sc *StorageCcntmext) Clone() interfaces.IInteropInterface {
-	s := *sc
-	return &s
-}
