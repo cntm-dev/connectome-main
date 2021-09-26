@@ -75,7 +75,7 @@ func walletAction(c *cli.Ccntmext) error {
 	account, _ := wallet.GetDefaultAccount()
 	pubKey := account.PubKey()
 	signatureRedeemScript, _ := ccntmract.CreateSignatureRedeemScript(pubKey)
-	programHash, _ := ToCodeHash(signatureRedeemScript)
+	programHash:= ToCodeHash(signatureRedeemScript)
 	encodedPubKey, _ := pubKey.EncodePoint(true)
 	address, _ := programHash.ToAddress()
 	fmt.Println("public key:   ", ToHexString(encodedPubKey))

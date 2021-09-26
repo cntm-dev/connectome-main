@@ -186,7 +186,7 @@ func (s *StateMachine) CcntmractCreate(engine *vm.ExecutionEngine) (bool, error)
 		Email:       string(emailByte),
 		Description: string(descByte),
 	}
-	codeHash, _ := common.ToCodeHash(codeByte)
+	codeHash := common.ToCodeHash(codeByte)
 	state, err := s.CloneCache.GetOrAdd(store.ST_Ccntmract, codeHash.ToArray(), ccntmractState)
 	if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractCreate] GetOrAdd error!")
@@ -203,10 +203,7 @@ func (s *StateMachine) CcntmractMigrate(engine *vm.ExecutionEngine) (bool, error
 	if len(codeByte) > 1024*1024 {
 		return false, errors.NewErr("[CcntmractMigrate] Code too lcntm!")
 	}
-	codeHash, err := common.ToCodeHash(codeByte)
-	if err != nil {
-		return false, err
-	}
+	codeHash := common.ToCodeHash(codeByte)
 	item, err := s.CloneCache.Get(store.ST_Ccntmract, codeHash.ToArray())
 	if err != nil {
 		return false, errors.NewErr("[CcntmractMigrate] Get Ccntmract error!")

@@ -120,10 +120,7 @@ func (ds *DbftService) CheckSignatures() error {
 		if err != nil {
 			return NewDetailErr(err, ErrNoCode, "[DbftService] ,EncodePoint failed")
 		}
-		codehash, err := ToCodeHash(ep)
-		if err != nil {
-			return NewDetailErr(err, ErrNoCode, "[DbftService] ,ToCodeHash failed")
-		}
+		codehash := ToCodeHash(ep)
 
 		//create multi-sig ccntmract with all bookKeepers
 		ccntmract, err := ct.CreateMultiSigCcntmract(codehash, ds.ccntmext.M(), ds.ccntmext.BookKeepers)
@@ -432,7 +429,7 @@ func (ds *DbftService) PrepareResponseReceived(payload *msg.ConsensusPayload, me
 	if header == nil {
 		return
 	}
-	if _, err := va.VerifySignature(header, ds.ccntmext.BookKeepers[payload.BookKeeperIndex], message.Signature); err != nil {
+	if err := va.VerifySignature(header, ds.ccntmext.BookKeepers[payload.BookKeeperIndex], message.Signature); err != nil {
 		return
 	}
 

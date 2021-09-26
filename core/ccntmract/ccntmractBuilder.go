@@ -20,14 +20,8 @@ func CreateSignatureCcntmract(ownerPubKey *crypto.PubKey) (*Ccntmract, error) {
 	if err != nil {
 		return nil, NewDetailErr(err, ErrNoCode, "[Ccntmract],CreateSignatureCcntmract failed.")
 	}
-	hash, err := ToCodeHash(temp)
-	if err != nil {
-		return nil, NewDetailErr(err, ErrNoCode, "[Ccntmract],CreateSignatureCcntmract failed.")
-	}
-	signatureRedeemScriptHashToCodeHash, err := ToCodeHash(signatureRedeemScript)
-	if err != nil {
-		return nil, NewDetailErr(err, ErrNoCode, "[Ccntmract],CreateSignatureCcntmract failed.")
-	}
+	hash := ToCodeHash(temp)
+	signatureRedeemScriptHashToCodeHash := ToCodeHash(signatureRedeemScript)
 	return &Ccntmract{
 		Code:            signatureRedeemScript,
 		Parameters:      []CcntmractParameterType{Signature},
@@ -58,10 +52,7 @@ func CreateMultiSigCcntmract(publicKeyHash Uint160, m int, publicKeys []*crypto.
 	if err != nil {
 		return nil, NewDetailErr(err, ErrNoCode, "[Ccntmract],CreateSignatureRedeemScript failed.")
 	}
-	signatureRedeemScriptHashToCodeHash, err := ToCodeHash(MultiSigRedeemScript)
-	if err != nil {
-		return nil, NewDetailErr(err, ErrNoCode, "[Ccntmract],CreateSignatureCcntmract failed.")
-	}
+	signatureRedeemScriptHashToCodeHash := ToCodeHash(MultiSigRedeemScript)
 	return &Ccntmract{
 		Code:            MultiSigRedeemScript,
 		Parameters:      params,
