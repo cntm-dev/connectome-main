@@ -12,6 +12,8 @@ import (
 	"github.com/Ontology/core/ledger"
 	"github.com/Ontology/core/states"
 	tx "github.com/Ontology/core/transaction"
+	"github.com/Ontology/core/transaction/payload"
+	"github.com/Ontology/core/transaction/utxo"
 	. "github.com/Ontology/errors"
 	"math/rand"
 	"os"
@@ -50,7 +52,7 @@ func TransArryByteToHexString(ptx *tx.Transaction) *Transactions {
 	trans.BalanceInputs = make([]BalanceTxInputInfo, len(ptx.BalanceInputs))
 	for _, v := range ptx.BalanceInputs {
 		trans.BalanceInputs[n].AssetID = ToHexString(v.AssetID.ToArray())
-		trans.BalanceInputs[n].Value = v.Value
+		trans.BalanceInputs[n].Value = strconv.FormatInt(int64(v.Value), 10)
 		trans.BalanceInputs[n].ProgramHash = ToHexString(v.ProgramHash.ToArray())
 		n++
 	}
@@ -59,7 +61,7 @@ func TransArryByteToHexString(ptx *tx.Transaction) *Transactions {
 	trans.Outputs = make([]TxoutputInfo, len(ptx.Outputs))
 	for _, v := range ptx.Outputs {
 		trans.Outputs[n].AssetID = ToHexString(v.AssetID.ToArray())
-		trans.Outputs[n].Value = v.Value
+		trans.Outputs[n].Value = strconv.FormatInt(int64(v.Value), 10)
 		trans.Outputs[n].ProgramHash = ToHexString(v.ProgramHash.ToArray())
 		n++
 	}
@@ -72,34 +74,8 @@ func TransArryByteToHexString(ptx *tx.Transaction) *Transactions {
 		n++
 	}
 
-	n = 0
-	trans.AssetOutputs = make([]TxoutputMap, len(ptx.AssetOutputs))
-	for k, v := range ptx.AssetOutputs {
-		trans.AssetOutputs[n].Key = k
-		trans.AssetOutputs[n].Txout = make([]TxoutputInfo, len(v))
-		for m := 0; m < len(v); m++ {
-			trans.AssetOutputs[n].Txout[m].AssetID = ToHexString(v[m].AssetID.ToArray())
-			trans.AssetOutputs[n].Txout[m].Value = v[m].Value
-			trans.AssetOutputs[n].Txout[m].ProgramHash = ToHexString(v[m].ProgramHash.ToArray())
-		}
-		n += 1
-	}
-
-	n = 0
-	trans.AssetInputAmount = make([]AmountMap, len(ptx.AssetInputAmount))
-	for k, v := range ptx.AssetInputAmount {
-		trans.AssetInputAmount[n].Key = k
-		trans.AssetInputAmount[n].Value = v
-		n += 1
-	}
-
-	n = 0
-	trans.AssetOutputAmount = make([]AmountMap, len(ptx.AssetOutputAmount))
-	for k, v := range ptx.AssetOutputAmount {
-		trans.AssetInputAmount[n].Key = k
-		trans.AssetInputAmount[n].Value = v
-		n += 1
-	}
+	trans.NetworkFee = strconv.FormatInt(int64(ptx.NetworkFee),10)
+	trans.SystemFee = strconv.FormatInt(int64(ptx.SystemFee),10)
 
 	mhash := ptx.Hash()
 	trans.Hash = ToHexString(mhash.ToArray())

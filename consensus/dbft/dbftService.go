@@ -7,6 +7,7 @@ import (
 	. "github.com/Ontology/common"
 	"github.com/Ontology/common/config"
 	"github.com/Ontology/common/log"
+	"github.com/Ontology/core/ccntmract"
 	ct "github.com/Ontology/core/ccntmract"
 	"github.com/Ontology/core/ccntmract/program"
 	"github.com/Ontology/core/ledger"
@@ -162,11 +163,28 @@ func (ds *DbftService) CheckSignatures() error {
 	return nil
 }
 
-func (ds *DbftService) CreateBookkeepingTransaction(nonce uint64) *tx.Transaction {
+func (ds *DbftService) CreateBookkeepingTransaction(nonce uint64, fee Fixed64) *tx.Transaction {
 	log.Debug()
 	//TODO: sysfee
 	bookKeepingPayload := &payload.BookKeeping{
 		Nonce: uint64(time.Now().UnixNano()),
+	}
+	signatureRedeemScript, err := ccntmract.CreateSignatureRedeemScript(ds.ccntmext.Owner)
+	if err != nil {
+		return nil
+	}
+	signatureRedeemScriptHashToCodeHash := ToCodeHash(signatureRedeemScript)
+	if err != nil {
+		return nil
+	}
+	outputs := []*utxo.TxOutput{}
+	if fee > 0 {
+		feeOutput := &utxo.TxOutput{
+			AssetID:     tx.cntmAssetID,
+			Value:       fee,
+			ProgramHash: signatureRedeemScriptHashToCodeHash,
+		}
+		outputs = append(outputs, feeOutput)
 	}
 	return &tx.Transaction{
 		TxType:         tx.BookKeeping,
@@ -175,7 +193,7 @@ func (ds *DbftService) CreateBookkeepingTransaction(nonce uint64) *tx.Transactio
 		Attributes:     []*tx.TxAttribute{},
 		UTXOInputs:     []*utxo.UTXOTxInput{},
 		BalanceInputs:  []*tx.BalanceTxInput{},
-		Outputs:        []*utxo.TxOutput{},
+		Outputs:        outputs,
 		Programs:       []*program.Program{},
 	}
 }
@@ -326,7 +344,7 @@ func (ds *DbftService) GetUnverifiedTxs(txs []*tx.Transaction) []*tx.Transaction
 	if len(ds.ccntmext.Transactions) == 0 {
 		return nil
 	}
-	txpool := ds.localNet.GetTxnPool(false)
+	txpool, _ := ds.localNet.GetTxnPool(false)
 	ret := []*tx.Transaction{}
 	for _, t := range txs {
 		if _, ok := txpool[t.Hash()]; !ok {
