@@ -26,8 +26,6 @@ const (
 
 var (
 	GenerationAmount = [17]uint32{80, 70, 60, 50, 40, 30, 20, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10}
-	cntmAssetID       Uint256
-	cntmAssetID       Uint256
 )
 
 var GenBlockTime = (config.DEFAULTGENBLOCKTIME * time.Second)
@@ -201,13 +199,13 @@ func GenesisBlockInit(defaultBookKeeper []*crypto.PubKey) (*Block, error) {
 		Programs:      []*program.Program{},
 	}
 	//block
-	issue := tx.NewIssueToken(tx.NewGoverningToken(), tx.NewUtilityToken())
+	issue := tx.NewIssueToken(tx.cntmToken, tx.cntmToken)
 	genesisBlock := &Block{
-		Header:       genesisHeader,
+		Header: genesisHeader,
 		Transactions: []*tx.Transaction{
 			trans,
-			tx.NewGoverningToken(),
-			tx.NewUtilityToken(),
+			tx.cntmToken,
+			tx.cntmToken,
 			issue,
 		},
 	}

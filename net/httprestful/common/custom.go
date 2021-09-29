@@ -220,7 +220,7 @@ func SendClaim(cmd map[string]interface{}) map[string]interface{} {
 	}
 	output := []*utxo.TxOutput{
 		{
-			AssetID:     tx.cntmAssetID,
+			AssetID:     tx.cntmTokenID,
 			Value:       amount,
 			ProgramHash: ccntmroller,
 		},

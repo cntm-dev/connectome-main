@@ -1,6 +1,7 @@
 package transaction
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -19,7 +20,6 @@ import (
 	"io"
 	"math/big"
 	"sort"
-	"bytes"
 )
 
 const (
@@ -29,9 +29,11 @@ const (
 
 var (
 	Infinity    = &crypto.PubKey{X: big.NewInt(0), Y: big.NewInt(0)}
-	cntmAssetID  Uint256
-	cntmAssetID  Uint256
 	SystemIssue Uint256
+	cntmToken    = NewGoverningToken()
+	cntmToken    = NewUtilityToken()
+	cntmTokenID  = cntmToken.Hash()
+	cntmTokenID  = cntmToken.Hash()
 )
 
 //for different transaction types with different payload format
@@ -344,7 +346,7 @@ func (tx *Transaction) GetProgramHashes() ([]Uint160, error) {
 			return nil, NewDetailErr(err, ErrNoCode, "[Transaction], GetTransactionResults failed.")
 		}
 		for k := range result {
-			if k.CompareTo(NewGoverningToken().Hash()) == 0 || k.CompareTo(NewUtilityToken().Hash()) == 0 {
+			if k.CompareTo(cntmTokenID) == 0 || k.CompareTo(cntmTokenID) == 0 {
 				ccntminue
 			}
 			tx, err := TxStore.GetTransaction(k)
@@ -405,8 +407,7 @@ func (tx *Transaction) GetProgramHashes() ([]Uint160, error) {
 		}
 		for _, output := range reference {
 			programHash := output.ProgramHash
-			//	hashs = append(hashs, programHash)
-			hashs = appendHash(hashs, programHash)
+			hashs = append(hashs, programHash)
 		}
 	default:
 	}
@@ -564,13 +565,13 @@ func (tx *Transaction) GetNetworkFee() (Fixed64, error) {
 	}
 	var input int64
 	for _, v := range refrence {
-		if v.AssetID.CompareTo(cntmAssetID) == 0 {
+		if v.AssetID.CompareTo(cntmTokenID) == 0 {
 			input += v.Value.GetData()
 		}
 	}
 	var output int64
 	for _, v := range tx.Outputs {
-		if v.AssetID.CompareTo(cntmAssetID) == 0 {
+		if v.AssetID.CompareTo(cntmTokenID) == 0 {
 			output += v.Value.GetData()
 		}
 	}
@@ -587,15 +588,14 @@ func NewGoverningToken() *Transaction {
 		&asset.Asset{
 			Name:        "cntm",
 			Description: "Ontology Network cntm Token",
-			Precision:   8,
+			Precision:   0,
 			AssetType:   asset.GoverningToken,
 			RecordType:  asset.UTXO,
 		},
 		FromDecimal(OngRegisterAmount),
 		Infinity,
-		BytesToUint160([]byte{byte(vm.PUSHF)}),
+		ToCodeHash([]byte{byte(vm.PUSHF)}),
 	)
-	cntmAssetID = regAsset.Hash()
 	return regAsset
 }
 
@@ -610,9 +610,8 @@ func NewUtilityToken() *Transaction {
 		},
 		FromDecimal(OngRegisterAmount),
 		Infinity,
-		BytesToUint160([]byte{byte(vm.PUSHF)}),
+		ToCodeHash([]byte{byte(vm.PUSHF)}),
 	)
-	cntmAssetID = regAsset.Hash()
 	return regAsset
 }
 
@@ -653,14 +652,4 @@ func (a byProgramHashes) Less(i, j int) bool {
 	} else {
 		return true
 	}
-}
-
-func appendHash(hashs []Uint160, hash Uint160) []Uint160 {
-	for _, v := range hashs {
-		if hash.CompareTo(v) == 0 {
-			return hashs
-		}
-	}
-	hashs = append(hashs, hash)
-	return hashs
 }
