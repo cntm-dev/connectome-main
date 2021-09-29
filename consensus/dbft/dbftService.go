@@ -22,6 +22,7 @@ import (
 	"github.com/Ontology/net"
 	msg "github.com/Ontology/net/message"
 	"time"
+	"github.com/Ontology/core/vote"
 )
 
 type DbftService struct {
