@@ -146,6 +146,15 @@ func (cxt *ConsensusCcntmext) MakePrepareResponse(signature []byte) *msg.Consens
 	return cxt.MakePayload(preRes)
 }
 
+func (cxt *ConsensusCcntmext) MakeBlockSignatures(signatures []SignaturesData) *msg.ConsensusPayload {
+	log.Debug()
+	sigs := &BlockSignatures{
+		Signatures: signatures,
+	}
+	sigs.msgData.Type = BlockSignaturesMsg
+	return cxt.MakePayload(sigs)
+}
+
 func (cxt *ConsensusCcntmext) GetSignaturesCount() (count int) {
 	log.Debug()
 	count = 0

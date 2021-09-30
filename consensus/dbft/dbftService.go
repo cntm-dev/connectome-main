@@ -17,12 +17,12 @@ import (
 	"github.com/Ontology/core/transaction/payload"
 	"github.com/Ontology/core/transaction/utxo"
 	va "github.com/Ontology/core/validation"
+	"github.com/Ontology/core/vote"
 	. "github.com/Ontology/errors"
 	"github.com/Ontology/events"
 	"github.com/Ontology/net"
 	msg "github.com/Ontology/net/message"
 	"time"
-	"github.com/Ontology/core/vote"
 )
 
 type DbftService struct {
@@ -135,8 +135,11 @@ func (ds *DbftService) CheckSignatures() error {
 		block := ds.ccntmext.MakeHeader()
 		//sign the block with all bookKeepers and add signed ccntmract to ccntmext
 		cxt := ct.NewCcntmractCcntmext(block)
+		sigs := make([]SignaturesData, ds.ccntmext.M())
 		for i, j := 0, 0; i < len(ds.ccntmext.BookKeepers) && j < ds.ccntmext.M(); i++ {
 			if ds.ccntmext.Signatures[i] != nil {
+				sigs[j].Index = uint16(i)
+				sigs[j].Signature = ds.ccntmext.Signatures[i]
 				err := cxt.AddCcntmract(ccntmract, ds.ccntmext.BookKeepers[i], ds.ccntmext.Signatures[i])
 				if err != nil {
 					log.Error("[CheckSignatures] Multi-sign add ccntmract error:", err.Error())
@@ -159,6 +162,8 @@ func (ds *DbftService) CheckSignatures() error {
 			}
 
 			ds.ccntmext.State |= BlockGenerated
+			payload := ds.ccntmext.MakeBlockSignatures(sigs)
+			ds.SignAndRelay(payload)
 		}
 	}
 	return nil
@@ -302,6 +307,14 @@ func (ds *DbftService) NewConsensusPayload(payload *msg.ConsensusPayload) {
 		return
 	}
 
+	if ds.ccntmext.State.HasFlag(BlockGenerated) {
+		return
+	}
+
+	if ds.ccntmext.State.HasFlag(BlockGenerated) {
+		return
+	}
+
 	if int(payload.BookKeeperIndex) >= len(ds.ccntmext.BookKeepers) {
 		return
 	}
@@ -336,6 +349,11 @@ func (ds *DbftService) NewConsensusPayload(payload *msg.ConsensusPayload) {
 	case PrepareResponseMsg:
 		if pres, ok := message.(*PrepareResponse); ok {
 			ds.PrepareResponseReceived(payload, pres)
+		}
+		break
+	case BlockSignaturesMsg:
+		if blockSigs, ok := message.(*BlockSignatures); ok {
+			ds.BlockSignaturesReceived(payload, blockSigs)
 		}
 		break
 	}
@@ -459,6 +477,48 @@ func (ds *DbftService) PrepareResponseReceived(payload *msg.ConsensusPayload, me
 		return
 	}
 	log.Info("Prepare Response finished")
+}
+
+func (ds *DbftService) BlockSignaturesReceived(payload *msg.ConsensusPayload, message *BlockSignatures) {
+	log.Info(fmt.Sprintf("BlockSignatures Received: height=%d View=%d index=%d", payload.Height, message.ViewNumber(), payload.BookKeeperIndex))
+
+	if ds.ccntmext.State.HasFlag(BlockGenerated) {
+		return
+	}
+
+	//if the signature already exist, needn't handle again
+	if ds.ccntmext.Signatures[payload.BookKeeperIndex] != nil {
+		return
+	}
+
+	header := ds.ccntmext.MakeHeader()
+	if header == nil {
+		return
+	}
+	for i := 0; i < len(message.Signatures); i++ {
+		sigdata := message.Signatures[i]
+
+		if ds.ccntmext.Signatures[sigdata.Index] != nil {
+			ccntminue
+		}
+
+		if err := va.VerifySignature(header, ds.ccntmext.BookKeepers[sigdata.Index], sigdata.Signature); err != nil {
+			ccntminue
+		}
+
+		ds.ccntmext.Signatures[sigdata.Index] = sigdata.Signature
+		if ds.ccntmext.GetSignaturesCount() >= ds.ccntmext.M() {
+			log.Info("BlockSignatures got enough signatures")
+			break
+		}
+	}
+
+	err := ds.CheckSignatures()
+	if err != nil {
+		log.Error("CheckSignatures failed")
+		return
+	}
+	log.Info("BlockSignatures finished")
 }
 
 func (ds *DbftService) RefreshPolicy() {
