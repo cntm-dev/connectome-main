@@ -2,8 +2,7 @@ package net
 
 import (
 	. "github.com/Ontology/common"
-	"github.com/Ontology/core/ledger"
-	"github.com/Ontology/core/transaction"
+	"github.com/Ontology/core/types"
 	"github.com/Ontology/crypto"
 	. "github.com/Ontology/errors"
 	"github.com/Ontology/events"

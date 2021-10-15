@@ -5,15 +5,12 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"github.com/Ontology/account"
 	. "github.com/Ontology/common"
 	"github.com/Ontology/common/config"
 	"github.com/Ontology/common/log"
 	"github.com/Ontology/core/ledger"
 	"github.com/Ontology/core/states"
-	tx "github.com/Ontology/core/transaction"
-	"github.com/Ontology/core/transaction/payload"
-	"github.com/Ontology/core/transaction/utxo"
+	"github.com/Ontology/core/types"
 	. "github.com/Ontology/errors"
 	"math/rand"
 	"os"
@@ -25,11 +22,11 @@ const (
 	RANDBYTELEN = 4
 )
 
-func TransArryByteToHexString(ptx *tx.Transaction) *Transactions {
+func TransArryByteToHexString(ptx *types.Transaction) *Transactions {
+	panic("Transaction structure has changed need reimplement ")
 
 	trans := new(Transactions)
 	trans.TxType = ptx.TxType
-	trans.PayloadVersion = ptx.PayloadVersion
 	trans.Payload = TransPayloadToHex(ptx.Payload)
 
 	n := 0
@@ -40,43 +37,8 @@ func TransArryByteToHexString(ptx *tx.Transaction) *Transactions {
 		n++
 	}
 
-	n = 0
-	trans.UTXOInputs = make([]UTXOTxInputInfo, len(ptx.UTXOInputs))
-	for _, v := range ptx.UTXOInputs {
-		trans.UTXOInputs[n].ReferTxID = ToHexString(v.ReferTxID.ToArray())
-		trans.UTXOInputs[n].ReferTxOutputIndex = v.ReferTxOutputIndex
-		n++
-	}
-
-	n = 0
-	trans.BalanceInputs = make([]BalanceTxInputInfo, len(ptx.BalanceInputs))
-	for _, v := range ptx.BalanceInputs {
-		trans.BalanceInputs[n].AssetID = ToHexString(v.AssetID.ToArray())
-		trans.BalanceInputs[n].Value = strconv.FormatInt(int64(v.Value), 10)
-		trans.BalanceInputs[n].ProgramHash = ToHexString(v.ProgramHash.ToArray())
-		n++
-	}
-
-	n = 0
-	trans.Outputs = make([]TxoutputInfo, len(ptx.Outputs))
-	for _, v := range ptx.Outputs {
-		trans.Outputs[n].AssetID = ToHexString(v.AssetID.ToArray())
-		trans.Outputs[n].Value = strconv.FormatInt(int64(v.Value), 10)
-		trans.Outputs[n].ProgramHash = ToHexString(v.ProgramHash.ToArray())
-		n++
-	}
-
-	n = 0
-	trans.Programs = make([]ProgramInfo, len(ptx.Programs))
-	for _, v := range ptx.Programs {
-		trans.Programs[n].Code = ToHexString(v.Code)
-		trans.Programs[n].Parameter = ToHexString(v.Parameter)
-		n++
-	}
-
-	networkfee,_:=ptx.GetNetworkFee()
-	trans.NetworkFee = strconv.FormatInt(int64(networkfee),10)
-	trans.SystemFee = strconv.FormatInt(int64(ptx.SystemFee),10)
+	networkfee := ptx.GetNetworkFee()
+	trans.NetworkFee = strconv.FormatInt(int64(networkfee), 10)
 
 	mhash := ptx.Hash()
 	trans.Hash = ToHexString(mhash.ToArray())
@@ -140,7 +102,7 @@ func getBlock(params []interface{}) map[string]interface{} {
 		Timestamp:        block.Header.Timestamp,
 		Height:           block.Header.Height,
 		ConsensusData:    block.Header.ConsensusData,
-		NextBookKeeper:   ToHexString(block.Header.NextBookKeeper.ToArray()),
+		NextBookKeeper:   ToHexString(block.Header.NextBookKeeper[:]),
 		Program: ProgramInfo{
 			Code:      ToHexString(block.Header.Program.Code),
 			Parameter: ToHexString(block.Header.Program.Parameter),
@@ -323,43 +285,48 @@ func stopConsensus(params []interface{}) map[string]interface{} {
 }
 
 func sendSampleTransaction(params []interface{}) map[string]interface{} {
-	if len(params) < 1 {
-		return DnaRpcNil
-	}
-	var txType string
-	switch params[0].(type) {
-	case string:
-		txType = params[0].(string)
-	default:
-		return DnaRpcInvalidParameter
-	}
+	panic("need reimplementation")
+	return nil
 
-	issuer, err := account.NewAccount()
-	if err != nil {
-		return DnaRpc("Failed to create account")
-	}
-	admin := issuer
+	/*
+		if len(params) < 1 {
+			return DnaRpcNil
+		}
+		var txType string
+		switch params[0].(type) {
+		case string:
+			txType = params[0].(string)
+		default:
+			return DnaRpcInvalidParameter
+		}
 
-	rbuf := make([]byte, RANDBYTELEN)
-	rand.Read(rbuf)
-	switch string(txType) {
-	case "perf":
-		num := 1
-		if len(params) == 2 {
-			switch params[1].(type) {
-			case float64:
-				num = int(params[1].(float64))
+		issuer, err := account.NewAccount()
+		if err != nil {
+			return DnaRpc("Failed to create account")
+		}
+		admin := issuer
+
+		rbuf := make([]byte, RANDBYTELEN)
+		rand.Read(rbuf)
+		switch string(txType) {
+		case "perf":
+			num := 1
+			if len(params) == 2 {
+				switch params[1].(type) {
+				case float64:
+					num = int(params[1].(float64))
+				}
 			}
+			for i := 0; i < num; i++ {
+				regTx := NewRegTx(ToHexString(rbuf), i, admin, issuer)
+				SignTx(admin, regTx)
+				VerifyAndSendTx(regTx)
+			}
+			return DnaRpc(fmt.Sprintf("%d transaction(s) was sent", num))
+		default:
+			return DnaRpc("Invalid transacion type")
 		}
-		for i := 0; i < num; i++ {
-			regTx := NewRegTx(ToHexString(rbuf), i, admin, issuer)
-			SignTx(admin, regTx)
-			VerifyAndSendTx(regTx)
-		}
-		return DnaRpc(fmt.Sprintf("%d transaction(s) was sent", num))
-	default:
-		return DnaRpc("Invalid transacion type")
-	}
+	*/
 }
 
 func setDebugInfo(params []interface{}) map[string]interface{} {
@@ -440,7 +407,7 @@ func regDataFile(params []interface{}) map[string]interface{} {
 		if err != nil {
 			return DnaRpcInvalidParameter
 		}
-		var txn tx.Transaction
+		var txn types.Transaction
 		if err := txn.Deserialize(bytes.NewReader(hex)); err != nil {
 			return DnaRpcInvalidTransaction
 		}

@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"errors"
 	"io"
-	"math/big"
 
 	. "github.com/Ontology/common"
 	. "github.com/Ontology/common/config"
@@ -27,10 +26,80 @@ type Transaction struct {
 	hash *Uint256
 }
 
-
 type Sig struct {
-	PubKey  crypto.PubKey
-	SigData []byte
+	PubKeys []*crypto.PubKey
+	M       uint8
+	SigData [][]byte
+}
+
+func (self *Sig) Deserialize(r io.Reader) error {
+	n, err := serialization.ReadVarUint(r, 0)
+	if err != nil {
+		return err
+	}
+
+	self.PubKeys = make([]*crypto.PubKey, n)
+	for i := 0; i < int(n); i++ {
+		pubkey := new(crypto.PubKey)
+		err = pubkey.DeSerialize(r)
+		if err != nil {
+			return err
+		}
+		self.PubKeys[i] = pubkey
+	}
+
+	self.M, err = serialization.ReadUint8(r)
+	if err != nil {
+		return err
+	}
+
+	m, err := serialization.ReadVarUint(r, 0)
+	if err != nil {
+		return err
+	}
+
+	self.SigData = make([][]byte, m)
+	for i := 0; i < int(m); i++ {
+		sig, err := serialization.ReadVarBytes(r)
+		if err != nil {
+			return err
+		}
+		self.SigData[i] = sig
+	}
+
+	return nil
+}
+
+func (self *Sig) Serialize(w io.Writer) error {
+	err := serialization.WriteVarUint(w, uint64(len(self.PubKeys)))
+	if err != nil {
+		return errors.New("serialize sig pubkey length failed")
+	}
+	for _, pubkey := range self.PubKeys {
+		err = pubkey.Serialize(w)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = serialization.WriteUint8(w, self.M)
+	if err != nil {
+		return errors.New("serialize Sig M failed")
+	}
+
+	err = serialization.WriteVarUint(w, uint64(len(self.SigData)))
+	if err != nil {
+		return errors.New("serialize sig pubkey length failed")
+	}
+
+	for _, sig := range self.SigData {
+		err = serialization.WriteVarBytes(w, sig)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type Fee struct {
@@ -97,8 +166,7 @@ func (tx *Transaction) Serialize(w io.Writer) error {
 		return NewDetailErr(err, ErrNoCode, "serialize tx sigs length failed")
 	}
 	for _, sig := range tx.Sigs {
-		sig.PubKey.Serialize(w)
-		err = serialization.WriteVarBytes(w, sig.SigData)
+		err = sig.Serialize(w)
 		if err != nil {
 			return err
 		}
@@ -114,6 +182,7 @@ func (tx *Transaction) GetTotalFee() Fixed64 {
 	}
 	return sum
 }
+
 //Serialize the Transaction data without ccntmracts
 func (tx *Transaction) SerializeUnsigned(w io.Writer) error {
 	//txType
@@ -161,14 +230,13 @@ func (tx *Transaction) Deserialize(r io.Reader) error {
 		return NewDetailErr(err, ErrNoCode, "transaction sigs deserialize error")
 	}
 
+	tx.Sigs = make([]*Sig, 0, length)
 	for i := 0; i < int(length); i++ {
 		sig := new(Sig)
-		err := sig.PubKey.DeSerialize(r)
+		err := sig.Deserialize(r)
 		if err != nil {
 			return errors.New("deserialize transaction failed")
 		}
-		sig.SigData, err = serialization.ReadVarBytes(r)
-
 		tx.Sigs = append(tx.Sigs, sig)
 	}
 
@@ -236,20 +304,6 @@ func (tx *Transaction) DeserializeUnsigned(r io.Reader) error {
 	return nil
 }
 
-const (
-	OntRegisterAmount = 1000000000
-	OngRegisterAmount = 1000000000
-)
-
-var (
-	Infinity    = &crypto.PubKey{X: big.NewInt(0), Y: big.NewInt(0)}
-	SystemIssue Uint256
-	cntmToken    = NewGoverningToken()
-	cntmToken    = NewUtilityToken()
-	cntmTokenID  = cntmToken.Hash()
-	cntmTokenID  = cntmToken.Hash()
-)
-
 func (tx *Transaction) GetMessage() []byte {
 	buf := new(bytes.Buffer)
 	tx.SerializeUnsigned(buf)
@@ -292,14 +346,4 @@ func (tx *Transaction) GetSysFee() Fixed64 {
 
 func (tx *Transaction) GetNetworkFee() Fixed64 {
 	return tx.NetWorkFee
-}
-
-func NewGoverningToken() *Transaction {
-	panic("unimplemented ")
-	return nil
-}
-
-func NewUtilityToken() *Transaction {
-	panic("unimplemented ")
-	return nil
 }
