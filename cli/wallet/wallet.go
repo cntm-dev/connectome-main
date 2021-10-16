@@ -12,7 +12,7 @@ import (
 	. "github.com/Ontology/common"
 	"github.com/Ontology/common/password"
 	"github.com/Ontology/core/ccntmract"
-	"github.com/Ontology/net/httpjsonrpc"
+	"github.com/Ontology/http/httpjsonrpc"
 
 	"github.com/urfave/cli"
 )
@@ -88,7 +88,7 @@ func walletAction(c *cli.Ccntmext) error {
 		if err != nil {
 			return err
 		}
-		resp, err := httpjsonrpc.Call(Address(), "getunspendoutput", 0,
+		resp, err := jsonrpc.Call(Address(), "getunspendoutput", 0,
 			[]interface{}{hex.EncodeToString(buffer.Bytes()), asset})
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)

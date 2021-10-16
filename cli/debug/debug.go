@@ -5,7 +5,7 @@ import (
 	"os"
 
 	. "github.com/Ontology/cli/common"
-	"github.com/Ontology/net/httpjsonrpc"
+	"github.com/Ontology/http/httpjsonrpc"
 
 	"github.com/urfave/cli"
 )
@@ -17,7 +17,7 @@ func debugAction(c *cli.Ccntmext) (err error) {
 	}
 	level := c.Int("level")
 	if level != -1 {
-		resp, err := httpjsonrpc.Call(Address(), "setdebuginfo", 0, []interface{}{level})
+		resp, err := jsonrpc.Call(Address(), "setdebuginfo", 0, []interface{}{level})
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return err

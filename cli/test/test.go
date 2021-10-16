@@ -5,7 +5,7 @@ import (
 	"os"
 
 	. "github.com/Ontology/cli/common"
-	"github.com/Ontology/net/httpjsonrpc"
+	"github.com/Ontology/http/httpjsonrpc"
 
 	"github.com/urfave/cli"
 )
@@ -18,7 +18,7 @@ func testAction(c *cli.Ccntmext) (err error) {
 	txnType := c.String("tx")
 	txnNum := c.Int("num")
 	if txnType != "" {
-		resp, err := httpjsonrpc.Call(Address(), "sendsampletransaction", 0, []interface{}{txnType, txnNum})
+		resp, err := jsonrpc.Call(Address(), "sendsampletransaction", 0, []interface{}{txnType, txnNum})
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return err

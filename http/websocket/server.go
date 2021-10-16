@@ -1,4 +1,4 @@
-package httpwebsocket
+package websocket
 
 import (
 	"bytes"
@@ -6,11 +6,10 @@ import (
 	. "github.com/Ontology/common/config"
 	"github.com/Ontology/core/ledger"
 	"github.com/Ontology/core/types"
-	"github.com/Ontology/events"
-	"github.com/Ontology/net/httprestful/common"
-	Err "github.com/Ontology/net/httprestful/error"
-	"github.com/Ontology/net/httpwebsocket/websocket"
-	. "github.com/Ontology/net/protocol"
+	. "github.com/Ontology/http/base/actor"
+	. "github.com/Ontology/http/base/rest"
+	Err "github.com/Ontology/http/base/error"
+	"github.com/Ontology/http/websocket/websocket"
 	sc "github.com/Ontology/smartccntmract/common"
 	"github.com/Ontology/smartccntmract/event"
 )
@@ -22,10 +21,9 @@ var (
 	pushBlockTxsFlag bool = false
 )
 
-func StartServer(n Noder) {
-	common.SetNode(n)
-	ledger.DefaultLedger.Blockchain.BCEvents.Subscribe(events.EventBlockPersistCompleted, SendBlock2WSclient)
-	ledger.DefaultLedger.Blockchain.BCEvents.Subscribe(events.EventSmartCode, PushSmartCodeEvent)
+func StartServer() {
+	SubscribeEvent("EventBlockPersistCompleted",SendBlock2WSclient)
+	SubscribeEvent("EventSmartCode",PushSmartCodeEvent)
 	go func() {
 		ws = websocket.InitWsServer()
 		ws.Start()
@@ -130,7 +128,7 @@ func PushSmartCodeEvent(v interface{}) {
 
 func PushEvent(txHash string, errcode int64, action string, result interface{}) {
 	if ws != nil {
-		resp := common.ResponsePack(Err.SUCCESS)
+		resp := ResponsePack(Err.SUCCESS)
 		resp["Result"] = result
 		resp["Error"] = errcode
 		resp["Action"] = action
@@ -144,14 +142,14 @@ func PushBlock(v interface{}) {
 	if ws == nil {
 		return
 	}
-	resp := common.ResponsePack(Err.SUCCESS)
+	resp := ResponsePack(Err.SUCCESS)
 	if block, ok := v.(*types.Block); ok {
 		if pushRawBlockFlag {
 			w := bytes.NewBuffer(nil)
 			block.Serialize(w)
 			resp["Result"] = ToHexString(w.Bytes())
 		} else {
-			resp["Result"] = common.GetBlockInfo(block)
+			resp["Result"] = GetBlockInfo(block)
 		}
 		resp["Action"] = "sendrawblock"
 		ws.BroadcastResult(resp)
@@ -161,10 +159,10 @@ func PushBlockTransactions(v interface{}) {
 	if ws == nil {
 		return
 	}
-	resp := common.ResponsePack(Err.SUCCESS)
+	resp := ResponsePack(Err.SUCCESS)
 	if block, ok := v.(*types.Block); ok {
 		if pushBlockTxsFlag {
-			resp["Result"] = common.GetBlockTransactions(block)
+			resp["Result"] = GetBlockTransactions(block)
 		}
 		resp["Action"] = "sendblocktransactions"
 		ws.BroadcastResult(resp)

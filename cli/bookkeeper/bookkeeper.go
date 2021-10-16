@@ -10,7 +10,7 @@ import (
 	"github.com/Ontology/core/signature"
 	"github.com/Ontology/core/transaction"
 	"github.com/Ontology/crypto"
-	"github.com/Ontology/net/httpjsonrpc"
+	"github.com/Ontology/http/httpjsonrpc"
 	"math/rand"
 	"os"
 	"strconv"
@@ -113,7 +113,7 @@ func assetAction(c *cli.Ccntmext) error {
 		return err
 	}
 
-	resp, err := httpjsonrpc.Call(Address(), "sendrawtransaction", 0, []interface{}{txHex})
+	resp, err := jsonrpc.Call(Address(), "sendrawtransaction", 0, []interface{}{txHex})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return err

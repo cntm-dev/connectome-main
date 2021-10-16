@@ -1,66 +1,33 @@
-package httpjsonrpc
+package jsonrpc
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/hex"
-	"fmt"
 	. "github.com/Ontology/common"
-	"github.com/Ontology/common/config"
-	"github.com/Ontology/common/log"
-	"github.com/Ontology/core/ledger"
-	"github.com/Ontology/core/states"
 	"github.com/Ontology/core/types"
 	. "github.com/Ontology/errors"
+	. "github.com/Ontology/http/base/common"
+	. "github.com/Ontology/http/base/rpc"
+	. "github.com/Ontology/http/base/actor"
+	"github.com/Ontology/common/config"
 	"math/rand"
+	"fmt"
+	"encoding/base64"
 	"os"
-	"path/filepath"
-	"strconv"
 )
 
-const (
-	RANDBYTELEN = 4
-)
-
-func TransArryByteToHexString(ptx *types.Transaction) *Transactions {
-	panic("Transaction structure has changed need reimplement ")
-
-	trans := new(Transactions)
-	trans.TxType = ptx.TxType
-	trans.Payload = TransPayloadToHex(ptx.Payload)
-
-	n := 0
-	trans.Attributes = make([]TxAttributeInfo, len(ptx.Attributes))
-	for _, v := range ptx.Attributes {
-		trans.Attributes[n].Usage = v.Usage
-		trans.Attributes[n].Data = ToHexString(v.Data)
-		n++
+func GetBestBlockHash(params []interface{}) map[string]interface{} {
+	hash,err := CurrentBlockHash()
+	if err != nil{
+		return DnaRpcFailed
 	}
-
-	networkfee := ptx.GetNetworkFee()
-	trans.NetworkFee = strconv.FormatInt(int64(networkfee), 10)
-
-	mhash := ptx.Hash()
-	trans.Hash = ToHexString(mhash.ToArray())
-
-	return trans
-}
-func getCurrentDirectory() string {
-	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		log.Fatal(err)
-	}
-	return dir
-}
-func getBestBlockHash(params []interface{}) map[string]interface{} {
-	hash := ledger.DefaultLedger.Blockchain.CurrentBlockHash()
 	return DnaRpc(ToHexString(hash.ToArray()))
 }
 
 // Input JSON string examples for getblock method as following:
 //   {"jsonrpc": "2.0", "method": "getblock", "params": [1], "id": 0}
 //   {"jsonrpc": "2.0", "method": "getblock", "params": ["aabbcc.."], "id": 0}
-func getBlock(params []interface{}) map[string]interface{} {
+func GetBlock(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return DnaRpcNil
 	}
@@ -70,11 +37,11 @@ func getBlock(params []interface{}) map[string]interface{} {
 	// block height
 	case float64:
 		index := uint32(params[0].(float64))
-		hash, err = ledger.DefaultLedger.Store.GetBlockHash(index)
+		hash, err = GetBlockHashFromStore(index)
 		if err != nil {
 			return DnaRpcUnknownBlock
 		}
-	// block hash
+		// block hash
 	case string:
 		str := params[0].(string)
 		hex, err := hex.DecodeString(str)
@@ -88,7 +55,7 @@ func getBlock(params []interface{}) map[string]interface{} {
 		return DnaRpcInvalidParameter
 	}
 
-	block, err := ledger.DefaultLedger.Store.GetBlock(hash)
+	block, err := GetBlockFromStore(hash)
 	if err != nil {
 		return DnaRpcUnknownBlock
 	}
@@ -379,7 +346,7 @@ func uploadDataFile(params []interface{}) map[string]interface{} {
 	return DnaRpc(refpath)
 
 }
-func getSmartCodeEvent(params []interface{}) map[string]interface{} {
+func GetSmartCodeEvent(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return DnaRpcNil
 	}
@@ -395,7 +362,7 @@ func getSmartCodeEvent(params []interface{}) map[string]interface{} {
 	}
 	return DnaRpcInvalidParameter
 }
-func regDataFile(params []interface{}) map[string]interface{} {
+func RegDataFile(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return DnaRpcNil
 	}
@@ -422,7 +389,7 @@ func regDataFile(params []interface{}) map[string]interface{} {
 	return DnaRpc(ToHexString(hash.ToArray()))
 }
 
-func catDataRecord(params []interface{}) map[string]interface{} {
+func CatDataRecord(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return DnaRpcNil
 	}
@@ -438,7 +405,7 @@ func catDataRecord(params []interface{}) map[string]interface{} {
 		if err != nil {
 			return DnaRpcInvalidTransaction
 		}
-		tx, err := ledger.DefaultLedger.Store.GetTransaction(hash)
+		tx, err := GetTransaction(hash) //ledger.DefaultLedger.Store.GetTransaction(hash)
 		if err != nil {
 			return DnaRpcUnknownTransaction
 		}
@@ -451,7 +418,7 @@ func catDataRecord(params []interface{}) map[string]interface{} {
 	}
 }
 
-func getDataFile(params []interface{}) map[string]interface{} {
+func GetDataFile(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return DnaRpcNil
 	}
@@ -467,7 +434,7 @@ func getDataFile(params []interface{}) map[string]interface{} {
 		if err != nil {
 			return DnaRpcInvalidTransaction
 		}
-		tx, err := ledger.DefaultLedger.Store.GetTransaction(hash)
+		tx, err := GetTransaction(hash)
 		if err != nil {
 			return DnaRpcUnknownTransaction
 		}
