@@ -12,6 +12,7 @@ import (
 	"github.com/Ontology/core/types"
 	"github.com/Ontology/crypto"
 	vm "github.com/Ontology/vm/neovm"
+	vmtypes "github.com/Ontology/vm/types"
 )
 
 const (
@@ -78,7 +79,7 @@ func NewGoverningToken() *types.Transaction {
 	}
 
 	tx := core.NewDeployTransaction(&fnCode, "cntm", "0.1.0",
-		"Ontology", "", "Ontology Network cntm Token", types.NativeVM, true)
+		"Ontology", "", "Ontology Network cntm Token", vmtypes.NativeVM, true)
 	return tx
 }
 
@@ -88,7 +89,7 @@ func NewUtilityToken() *types.Transaction {
 	}
 
 	tx := core.NewDeployTransaction(&fnCode, "cntm", "0.1.0",
-		"Ontology", "", "Ontology Network cntm Token", types.NativeVM, true)
+		"Ontology", "", "Ontology Network cntm Token", vmtypes.NativeVM, true)
 	return tx
 }
 

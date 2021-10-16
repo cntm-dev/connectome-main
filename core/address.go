@@ -5,9 +5,10 @@ import (
 	"crypto/sha256"
 	"errors"
 
-	"DNA/common/serialization"
+	"github.com/Ontology/common/serialization"
 	"github.com/Ontology/core/types"
 	"github.com/Ontology/crypto"
+	vmtypes "github.com/Ontology/vm/types"
 	"golang.org/x/crypto/ripemd160"
 )
 
@@ -48,7 +49,7 @@ func AddressFromMultiPubKeys(pubkeys []*crypto.PubKey, m int) (types.Address, er
 	return addr, nil
 }
 
-func AddressFromVmCode(vmCode types.VmCode) types.Address {
+func AddressFromVmCode(vmCode vmtypes.VmCode) types.Address {
 	var addr types.Address
 	temp := sha256.Sum256(vmCode.Code)
 	md := ripemd160.New()
