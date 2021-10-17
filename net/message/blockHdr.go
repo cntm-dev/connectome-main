@@ -173,85 +173,86 @@ func SendMsgSyncHeaders(node Noder) {
 }
 
 func (msg blkHeader) Handle(node Noder) error {
-	log.Debug()
-	err := ledger.DefaultLedger.Store.AddHeaders(msg.blkHdr, ledger.DefaultLedger)
-	if err != nil {
-		log.Warn("Add block Header error")
-		return errors.New("Add block Header error, send new header request to another node\n")
-	}
+	//log.Debug()
+	//err := ledger.DefaultLedger.Store.AddHeaders(msg.blkHdr, ledger.DefaultLedger)
+	//if err != nil {
+	//	log.Warn("Add block Header error")
+	//	return errors.New("Add block Header error, send new header request to another node\n")
+	//}
 	return nil
 }
 
 func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]types.Header, uint32, error) {
-	var count uint32 = 0
-	var empty [HASHLEN]byte
-	headers := []types.Header{}
-	var startHeight uint32
-	var stopHeight uint32
-	curHeight := ledger.DefaultLedger.Store.GetHeaderHeight()
-	if startHash == empty {
-		if stopHash == empty {
-			if curHeight > MAXBLKHDRCNT {
-				count = MAXBLKHDRCNT
-			} else {
-				count = curHeight
-			}
-		} else {
-			bkstop, err := ledger.DefaultLedger.Store.GetHeader(stopHash)
-			if err != nil {
-				return nil, 0, err
-			}
-			stopHeight = bkstop.Height
-			count = curHeight - stopHeight
-			if count > MAXBLKHDRCNT {
-				count = MAXBLKHDRCNT
-			}
-		}
-	} else {
-		bkstart, err := ledger.DefaultLedger.Store.GetHeader(startHash)
-		if err != nil {
-			return nil, 0, err
-		}
-		startHeight = bkstart.Height
-		if stopHash != empty {
-			bkstop, err := ledger.DefaultLedger.Store.GetHeader(stopHash)
-			if err != nil {
-				return nil, 0, err
-			}
-			stopHeight = bkstop.Height
+	//var count uint32 = 0
+	//var empty [HASHLEN]byte
+	//headers := []ledger.Header{}
+	//var startHeight uint32
+	//var stopHeight uint32
+	//curHeight := ledger.DefaultLedger.Store.GetHeaderHeight()
+	//if startHash == empty {
+	//	if stopHash == empty {
+	//		if curHeight > MAXBLKHDRCNT {
+	//			count = MAXBLKHDRCNT
+	//		} else {
+	//			count = curHeight
+	//		}
+	//	} else {
+	//		bkstop, err := ledger.DefaultLedger.Store.GetHeader(stopHash)
+	//		if err != nil {
+	//			return nil, 0, err
+	//		}
+	//		stopHeight = bkstop.Height
+	//		count = curHeight - stopHeight
+	//		if count > MAXBLKHDRCNT {
+	//			count = MAXBLKHDRCNT
+	//		}
+	//	}
+	//} else {
+	//	bkstart, err := ledger.DefaultLedger.Store.GetHeader(startHash)
+	//	if err != nil {
+	//		return nil, 0, err
+	//	}
+	//	startHeight = bkstart.Height
+	//	if stopHash != empty {
+	//		bkstop, err := ledger.DefaultLedger.Store.GetHeader(stopHash)
+	//		if err != nil {
+	//			return nil, 0, err
+	//		}
+	//		stopHeight = bkstop.Height
 
-			// avoid unsigned integer underflow
-			if startHeight < stopHeight {
-				return nil, 0, errors.New("do not have header to send")
-			}
-			count = startHeight - stopHeight
+	//		// avoid unsigned integer underflow
+	//		if startHeight < stopHeight {
+	//			return nil, 0, errors.New("do not have header to send")
+	//		}
+	//		count = startHeight - stopHeight
 
-			if count >= MAXBLKHDRCNT {
-				count = MAXBLKHDRCNT
-				stopHeight = startHeight - MAXBLKHDRCNT
-			}
-		} else {
+	//		if count >= MAXBLKHDRCNT {
+	//			count = MAXBLKHDRCNT
+	//			stopHeight = startHeight - MAXBLKHDRCNT
+	//		}
+	//	} else {
 
-			if startHeight > MAXBLKHDRCNT {
-				count = MAXBLKHDRCNT
-			} else {
-				count = startHeight
-			}
-		}
-	}
+	//		if startHeight > MAXBLKHDRCNT {
+	//			count = MAXBLKHDRCNT
+	//		} else {
+	//			count = startHeight
+	//		}
+	//	}
+	//}
 
-	var i uint32
-	for i = 1; i <= count; i++ {
-		hash, err := ledger.DefaultLedger.Store.GetBlockHash(stopHeight + i)
-		hd, err := ledger.DefaultLedger.Store.GetHeader(hash)
-		if err != nil {
-			log.Errorf("GetBlockWithHeight failed with err=%s, hash=%x,height=%d\n", err.Error(), hash, stopHeight+i)
-			return nil, 0, err
-		}
-		headers = append(headers, *hd)
-	}
+	//var i uint32
+	//for i = 1; i <= count; i++ {
+	//	hash, err := ledger.DefaultLedger.Store.GetBlockHash(stopHeight + i)
+	//	hd, err := ledger.DefaultLedger.Store.GetHeader(hash)
+	//	if err != nil {
+	//		log.Errorf("GetBlockWithHeight failed with err=%s, hash=%x,height=%d\n", err.Error(), hash, stopHeight+i)
+	//		return nil, 0, err
+	//	}
+	//	headers = append(headers, *hd)
+	//}
 
-	return headers, count, nil
+	//return headers, count, nil
+	return []ledger.Header{}, 0, nil
 }
 
 func NewHeaders(headers []types.Header, count uint32) ([]byte, error) {

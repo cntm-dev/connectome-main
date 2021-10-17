@@ -103,13 +103,25 @@ func printIPAddr() {
 	}
 }
 
+func (link *link) closeConn(isConsensusChannel bool) {
+	if !isConsensusChannel {
+		link.conn.Close()
+	} else {
+		link.consensusConn.Close()
+	}
+}
+
 func (link *link) CloseConn() {
-	link.conn.Close()
+	link.closeConn(false)
+}
+
+func (link *link) CloseConsensusConn() {
+	link.closeConn(true)
 }
 
 func (n *node) initConnection() {
 	isTls := Parameters.IsTLS
-	var listener net.Listener
+	var listener, listenerConsensus net.Listener
 	var err error
 	if isTls {
 		listener, err = initTlsListen()
@@ -118,12 +130,18 @@ func (n *node) initConnection() {
 			return
 		}
 	} else {
-		listener, err = initNonTlsListen()
+		listener, listenerConsensus, err = initNonTlsListen()
 		if err != nil {
 			log.Error("non TLS listen failed")
 			return
 		}
 	}
+	go n.waitForConnect(listener, false)
+	go n.waitForConnect(listenerConsensus, true)
+	//TODO Release the net listen resouce
+}
+
+func (n *node) waitForConnect(listener net.Listener, isConsensusChannel bool) {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -134,23 +152,44 @@ func (n *node) initConnection() {
 
 		n.link.connCnt++
 
-		node := NewNode()
-		node.addr, err = parseIPaddr(conn.RemoteAddr().String())
-		node.local = n
-		node.conn = conn
-		go node.rx()
+		var node *node
+		if !isConsensusChannel {
+			node = NewNode()
+			node.addr, err = parseIPaddr(conn.RemoteAddr().String())
+			node.local = n
+			node.conn = conn
+		} else {
+			localIp, err := parseIPaddr(conn.LocalAddr().String())
+			if err != nil {
+				log.Error("parseIPaddr error:", err)
+				conn.Close()
+				ccntminue
+			}
+			node = n.GetNbrNodeByAddr(localIp)
+			if node == nil {
+				conn.Close()
+				ccntminue
+			}
+			node.consensusConn = conn
+		}
+		go node.rx(isConsensusChannel)
 	}
-	//TODO Release the net listen resouce
+
 }
 
-func initNonTlsListen() (net.Listener, error) {
+func initNonTlsListen() (net.Listener, net.Listener, error) {
 	log.Debug()
-	listener, err := net.Listen("tcp", ":" + strconv.Itoa(Parameters.NodePort))
+	listener, err := net.Listen("tcp", ":"+strconv.Itoa(Parameters.NodePort))
 	if err != nil {
 		log.Error("Error listening\n", err.Error())
-		return nil, err
+		return nil, nil, err
 	}
-	return listener, nil
+	listenerConsensus, err := net.Listen("tcp", ":"+strconv.Itoa(Parameters.NodeConsensusPort))
+	if err != nil {
+		log.Error("Error listening\n", err.Error())
+		return nil, nil, err
+	}
+	return listener, listenerConsensus, nil
 }
 
 func initTlsListen() (net.Listener, error) {
@@ -184,7 +223,7 @@ func initTlsListen() (net.Listener, error) {
 	}
 
 	log.Info("TLS listen port is ", strconv.Itoa(Parameters.NodePort))
-	listener, err := tls.Listen("tcp", ":" + strconv.Itoa(Parameters.NodePort), tlsConfig)
+	listener, err := tls.Listen("tcp", ":"+strconv.Itoa(Parameters.NodePort), tlsConfig)
 	if err != nil {
 		log.Error(err)
 		return nil, err

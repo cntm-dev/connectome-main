@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"github.com/Ontology/common/config"
 	"github.com/Ontology/common/log"
-	"github.com/Ontology/core/ledger"
+	//	"github.com/Ontology/core/ledger"
 	"github.com/Ontology/crypto"
 	. "github.com/Ontology/net/protocol"
 	"time"
@@ -21,33 +21,37 @@ const (
 type version struct {
 	Hdr msgHdr
 	P   struct {
-		    Version      uint32
-		    Services     uint64
-		    TimeStamp    uint32
-		    Port         uint16
-		    HttpInfoPort uint16
-		    Cap          [32]byte
-		    Nonce        uint64
-		    // TODO remove tempory to get serilization function passed
-		    UserAgent    uint8
-		    StartHeight  uint64
-		    // FIXME check with the specify relay type length
-		    Relay        uint8
-	    }
-	pk  *crypto.PubKey
+		Version       uint32
+		Services      uint64
+		TimeStamp     uint32
+		Port          uint16
+		HttpInfoPort  uint16
+		ConsensusPort uint16
+		Cap           [32]byte
+		Nonce         uint64
+		// TODO remove tempory to get serilization function passed
+		UserAgent   uint8
+		StartHeight uint64
+		// FIXME check with the specify relay type length
+		Relay       uint8
+		IsConsensus bool
+	}
+	pk *crypto.PubKey
 }
 
 func (msg *version) init(n Noder) {
 	// Do the init
 }
 
-func NewVersion(n Noder) ([]byte, error) {
+func NewVersion(n Noder, isConsensus bool) ([]byte, error) {
 	log.Debug()
 	var msg version
 
 	msg.P.Version = n.Version()
 	msg.P.Services = n.Services()
 	msg.P.HttpInfoPort = config.Parameters.HttpInfoPort
+	msg.P.ConsensusPort = n.GetConsensusPort()
+	msg.P.IsConsensus = isConsensus
 	if config.Parameters.HttpInfoStart {
 		msg.P.Cap[HTTPINFOFLAG] = 0x01
 	} else {
@@ -166,9 +170,30 @@ func (msg version) Handle(node Noder) error {
 
 	// Exclude the node itself
 	if msg.P.Nonce == localNode.GetID() {
-		log.Warn("The node handshark with itself")
-		node.CloseConn()
-		return errors.New("The node handshark with itself")
+		if (msg.P.IsConsensus == false && node.GetState() == ESTABLISH) || (msg.P.IsConsensus == true && node.GetConsensusState() == ESTABLISH) {
+			log.Warn("The node handshark with itself")
+			node.CloseConn()
+			return errors.New("The node handshark with itself")
+		}
+	}
+
+	if msg.P.IsConsensus == true {
+		s := node.GetConsensusState()
+		if s != INIT && s != HAND {
+			log.Warn("Unknow status to received version")
+			return errors.New("Unknow status to received version")
+		}
+
+		var buf []byte
+		if s == INIT {
+			node.SetConsensusState(HANDSHAKE)
+			buf, _ = NewVersion(localNode, true)
+		} else if s == HAND {
+			node.SetConsensusState(HANDSHAKED)
+			buf, _ = NewVerack(true)
+		}
+		node.ConsensusTx(buf)
+		return nil
 	}
 
 	s := node.GetState()

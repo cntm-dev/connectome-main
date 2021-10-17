@@ -71,8 +71,9 @@ func (node *node) UpdateInfo(t time.Time, version uint32, services uint64,
 
 func NewNode() *node {
 	n := node{
-		state: INIT,
-		chF:   make(chan func() error),
+		state:          INIT,
+		consensusState: INIT,
+		chF:            make(chan func() error),
 	}
 	runtime.SetFinalizer(&n, rmNode)
 	go n.backend()
