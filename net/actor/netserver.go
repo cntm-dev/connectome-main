@@ -1,14 +1,15 @@
 package actor
 
 import (
-	"github.com/cntmID/eventbus/actor"
-	"github.com/Ontology/net/protocol"
 	"github.com/Ontology/common/log"
+	"github.com/Ontology/eventbus/actor"
+	"github.com/Ontology/net/protocol"
 )
 
 var NetServerPid *actor.PID
 
 var node protocol.Noder
+
 type NetServer struct{}
 
 type GetNodeVersionReq struct {
@@ -29,9 +30,9 @@ type GetNodeIdRsp struct {
 	Id uint64
 }
 
-type GetSynPortReq struct {
+type GetNodePortReq struct {
 }
-type GetSynPortRsp struct {
+type GetNodePortRsp struct {
 	Port uint16
 }
 
@@ -73,9 +74,9 @@ func (state *NetServer) Receive(ccntmext actor.Ccntmext) {
 	case *GetConnectionCntReq:
 		connectionCnt := node.GetConnectionCnt()
 		ccntmext.Sender().Request(&GetConnectionCntRsp{Cnt: connectionCnt}, ccntmext.Self())
-	case *GetSynPortReq:
-		synPort := node.GetPort()
-		ccntmext.Sender().Request(&GetSynPortRsp{Port: synPort}, ccntmext.Self())
+	case *GetNodePortReq:
+		nodePort := node.GetPort()
+		ccntmext.Sender().Request(&GetNodePortRsp{Port: nodePort}, ccntmext.Self())
 	case *GetConsensusPortReq:
 		conPort := node.GetConsensusPort()
 		ccntmext.Sender().Request(&GetConsensusPortRsp{Port: conPort}, ccntmext.Self())
@@ -107,6 +108,6 @@ func init() {
 	NetServerPid = actor.Spawn(props)
 }
 
-func SetNode(netNode protocol.Noder){
+func SetNode(netNode protocol.Noder) {
 	node = netNode
 }

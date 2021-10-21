@@ -16,7 +16,7 @@ import (
 	"os"
 )
 
-func GetBestBlockHash(params []interface{}) map[string]interface{} {
+func getBestBlockHash(params []interface{}) map[string]interface{} {
 	hash,err := CurrentBlockHash()
 	if err != nil{
 		return DnaRpcFailed
@@ -27,7 +27,7 @@ func GetBestBlockHash(params []interface{}) map[string]interface{} {
 // Input JSON string examples for getblock method as following:
 //   {"jsonrpc": "2.0", "method": "getblock", "params": [1], "id": 0}
 //   {"jsonrpc": "2.0", "method": "getblock", "params": ["aabbcc.."], "id": 0}
-func GetBlock(params []interface{}) map[string]interface{} {
+func getBlock(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return DnaRpcNil
 	}
@@ -346,7 +346,7 @@ func uploadDataFile(params []interface{}) map[string]interface{} {
 	return DnaRpc(refpath)
 
 }
-func GetSmartCodeEvent(params []interface{}) map[string]interface{} {
+func getSmartCodeEvent(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return DnaRpcNil
 	}
@@ -362,7 +362,7 @@ func GetSmartCodeEvent(params []interface{}) map[string]interface{} {
 	}
 	return DnaRpcInvalidParameter
 }
-func RegDataFile(params []interface{}) map[string]interface{} {
+func regDataFile(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return DnaRpcNil
 	}
@@ -389,7 +389,7 @@ func RegDataFile(params []interface{}) map[string]interface{} {
 	return DnaRpc(ToHexString(hash.ToArray()))
 }
 
-func CatDataRecord(params []interface{}) map[string]interface{} {
+func catDataRecord(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return DnaRpcNil
 	}
@@ -418,7 +418,7 @@ func CatDataRecord(params []interface{}) map[string]interface{} {
 	}
 }
 
-func GetDataFile(params []interface{}) map[string]interface{} {
+func getDataFile(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return DnaRpcNil
 	}

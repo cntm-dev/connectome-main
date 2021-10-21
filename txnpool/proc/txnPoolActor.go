@@ -2,71 +2,40 @@ package proc
 
 import (
 	"fmt"
-	"github.com/Ontology/common"
 	"github.com/Ontology/common/log"
 	tx "github.com/Ontology/core/types"
 	"github.com/Ontology/eventbus/actor"
 	tc "github.com/Ontology/txnpool/common"
+	"github.com/Ontology/validator/types"
 )
 
-func NewTxnActor(s *TXNPoolServer) *TxnActor {
-	a := &TxnActor{}
+func NewTxActor(s *TXPoolServer) *TxActor {
+	a := &TxActor{}
 	a.setServer(s)
 	return a
 }
 
-func NewTxnPoolActor(s *TXNPoolServer) *TxnPoolActor {
-	a := &TxnPoolActor{}
+func NewTxPoolActor(s *TXPoolServer) *TxPoolActor {
+	a := &TxPoolActor{}
 	a.setServer(s)
 	return a
 }
 
-func NewVerifyRspActor(s *TXNPoolServer) *VerifyRspActor {
+func NewVerifyRspActor(s *TXPoolServer) *VerifyRspActor {
 	a := &VerifyRspActor{}
 	a.setServer(s)
 	return a
 }
 
 // TxnActor: Handle the low priority msg from P2P and API
-type GetTxnReq struct {
-	Hash common.Uint256
+type TxActor struct {
+	server *TXPoolServer
 }
 
-type GetTxnRsp struct {
-	Txn *tx.Transaction
-}
-
-type CheckTxnReq struct {
-	Hash common.Uint256
-}
-
-type CheckTxnRsp struct {
-	Ok bool
-}
-
-type GetTxnStatusReq struct {
-	Hash common.Uint256
-}
-
-type GetTxnStatusRsp struct {
-	TxnStatus *tc.TXNEntry
-}
-
-type GetTxnStats struct {
-}
-
-type GetTxnStatsRsp struct {
-	count *[]uint64
-}
-
-type TxnActor struct {
-	server *TXNPoolServer
-}
-
-func (ta *TxnActor) Receive(ccntmext actor.Ccntmext) {
+func (ta *TxActor) Receive(ccntmext actor.Ccntmext) {
 	switch msg := ccntmext.Message().(type) {
 	case *actor.Started:
-		log.Info("Server started and be ready to receive txn")
+		log.Info("Server started and be ready to receive tx msg")
 	case *actor.Stopping:
 		log.Info("Server stopping")
 	case *actor.Restarting:
@@ -81,102 +50,85 @@ func (ta *TxnActor) Receive(ccntmext actor.Ccntmext) {
 		} else {
 			ta.server.assginTXN2Worker(msg)
 		}
-	case *GetTxnReq:
+	case *tc.GetTxnReq:
 		res := ta.server.getTransaction(msg.Hash)
-		ccntmext.Sender().Request(&GetTxnRsp{Txn: res}, ccntmext.Self())
-	case *GetTxnStats:
+		ccntmext.Sender().Request(&tc.GetTxnRsp{Txn: res}, ccntmext.Self())
+	case *tc.GetTxnStats:
 		res := ta.server.getStats()
-		ccntmext.Sender().Request(&GetTxnStatsRsp{count: res}, ccntmext.Self())
-	case *CheckTxnReq:
-		res := ta.server.CheckTxn(msg.Hash)
-		ccntmext.Sender().Request(&CheckTxnRsp{Ok: res}, ccntmext.Self())
-	case *GetTxnStatusReq:
-		res := ta.server.GetTxnStatusReq(msg.Hash)
-		ccntmext.Sender().Request(&GetTxnStatusRsp{TxnStatus: res}, ccntmext.Self())
+		ccntmext.Sender().Request(&tc.GetTxnStatsRsp{Count: res}, ccntmext.Self())
+	case *tc.CheckTxnReq:
+		res := ta.server.CheckTx(msg.Hash)
+		ccntmext.Sender().Request(&tc.CheckTxnRsp{Ok: res}, ccntmext.Self())
+	case *tc.GetTxnStatusReq:
+		res := ta.server.GetTxStatusReq(msg.Hash)
+		ccntmext.Sender().Request(res, ccntmext.Self())
 	default:
 		log.Info("Unknown msg type", msg)
 	}
 }
 
-func (ta *TxnActor) setServer(s *TXNPoolServer) {
+func (ta *TxActor) setServer(s *TXPoolServer) {
 	ta.server = s
 }
 
 // TxnPoolActor: Handle the high priority request from Consensus
-type GetTxnPoolReq struct {
-	ByCount bool
+type TxPoolActor struct {
+	server *TXPoolServer
 }
 
-type GetTxnPoolRsp struct {
-	TxnPool []*tc.TXNEntry
-}
-
-type GetPendingTxnReq struct {
-	ByCount bool
-}
-
-type GetPendingTxnRsp struct {
-	Txs []*tx.Transaction
-}
-
-type GetUnverifiedTxsReq struct {
-	Txs []*tx.Transaction
-}
-
-type GetUnverifiedTxsRsp struct {
-	Txs []*tx.Transaction
-}
-
-type CleanTxnPoolReq struct {
-	TxnPool []*tx.Transaction
-}
-
-type TxnPoolActor struct {
-	server *TXNPoolServer
-}
-
-func (tpa *TxnPoolActor) Receive(ccntmext actor.Ccntmext) {
+func (tpa *TxPoolActor) Receive(ccntmext actor.Ccntmext) {
 	switch msg := ccntmext.Message().(type) {
 	case *actor.Started:
-		log.Info("Server started and be ready to receive txn")
+		log.Info("Server started and be ready to receive txPool msg")
 	case *actor.Stopping:
 		log.Info("Server stopping")
 	case *actor.Restarting:
 		log.Info("Server Restarting")
-	case *GetTxnPoolReq:
-		res := tpa.server.GetTxnPool(msg.ByCount)
-		ccntmext.Sender().Request(&GetTxnPoolRsp{TxnPool: res}, ccntmext.Self())
-	case *CleanTxnPoolReq:
-		tpa.server.CleanTransactionList(msg.TxnPool)
-	case *GetPendingTxnReq:
+	case *tc.GetTxnPoolReq:
+		res := tpa.server.GetTxPool(msg.ByCount)
+		ccntmext.Sender().Request(&tc.GetTxnPoolRsp{TxnPool: res}, ccntmext.Self())
+	case *tc.GetPendingTxnReq:
 		res := tpa.server.GetPendingTxs(msg.ByCount)
-		ccntmext.Sender().Request(&GetPendingTxnRsp{Txs: res}, ccntmext.Self())
-	case *GetUnverifiedTxsReq:
-		res := tpa.server.GetUnverifiedTxs(msg.Txs)
-		ccntmext.Sender().Request(&GetUnverifiedTxsRsp{Txs: res}, ccntmext.Self())
+		ccntmext.Sender().Request(&tc.GetPendingTxnRsp{Txs: res}, ccntmext.Self())
 	default:
 		log.Info("Unknown msg type", msg)
 	}
 }
 
-func (tpa *TxnPoolActor) setServer(s *TXNPoolServer) {
+func (tpa *TxPoolActor) setServer(s *TXPoolServer) {
 	tpa.server = s
 }
 
 // VerifyRspActor: Handle the response from the validators
 type VerifyRspActor struct {
-	server *TXNPoolServer
+	server *TXPoolServer
 }
 
 func (vpa *VerifyRspActor) Receive(ccntmext actor.Ccntmext) {
 	switch msg := ccntmext.Message().(type) {
 	case *actor.Started:
-		log.Info("Server started and be ready to receive txn")
+		log.Info("Server started and be ready to receive validator's msg")
 	case *actor.Stopping:
 		log.Info("Server stopping")
 	case *actor.Restarting:
 		log.Info("Server Restarting")
-	case *tc.VerifyRsp:
+	case *types.RegisterValidator:
+		log.Infof("validator %v connected", msg.Sender)
+		fmt.Println("llls")
+		v := Validator{
+			Pid:       msg.Sender,
+			CheckType: msg.Type,
+		}
+		vpa.server.registerValidator(msg.Id, v)
+	case *types.UnRegisterValidator:
+		log.Infof("validator %v disconnected", msg.Id)
+		pid := vpa.server.GetValidatorPID(msg.Id)
+		if pid != nil {
+			vpa.server.unRegisterValidator(msg.Id)
+			pid.Tell(&types.UnRegisterAck{Id: msg.Id})
+		}
+
+	case *types.CheckResponse:
 		log.Info("Server Receives verify rsp message")
 		vpa.server.assignRsp2Worker(msg)
 	default:
@@ -184,6 +136,6 @@ func (vpa *VerifyRspActor) Receive(ccntmext actor.Ccntmext) {
 	}
 }
 
-func (vpa *VerifyRspActor) setServer(s *TXNPoolServer) {
+func (vpa *VerifyRspActor) setServer(s *TXPoolServer) {
 	vpa.server = s
 }
