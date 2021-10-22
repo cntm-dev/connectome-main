@@ -2,7 +2,7 @@ package dbft
 
 import (
 	"fmt"
-	cl "github.com/Ontology/account"
+	"github.com/Ontology/account"
 	. "github.com/Ontology/common"
 	"github.com/Ontology/common/log"
 	ser "github.com/Ontology/common/serialization"
@@ -92,14 +92,17 @@ func (cxt *ConsensusCcntmext) MakeHeader() *types.Block {
 		if err != nil {
 			return nil
 		}
-		blockRoot := ledger.DefaultLedger.Store.GetBlockRootWithNewTxRoot(txRoot)
-		stateRoot := ledger.DefaultLedger.Store.GetCurrentStateRoot()
+		blockRoot := ledger.DefLedger.GetBlockRootWithNewTxRoot(&txRoot)
+		stateRoot, err := ledger.DefLedger.GetCurrentStateRoot()
+		if err != nil {
+			return nil
+		}
 		header := &types.Header{
 			Version:          CcntmextVersion,
 			PrevBlockHash:    cxt.PrevHash,
 			TransactionsRoot: txRoot,
-			BlockRoot:        blockRoot,
-			StateRoot:        stateRoot,
+			BlockRoot:        *blockRoot,
+			StateRoot:        *stateRoot,
 			Timestamp:        cxt.Timestamp,
 			Height:           cxt.Height,
 			ConsensusData:    cxt.Nonce,
@@ -181,12 +184,12 @@ func (cxt *ConsensusCcntmext) GetStateDetail() string {
 
 }
 
-func (cxt *ConsensusCcntmext) Reset(client cl.Client, localNode net.Neter) {
-	preHash := ledger.DefaultLedger.Blockchain.CurrentBlockHash()
-	height := ledger.DefaultLedger.Blockchain.BlockHeight
+func (cxt *ConsensusCcntmext) Reset(bkAccount *account.Account, localNode net.Neter) {
+	preHash := ledger.DefLedger.GetCurrentBlockHash()
+	height := ledger.DefLedger.GetCurrentBlockHeight()
 	header := cxt.MakeHeader()
 
-	if height != cxt.Height || header == nil || header.Hash() != preHash || len(cxt.NextBookKeepers) == 0 {
+	if height != cxt.Height || header == nil || header.Hash() != *preHash || len(cxt.NextBookKeepers) == 0 {
 		log.Info("[ConsensusCcntmext] Calculate BookKeepers from db")
 		var err error
 		cxt.BookKeepers, err = vote.GetValidators([]*types.Transaction{})
@@ -198,7 +201,7 @@ func (cxt *ConsensusCcntmext) Reset(client cl.Client, localNode net.Neter) {
 	}
 
 	cxt.State = Initial
-	cxt.PrevHash = preHash
+	cxt.PrevHash = *preHash
 	cxt.Height = height + 1
 	cxt.ViewNumber = 0
 	cxt.BookKeeperIndex = -1
@@ -211,8 +214,7 @@ func (cxt *ConsensusCcntmext) Reset(client cl.Client, localNode net.Neter) {
 	cxt.ExpectedView = make([]byte, bookKeeperLen)
 
 	for i := 0; i < bookKeeperLen; i++ {
-		ac, _ := client.GetDefaultAccount()
-		if ac.PublicKey.X.Cmp(cxt.BookKeepers[i].X) == 0 {
+		if bkAccount.PublicKey.X.Cmp(cxt.BookKeepers[i].X) == 0 {
 			cxt.BookKeeperIndex = i
 			cxt.Owner = cxt.BookKeepers[i]
 			break

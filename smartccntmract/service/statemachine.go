@@ -8,8 +8,8 @@ import (
 	"github.com/Ontology/core/asset"
 	"github.com/Ontology/core/code"
 	"github.com/Ontology/core/ccntmract"
-	"github.com/Ontology/core/ledger"
 	"github.com/Ontology/core/states"
+	scommon "github.com/Ontology/core/store/common"
 	"github.com/Ontology/core/store"
 	"github.com/Ontology/core/types"
 	"github.com/Ontology/crypto"
@@ -23,15 +23,17 @@ import (
 
 type StateMachine struct {
 	*StateReader
+	ldgerStore store.ILedgerStore
 	CloneCache *storage.CloneCache
 	trigger    vmtypes.TriggerType
 	block      *types.Block
 }
 
-func NewStateMachine(dbCache store.IStateStore, trigger vmtypes.TriggerType, block *types.Block) *StateMachine {
+func NewStateMachine(ldgerStore store.ILedgerStore, dbCache scommon.IStateStore, trigger vmtypes.TriggerType, block *types.Block) *StateMachine {
 	var stateMachine StateMachine
+	stateMachine.ldgerStore = ldgerStore
 	stateMachine.CloneCache = storage.NewCloneCache(dbCache)
-	stateMachine.StateReader = NewStateReader(trigger)
+	stateMachine.StateReader = NewStateReader(ldgerStore,trigger)
 	stateMachine.trigger = trigger
 	stateMachine.block = block
 
@@ -127,10 +129,10 @@ func (s *StateMachine) CreateAsset(engine *vm.ExecutionEngine) (bool, error) {
 		Owner:      owner,
 		Admin:      admin,
 		Issuer:     admin,
-		Expiration: ledger.DefaultLedger.Store.GetHeight() + 1 + 2000000,
+		Expiration: s.ldgerStore.GetCurrentBlockHeight() + 1 + 2000000,
 		IsFrozen:   false,
 	}
-	state, err := s.CloneCache.GetOrAdd(store.ST_Asset, assetId.ToArray(), assetState)
+	state, err := s.CloneCache.GetOrAdd(scommon.ST_Asset, assetId.ToArray(), assetState)
 	if err != nil {
 		log.Error("[CreateAsset] GetOrAdd asset fail!")
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[CreateAsset] GetOrAdd error!")
@@ -190,7 +192,7 @@ func (s *StateMachine) CcntmractCreate(engine *vm.ExecutionEngine) (bool, error)
 		Description: string(descByte),
 	}
 	codeHash := common.ToCodeHash(codeByte)
-	state, err := s.CloneCache.GetOrAdd(store.ST_Ccntmract, codeHash.ToArray(), ccntmractState)
+	state, err := s.CloneCache.GetOrAdd(scommon.ST_Ccntmract, codeHash.ToArray(), ccntmractState)
 	if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractCreate] GetOrAdd error!")
 	}
@@ -207,7 +209,7 @@ func (s *StateMachine) CcntmractMigrate(engine *vm.ExecutionEngine) (bool, error
 		return false, errors.NewErr("[CcntmractMigrate] Code too lcntm!")
 	}
 	codeHash := common.ToCodeHash(codeByte)
-	item, err := s.CloneCache.Get(store.ST_Ccntmract, codeHash.ToArray())
+	item, err := s.CloneCache.Get(scommon.ST_Ccntmract, codeHash.ToArray())
 	if err != nil {
 		return false, errors.NewErr("[CcntmractMigrate] Get Ccntmract error!")
 	}
@@ -257,8 +259,8 @@ func (s *StateMachine) CcntmractMigrate(engine *vm.ExecutionEngine) (bool, error
 		Email:       string(emailByte),
 		Description: string(descByte),
 	}
-	s.CloneCache.Add(store.ST_Ccntmract, codeHash.ToArray(), ccntmractState)
-	stateValues, err := s.CloneCache.Store.Find(store.ST_Ccntmract, codeHash.ToArray())
+	s.CloneCache.Add(scommon.ST_Ccntmract, codeHash.ToArray(), ccntmractState)
+	stateValues, err := s.CloneCache.Store.Find(scommon.ST_Ccntmract, codeHash.ToArray())
 	if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractMigrate] Find error!")
 	}
@@ -273,7 +275,7 @@ func (s *StateMachine) CcntmractMigrate(engine *vm.ExecutionEngine) (bool, error
 		if _, err := key.Serialize(b); err != nil {
 			return false, errors.NewErr("[CcntmractMigrate] Key Serialize error!")
 		}
-		s.CloneCache.Add(store.ST_Storage, key.ToArray(), v.Value)
+		s.CloneCache.Add(scommon.ST_Storage, key.ToArray(), v.Value)
 	}
 	vm.PushData(engine, ccntmractState)
 	return s.CcntmractDestory(engine)
@@ -289,8 +291,9 @@ func (s *StateMachine) AssetRenew(engine *vm.ExecutionEngine) (bool, error) {
 	}
 	years := vm.PopInt(engine)
 	assetState := data.(*states.AssetState)
-	if assetState.Expiration < ledger.DefaultLedger.Store.GetHeight()+1 {
-		assetState.Expiration = ledger.DefaultLedger.Store.GetHeight() + 1
+	nextBlockHeight := s.ldgerStore.GetCurrentBlockHeight() + 1
+	if assetState.Expiration < nextBlockHeight {
+		assetState.Expiration = nextBlockHeight
 	}
 	assetState.Expiration += uint32(years) * 2000000
 	vm.PushData(engine, assetState.Expiration)
@@ -306,26 +309,26 @@ func (s *StateMachine) CcntmractDestory(engine *vm.ExecutionEngine) (bool, error
 	if err != nil {
 		return false, nil
 	}
-	item, err := s.CloneCache.Store.TryGet(store.ST_Ccntmract, hash.ToArray())
+	item, err := s.CloneCache.Store.TryGet(scommon.ST_Ccntmract, hash.ToArray())
 	if err != nil {
 		return false, err
 	}
 	if item == nil {
 		return false, nil
 	}
-	s.CloneCache.Delete(store.ST_Ccntmract, hash.ToArray())
-	stateValues, err := s.CloneCache.Store.Find(store.ST_Ccntmract, hash.ToArray())
+	s.CloneCache.Delete(scommon.ST_Ccntmract, hash.ToArray())
+	stateValues, err := s.CloneCache.Store.Find(scommon.ST_Ccntmract, hash.ToArray())
 	if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractDestory] Find error!")
 	}
 	for _, v := range stateValues {
-		s.CloneCache.Delete(store.ST_Storage, []byte(v.Key))
+		s.CloneCache.Delete(scommon.ST_Storage, []byte(v.Key))
 	}
 	return true, nil
 }
 
 func (s *StateMachine) CheckStorageCcntmext(ccntmext *StorageCcntmext) (bool, error) {
-	item, err := s.CloneCache.Get(store.ST_Ccntmract, ccntmext.codeHash.ToArray())
+	item, err := s.CloneCache.Get(scommon.ST_Ccntmract, ccntmext.codeHash.ToArray())
 	if err != nil {
 		return false, err
 	}
@@ -353,7 +356,7 @@ func (s *StateMachine) StoragePut(engine *vm.ExecutionEngine) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	s.CloneCache.Add(store.ST_Storage, k, &states.StorageItem{Value: value})
+	s.CloneCache.Add(scommon.ST_Storage, k, &states.StorageItem{Value: value})
 	return true, nil
 }
 
@@ -371,7 +374,7 @@ func (s *StateMachine) StorageDelete(engine *vm.ExecutionEngine) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	s.CloneCache.Delete(store.ST_Storage, k)
+	s.CloneCache.Delete(scommon.ST_Storage, k)
 	return true, nil
 }
 
@@ -392,7 +395,7 @@ func (s *StateMachine) StorageGet(engine *vm.ExecutionEngine) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	item, err := s.CloneCache.Get(store.ST_Storage, k)
+	item, err := s.CloneCache.Get(scommon.ST_Storage, k)
 	if err != nil {
 		return false, err
 	}
@@ -414,7 +417,7 @@ func (s *StateMachine) GetStorageCcntmext(engine *vm.ExecutionEngine) (bool, err
 	}
 	ccntmractState := opInterface.(*states.CcntmractState)
 	codeHash := ccntmractState.Code.CodeHash()
-	item, err := s.CloneCache.Store.TryGet(store.ST_Ccntmract, codeHash.ToArray())
+	item, err := s.CloneCache.Store.TryGet(scommon.ST_Ccntmract, codeHash.ToArray())
 	if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[GetStorageCcntmext] Get StorageCcntmext nil")
 	}

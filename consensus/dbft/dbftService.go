@@ -2,35 +2,36 @@ package dbft
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"time"
 
-	cl "github.com/Ontology/account"
 	. "github.com/Ontology/common"
 	"github.com/Ontology/common/config"
 	"github.com/Ontology/common/log"
 	"github.com/Ontology/core"
 	"github.com/Ontology/core/ccntmract"
-	ct "github.com/Ontology/core/ccntmract"
 	"github.com/Ontology/core/ccntmract/program"
 	"github.com/Ontology/core/genesis"
 	"github.com/Ontology/core/ledger"
 	"github.com/Ontology/core/payload"
-	_ "github.com/Ontology/core/signature"
+	"github.com/Ontology/core/signature"
 	"github.com/Ontology/core/transaction/utxo"
 	"github.com/Ontology/core/types"
 	"github.com/Ontology/core/vote"
 	"github.com/Ontology/crypto"
-	. "github.com/Ontology/errors"
 	"github.com/Ontology/events"
 	"github.com/Ontology/net"
 	msg "github.com/Ontology/net/message"
+	"github.com/Ontology/core/ledger/ledgerevent"
+	"github.com/Ontology/account"
+	clientActor "github.com/Ontology/consensus/actor"
+	cntmErrors "github.com/Ontology/errors"
+	"github.com/Ontology/eventbus/actor"
 )
 
 type DbftService struct {
 	ccntmext           ConsensusCcntmext
-	Client            cl.Client
+	Account           *account.Account
 	timer             *time.Timer
 	timerHeight       uint32
 	timeView          byte
@@ -38,18 +39,19 @@ type DbftService struct {
 	logDictionary     string
 	started           bool
 	localNet          net.Neter
+	poolActor         *clientActor.TxPoolActor
 
 	newInventorySubscriber          events.Subscriber
 	blockPersistCompletedSubscriber events.Subscriber
 }
 
-func NewDbftService(client cl.Client, logDictionary string, localNet net.Neter) *DbftService {
+func NewDbftService(bkAccount *account.Account, logDictionary string, txpool *actor.PID) *DbftService {
 
 	ds := &DbftService{
-		Client:        client,
+		Account:       bkAccount,
 		timer:         time.NewTimer(time.Second * 15),
 		started:       false,
-		localNet:      localNet,
+		poolActor:     &clientActor.TxPoolActor{Pool: txpool},
 		logDictionary: logDictionary,
 	}
 
@@ -61,16 +63,10 @@ func NewDbftService(client cl.Client, logDictionary string, localNet net.Neter) 
 }
 
 func (ds *DbftService) BlockPersistCompleted(v interface{}) {
-	log.Debug()
 	if block, ok := v.(*types.Block); ok {
 		log.Infof("persist block: %x", block.Hash())
-		err := ds.localNet.CleanTransactions(block.Transactions)
-		if err != nil {
-			log.Warn(err)
-		}
 
 		ds.localNet.Xmit(block.Hash())
-		//log.Debug(fmt.Sprintf("persist block: %x with %d transactions\n", block.Hash(),len(trxHashToBeDelete)))
 	}
 
 	ds.blockReceivedTime = time.Now()
@@ -123,12 +119,12 @@ func (ds *DbftService) CheckSignatures() error {
 		//get current index's hash
 		ep, err := ds.ccntmext.BookKeepers[ds.ccntmext.BookKeeperIndex].EncodePoint(true)
 		if err != nil {
-			return NewDetailErr(err, ErrNoCode, "[DbftService] ,EncodePoint failed")
+			return cntmErrors.NewDetailErr(err, cntmErrors.ErrNoCode, "[DbftService] ,EncodePoint failed")
 		}
 		codehash := ToCodeHash(ep)
 
 		//create multi-sig ccntmract with all bookKeepers
-		ccntmract, err := ct.CreateMultiSigCcntmract(codehash, ds.ccntmext.M(), ds.ccntmext.BookKeepers)
+		ct, err := ccntmract.CreateMultiSigCcntmract(codehash, ds.ccntmext.M(), ds.ccntmext.BookKeepers)
 		if err != nil {
 			log.Error("CheckSignatures CreateMultiSigCcntmract error: ", err)
 			return err
@@ -151,18 +147,23 @@ func (ds *DbftService) CheckSignatures() error {
 		}
 		//set signed program to the block
 		block.Header.Program = &program.Program{
-			Code:      ccntmract.Code,
+			Code:      ct.Code,
 			Parameter: sb.ToArray(),
 		}
 		//fill transactions
 		block.Transactions = ds.ccntmext.Transactions
 
 		hash := block.Hash()
-		if !ledger.DefaultLedger.BlockInLedger(hash) {
+		isExist, err := ledger.DefLedger.IsCcntmainBlock(&hash)
+		if err != nil {
+			log.Errorf("DefLedger.IsCcntmainBlock Hash:%x error:%s", hash, err)
+			return err
+		}
+		if !isExist {
 			// save block
-			if err := ledger.DefaultLedger.Blockchain.AddBlock(block); err != nil {
+			if err := ledger.DefLedger.AddBlock(block); err != nil {
 				log.Error(fmt.Sprintf("[CheckSignatures] Xmit block Error: %s, blockHash: %d", err.Error(), block.Hash()))
-				return NewDetailErr(err, ErrNoCode, "[DbftService], CheckSignatures AddCcntmract failed.")
+				return cntmErrors.NewDetailErr(err, cntmErrors.ErrNoCode, "[DbftService], CheckSignatures AddCcntmract failed.")
 			}
 
 			ds.ccntmext.State |= BlockGenerated
@@ -225,7 +226,7 @@ func (ds *DbftService) Halt() error {
 	}
 
 	if ds.started {
-		ledger.DefaultLedger.Blockchain.BCEvents.UnSubscribe(events.EventBlockPersistCompleted, ds.blockPersistCompletedSubscriber)
+		ledgerevent.DefLedgerEvt.UnSubscribe(events.EventBlockPersistCompleted, ds.blockPersistCompletedSubscriber)
 		ds.localNet.GetEvent("consensus").UnSubscribe(events.EventNewInventory, ds.newInventorySubscriber)
 	}
 	return nil
@@ -359,31 +360,6 @@ func (ds *DbftService) NewConsensusPayload(payload *msg.ConsensusPayload) {
 	}
 }
 
-func (ds *DbftService) GetUnverifiedTxs(txs []*types.Transaction) []*types.Transaction {
-	if len(ds.ccntmext.Transactions) == 0 {
-		return nil
-	}
-	txpool, _ := ds.localNet.GetTxnPool(false)
-	ret := []*types.Transaction{}
-	for _, t := range txs {
-		if _, ok := txpool[t.Hash()]; !ok {
-			if t.TxType != types.BookKeeping {
-				ret = append(ret, t)
-			}
-		}
-	}
-	return ret
-}
-
-func (ds *DbftService) VerifyTxs(txs []*types.Transaction) error {
-	for _, t := range txs {
-		if errCode := ds.localNet.AppendTxnPool(t); errCode != ErrNoError {
-			return errors.New("[dbftService] VerifyTxs failed when AppendTxnPool.")
-		}
-	}
-	return nil
-}
-
 func (ds *DbftService) PrepareRequestReceived(payload *msg.ConsensusPayload, message *PrepareRequest) {
 	log.Info(fmt.Sprintf("Prepare Request Received: height=%d View=%d index=%d tx=%d", payload.Height, message.ViewNumber(), payload.BookKeeperIndex, len(message.Transactions)))
 
@@ -395,7 +371,7 @@ func (ds *DbftService) PrepareRequestReceived(payload *msg.ConsensusPayload, mes
 		return
 	}
 
-	header, err := ledger.DefaultLedger.Blockchain.GetHeader(ds.ccntmext.PrevHash)
+	header, err := ledger.DefLedger.GetHeaderByHash(&ds.ccntmext.PrevHash)
 	if err != nil {
 		log.Info("PrepareRequestReceived GetHeader failed with ds.ccntmext.PrevHash", ds.ccntmext.PrevHash)
 	}
@@ -564,15 +540,19 @@ func (ds *DbftService) SignAndRelay(payload *msg.ConsensusPayload) {
 	}
 	log.Debug("[SignAndRelay] ConsensusPayload Program Hashes: ", prohash)
 
-	ctCxt := ct.NewCcntmractCcntmext(payload)
+	ccntmext := ccntmract.NewCcntmractCcntmext(payload)
 
-	ret := ds.Client.Sign(ctCxt)
-	if ret == false {
-		log.Warn("[SignAndRelay] Sign ccntmract failure")
+	if prohash[0] != ds.Account.ProgramHash {
+		log.Error("[SignAndRelay] wrcntm program hash")
 	}
-	prog := ctCxt.GetPrograms()
+
+	sig, _ := signature.SignBySigner(ccntmext.Data, ds.Account)
+	ct, _ := ccntmract.CreateSignatureCcntmract(ds.Account.PublicKey)
+	ccntmext.AddCcntmract(ct, ds.Account.PublicKey, sig)
+
+	prog := ccntmext.GetPrograms()
 	if prog == nil {
-		log.Warn("[SignAndRelay] Get programe failure")
+		log.Warn("[SignAndRelay] Get program failure")
 	}
 	payload.SetPrograms(prog)
 	ds.localNet.Xmit(payload)
