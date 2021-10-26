@@ -5,8 +5,8 @@ import (
 	"github.com/Ontology/common"
 	"github.com/Ontology/core/genesis"
 	"github.com/Ontology/core/states"
-	"github.com/Ontology/core/store/ledgerstore"
 	"github.com/Ontology/core/store"
+	"github.com/Ontology/core/store/ledgerstore"
 	"github.com/Ontology/core/types"
 	"github.com/Ontology/crypto"
 )
@@ -26,6 +26,10 @@ func NewLedger() (*Ledger, error) {
 	return &Ledger{
 		ldgStore: ldgStore,
 	}, nil
+}
+
+func (this *Ledger) GetStore() store.ILedgerStore {
+	return this.ldgStore
 }
 
 func (this *Ledger) Init(defaultBookKeeper []*crypto.PubKey) error {
@@ -193,14 +197,6 @@ func (this *Ledger) GetStorageItem(codeHash *common.Uint160, key []byte) ([]byte
 
 func (this *Ledger) GetCcntmractState(ccntmractHash *common.Uint160) (*states.CcntmractState, error) {
 	return this.ldgStore.GetCcntmractState(ccntmractHash)
-}
-
-func (this *Ledger) GetAccountState(programHash *common.Uint160) (*states.AccountState, error) {
-	return this.ldgStore.GetAccountState(programHash)
-}
-
-func (this *Ledger) GetAssetState(assetId *common.Uint256) (*states.AssetState, error) {
-	return this.ldgStore.GetAssetState(assetId)
 }
 
 func (this *Ledger) PreExecuteCcntmract(tx *types.Transaction) ([]interface{}, error) {

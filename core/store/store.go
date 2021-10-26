@@ -26,15 +26,10 @@ type ILedgerStore interface {
 	IsCcntmainTransaction(txHash *Uint256) (bool, error)
 	GetCurrentStateRoot() (*Uint256, error)
 	GetBlockRootWithNewTxRoot(txRoot *Uint256) *Uint256
-	//Sates
 	GetAssetState(assetId *Uint256) (*states.AssetState, error)
-	//GetAllAssetState()(map[Uint256]*states.AssetState, error)
 	GetCcntmractState(ccntmractHash *Uint160) (*states.CcntmractState, error)
 	GetAccountState(programHash *Uint160) (*states.AccountState, error)
 	GetBookKeeperState() (*states.BookKeeperState, error)
-	//GetSpentCoinState(refTxId *Uint256)(*states.SpentCoinState, error)
-	//GetUnspentCoinState(refTxId *Uint256)(*states.UnspentCoinState, error)
-	//GetUnspentCoinStateByProgramHash(programHash *Uint160,assetId *Uint256)(*states.ProgramUnspentCoin, error)
 	GetStorageItem(key *states.StorageKey) (*states.StorageItem, error)
 	PreExecuteCcntmract(tx *types.Transaction) ([]interface{}, error)
 }
