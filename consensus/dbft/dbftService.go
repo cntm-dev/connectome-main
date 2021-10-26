@@ -15,7 +15,6 @@ import (
 	"github.com/Ontology/core/ccntmract/program"
 	"github.com/Ontology/core/genesis"
 	"github.com/Ontology/core/ledger"
-	"github.com/Ontology/core/ledger/ledgerevent"
 	"github.com/Ontology/core/payload"
 	"github.com/Ontology/core/signature"
 	"github.com/Ontology/core/transaction/utxo"
@@ -25,8 +24,8 @@ import (
 	cntmErrors "github.com/Ontology/errors"
 	"github.com/Ontology/eventbus/actor"
 	"github.com/Ontology/events"
-	"github.com/Ontology/net"
 	p2pmsg "github.com/Ontology/net/message"
+	"github.com/Ontology/events/message"
 )
 
 type DbftService struct {
@@ -37,22 +36,22 @@ type DbftService struct {
 	timeView          byte
 	blockReceivedTime time.Time
 	started           bool
-	localNet          net.Neter
 	poolActor         *actorTypes.TxPoolActor
+	p2p               *actorTypes.P2PActor
 
 	pid *actor.PID
-
-	newInventorySubscriber          events.Subscriber
-	blockPersistCompletedSubscriber events.Subscriber
+	sub *events.ActorSubscriber
+	//blockPersistCompletedSubscriber events.Subscriber
 }
 
-func NewDbftService(bkAccount *account.Account, txpool *actor.PID) (*DbftService, error) {
+func NewDbftService(bkAccount *account.Account, txpool, p2p *actor.PID) (*DbftService, error) {
 
 	service := &DbftService{
 		Account:   bkAccount,
 		timer:     time.NewTimer(time.Second * 15),
 		started:   false,
 		poolActor: &actorTypes.TxPoolActor{Pool: txpool},
+		p2p:       &actorTypes.P2PActor{P2P: p2p},
 	}
 
 	if !service.timer.Stop() {
@@ -75,6 +74,8 @@ func NewDbftService(bkAccount *account.Account, txpool *actor.PID) (*DbftService
 
 	pid, err := actor.SpawnNamed(props, "consensus_dbft")
 	service.pid = pid
+
+	service.sub = events.NewActorSubscriber(pid)
 	return service, err
 }
 
@@ -90,7 +91,7 @@ func (this *DbftService) Receive(ccntmext actor.Ccntmext) {
 		this.halt()
 	case *actorTypes.TimeOut:
 		this.Timeout()
-	case *actorTypes.BlockCompleted:
+	case *message.SaveBlockCompleteMsg:
 		this.handleBlockPersistCompleted(msg.Block)
 	case *p2pmsg.ConsensusPayload:
 		this.NewConsensusPayload(msg)
@@ -115,7 +116,7 @@ func (this *DbftService) Halt() error {
 
 func (self *DbftService) handleBlockPersistCompleted(block *types.Block) {
 	log.Infof("persist block: %x", block.Hash())
-	self.localNet.Xmit(block.Hash())
+	self.p2p.Xmit(block.Hash())
 
 	self.blockReceivedTime = time.Now()
 
@@ -126,7 +127,7 @@ func (ds *DbftService) BlockPersistCompleted(v interface{}) {
 	if block, ok := v.(*types.Block); ok {
 		log.Infof("persist block: %x", block.Hash())
 
-		ds.localNet.Xmit(block.Hash())
+		ds.p2p.Xmit(block.Hash())
 	}
 
 }
@@ -283,8 +284,7 @@ func (ds *DbftService) halt() error {
 	}
 
 	if ds.started {
-		ledgerevent.DefLedgerEvt.UnSubscribe(events.EventBlockPersistCompleted, ds.blockPersistCompletedSubscriber)
-		ds.localNet.GetEvent("consensus").UnSubscribe(events.EventNewInventory, ds.newInventorySubscriber)
+		ds.sub.Unsubscribe(message.TopicSaveBlockComplete)
 	}
 	return nil
 }
