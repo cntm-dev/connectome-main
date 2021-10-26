@@ -5,6 +5,8 @@ import (
 	"github.com/Ontology/events"
 	"github.com/Ontology/net/node"
 	"github.com/Ontology/net/protocol"
+	ns "github.com/Ontology/net/actor"
+	"github.com/Ontology/eventbus/actor"
 )
 
 type Neter interface {

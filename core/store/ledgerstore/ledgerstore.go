@@ -3,17 +3,17 @@ package ledgerstore
 import (
 	"fmt"
 	"github.com/Ontology/common"
+	"github.com/Ontology/core/payload"
 	"github.com/Ontology/core/states"
 	"github.com/Ontology/core/store/statestore"
-	"github.com/Ontology/core/payload"
 	"github.com/Ontology/core/types"
 	"github.com/Ontology/crypto"
 	smcommon "github.com/Ontology/smartccntmract/common"
-	vm "github.com/Ontology/vm/neovm"
-	vmtypes "github.com/Ontology/smartccntmract/types"
 	"github.com/Ontology/smartccntmract/service"
 	smtypes "github.com/Ontology/smartccntmract/types"
+	vmtypes "github.com/Ontology/smartccntmract/types"
 	"github.com/Ontology/vm/neovm"
+	vm "github.com/Ontology/vm/neovm"
 	log4 "github.com/alecthomas/log4go"
 	"sort"
 	"sync"
@@ -114,7 +114,7 @@ func (this *LedgerStore) InitLedgerStoreWithGenesisBlock(genesisBlock *types.Blo
 		if err != nil {
 			return fmt.Errorf("SaveBookKeeperState error %s", err)
 		}
-		err = this.AddBlock(genesisBlock)
+		err = this.saveBlock(genesisBlock)
 		if err != nil {
 			return fmt.Errorf("save genesis block error %s", err)
 		}
@@ -688,7 +688,7 @@ func (this *LedgerStore) IsCcntmainTransaction(txHash *common.Uint256) (bool, er
 }
 
 func (this *LedgerStore) GetBlockRootWithNewTxRoot(txRoot *common.Uint256) *common.Uint256 {
-	newTxRoot :=this.merkleStore.GetBlockRootWithNewTxRoot(*txRoot)
+	newTxRoot := this.merkleStore.GetBlockRootWithNewTxRoot(*txRoot)
 	return &newTxRoot
 }
 
