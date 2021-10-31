@@ -10,7 +10,6 @@ import (
 	"github.com/Ontology/common/config"
 	"github.com/Ontology/common/log"
 	actorTypes "github.com/Ontology/consensus/actor"
-	"github.com/Ontology/core"
 	"github.com/Ontology/core/ccntmract"
 	"github.com/Ontology/core/ccntmract/program"
 	"github.com/Ontology/core/genesis"
@@ -19,13 +18,14 @@ import (
 	"github.com/Ontology/core/signature"
 	"github.com/Ontology/core/transaction/utxo"
 	"github.com/Ontology/core/types"
+	"github.com/Ontology/core/utils"
 	"github.com/Ontology/core/vote"
 	"github.com/Ontology/crypto"
 	cntmErrors "github.com/Ontology/errors"
 	"github.com/Ontology/eventbus/actor"
 	"github.com/Ontology/events"
-	p2pmsg "github.com/Ontology/net/message"
 	"github.com/Ontology/events/message"
+	p2pmsg "github.com/Ontology/net/message"
 )
 
 type DbftService struct {

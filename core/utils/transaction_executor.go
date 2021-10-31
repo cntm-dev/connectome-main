@@ -1,4 +1,4 @@
-package core
+package utils
 
 import (
 	"bytes"
@@ -6,13 +6,7 @@ import (
 	"github.com/Ontology/core/payload"
 	"github.com/Ontology/core/types"
 	vmtypes "github.com/Ontology/vm/types"
-
-	"testing"
 )
-
-func TestNewcntmTransferTransaction(t *testing.T) {
-	executor := transactionExecutor{}
-}
 
 type TransactionExector interface {
 	Execute(tx *types.Transaction)
@@ -54,8 +48,4 @@ func NewcntmTransferTransaction(from, to types.Address) *types.Transaction {
 
 	tx, _ := NewInvokeTransaction(vmcode, params)
 	return tx
-}
-
-func Testcntm(t *testing.T) {
-
 }
