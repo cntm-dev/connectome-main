@@ -1,4 +1,4 @@
-package jsonrpc
+package rpc
 
 import (
 	"bytes"
@@ -7,7 +7,6 @@ import (
 	"github.com/Ontology/core/types"
 	. "github.com/Ontology/errors"
 	. "github.com/Ontology/http/base/common"
-	. "github.com/Ontology/http/base/rpc"
 	. "github.com/Ontology/http/base/actor"
 	"github.com/Ontology/common/config"
 	"math/rand"
@@ -16,7 +15,7 @@ import (
 	"os"
 )
 
-func getBestBlockHash(params []interface{}) map[string]interface{} {
+func GetBestBlockHash(params []interface{}) map[string]interface{} {
 	hash,err := CurrentBlockHash()
 	if err != nil{
 		return DnaRpcFailed
@@ -27,7 +26,7 @@ func getBestBlockHash(params []interface{}) map[string]interface{} {
 // Input JSON string examples for getblock method as following:
 //   {"jsonrpc": "2.0", "method": "getblock", "params": [1], "id": 0}
 //   {"jsonrpc": "2.0", "method": "getblock", "params": ["aabbcc.."], "id": 0}
-func getBlock(params []interface{}) map[string]interface{} {
+func GetBlock(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return DnaRpcNil
 	}
@@ -346,7 +345,7 @@ func uploadDataFile(params []interface{}) map[string]interface{} {
 	return DnaRpc(refpath)
 
 }
-func getSmartCodeEvent(params []interface{}) map[string]interface{} {
+func GetSmartCodeEvent(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return DnaRpcNil
 	}
@@ -362,7 +361,7 @@ func getSmartCodeEvent(params []interface{}) map[string]interface{} {
 	}
 	return DnaRpcInvalidParameter
 }
-func regDataFile(params []interface{}) map[string]interface{} {
+func RegDataFile(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return DnaRpcNil
 	}
@@ -389,7 +388,7 @@ func regDataFile(params []interface{}) map[string]interface{} {
 	return DnaRpc(ToHexString(hash.ToArray()))
 }
 
-func catDataRecord(params []interface{}) map[string]interface{} {
+func CatDataRecord(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return DnaRpcNil
 	}
@@ -418,7 +417,7 @@ func catDataRecord(params []interface{}) map[string]interface{} {
 	}
 }
 
-func getDataFile(params []interface{}) map[string]interface{} {
+func GetDataFile(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return DnaRpcNil
 	}

@@ -158,7 +158,7 @@ func (this *StateStore) GetAccountState(programHash *common.Uint160) (*AccountSt
 }
 
 func (this *StateStore) GetCcntmractState(ccntmractHash *common.Uint160) (*CcntmractState, error) {
-	key, err := this.getAccountStatekey(ccntmractHash)
+	key, err := this.getCcntmractStateKey(ccntmractHash)
 	if err != nil {
 		return nil, err
 	}
