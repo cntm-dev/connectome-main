@@ -50,7 +50,7 @@ func (self *validator) Receive(ccntmext actor.Ccntmext) {
 		errCode := errors.ErrNoError
 		hash := msg.Tx.Hash()
 
-		exist, err := ledger.DefLedger.IsCcntmainTransaction(&hash)
+		exist, err := ledger.DefLedger.IsCcntmainTransaction(hash)
 		if err != nil {
 			log.Warn("query db error:", err)
 			errCode = errors.ErrUnknown

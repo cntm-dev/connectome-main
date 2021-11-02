@@ -1,9 +1,6 @@
 package solo
 
 import (
-	"bytes"
-	"errors"
-	"fmt"
 	"time"
 
 	"github.com/Ontology/account"
@@ -11,8 +8,6 @@ import (
 	"github.com/Ontology/common/config"
 	"github.com/Ontology/common/log"
 	actorTypes "github.com/Ontology/consensus/actor"
-	"github.com/Ontology/core/ccntmract"
-	"github.com/Ontology/core/ccntmract/program"
 	"github.com/Ontology/core/ledger"
 	"github.com/Ontology/core/payload"
 	"github.com/Ontology/core/types"
@@ -153,7 +148,7 @@ func (this *SoloService) makeBlock() *types.Block {
 		return nil
 	}
 
-	blockRoot := ledger.DefLedger.GetBlockRootWithNewTxRoot(&txRoot)
+	blockRoot := ledger.DefLedger.GetBlockRootWithNewTxRoot(txRoot)
 	stateRoot, err := ledger.DefLedger.GetCurrentStateRoot()
 	if err != nil {
 		log.Errorf("GetCurrentStateRoot error %s", err)
@@ -161,10 +156,10 @@ func (this *SoloService) makeBlock() *types.Block {
 	}
 	header := &types.Header{
 		Version:          CcntmextVersion,
-		PrevBlockHash:    *prevHash,
+		PrevBlockHash:    prevHash,
 		TransactionsRoot: txRoot,
-		BlockRoot:        *blockRoot,
-		StateRoot:        *stateRoot,
+		BlockRoot:        blockRoot,
+		StateRoot:        stateRoot,
 		Timestamp:        uint32(time.Now().Unix()),
 		Height:           height,
 		ConsensusData:    nonce,
@@ -175,42 +170,15 @@ func (this *SoloService) makeBlock() *types.Block {
 		Transactions: transactions,
 	}
 
-	prog, err := this.getBlockProgram(block, owner)
+	signature, err := crypto.Sign(this.Account.PrivKey(), block.GetMessage())
 	if err != nil {
-		log.Errorf("getBlockPrograms error:%s", err)
-		return nil
-	}
-	if prog == nil {
-		log.Errorf("getBlockPrograms programs is nil")
+		log.Error("[Signature],Sign failed.")
 		return nil
 	}
 
-	block.Header.Program = prog
+	block.Header.BookKeepers = []*crypto.PubKey{owner}
+	block.Header.SigData = [][]byte{signature}
 	return block
-}
-
-func (this *SoloService) getBlockProgram(block *types.Block, owner *crypto.PubKey) (*program.Program, error) {
-	buf := new(bytes.Buffer)
-	block.SerializeUnsigned(buf)
-
-	signature, err := crypto.Sign(this.Account.PrivKey(), buf.Bytes())
-	if err != nil {
-		return nil, errors.New("[Signature],Sign failed.")
-	}
-
-	sc, err := ccntmract.CreateSignatureCcntmract(owner)
-	if err != nil {
-		return nil, fmt.Errorf("CreateSignatureCcntmract error:%s", err)
-	}
-
-	sb := program.NewProgramBuilder()
-	sb.PushData(signature)
-
-	return &program.Program{
-		Code:      sc.Code,
-		Parameter: sb.ToArray(),
-	}, nil
-
 }
 
 func (this *SoloService) createBookkeepingTransaction(nonce uint64, fee Fixed64) *types.Transaction {

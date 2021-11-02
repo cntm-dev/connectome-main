@@ -2,22 +2,22 @@ package rpc
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	. "github.com/Ontology/common"
+	"github.com/Ontology/common/config"
 	"github.com/Ontology/core/types"
 	. "github.com/Ontology/errors"
-	. "github.com/Ontology/http/base/common"
 	. "github.com/Ontology/http/base/actor"
-	"github.com/Ontology/common/config"
+	. "github.com/Ontology/http/base/common"
 	"math/rand"
-	"fmt"
-	"encoding/base64"
 	"os"
 )
 
 func GetBestBlockHash(params []interface{}) map[string]interface{} {
-	hash,err := CurrentBlockHash()
-	if err != nil{
+	hash, err := CurrentBlockHash()
+	if err != nil {
 		return DnaRpcFailed
 	}
 	return DnaRpc(ToHexString(hash.ToArray()))
@@ -69,10 +69,11 @@ func GetBlock(params []interface{}) map[string]interface{} {
 		Height:           block.Header.Height,
 		ConsensusData:    block.Header.ConsensusData,
 		NextBookKeeper:   ToHexString(block.Header.NextBookKeeper[:]),
-		Program: ProgramInfo{
-			Code:      ToHexString(block.Header.Program.Code),
-			Parameter: ToHexString(block.Header.Program.Parameter),
-		},
+		// TODO replace with bookkeepers and sigdata
+		//Program: ProgramInfo{
+		//	Code:      ToHexString(block.Header.Program.Code),
+		//	Parameter: ToHexString(block.Header.Program.Parameter),
+		//},
 		Hash: ToHexString(hash.ToArray()),
 	}
 

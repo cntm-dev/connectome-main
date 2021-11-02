@@ -11,11 +11,9 @@ import (
 	"github.com/Ontology/common/log"
 	actorTypes "github.com/Ontology/consensus/actor"
 	"github.com/Ontology/core/ccntmract"
-	"github.com/Ontology/core/ccntmract/program"
 	"github.com/Ontology/core/genesis"
 	"github.com/Ontology/core/ledger"
 	"github.com/Ontology/core/payload"
-	"github.com/Ontology/core/signature"
 	"github.com/Ontology/core/transaction/utxo"
 	"github.com/Ontology/core/types"
 	"github.com/Ontology/core/utils"
@@ -173,46 +171,27 @@ func (ds *DbftService) CheckSignatures() error {
 
 	//check if get enough signatures
 	if ds.ccntmext.GetSignaturesCount() >= ds.ccntmext.M() {
-
-		//get current index's hash
-		ep, err := ds.ccntmext.BookKeepers[ds.ccntmext.BookKeeperIndex].EncodePoint(true)
-		if err != nil {
-			return cntmErrors.NewDetailErr(err, cntmErrors.ErrNoCode, "[DbftService] ,EncodePoint failed")
-		}
-		codehash := ToCodeHash(ep)
-
-		//create multi-sig ccntmract with all bookKeepers
-		ct, err := ccntmract.CreateMultiSigCcntmract(codehash, ds.ccntmext.M(), ds.ccntmext.BookKeepers)
-		if err != nil {
-			log.Error("CheckSignatures CreateMultiSigCcntmract error: ", err)
-			return err
-		}
-
 		//build block
 		block := ds.ccntmext.MakeHeader()
-		//sign the block with all bookKeepers and add signed ccntmract to ccntmext
-		sb := program.NewProgramBuilder()
-
 		sigs := make([]SignaturesData, ds.ccntmext.M())
 		for i, j := 0, 0; i < len(ds.ccntmext.BookKeepers) && j < ds.ccntmext.M(); i++ {
 			if ds.ccntmext.Signatures[i] != nil {
+				sig := ds.ccntmext.Signatures[i]
 				sigs[j].Index = uint16(i)
-				sigs[j].Signature = ds.ccntmext.Signatures[i]
+				sigs[j].Signature = sig
 
-				sb.PushData(ds.ccntmext.Signatures[i])
+				block.Header.SigData = append(block.Header.SigData, sig)
 				j++
 			}
 		}
-		//set signed program to the block
-		block.Header.Program = &program.Program{
-			Code:      ct.Code,
-			Parameter: sb.ToArray(),
-		}
+
+		block.Header.BookKeepers = ds.ccntmext.BookKeepers
+
 		//fill transactions
 		block.Transactions = ds.ccntmext.Transactions
 
 		hash := block.Hash()
-		isExist, err := ledger.DefLedger.IsCcntmainBlock(&hash)
+		isExist, err := ledger.DefLedger.IsCcntmainBlock(hash)
 		if err != nil {
 			log.Errorf("DefLedger.IsCcntmainBlock Hash:%x error:%s", hash, err)
 			return err
@@ -428,7 +407,7 @@ func (ds *DbftService) PrepareRequestReceived(payload *p2pmsg.ConsensusPayload, 
 		return
 	}
 
-	header, err := ledger.DefLedger.GetHeaderByHash(&ds.ccntmext.PrevHash)
+	header, err := ledger.DefLedger.GetHeaderByHash(ds.ccntmext.PrevHash)
 	if err != nil {
 		log.Info("PrepareRequestReceived GetHeader failed with ds.ccntmext.PrevHash", ds.ccntmext.PrevHash)
 	}
