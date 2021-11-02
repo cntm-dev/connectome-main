@@ -196,7 +196,7 @@ func (this *LedgerStore) initHeaderIndexList() error {
 		}
 		this.headerIndex[height] = blockHash
 	}
-	this.storedIndexCount += currBlockHeight - storeIndexCount + 1
+
 	return nil
 }
 
@@ -253,18 +253,6 @@ func (this *LedgerStore) clearCache() {
 	}
 }
 
-func (this *LedgerStore) getStoreIndexCount() uint32 {
-	this.lock.RLock()
-	defer this.lock.RUnlock()
-	return this.storedIndexCount
-}
-
-func (this *LedgerStore) addStoreIndexCount(delt uint32) {
-	this.lock.Lock()
-	defer this.lock.Unlock()
-	this.storedIndexCount += delt
-}
-
 func (this *LedgerStore) setHeaderIndex(height uint32, blockHash common.Uint256) {
 	this.lock.Lock()
 	defer this.lock.Unlock()
@@ -284,13 +272,21 @@ func (this *LedgerStore) getHeaderIndex(height uint32) common.Uint256 {
 func (this *LedgerStore) GetCurrentHeaderHeight() uint32 {
 	this.lock.RLock()
 	defer this.lock.RUnlock()
-	return uint32(len(this.headerIndex)) - 1
+	size := len(this.headerIndex)
+	if size == 0 {
+		return 0
+	}
+	return uint32(size) - 1
 }
 
 func (this *LedgerStore) GetCurrentHeaderHash() common.Uint256 {
 	this.lock.RLock()
 	defer this.lock.RUnlock()
-	return this.headerIndex[uint32(len(this.headerIndex))-1]
+	size := len(this.headerIndex)
+	if size == 0{
+		return common.Uint256{}
+	}
+	return this.headerIndex[uint32(size)-1]
 }
 
 func (this *LedgerStore) setCurrentBlock(height uint32, blockHash common.Uint256) {
@@ -521,6 +517,7 @@ func (this *LedgerStore) saveBlock(block *types.Block) error {
 		}
 	}
 
+	this.setHeaderIndex(blockHeight, blockHash)
 	err = this.saveHeaderIndexList()
 	if err != nil {
 		return fmt.Errorf("saveHeaderIndexList error %s", err)
@@ -644,11 +641,11 @@ func (this *LedgerStore) saveHeaderIndexList() error {
 		return nil
 	}
 
-	headerList := make(map[uint32]common.Uint256, HeaderIndexBatchSize)
+	//headerList := make(map[uint32]common.Uint256, HeaderIndexBatchSize)
+	headerList := make([]common.Uint256, HeaderIndexBatchSize)
 	for i := uint32(0); i < HeaderIndexBatchSize; i++ {
 		height := storeCount + i
-		blockHash := this.headerIndex[height]
-		headerList[height] = blockHash
+		headerList[i] = this.headerIndex[height]
 	}
 	this.lock.RUnlock()
 
@@ -657,7 +654,9 @@ func (this *LedgerStore) saveHeaderIndexList() error {
 		return fmt.Errorf("SaveHeaderIndexList start %d error %s", storeCount, err)
 	}
 
-	this.addStoreIndexCount(HeaderIndexBatchSize)
+	this.lock.Lock()
+	this.storedIndexCount += HeaderIndexBatchSize
+	this.lock.Unlock()
 	return nil
 }
 
@@ -678,7 +677,7 @@ func (this *LedgerStore) IsCcntmainTransaction(txHash common.Uint256) (bool, err
 }
 
 func (this *LedgerStore) GetBlockRootWithNewTxRoot(txRoot common.Uint256) common.Uint256 {
-	return  this.merkleStore.GetBlockRootWithNewTxRoot(txRoot)
+	return this.merkleStore.GetBlockRootWithNewTxRoot(txRoot)
 }
 
 func (this *LedgerStore) GetBlockHash(height uint32) common.Uint256 {
