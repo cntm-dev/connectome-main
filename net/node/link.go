@@ -158,19 +158,25 @@ func (n *node) waitForConnect(listener net.Listener, isConsensusChannel bool) {
 			node.addr, err = parseIPaddr(conn.RemoteAddr().String())
 			node.local = n
 			node.conn = conn
+			node.ConsensusNode = node
 		} else {
-			localIp, err := parseIPaddr(conn.LocalAddr().String())
-			if err != nil {
-				log.Error("parseIPaddr error:", err)
-				conn.Close()
-				ccntminue
-			}
-			node = n.GetNbrNodeByAddr(localIp)
-			if node == nil {
-				conn.Close()
-				ccntminue
-			}
+			//localIp, err := parseIPaddr(conn.LocalAddr().String())
+			//if err != nil {
+			//	log.Error("parseIPaddr error:", err)
+			//	conn.Close()
+			//	ccntminue
+			//}
+			//node = n.GetNbrNodeByAddr(localIp)
+			//if node == nil {
+			//	conn.Close()
+			//	ccntminue
+			//}
+			//node.consensusConn = conn
+			node = NewNode()
+			node.addr, err = parseIPaddr(conn.RemoteAddr().String())
+			node.local = n
 			node.consensusConn = conn
+			node.ConsensusNode = node
 		}
 		go node.rx(isConsensusChannel)
 	}
