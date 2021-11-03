@@ -153,18 +153,18 @@ type TxPoolActor struct {
 func (tpa *TxPoolActor) Receive(ccntmext actor.Ccntmext) {
 	switch msg := ccntmext.Message().(type) {
 	case *actor.Started:
-		log.Info("Server started and be ready to receive txPool msg")
+		log.Info("txpool actor started and be ready to receive txPool msg")
 
 	case *actor.Stopping:
-		log.Info("Server stopping")
+		log.Info("txpool actor stopping")
 
 	case *actor.Restarting:
-		log.Info("Server Restarting")
+		log.Info("txpool actor Restarting")
 
 	case *tc.GetTxnPoolReq:
 		sender := ccntmext.Sender()
 
-		log.Info("Server Receives getting tx pool req from ", sender)
+		log.Info("txpool actor Receives getting tx pool req from ", sender)
 
 		res := tpa.server.getTxPool(msg.ByCount)
 		if sender != nil {
@@ -174,7 +174,7 @@ func (tpa *TxPoolActor) Receive(ccntmext actor.Ccntmext) {
 	case *tc.GetPendingTxnReq:
 		sender := ccntmext.Sender()
 
-		log.Info("Server Receives getting pedning tx req from ", sender)
+		log.Info("txpool actor Receives getting pedning tx req from ", sender)
 
 		res := tpa.server.getPendingTxs(msg.ByCount)
 		if sender != nil {
@@ -184,14 +184,14 @@ func (tpa *TxPoolActor) Receive(ccntmext actor.Ccntmext) {
 	case *tc.VerifyBlockReq:
 		sender := ccntmext.Sender()
 
-		log.Info("Server Receives verifying block req from ", sender)
+		log.Info("txpool actor Receives verifying block req from ", sender)
 
 		tpa.server.verifyBlock(msg, sender)
 
 	case *message.SaveBlockCompleteMsg:
 		sender := ccntmext.Sender()
 
-		log.Info("Server Receives block complete event from ", sender)
+		log.Info("txpool actor Receives block complete event from ", sender)
 
 		if msg.Block != nil {
 			tpa.server.cleanTransactionList(msg.Block.Transactions)

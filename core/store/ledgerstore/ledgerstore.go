@@ -7,7 +7,6 @@ import (
 	"github.com/Ontology/core/states"
 	"github.com/Ontology/core/store/statestore"
 	"github.com/Ontology/core/types"
-	"github.com/Ontology/core/utils"
 	"github.com/Ontology/crypto"
 	"github.com/Ontology/events"
 	"github.com/Ontology/events/message"
@@ -15,10 +14,10 @@ import (
 	"github.com/Ontology/smartccntmract/service"
 	smtypes "github.com/Ontology/smartccntmract/types"
 	"github.com/Ontology/vm/neovm"
-	log4 "github.com/alecthomas/log4go"
 	"sort"
 	"sync"
 	"time"
+	"github.com/Ontology/common/log"
 )
 
 const (
@@ -254,7 +253,7 @@ func (this *LedgerStore) clearCache() {
 		if err != nil {
 			blockHash := block.Hash()
 			this.delFromBlockHash(blockHash)
-			log4.Error("saveBlock in cache height:%d error %s", block.Header.Height, err)
+			log.Errorf("saveBlock in cache height:%d error %s", block.Header.Height, err)
 			break
 		}
 	}
@@ -383,7 +382,7 @@ func (this *LedgerStore) verifyHeader(header *types.Header) error {
 		return fmt.Errorf("block timestamp is incorrect")
 	}
 
-	address, err := utils.AddressFromBookKeepers(header.BookKeepers)
+	address, err := types.AddressFromBookKeepers(header.BookKeepers)
 	if err != nil {
 		return err
 	}

@@ -17,7 +17,6 @@ import (
 	"github.com/Ontology/core/payload"
 	"github.com/Ontology/core/transaction/utxo"
 	"github.com/Ontology/core/types"
-	"github.com/Ontology/core/utils"
 	"github.com/Ontology/core/vote"
 	"github.com/Ontology/crypto"
 	cntmErrors "github.com/Ontology/errors"
