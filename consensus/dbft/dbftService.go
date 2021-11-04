@@ -266,7 +266,6 @@ func (ds *DbftService) ChangeViewReceived(payload *p2pmsg.ConsensusPayload, mess
 }
 
 func (ds *DbftService) halt() error {
-	log.Debug()
 	log.Info("DBFT Stop")
 	if ds.timer != nil {
 		ds.timer.Stop()
@@ -336,8 +335,6 @@ func (ds *DbftService) LocalNodeNewInventory(v interface{}) {
 		}
 	}
 }
-
-//TODO: add invenory receiving
 
 func (ds *DbftService) NewConsensusPayload(payload *p2pmsg.ConsensusPayload) {
 	log.Debug()

@@ -76,36 +76,42 @@ func (this *LedgerActor) Receive(ctx actor.Ccntmext) {
 
 func (this *LedgerActor) handleAddHeaderReq(ctx actor.Ccntmext, req *AddHeaderReq) {
 	err := ledger.DefLedger.AddHeaders([]*types.Header{req.Header})
-	hash := req.Header.Hash()
-	resp := &AddHeaderRsp{
-		BlockHash: hash,
-		Error:     err,
+	if ctx.Sender() != nil {
+		hash := req.Header.Hash()
+		resp := &AddHeaderRsp{
+			BlockHash: hash,
+			Error:     err,
+		}
+		ctx.Sender().Request(resp, ctx.Self())
 	}
-	ctx.Sender().Request(resp, ctx.Self())
 }
 
 func (this *LedgerActor) handleAddHeadersReq(ctx actor.Ccntmext, req *AddHeadersReq) {
 	err := ledger.DefLedger.AddHeaders(req.Headers)
-	hashes := make([]common.Uint256, 0, len(req.Headers))
-	for _, header := range req.Headers {
-		hash := header.Hash()
-		hashes = append(hashes, hash)
+	if ctx.Sender() != nil {
+		hashes := make([]common.Uint256, 0, len(req.Headers))
+		for _, header := range req.Headers {
+			hash := header.Hash()
+			hashes = append(hashes, hash)
+		}
+		resp := &AddHeadersRsp{
+			BlockHashes: hashes,
+			Error:       err,
+		}
+		ctx.Sender().Request(resp, ctx.Self())
 	}
-	resp := &AddHeadersRsp{
-		BlockHashes: hashes,
-		Error:       err,
-	}
-	ctx.Sender().Request(resp, ctx.Self())
 }
 
 func (this *LedgerActor) handleAddBlockReq(ctx actor.Ccntmext, req *AddBlockReq) {
 	err := ledger.DefLedger.AddBlock(req.Block)
-	hash := req.Block.Hash()
-	resp := &AddBlockRsp{
-		BlockHash:hash,
-		Error:     err,
+	if ctx.Sender() != nil {
+		hash := req.Block.Hash()
+		resp := &AddBlockRsp{
+			BlockHash:hash,
+			Error:     err,
+		}
+		ctx.Sender().Request(resp, ctx.Self())
 	}
-	ctx.Sender().Request(resp, ctx.Self())
 }
 
 func (this *LedgerActor) handleGetTransactionReq(ctx actor.Ccntmext, req *GetTransactionReq) {
