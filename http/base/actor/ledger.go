@@ -4,11 +4,11 @@ import (
 	"time"
 	"github.com/Ontology/eventbus/actor"
 	"github.com/Ontology/core/types"
-	"github.com/Ontology/core/states"
 	. "github.com/Ontology/core/ledger/actor"
 	. "github.com/Ontology/common"
 	"errors"
 	"github.com/Ontology/smartccntmract/event"
+	"github.com/Ontology/core/payload"
 )
 
 var defLedgerPid *actor.PID
@@ -101,23 +101,8 @@ func GetStorageItem(codeHash Uint160, key []byte) ([]byte, error) {
 	}
 }
 
-//ledger.DefaultLedger.Store.GetAccount(programHash)
-//TODO not finish
-func GetAccount(programHash Uint160) (*states.AccountState, error) {
-	future := defLedgerPid.RequestFuture(nil, 10*time.Second)
-	result, err := future.Result()
-	if err != nil {
-		return nil, err
-	}
-	if rsp, ok := result.(*GetTransactionRsp); !ok {
-		return nil, errors.New("fail")
-	}else {
-		return nil, rsp.Error
-	}
-}
-
 //ledger.DefaultLedger.Store.GetCcntmract(hash)
-func GetCcntmractFromStore(hash Uint160) (*states.CcntmractState, error) {
+func GetCcntmractFromStore(hash Uint160) (*payload.DeployCode, error) {
 	future := defLedgerPid.RequestFuture(&GetCcntmractStateReq{hash}, 10*time.Second)
 	result, err := future.Result()
 	if err != nil {

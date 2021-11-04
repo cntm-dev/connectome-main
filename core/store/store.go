@@ -5,6 +5,7 @@ import (
 	."github.com/Ontology/common"
 	"github.com/Ontology/core/types"
 	"github.com/Ontology/crypto"
+	"github.com/Ontology/core/payload"
 )
 // ILedgerStore provides func with store package.
 type ILedgerStore interface {
@@ -26,11 +27,10 @@ type ILedgerStore interface {
 	IsCcntmainTransaction(txHash Uint256) (bool, error)
 	GetCurrentStateRoot() (Uint256, error)
 	GetBlockRootWithNewTxRoot(txRoot Uint256) Uint256
-	GetAssetState(assetId Uint256) (*states.AssetState, error)
-	GetCcntmractState(ccntmractHash Uint160) (*states.CcntmractState, error)
-	GetAccountState(programHash Uint160) (*states.AccountState, error)
+	GetCcntmractState(ccntmractHash Uint160) (*payload.DeployCode, error)
 	GetBookKeeperState() (*states.BookKeeperState, error)
 	GetStorageItem(key *states.StorageKey) (*states.StorageItem, error)
 	PreExecuteCcntmract(tx *types.Transaction) ([]interface{}, error)
 }
+
 

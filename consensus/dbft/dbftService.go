@@ -11,11 +11,9 @@ import (
 	"github.com/Ontology/common/config"
 	"github.com/Ontology/common/log"
 	actorTypes "github.com/Ontology/consensus/actor"
-	"github.com/Ontology/core/ccntmract"
 	"github.com/Ontology/core/genesis"
 	"github.com/Ontology/core/ledger"
 	"github.com/Ontology/core/payload"
-	"github.com/Ontology/core/transaction/utxo"
 	"github.com/Ontology/core/types"
 	"github.com/Ontology/core/vote"
 	"github.com/Ontology/crypto"
@@ -98,6 +96,7 @@ func (this *DbftService) Receive(ccntmext actor.Ccntmext) {
 	case *actorTypes.StopConsensus:
 		this.halt()
 	case *actorTypes.TimeOut:
+		log.Info("dbft receive timeout")
 		this.Timeout()
 	case *message.SaveBlockCompleteMsg:
 		this.handleBlockPersistCompleted(msg.Block)
@@ -227,23 +226,23 @@ func (ds *DbftService) CreateBookkeepingTransaction(nonce uint64, fee Fixed64) *
 	bookKeepingPayload := &payload.BookKeeping{
 		Nonce: uint64(time.Now().UnixNano()),
 	}
-	signatureRedeemScript, err := ccntmract.CreateSignatureRedeemScript(ds.ccntmext.Owner)
-	if err != nil {
-		return nil
-	}
-	signatureRedeemScriptHashToCodeHash := ToCodeHash(signatureRedeemScript)
-	if err != nil {
-		return nil
-	}
-	outputs := []*utxo.TxOutput{}
-	if fee > 0 {
-		feeOutput := &utxo.TxOutput{
-			AssetID:     genesis.cntmTokenID,
-			Value:       fee,
-			ProgramHash: signatureRedeemScriptHashToCodeHash,
-		}
-		outputs = append(outputs, feeOutput)
-	}
+	//signatureRedeemScript, err := ccntmract.CreateSignatureRedeemScript(ds.ccntmext.Owner)
+	//if err != nil {
+	//	return nil
+	//}
+	//signatureRedeemScriptHashToCodeHash := ToCodeHash(signatureRedeemScript)
+	//if err != nil {
+	//	return nil
+	//}
+	//outputs := []*utxo.TxOutput{}
+	//if fee > 0 {
+	//	feeOutput := &utxo.TxOutput{
+	//		AssetID:     genesis.cntmTokenID,
+	//		Value:       fee,
+	//		ProgramHash: signatureRedeemScriptHashToCodeHash,
+	//	}
+	//	outputs = append(outputs, feeOutput)
+	//}
 	return &types.Transaction{
 		TxType: types.BookKeeping,
 		//PayloadVersion: payload.BookKeepingPayloadVersion,
@@ -337,10 +336,6 @@ func (ds *DbftService) LocalNodeNewInventory(v interface{}) {
 }
 
 func (ds *DbftService) NewConsensusPayload(payload *p2pmsg.ConsensusPayload) {
-	log.Debug()
-	ds.ccntmext.ccntmextMu.Lock()
-	defer ds.ccntmext.ccntmextMu.Unlock()
-
 	//if payload from current peer, ignore it
 	if int(payload.BookKeeperIndex) == ds.ccntmext.BookKeeperIndex {
 		return
@@ -614,9 +609,6 @@ func (ds *DbftService) Start() error {
 }
 
 func (ds *DbftService) Timeout() {
-	log.Debug()
-	ds.ccntmext.ccntmextMu.Lock()
-	defer ds.ccntmext.ccntmextMu.Unlock()
 	if ds.timerHeight != ds.ccntmext.Height || ds.timeView != ds.ccntmext.ViewNumber {
 		return
 	}

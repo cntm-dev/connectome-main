@@ -1,63 +1,46 @@
-// Copyright 2017 The Ontology Authors
-// This file is part of the Ontology library.
+// Copyright 2017 The Onchain Authors
+// This file is part of the Onchain library.
 //
-// The Ontology library is free software: you can redistribute it and/or modify
+// The Onchain library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The Ontology library is distributed in the hope that it will be useful,
+// The Onchain library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// alcntm with the Ontology library. If not, see <http://www.gnu.org/licenses/>.
+// alcntm with the Onchain library. If not, see <http://www.gnu.org/licenses/>.
 
 package smartccntmract
 
 import (
 	"github.com/Ontology/common"
 	"github.com/Ontology/core/ccntmract"
-	sig "github.com/Ontology/core/signature"
 	"github.com/Ontology/smartccntmract/service"
-	"github.com/Ontology/smartccntmract/types"
+	vmtypes "github.com/Ontology/vm/types"
+	"reflect"
 	"github.com/Ontology/vm/neovm"
-	"github.com/Ontology/vm/neovm/interfaces"
-	"math/big"
-	storecomm"github.com/Ontology/core/store/common"
 	"github.com/Ontology/errors"
 	"github.com/Ontology/common/log"
-	scommon "github.com/Ontology/smartccntmract/common"
-	"reflect"
+	"github.com/Ontology/core/store"
+	scommon "github.com/Ontology/core/store/common"
+	"github.com/Ontology/core/types"
 )
 
-type SmartCcntmract struct {
-	Engine         Engine
-	Code           []byte
-	Input          []byte
-	ParameterTypes []ccntmract.CcntmractParameterType
-	Caller         common.Uint160
-	CodeHash       common.Uint160
-	VMType         types.VmType
-	ReturnType     ccntmract.CcntmractParameterType
+type Ccntmext struct {
+	LedgerStore store.ILedgerStore
+	Code vmtypes.VmCode
+	DBCache scommon.IStateStore
+	TX *types.Transaction
+	Time uint32
 }
 
-type Ccntmext struct {
-	VmType         types.VmType
-	Caller         common.Uint160
-	StateMachine   *service.StateMachine
-	DBCache        storecomm.IStateStore
-	Code           []byte
+type SmartCcntmract struct {
 	Input          []byte
-	CodeHash       common.Uint160
-	Time           *big.Int
-	BlockNumber    *big.Int
-	CacheCodeTable interfaces.ICodeTable
-	SignableData   sig.SignableData
-	Gas            common.Fixed64
-	ReturnType     ccntmract.CcntmractParameterType
-	ParameterTypes []ccntmract.CcntmractParameterType
+	VMType         vmtypes.VmType
 }
 
 type Engine interface {
@@ -67,10 +50,11 @@ type Engine interface {
 
 func NewSmartCcntmract(ccntmext *Ccntmext) (*SmartCcntmract, error) {
 	var e Engine
-	switch ccntmext.VmType {
-	case types.NEOVM:
+	switch ccntmext.Code.VmType {
+	case vmtypes.NEOVM:
+		stateMachine := service.NewStateMachine(ccntmext.LedgerStore, ccntmext.DBCache, vmtypes.Application, ccntmext.Time)
 		e = neovm.NewExecutionEngine(
-			ccntmext.SignableData,
+			ccntmext.TX,
 			new(neovm.ECDsaCrypto),
 			ccntmext.CacheCodeTable,
 			ccntmext.StateMachine,

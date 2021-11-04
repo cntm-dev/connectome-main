@@ -11,7 +11,6 @@ import (
 	"github.com/Ontology/core/vote"
 	"github.com/Ontology/crypto"
 	msg "github.com/Ontology/net/message"
-	"sync"
 )
 
 const CcntmextVersion uint32 = 0
@@ -28,14 +27,13 @@ type ConsensusCcntmext struct {
 	PrimaryIndex    uint32
 	Timestamp       uint32
 	Nonce           uint64
-	NextBookKeeper  types.Address
+	NextBookKeeper  Uint160
 	Transactions    []*types.Transaction
 	Signatures      [][]byte
 	ExpectedView    []byte
 
 	header *types.Block
 
-	ccntmextMu           sync.Mutex
 	isBookKeeperChanged bool
 	nmChangedblkHeight  uint32
 }

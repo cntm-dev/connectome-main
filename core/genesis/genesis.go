@@ -3,10 +3,8 @@ package genesis
 import (
 	"errors"
 	"time"
-
 	"github.com/Ontology/common"
 	"github.com/Ontology/common/config"
-	"github.com/Ontology/core/code"
 	"github.com/Ontology/core/types"
 	"github.com/Ontology/core/utils"
 	"github.com/Ontology/crypto"
@@ -24,6 +22,11 @@ const (
 
 var (
 	GenerationAmount = [17]uint32{80, 70, 60, 50, 40, 30, 20, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10}
+
+	OntCcntmractCode = &vmtypes.VmCode{VmType: vmtypes.NativeVM, Code: []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}}
+	OngCcntmractCode = &vmtypes.VmCode{VmType: vmtypes.NativeVM, Code: []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}}
+	OntCcntmractAddress = OntCcntmractCode.AddressFromVmCode()
+	OngCcntmractAddress = OngCcntmractCode.AddressFromVmCode()
 
 	cntmToken   = NewGoverningToken()
 	cntmToken   = NewUtilityToken()
@@ -65,32 +68,30 @@ func GenesisBlockInit(defaultBookKeeper []*crypto.PubKey) (*types.Block, error) 
 		Transactions: []*types.Transaction{
 			cntm,
 			cntm,
+			NewGoverningInit(),
 		},
 	}
 	return genesisBlock, nil
 }
 
 func NewGoverningToken() *types.Transaction {
-	fnCode := code.FunctionCode{
-		Code: []byte("cntm Token"),
-	}
-
-	tx := utils.NewDeployTransaction(&fnCode, "cntm", "0.1.0",
-		"Ontology", "", "Ontology Network cntm Token", vmtypes.NativeVM, true)
+	tx := utils.NewDeployTransaction([]byte("cntm Token"), "cntm", "1.0",
+		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", vmtypes.NativeVM, true)
 	return tx
 }
 
 func NewUtilityToken() *types.Transaction {
-	fnCode := code.FunctionCode{
-		Code: []byte("cntm Token"),
-	}
-
-	tx := utils.NewDeployTransaction(&fnCode, "cntm", "0.1.0",
-		"Ontology", "", "Ontology Network cntm Token", vmtypes.NativeVM, true)
+	tx := utils.NewDeployTransaction([]byte("cntm Token"), "cntm", "1.0",
+		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", vmtypes.NativeVM, true)
 	return tx
 }
 
-func NewInitSystemTokenTransaction() *types.Transaction {
-	// invoke transaction to init cntm/cntm token
-	return nil
+func NewGoverningInit() *types.Transaction {
+	vmCode := vmtypes.VmCode{
+		VmType: vmtypes.NativeVM,
+		Code: []byte{21, 67, 111, 109, 109, 111, 110, 46, 84, 111, 107, 101, 110, 46, 84, 114, 97, 110, 115, 102, 101, 114},
+	}
+	tx := utils.NewInvokeTransaction(vmCode)
+	return tx
 }
+
