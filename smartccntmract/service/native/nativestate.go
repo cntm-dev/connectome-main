@@ -31,7 +31,7 @@ func NewNativeService(dbCache scommon.IStateStore, input []byte, tx *types.Trans
 	nativeService.Input = input
 	nativeService.Tx = tx
 	nativeService.ServiceMap = make(map[string]Handler)
-	nativeService.Register("Common.Token.Transfer", Transfer)
+	nativeService.Register("Ont.Token.Transfer", Transfer)
 	nativeService.Register("Ont.Token.Init", OntInit)
 	return &nativeService
 }
@@ -40,16 +40,16 @@ func(native *NativeService) Register(methodName string, handler Handler) {
 	native.ServiceMap[methodName] = handler
 }
 
-func(native *NativeService) IsValid() (bool, error){
+func(native *NativeService) Invoke() (bool, error){
 	bf := bytes.NewBuffer(native.Input)
 	serviceName, err := serialization.ReadVarBytes(bf); if err != nil {
 		return false, err
 	}
-	if _, ok := native.ServiceMap[string(serviceName)]; !ok {
+	service, ok := native.ServiceMap[string(serviceName)]; if !ok {
 		return false, errors.NewErr("Native does not support this service!")
 	}
 	native.Input = bf.Bytes()
-	return true, nil
+	return service(native)
 }
 
 func Transfer(native *NativeService) (bool, error) {
