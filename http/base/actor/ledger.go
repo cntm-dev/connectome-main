@@ -102,7 +102,7 @@ func GetStorageItem(codeHash Uint160, key []byte) ([]byte, error) {
 }
 
 //ledger.DefaultLedger.Store.GetCcntmract(hash)
-func GetCcntmractFromStore(hash Uint160) (*payload.DeployCode, error) {
+func GetCcntmractStateFromStore(hash Uint160) (*payload.DeployCode, error) {
 	future := defLedgerPid.RequestFuture(&GetCcntmractStateReq{hash}, 10*time.Second)
 	result, err := future.Result()
 	if err != nil {

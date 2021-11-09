@@ -239,7 +239,7 @@ func (ds *DbftService) CreateBookkeepingTransaction(nonce uint64, fee Fixed64) *
 	//	feeOutput := &utxo.TxOutput{
 	//		AssetID:     genesis.cntmTokenID,
 	//		Value:       fee,
-	//		ProgramHash: signatureRedeemScriptHashToCodeHash,
+	//		Address: signatureRedeemScriptHashToCodeHash,
 	//	}
 	//	outputs = append(outputs, feeOutput)
 	//}
@@ -480,9 +480,8 @@ func (ds *DbftService) PrepareResponseReceived(payload *msg.ConsensusPayload, me
 	if header == nil {
 		return
 	}
-	buf := new(bytes.Buffer)
-	header.SerializeUnsigned(buf)
-	err := crypto.Verify(*ds.ccntmext.BookKeepers[payload.BookKeeperIndex], buf.Bytes(), message.Signature)
+	blockHash := header.Hash()
+	err := crypto.Verify(*ds.ccntmext.BookKeepers[payload.BookKeeperIndex], blockHash[:], message.Signature)
 	if err != nil {
 		return
 	}
@@ -513,8 +512,7 @@ func (ds *DbftService) BlockSignaturesReceived(payload *p2pmsg.ConsensusPayload,
 		return
 	}
 
-	buf := new(bytes.Buffer)
-	header.SerializeUnsigned(buf)
+	blockHash := header.Hash()
 
 	for i := 0; i < len(message.Signatures); i++ {
 		sigdata := message.Signatures[i]
@@ -523,7 +521,7 @@ func (ds *DbftService) BlockSignaturesReceived(payload *p2pmsg.ConsensusPayload,
 			ccntminue
 		}
 
-		err := crypto.Verify(*ds.ccntmext.BookKeepers[sigdata.Index], buf.Bytes(), sigdata.Signature)
+		err := crypto.Verify(*ds.ccntmext.BookKeepers[sigdata.Index], blockHash[:], sigdata.Signature)
 		if err != nil {
 			ccntminue
 		}

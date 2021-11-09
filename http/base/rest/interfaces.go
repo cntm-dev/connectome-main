@@ -313,7 +313,7 @@ func ResponsePack(errCode int64) map[string]interface{} {
 	}
 	return resp
 }
-func GetCcntmract(cmd map[string]interface{}) map[string]interface{} {
+func GetCcntmractState(cmd map[string]interface{}) map[string]interface{} {
 	resp := ResponsePack(Err.SUCCESS)
 	str := cmd["Hash"].(string)
 	bys, err := HexToBytes(str)
@@ -325,12 +325,11 @@ func GetCcntmract(cmd map[string]interface{}) map[string]interface{} {
 	if err != nil {
 		return ResponsePack(Err.INVALID_PARAMS)
 	}
-	//TODO GetCcntmract from store
-	//ccntmract, err := GetCcntmractFromStore(hash)
-	//if err != nil {
-	//	resp["Error"] = Err.INVALID_PARAMS
-	//	return resp
-	//}
-	//resp["Result"] = string(ccntmract)
+	ccntmract, err := GetCcntmractStateFromStore(hash)
+	if err != nil || ccntmract == nil {
+		resp["Error"] = Err.INVALID_PARAMS
+		return resp
+	}
+	resp["Result"] = TransPayloadToHex(ccntmract)
 	return resp
 }
