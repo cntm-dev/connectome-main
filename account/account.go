@@ -3,9 +3,8 @@ package account
 import (
 	"errors"
 	. "github.com/Ontology/common"
-	"github.com/Ontology/core/ccntmract"
 	"github.com/Ontology/crypto"
-	. "github.com/Ontology/errors"
+	"github.com/Ontology/core/types"
 )
 
 type Account struct {
@@ -14,18 +13,14 @@ type Account struct {
 	Address    Uint160
 }
 
-func NewAccount() (*Account, error) {
+func NewAccount() *Account {
 	priKey, pubKey, _ := crypto.GenKeyPair()
-	signatureRedeemScript, err := ccntmract.CreateSignatureRedeemScript(&pubKey)
-	if err != nil {
-		return nil, NewDetailErr(err, ErrNoCode, "CreateSignatureRedeemScript failed")
-	}
-	programHash := ToCodeHash(signatureRedeemScript)
+	address := types.AddressFromPubKey(&pubKey)
 	return &Account{
 		PrivateKey: priKey,
 		PublicKey:  &pubKey,
-		Address:    programHash,
-	}, nil
+		Address:    address,
+	}
 }
 
 func NewAccountWithPrivatekey(privateKey []byte) (*Account, error) {
@@ -36,15 +31,12 @@ func NewAccountWithPrivatekey(privateKey []byte) (*Account, error) {
 	}
 
 	pubKey := crypto.NewPubKey(privateKey)
-	signatureRedeemScript, err := ccntmract.CreateSignatureRedeemScript(pubKey)
-	if err != nil {
-		return nil, NewDetailErr(err, ErrNoCode, "CreateSignatureRedeemScript failed")
-	}
-	programHash := ToCodeHash(signatureRedeemScript)
+	address := types.AddressFromPubKey(pubKey)
+
 	return &Account{
 		PrivateKey: privateKey,
 		PublicKey:  pubKey,
-		Address:    programHash,
+		Address:    address,
 	}, nil
 }
 

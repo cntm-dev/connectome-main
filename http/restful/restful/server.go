@@ -46,7 +46,7 @@ const (
 	Api_SendRawTx = "/api/v1/transaction"
 	Api_WebsocketState = "/api/v1/config/websocket/state"
 	Api_Restart = "/api/v1/restart"
-	Api_GetCcntmract = "/api/v1/ccntmract/:hash"
+	Api_GetCcntmractState = "/api/v1/ccntmract/:hash"
 	Api_GetSmartCodeEvent = "/api/v1/smartcode/event/:height"
 )
 
@@ -136,7 +136,7 @@ func (rt *restServer) registryMethod() {
 		Api_Getblockheight:      {name: "getblockheight", handler: GetBlockHeight},
 		Api_Getblockhash:        {name: "getblockhash", handler: GetBlockHash},
 		Api_Gettransaction:      {name: "gettransaction", handler: GetTransactionByHash},
-		Api_GetCcntmract:         {name: "getccntmract", handler: GetCcntmractState},
+		Api_GetCcntmractState:         {name: "getccntmract", handler: GetCcntmractState},
 		Api_Restart:             {name: "restart", handler: rt.Restart},
 		Api_GetSmartCodeEvent:{name: "getsmartcodeevent", handler: GetSmartCodeEventByHeight},
 	}
@@ -170,8 +170,8 @@ func (rt *restServer) getPath(url string) string {
 		return Api_Getblockbyhash
 	} else if strings.Ccntmains(url, strings.TrimRight(Api_Gettransaction, ":hash")) {
 		return Api_Gettransaction
-	} else if strings.Ccntmains(url, strings.TrimRight(Api_GetCcntmract, ":hash")) {
-		return Api_GetCcntmract
+	} else if strings.Ccntmains(url, strings.TrimRight(Api_GetCcntmractState, ":hash")) {
+		return Api_GetCcntmractState
 	} else if strings.Ccntmains(url, strings.TrimRight(Api_GetSmartCodeEvent, ":height")) {
 		return Api_GetSmartCodeEvent
 	}
@@ -203,7 +203,7 @@ func (rt *restServer) getParams(r *http.Request, url string, req map[string]inte
 		req["Hash"] = getParam(r, "hash")
 		req["Raw"] = r.FormValue("raw")
 		break
-	case Api_GetCcntmract:
+	case Api_GetCcntmractState:
 		req["Hash"] = getParam(r, "hash")
 		req["Raw"] = r.FormValue("raw")
 		break
