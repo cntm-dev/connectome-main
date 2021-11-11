@@ -23,10 +23,8 @@ const (
 var (
 	GenerationAmount = [17]uint32{80, 70, 60, 50, 40, 30, 20, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10}
 
-	OntCcntmractCode = &vmtypes.VmCode{VmType: vmtypes.NativeVM, Code: []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}}
-	OngCcntmractCode = &vmtypes.VmCode{VmType: vmtypes.NativeVM, Code: []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}}
-	OntCcntmractAddress = OntCcntmractCode.AddressFromVmCode()
-	OngCcntmractAddress = OngCcntmractCode.AddressFromVmCode()
+	OntCcntmractAddress, _ = common.Uint160ParseFromBytes([]byte{0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1})
+	OngCcntmractAddress, _ = common.Uint160ParseFromBytes([]byte{0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2})
 
 	cntmToken   = NewGoverningToken()
 	cntmToken   = NewUtilityToken()
@@ -69,6 +67,7 @@ func GenesisBlockInit(defaultBookKeeper []*crypto.PubKey) (*types.Block, error) 
 			cntm,
 			cntm,
 			NewGoverningInit(),
+			NewUtilityInit(),
 		},
 	}
 	return genesisBlock, nil
@@ -89,7 +88,16 @@ func NewUtilityToken() *types.Transaction {
 func NewGoverningInit() *types.Transaction {
 	vmCode := vmtypes.VmCode{
 		VmType: vmtypes.NativeVM,
-		Code: []byte{14, 79, 110, 116, 46, 84, 111, 107, 101, 110, 46, 73, 110, 105, 116},
+		Code: []byte{14, 84, 111, 107, 101, 110, 46, 79, 110, 116, 46, 73, 110, 105, 116},
+	}
+	tx := utils.NewInvokeTransaction(vmCode)
+	return tx
+}
+
+func NewUtilityInit() *types.Transaction {
+	vmCode := vmtypes.VmCode{
+		VmType: vmtypes.NativeVM,
+		Code: []byte{14, 84, 111, 107, 101, 110, 46, 79, 110, 103, 46, 73, 110, 105, 116},
 	}
 	tx := utils.NewInvokeTransaction(vmCode)
 	return tx

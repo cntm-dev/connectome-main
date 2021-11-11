@@ -116,7 +116,7 @@ func (this *LedgerActor) handleAddBlockReq(ctx actor.Ccntmext, req *AddBlockReq)
 
 func (this *LedgerActor) handleGetTransactionReq(ctx actor.Ccntmext, req *GetTransactionReq) {
 	tx, err := ledger.DefLedger.GetTransaction(req.TxHash)
-	resp := GetTransactionRsp{
+	resp := &GetTransactionRsp{
 		Error: err,
 		Tx:    tx,
 	}
@@ -270,7 +270,7 @@ func (this *LedgerActor) handleIsCcntmainTransactionReq(ctx actor.Ccntmext, req 
 
 func (this *LedgerActor) handlePreExecuteCcntmractReq(ctx actor.Ccntmext, req *PreExecuteCcntmractReq) {
 	result, err := ledger.DefLedger.PreExecuteCcntmract(req.Tx)
-	resp := PreExecuteCcntmractRsp{
+	resp := &PreExecuteCcntmractRsp{
 		Result: result,
 		Error:  err,
 	}
