@@ -48,6 +48,7 @@ const (
 	Api_Restart = "/api/v1/restart"
 	Api_GetCcntmractState = "/api/v1/ccntmract/:hash"
 	Api_GetSmartCodeEvent = "/api/v1/smartcode/event/:height"
+	Api_GetTxBlockHeight = "/api/v1/block/height/txhash/:hash"
 )
 
 func InitRestServer() ApiServer {
@@ -139,6 +140,7 @@ func (rt *restServer) registryMethod() {
 		Api_GetCcntmractState:         {name: "getccntmract", handler: GetCcntmractState},
 		Api_Restart:             {name: "restart", handler: rt.Restart},
 		Api_GetSmartCodeEvent:{name: "getsmartcodeevent", handler: GetSmartCodeEventByHeight},
+		Api_GetTxBlockHeight:{name: "gettxblockheight", handler: GetTxBlockHeight},
 	}
 
 	sendRawTransaction := func(cmd map[string]interface{}) map[string]interface{} {
@@ -174,6 +176,8 @@ func (rt *restServer) getPath(url string) string {
 		return Api_GetCcntmractState
 	} else if strings.Ccntmains(url, strings.TrimRight(Api_GetSmartCodeEvent, ":height")) {
 		return Api_GetSmartCodeEvent
+	} else if strings.Ccntmains(url, strings.TrimRight(Api_GetTxBlockHeight, ":hash")) {
+		return Api_GetTxBlockHeight
 	}
 	return url
 }
@@ -220,6 +224,9 @@ func (rt *restServer) getParams(r *http.Request, url string, req map[string]inte
 		break
 	case Api_GetSmartCodeEvent:
 		req["Height"] = getParam(r, "height")
+		break
+	case Api_GetTxBlockHeight:
+		req["Hash"] = getParam(r, "hash")
 		break
 	case Api_WebsocketState:
 		break

@@ -11,6 +11,7 @@ import (
 	Err "github.com/Ontology/http/base/error"
 	"github.com/Ontology/http/websocket/websocket"
 	sc "github.com/Ontology/smartccntmract/common"
+	. "github.com/Ontology/http/base/common"
 	"github.com/Ontology/smartccntmract/event"
 	"github.com/Ontology/events/message"
 )
