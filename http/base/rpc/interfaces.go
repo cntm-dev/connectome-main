@@ -18,9 +18,9 @@ import (
 func GetBestBlockHash(params []interface{}) map[string]interface{} {
 	hash, err := CurrentBlockHash()
 	if err != nil {
-		return DnaRpcFailed
+		return RpcFailed
 	}
-	return DnaRpc(ToHexString(hash.ToArray()))
+	return Rpc(ToHexString(hash.ToArray()))
 }
 
 // Input JSON string examples for getblock method as following:
@@ -28,7 +28,7 @@ func GetBestBlockHash(params []interface{}) map[string]interface{} {
 //   {"jsonrpc": "2.0", "method": "getblock", "params": ["aabbcc.."], "id": 0}
 func GetBlock(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
-		return DnaRpcNil
+		return RpcNil
 	}
 	var err error
 	var hash Uint256
@@ -332,26 +332,26 @@ func uploadDataFile(params []interface{}) map[string]interface{} {
 
 	data, err := base64.StdEncoding.DecodeString(str)
 	if err != nil {
-		return DnaRpcInvalidParameter
+		return RpcInvalidParameter
 	}
 	f, err := os.OpenFile(tmpname, os.O_WRONLY|os.O_CREATE, 0664)
 	if err != nil {
-		return DnaRpcIOError
+		return RpcIOError
 	}
 	defer f.Close()
 	f.Write(data)
 
 	refpath, err := AddFileIPFS(tmpname, true)
 	if err != nil {
-		return DnaRpcAPIError
+		return RpcAPIError
 	}
 
-	return DnaRpc(refpath)
+	return Rpc(refpath)
 
 }
 func GetSmartCodeEvent(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
-		return DnaRpcNil
+		return RpcNil
 	}
 
 	switch (params[0]).(type) {
@@ -359,16 +359,16 @@ func GetSmartCodeEvent(params []interface{}) map[string]interface{} {
 	case float64:
 		height := uint32(params[0].(float64))
 		//TODO resp
-		return DnaRpc(map[string]interface{}{"Height": height})
+		return Rpc(map[string]interface{}{"Height": height})
 	default:
-		return DnaRpcInvalidParameter
+		return RpcInvalidParameter
 	}
-	return DnaRpcInvalidParameter
+	return RpcInvalidParameter
 }
 
 func GetTxBlockHeight(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
-		return DnaRpcNil
+		return RpcNil
 	}
 
 	switch (params[0]).(type) {
@@ -377,22 +377,22 @@ func GetTxBlockHeight(params []interface{}) map[string]interface{} {
 		str := params[0].(string)
 		hex, err := hex.DecodeString(str)
 		if err != nil {
-			return DnaRpcInvalidParameter
+			return RpcInvalidParameter
 		}
 		var hash Uint256
 		if err := hash.Deserialize(bytes.NewReader(hex)); err != nil {
-			return DnaRpcInvalidParameter
+			return RpcInvalidParameter
 		}
 		//TODO resp
-		return DnaRpc(map[string]interface{}{"Height": 0})
+		return Rpc(map[string]interface{}{"Height": 0})
 	default:
-		return DnaRpcInvalidParameter
+		return RpcInvalidParameter
 	}
-	return DnaRpcInvalidParameter
+	return RpcInvalidParameter
 }
 func RegDataFile(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
-		return DnaRpcNil
+		return RpcNil
 	}
 	var hash Uint256
 	switch params[0].(type) {
@@ -472,11 +472,11 @@ func GetDataFile(params []interface{}) map[string]interface{} {
 
 		err = GetFileIPFS(info.IPFSPath, info.Filename)
 		if err != nil {
-			return DnaRpcAPIError
+			return RpcAPIError
 		}
 		//TODO: shoud return download address
-		return DnaRpcSuccess
+		return RpcSuccess
 	default:
-		return DnaRpcInvalidParameter
+		return RpcInvalidParameter
 	}
 }
