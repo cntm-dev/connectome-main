@@ -7,13 +7,13 @@ import (
 
 type NotifyEventArgs struct {
 	Ccntmainer common.Uint256
-	CodeHash common.Uint160
+	CodeHash common.Address
 	States types.StackItemInterface
 }
 
 type NotifyEventInfo struct {
 	Ccntmainer common.Uint256
-	CodeHash common.Uint160
+	CodeHash common.Address
 	States interface{}
 }
 

@@ -72,8 +72,8 @@ func (self *Sig) Deserialize(r io.Reader) error {
 	return nil
 }
 
-func (self *Transaction) GetSignatureAddresses() []Uint160{
-	address := make([]Uint160, 0, len(self.Sigs))
+func (self *Transaction) GetSignatureAddresses() []Address {
+	address := make([]Address, 0, len(self.Sigs))
 	for _, sig := range self.Sigs {
 		m := int(sig.M)
 		n := len(sig.PubKeys)
@@ -123,7 +123,7 @@ func (self *Sig) Serialize(w io.Writer) error {
 
 type Fee struct {
 	Amount Fixed64
-	Payer  Uint160
+	Payer  Address
 }
 
 type TransactionType byte
@@ -163,8 +163,6 @@ var TxName = map[TransactionType]string{
 //Payload define the func for loading the payload data
 //base on payload type which have different struture
 type Payload interface {
-	//  Get payload data
-	Data() []byte
 
 	//Serialize payload data
 	Serialize(w io.Writer) error

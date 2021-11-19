@@ -24,10 +24,10 @@ type Ccntmract struct {
 	Parameters      []CcntmractParameterType
 
 	//The program hash as ccntmract address
-	ProgramHash     Uint160
+	ProgramHash Address
 
 	//owner's pubkey hash indicate the owner of ccntmract
-	OwnerPubkeyHash Uint160
+	OwnerPubkeyHash Address
 }
 
 func (c *Ccntmract) IsStandard() bool {
@@ -154,7 +154,7 @@ func (c *Ccntmract) Serialize(w io.Writer) error {
 		return err
 	}
 	if len != 20 {
-		return NewDetailErr(errors.New("PubkeyHash.Serialize(): len != len(Uint160)"), ErrNoCode, "")
+		return NewDetailErr(errors.New("PubkeyHash.Serialize(): len != len(Address)"), ErrNoCode, "")
 	}
 
 	err = serialization.WriteVarBytes(w, CcntmractParameterTypeToByte(c.Parameters))

@@ -1,11 +1,11 @@
 package payload
 
 import (
-	"bytes"
 	. "github.com/Ontology/common"
 	"github.com/Ontology/common/serialization"
 	"github.com/Ontology/crypto"
 	"io"
+	. "github.com/Ontology/errors"
 )
 
 const (
@@ -15,7 +15,7 @@ const (
 type Vote struct {
 	PubKeys []*crypto.PubKey // vote node list
 
-	Account Uint160
+	Account Address
 }
 
 func (self *Vote) Check() bool {
@@ -25,21 +25,20 @@ func (self *Vote) Check() bool {
 	return true
 }
 
-func (self *Vote) Data() []byte {
-	var buf bytes.Buffer
-	serialization.WriteUint32(&buf, uint32(len(self.PubKeys)))
-	for _, key := range self.PubKeys {
-		key.Serialize(&buf)
-	}
-	self.Account.Serialize(&buf)
-
-	return buf.Bytes()
-}
-
 func (self *Vote) Serialize(w io.Writer) error {
-	_, err := w.Write(self.Data())
+	if err := serialization.WriteUint32(w, uint32(len(self.PubKeys))); err != nil {
+		return NewDetailErr(err, ErrNoCode, "Vote PubKeys length Serialize failed.")
+	}
+	for _, key := range self.PubKeys {
+		if err := key.Serialize(w); err != nil {
+			return NewDetailErr(err, ErrNoCode, "InvokeCode PubKeys Serialize failed.")
+		}
+	}
+	if _, err := self.Account.Serialize(w); err != nil {
+		return NewDetailErr(err, ErrNoCode, "InvokeCode Account Serialize failed.")
+	}
 
-	return err
+	return nil
 }
 
 func (self *Vote) Deserialize(r io.Reader) error {

@@ -45,10 +45,10 @@ type ClientImpl struct {
 	iv        []byte
 	masterKey []byte
 
-	accounts  map[Uint160]*Account
-	ccntmracts map[Uint160]*ct.Ccntmract
+	accounts  map[Address]*Account
+	ccntmracts map[Address]*ct.Ccntmract
 
-	watchOnly     []Uint160
+	watchOnly     []Address
 	currentHeight uint32
 
 	FileStore
@@ -88,8 +88,8 @@ func Open(path string, passwordKey []byte) *ClientImpl {
 func NewClient(path string, password []byte, create bool) *ClientImpl {
 	newClient := &ClientImpl{
 		path:      path,
-		accounts:  map[Uint160]*Account{},
-		ccntmracts: map[Uint160]*ct.Ccntmract{},
+		accounts:  map[Address]*Account{},
+		ccntmracts: map[Address]*ct.Ccntmract{},
 		FileStore: FileStore{path: path},
 		isrunning: true,
 	}
@@ -99,7 +99,7 @@ func NewClient(path string, password []byte, create bool) *ClientImpl {
 		//create new client
 		newClient.iv = make([]byte, 16)
 		newClient.masterKey = make([]byte, 32)
-		newClient.watchOnly = []Uint160{}
+		newClient.watchOnly = []Address{}
 		newClient.currentHeight = 0
 
 		//generate random number for iv/masterkey
@@ -187,7 +187,7 @@ func (cl *ClientImpl) GetAccount(pubKey *crypto.PubKey) (*Account, error) {
 	return cl.GetAccountByProgramHash(programHash), nil
 }
 
-func (cl *ClientImpl) GetAccountByProgramHash(programHash Uint160) *Account {
+func (cl *ClientImpl) GetAccountByProgramHash(programHash Address) *Account {
 	cl.mu.Lock()
 	defer cl.mu.Unlock()
 
@@ -197,7 +197,7 @@ func (cl *ClientImpl) GetAccountByProgramHash(programHash Uint160) *Account {
 	return nil
 }
 
-func (cl *ClientImpl) GetCcntmract(programHash Uint160) *ct.Ccntmract {
+func (cl *ClientImpl) GetCcntmract(programHash Address) *ct.Ccntmract {
 	log.Debug()
 	cl.mu.Lock()
 	defer cl.mu.Unlock()
@@ -272,7 +272,7 @@ func (cl *ClientImpl) CreateAccount() (*Account, error) {
 	ct, err := ccntmract.CreateSignatureCcntmract(ac.PublicKey)
 	if err == nil {
 		cl.AddCcntmract(ct)
-		address, _ := ct.ProgramHash.ToAddress()
+		address := ct.ProgramHash.ToBase58()
 		log.Info("[CreateCcntmract] Address: ", address)
 	}
 
@@ -392,7 +392,7 @@ func (cl *ClientImpl) SaveAccount(ac *Account) error {
 
 	ClearBytes(decryptedPrivateKey, 96)
 
-	err = cl.SaveAccountData(ac.Address.ToArray(), encryptedPrivateKey)
+	err = cl.SaveAccountData(ac.Address[:], encryptedPrivateKey)
 	if err != nil {
 		return err
 	}
@@ -400,9 +400,9 @@ func (cl *ClientImpl) SaveAccount(ac *Account) error {
 	return nil
 }
 
-func (cl *ClientImpl) LoadAccount() map[Uint160]*Account {
+func (cl *ClientImpl) LoadAccount() map[Address]*Account {
 	i := 0
-	accounts := map[Uint160]*Account{}
+	accounts := map[Address]*Account{}
 	for true {
 		_, prikeyenc, err := cl.LoadAccountData(i)
 		if err != nil {
@@ -424,9 +424,9 @@ func (cl *ClientImpl) LoadAccount() map[Uint160]*Account {
 	return accounts
 }
 
-func (cl *ClientImpl) LoadCcntmracts() map[Uint160]*ct.Ccntmract {
+func (cl *ClientImpl) LoadCcntmracts() map[Address]*ct.Ccntmract {
 	i := 0
-	ccntmracts := map[Uint160]*ct.Ccntmract{}
+	ccntmracts := map[Address]*ct.Ccntmract{}
 
 	for true {
 		ph, _, rd, err := cl.LoadCcntmractData(i)

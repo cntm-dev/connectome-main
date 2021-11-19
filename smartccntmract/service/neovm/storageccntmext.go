@@ -5,10 +5,10 @@ import (
 )
 
 type StorageCcntmext struct {
-	codeHash common.Uint160
+	codeHash common.Address
 }
 
-func NewStorageCcntmext(codeHash common.Uint160) *StorageCcntmext {
+func NewStorageCcntmext(codeHash common.Address) *StorageCcntmext {
 	var storageCcntmext StorageCcntmext
 	storageCcntmext.codeHash = codeHash
 	return &storageCcntmext

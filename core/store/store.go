@@ -26,7 +26,7 @@ type ILedgerStore interface {
 	IsCcntmainBlock(blockHash Uint256) (bool, error)
 	IsCcntmainTransaction(txHash Uint256) (bool, error)
 	GetBlockRootWithNewTxRoot(txRoot Uint256) Uint256
-	GetCcntmractState(ccntmractHash Uint160) (*payload.DeployCode, error)
+	GetCcntmractState(ccntmractHash Address) (*payload.DeployCode, error)
 	GetBookKeeperState() (*states.BookKeeperState, error)
 	GetStorageItem(key *states.StorageKey) (*states.StorageItem, error)
 	PreExecuteCcntmract(tx *types.Transaction) ([]interface{}, error)

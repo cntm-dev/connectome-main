@@ -14,7 +14,7 @@ import (
 
 type CcntmractCcntmext struct {
 	Data            sig.SignableData
-	ProgramHashes   []Uint160
+	ProgramHashes   []Address
 	Codes           [][]byte
 	Parameters      [][][]byte
 
@@ -213,7 +213,7 @@ func (cxt *CcntmractCcntmext) ParseCcntmractPubKeys(ccntmract *Ccntmract) (map[s
 	return pubkeyIndex, nil
 }
 
-func (cxt *CcntmractCcntmext) GetIndex(programHash Uint160) int {
+func (cxt *CcntmractCcntmext) GetIndex(programHash Address) int {
 	for i := 0; i < len(cxt.ProgramHashes); i++ {
 		if cxt.ProgramHashes[i] == programHash {
 			return i

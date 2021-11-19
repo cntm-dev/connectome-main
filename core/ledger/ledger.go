@@ -142,7 +142,7 @@ func (this *Ledger) GetBookKeeperState() (*states.BookKeeperState, error) {
 }
 
 //
-//func (this *Ledger) GetBookKeeperAddress() (*common.Uint160, error) {
+//func (this *Ledger) GetBookKeeperAddress() (*common.Address, error) {
 //	bookState, err := this.GetBookKeeperState()
 //	if err != nil {
 //		return nil, fmt.Errorf("GetBookKeeperState error %s", err)
@@ -181,7 +181,7 @@ func (this *Ledger) GetBookKeeperState() (*states.BookKeeperState, error) {
 //return claimable, nil
 //}
 
-func (this *Ledger) GetStorageItem(codeHash *common.Uint160, key []byte) ([]byte, error) {
+func (this *Ledger) GetStorageItem(codeHash *common.Address, key []byte) ([]byte, error) {
 	storageKey := &states.StorageKey{
 		CodeHash: *codeHash,
 		Key:      key,
@@ -191,12 +191,12 @@ func (this *Ledger) GetStorageItem(codeHash *common.Uint160, key []byte) ([]byte
 		return nil, fmt.Errorf("GetStorageItem error %s", err)
 	}
 	if storageItem == nil {
-		return nil, fmt.Errorf("cannot get storage item by codehash %x Key %x", codeHash, key)
+		return nil, fmt.Errorf("cannot get storage item by codehash %x Key %x", *codeHash, key)
 	}
 	return storageItem.Value, nil
 }
 
-func (this *Ledger) GetCcntmractState(ccntmractHash common.Uint160) (*payload.DeployCode, error) {
+func (this *Ledger) GetCcntmractState(ccntmractHash common.Address) (*payload.DeployCode, error) {
 	return this.ldgStore.GetCcntmractState(ccntmractHash)
 }
 
@@ -209,7 +209,7 @@ func (this *Ledger) PreExecuteCcntmract(tx *types.Transaction) ([]interface{}, e
 //	return this.ldgStore.GetAllAssetState()
 //}
 //
-//func (this *Ledger) MakeBookKeeperAddress(bookKeepers []*crypto.PubKey) (*common.Uint160, error) {
+//func (this *Ledger) MakeBookKeeperAddress(bookKeepers []*crypto.PubKey) (*common.Address, error) {
 //	bookSize := len(bookKeepers)
 //	if bookSize == 0 {
 //		return nil, fmt.Errorf("bookKeeper is empty")

@@ -304,23 +304,23 @@ func (s *StateMachine) GetStorageCcntmext(engine *vm.ExecutionEngine) (bool, err
 	if err != nil {
 		return false, err
 	}
-	if codeHash.CompareTo(currentHash) != 0 {
+	if codeHash != currentHash {
 		return false, errors.NewErr("[GetStorageCcntmext] CodeHash not equal!")
 	}
 	vm.PushData(engine, &StorageCcntmext{codeHash: codeHash})
 	return true, nil
 }
 
-func ccntmains(programHashes []common.Uint160, programHash common.Uint160) bool {
+func ccntmains(programHashes []common.Address, programHash common.Address) bool {
 	for _, v := range programHashes {
-		if v.CompareTo(programHash) == 0 {
+		if v == programHash {
 			return true
 		}
 	}
 	return false
 }
 
-func serializeStorageKey(codeHash common.Uint160, key []byte) ([]byte, error) {
+func serializeStorageKey(codeHash common.Address, key []byte) ([]byte, error) {
 	bf := new(bytes.Buffer)
 	storageKey := &states.StorageKey{CodeHash: codeHash, Key: key}
 	if _, err := storageKey.Serialize(bf); err != nil {

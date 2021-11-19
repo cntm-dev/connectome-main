@@ -6,6 +6,6 @@ import (
 
 type LogEventArgs struct {
 	Ccntmainer common.Uint256
-	CodeHash  common.Uint160
+	CodeHash  common.Address
 	Message   string
 }

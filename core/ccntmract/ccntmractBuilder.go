@@ -42,7 +42,7 @@ func CreateSignatureRedeemScript(pubkey *crypto.PubKey) ([]byte, error) {
 }
 
 //create a Multi Singature ccntmract for owner  。
-func CreateMultiSigCcntmract(publicKeyHash Uint160, m int, publicKeys []*crypto.PubKey) (*Ccntmract, error) {
+func CreateMultiSigCcntmract(publicKeyHash Address, m int, publicKeys []*crypto.PubKey) (*Ccntmract, error) {
 
 	params := make([]CcntmractParameterType, m)
 	for i, _ := range params {

@@ -28,7 +28,7 @@ func (this *StateStore) HandleDeployTransaction(stateBatch *statestore.StateBatc
 	codeHash := code.AddressFromVmCode()
 	if err := stateBatch.TryGetOrAdd(
 		common.ST_Ccntmract,
-		codeHash.ToArray(),
+		codeHash[:],
 		&payload.DeployCode{
 			Code:        deploy.Code,
 			VmType:      deploy.VmType,

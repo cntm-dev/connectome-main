@@ -12,7 +12,7 @@ type IClientStore interface {
 
 	LoadStoredData(name string) []byte
 
-	LoadAccount() map[Uint160]*Account
+	LoadAccount() map[Address]*Account
 
-	LoadCcntmracts() map[Uint160]*ct.Ccntmract
+	LoadCcntmracts() map[Address]*ct.Ccntmract
 }

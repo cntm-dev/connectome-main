@@ -852,7 +852,7 @@ func (this *LedgerStore) GetBookKeeperState() (*states.BookKeeperState, error) {
 	return this.stateStore.GetBookKeeperState()
 }
 
-func (this *LedgerStore) GetCcntmractState(ccntmractHash common.Uint160) (*payload.DeployCode, error) {
+func (this *LedgerStore) GetCcntmractState(ccntmractHash common.Address) (*payload.DeployCode, error) {
 	return this.stateStore.GetCcntmractState(ccntmractHash)
 }
 
