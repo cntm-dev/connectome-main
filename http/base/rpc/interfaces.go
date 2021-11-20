@@ -7,6 +7,7 @@ import (
 	"fmt"
 	. "github.com/Ontology/common"
 	"github.com/Ontology/common/config"
+	"github.com/Ontology/common/log"
 	"github.com/Ontology/core/types"
 	. "github.com/Ontology/errors"
 	. "github.com/Ontology/http/base/actor"
@@ -18,6 +19,7 @@ import (
 func GetBestBlockHash(params []interface{}) map[string]interface{} {
 	hash, err := CurrentBlockHash()
 	if err != nil {
+		log.Errorf("GetBestBlockHash error:%s", err)
 		return RpcFailed
 	}
 	return Rpc(ToHexString(hash.ToArray()))
