@@ -5,8 +5,9 @@ import (
 	"errors"
 	"github.com/Ontology/vm/wasmvm/memory"
 	"github.com/Ontology/vm/wasmvm/wasm"
-	"io/ioutil"
-	"fmt"
+	"github.com/Ontology/core/ledger"
+	"github.com/Ontology/common"
+	"github.com/Ontology/vm/types"
 )
 
 type IInteropService interface {
@@ -271,15 +272,15 @@ func getCcntmractFromAddr(addr []byte) ([]byte, error) {
 
 	//todo get the ccntmract code from ledger
 	//just for test
-		ccntmract := trimBuffToString(addr)
+/*		ccntmract := trimBuffToString(addr)
 		code, err := ioutil.ReadFile(fmt.Sprintf("./testdata2/%s.wasm",ccntmract))
 		if err != nil {
 			fmt.Printf("./testdata2/%s.wasm is not exist",ccntmract)
 			return nil,err
 		}
 
-		return code,nil
-/*	codeHash, err := common.Uint160ParseFromBytes(addr)
+		return code,nil*/
+	codeHash, err := common.Uint160ParseFromBytes(addr)
 	if err != nil {
 		return nil, errors.New("get address Code hash failed")
 	}
@@ -293,7 +294,7 @@ func getCcntmractFromAddr(addr []byte) ([]byte, error) {
 		return nil, errors.New(" ccntmract is not a wasm ccntmract")
 	}
 
-	return ccntmract.Code, nil*/
+	return ccntmract.Code, nil
 
 }
 
