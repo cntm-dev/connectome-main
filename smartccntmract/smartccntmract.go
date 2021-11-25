@@ -42,21 +42,21 @@ type SmartCcntmract struct {
 	Code           []byte
 	Input          []byte
 	ParameterTypes []ccntmract.CcntmractParameterType
-	Caller         common.Uint160
-	CodeHash       common.Uint160
+	Caller         common.Address
+	CodeHash       common.Address
 	VMType         types.VmType
 	ReturnType     ccntmract.CcntmractParameterType
 }
 
 type Ccntmext struct {
 	VmType         types.VmType
-	Caller         common.Uint160
+	Caller         common.Address
 	StateMachine   *service.StateMachine
 	WasmStateMachine *wasm.WasmStateMachine //add for wasm state machine
 	DBCache        storecomm.IStateStore
 	Code           []byte
 	Input          []byte
-	CodeHash       common.Uint160
+	CodeHash       common.Address
 	Time           *big.Int
 	BlockNumber    *big.Int
 	CacheCodeTable interfaces.ICodeTable
@@ -107,7 +107,6 @@ func (sc *SmartCcntmract) DeployCcntmract() ([]byte, error) {
 }
 
 func (sc *SmartCcntmract) InvokeCcntmract() (interface{}, error) {
-
 	res, err := sc.Engine.Call(sc.Caller, sc.Code, sc.Input)
 	if err != nil {
 		return nil, err

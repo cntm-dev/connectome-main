@@ -8,10 +8,12 @@ import (
 	. "github.com/Ontology/common"
 	"github.com/Ontology/common/config"
 	"github.com/Ontology/common/log"
+	"github.com/Ontology/core/genesis"
 	"github.com/Ontology/core/types"
 	. "github.com/Ontology/errors"
 	. "github.com/Ontology/http/base/actor"
 	. "github.com/Ontology/http/base/common"
+	"math/big"
 	"math/rand"
 	"os"
 )
@@ -385,13 +387,53 @@ func GetBlockHeightByTxHash(params []interface{}) map[string]interface{} {
 		if err := hash.Deserialize(bytes.NewReader(hex)); err != nil {
 			return RpcInvalidParameter
 		}
-		//TODO resp
-		return Rpc(map[string]interface{}{})
+		height,err := GetBlockHeightByTxHashFromStore(hash)
+		if err != nil{
+			return RpcInvalidParameter
+		}
+		return Rpc(height)
 	default:
 		return RpcInvalidParameter
 	}
 	return RpcInvalidParameter
 }
+
+type BalanceOfRsp struct {
+	Ont string `json:"cntm"`
+	Ong string `json:"cntm"`
+}
+
+func BalanceOf(params []interface{}) map[string]interface{} {
+	if len(params) < 1 {
+		return RpcInvalidParameter
+	}
+	address, ok := params[0].(string)
+	if !ok {
+		return RpcInvalidParameter
+	}
+	data, err := hex.DecodeString(address)
+	if err != nil {
+		return RpcInvalidParameter
+	}
+
+	cntm := new(big.Int)
+	cntm := new(big.Int)
+
+	cntmBalance, err := GetStorageItem(genesis.OntCcntmractAddress, data)
+	if err != nil {
+		log.Errorf("GetOntBalanceOf GetStorageItem cntm address:%s error:%s", address, err)
+		return RpcInternalError
+	}
+	if cntmBalance != nil {
+		cntm.SetBytes(cntmBalance)
+	}
+	rsp := &BalanceOfRsp{
+		Ont: cntm.String(),
+		Ong: cntm.String(),
+	}
+	return Rpc(rsp)
+}
+
 func RegDataFile(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return RpcNil

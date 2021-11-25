@@ -1,9 +1,7 @@
 package common
 
 import (
-	"bytes"
 	"crypto/sha256"
-	"encoding/binary"
 	"errors"
 	"github.com/Ontology/common/log"
 	. "github.com/Ontology/errors"
@@ -11,47 +9,36 @@ import (
 	"math/big"
 
 	"github.com/itchyny/base58-go"
+	"fmt"
 )
 
 const AddrLen int = 20
 
-type Address [AddrLen]uint8
+type Address [AddrLen]byte
 
 func (u *Address) ToArray() []byte {
-	var x []byte = make([]byte, AddrLen)
-	for i := 0; i < 20; i++ {
-		x[i] = byte(u[i])
-	}
-
+	x := append([]byte{}, u[:]...)
 	return x
 }
 
-func (u *Address) Serialize(w io.Writer) (int, error) {
-	b_buf := bytes.NewBuffer([]byte{})
-	binary.Write(b_buf, binary.LittleEndian, u)
 
-	len, err := w.Write(b_buf.Bytes())
-
-	if err != nil {
-		return 0, err
-	}
-
-	return len, nil
+func (self *Address) ToHexString() string {
+	return fmt.Sprintf("%x", self[:])
 }
 
-func (f *Address) Deserialize(r io.Reader) error {
-	p := make([]byte, AddrLen)
-	n, err := r.Read(p)
+func (self *Address) Serialize(w io.Writer) error {
+	_, err := w.Write(self[:])
+	return err
+}
 
-	if n <= 0 || err != nil {
-		return err
+func (self *Address) Deserialize(r io.Reader) error {
+	n, err := r.Read(self[:])
+	if n != len(self[:]) || err != nil {
+		return errors.New("deserialize Address error")
 	}
-
-	b_buf := bytes.NewBuffer(p)
-	binary.Read(b_buf, binary.LittleEndian, f)
-
 	return nil
 }
+
 
 func (f *Address) ToBase58() string {
 	data := append([]byte{0x41}, f[:]...)
