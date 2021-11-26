@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2018 The cntmology Authors
+ * This file is part of The cntmology library.
+ *
+ * The cntmology is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The cntmology is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package rest
 
 import (
@@ -12,6 +30,8 @@ import (
 	"github.com/Ontology/common/log"
 	. "github.com/Ontology/http/base/common"
 	. "github.com/Ontology/http/base/actor"
+	"math/big"
+	"github.com/Ontology/core/genesis"
 )
 
 const TlsPort int = 443
@@ -330,5 +350,30 @@ func GetStorage(cmd map[string]interface{}) map[string]interface{} {
 		return rspInternalError
 	}
 	resp["Result"] = ToHexString(value)
+	return resp
+}
+func GetBalance(cmd map[string]interface{}) map[string]interface{} {
+	resp := rspSuccess
+	addrBase58 := cmd["Addr"].(string)
+	address, err := AddressFromBase58(addrBase58)
+	if err != nil {
+		return rspInvalidParams
+	}
+	cntm := new(big.Int)
+	cntm := new(big.Int)
+
+	cntmBalance, err := GetStorageItem(genesis.OntCcntmractAddress, address.ToArray())
+	if err != nil {
+		log.Errorf("GetOntBalanceOf GetStorageItem cntm address:%s error:%s", address, err)
+		return rspInternalError
+	}
+	if cntmBalance != nil {
+		cntm.SetBytes(cntmBalance)
+	}
+	rsp := &BalanceOfRsp{
+		Ont: cntm.String(),
+		Ong: cntm.String(),
+	}
+	resp["Result"] = rsp
 	return resp
 }

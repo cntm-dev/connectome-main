@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2018 The cntmology Authors
+ * This file is part of The cntmology library.
+ *
+ * The cntmology is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The cntmology is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package rpc
 
 import (
@@ -398,30 +416,24 @@ func GetBlockHeightByTxHash(params []interface{}) map[string]interface{} {
 	return RpcInvalidParameter
 }
 
-type BalanceOfRsp struct {
-	Ont string `json:"cntm"`
-	Ong string `json:"cntm"`
-}
-
-func BalanceOf(params []interface{}) map[string]interface{} {
+func GetBalance(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return RpcInvalidParameter
 	}
-	address, ok := params[0].(string)
+	addrBase58, ok := params[0].(string)
 	if !ok {
 		return RpcInvalidParameter
 	}
-	data, err := hex.DecodeString(address)
+	address, err := AddressFromBase58(addrBase58)
 	if err != nil {
 		return RpcInvalidParameter
 	}
-
 	cntm := new(big.Int)
 	cntm := new(big.Int)
 
-	cntmBalance, err := GetStorageItem(genesis.OntCcntmractAddress, data)
+	cntmBalance, err := GetStorageItem(genesis.OntCcntmractAddress, address.ToArray())
 	if err != nil {
-		log.Errorf("GetOntBalanceOf GetStorageItem cntm address:%s error:%s", address, err)
+		log.Errorf("GetOntBalanceOf GetStorageItem cntm address:%s error:%s", addrBase58, err)
 		return RpcInternalError
 	}
 	if cntmBalance != nil {

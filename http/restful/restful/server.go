@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2018 The cntmology Authors
+ * This file is part of The cntmology library.
+ *
+ * The cntmology is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The cntmology is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package restful
 
 import (
@@ -43,7 +61,7 @@ const (
 	Api_GetTransaction = "/api/v1/transaction/:hash"
 	Api_SendRawTx = "/api/v1/transaction"
 	Api_GetStorage = "/api/v1/storage/:hash/:key"
-
+	Api_GetBalanceByAddr = "/api/v1/balance/:addr"
 	Api_WebsocketState       = "/api/v1/config/websocket/state"
 	Api_Restart              = "/api/v1/restart"
 	Api_GetCcntmractState     = "/api/v1/ccntmract/:hash"
@@ -142,6 +160,7 @@ func (rt *restServer) registryMethod() {
 		Api_GetSmartCodeEvent:    {name: "getsmartcodeevent", handler: GetSmartCodeEventByHeight},
 		Api_GetBlkHeightByTxHash: {name: "getblockheightbytxhash", handler: GetBlockHeightByTxHash},
 		Api_GetStorage:           {name: "getstorage", handler: GetStorage},
+		Api_GetBalanceByAddr:    {name: "getbalance", handler: GetBalance},
 	}
 
 	sendRawTransaction := func(cmd map[string]interface{}) map[string]interface{} {
@@ -181,6 +200,8 @@ func (rt *restServer) getPath(url string) string {
 		return Api_GetBlkHeightByTxHash
 	} else if strings.Ccntmains(url, strings.TrimRight(Api_GetStorage, ":hash/:key")) {
 		return Api_GetStorage
+	} else if strings.Ccntmains(url, strings.TrimRight(Api_GetBalanceByAddr, ":addr")) {
+		return Api_GetBalanceByAddr
 	}
 	return url
 }
@@ -215,6 +236,8 @@ func (rt *restServer) getParams(r *http.Request, url string, req map[string]inte
 		req["Height"] = getParam(r, "height")
 	case Api_GetBlkHeightByTxHash:
 		req["Hash"] = getParam(r, "hash")
+	case Api_GetBalanceByAddr:
+		req["Addr"] = getParam(r, "addr")
 	case Api_WebsocketState:
 	default:
 	}
