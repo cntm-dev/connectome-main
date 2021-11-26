@@ -25,7 +25,6 @@ type CcntmractCcntmext struct {
 }
 
 func NewCcntmractCcntmext(data sig.SignableData) *CcntmractCcntmext {
-	log.Debug()
 	programHashes, _ := data.GetProgramHashes() //TODO: check error
 	log.Debug("programHashes= ", programHashes)
 	log.Debug("hashLen := len(programHashes) ", len(programHashes))

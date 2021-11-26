@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 	"reflect"
-
+	ldgractor"github.com/Ontology/core/ledger/actor"
 	"github.com/Ontology/account"
 	. "github.com/Ontology/common"
 	"github.com/Ontology/common/config"
@@ -17,11 +17,11 @@ import (
 	"github.com/Ontology/core/types"
 	"github.com/Ontology/core/vote"
 	"github.com/Ontology/crypto"
-	cntmErrors "github.com/Ontology/errors"
 	"github.com/Ontology/eventbus/actor"
 	"github.com/Ontology/events"
 	"github.com/Ontology/events/message"
 	p2pmsg "github.com/Ontology/net/message"
+	"github.com/Ontology/validator/increment"
 )
 
 type DbftService struct {
@@ -32,6 +32,7 @@ type DbftService struct {
 	timeView          byte
 	blockReceivedTime time.Time
 	started           bool
+	incrValidator *increment.IncrementValidator
 	poolActor         *actorTypes.TxPoolActor
 	p2p               *actorTypes.P2PActor
 
@@ -46,6 +47,7 @@ func NewDbftService(bkAccount *account.Account, txpool, p2p *actor.PID) (*DbftSe
 		Account:   bkAccount,
 		timer:     time.NewTimer(time.Second * 15),
 		started:   false,
+		incrValidator: increment.NewIncrementValidator(10),
 		poolActor: &actorTypes.TxPoolActor{Pool: txpool},
 		p2p:       &actorTypes.P2PActor{P2P: p2p},
 	}
@@ -94,11 +96,15 @@ func (this *DbftService) Receive(ccntmext actor.Ccntmext) {
 	case *actorTypes.StartConsensus:
 		this.start()
 	case *actorTypes.StopConsensus:
+		this.incrValidator.Clean()
 		this.halt()
 	case *actorTypes.TimeOut:
 		log.Info("dbft receive timeout")
 		this.Timeout()
 	case *message.SaveBlockCompleteMsg:
+		log.Infof("dbft actor receives block complete event. block height=%d, numtx=%d",
+			msg.Block.Header.Height, len(msg.Block.Transactions))
+		this.incrValidator.AddBlock(msg.Block)
 		this.handleBlockPersistCompleted(msg.Block)
 	case *p2pmsg.ConsensusPayload:
 		this.NewConsensusPayload(msg)
@@ -207,9 +213,14 @@ func (ds *DbftService) CheckSignatures() error {
 		}
 		if !isExist {
 			// save block
-			if err := ledger.DefLedger.AddBlock(block); err != nil {
-				log.Error(fmt.Sprintf("[CheckSignatures] Xmit block Error: %s, blockHash: %d", err.Error(), block.Hash()))
-				return cntmErrors.NewDetailErr(err, cntmErrors.ErrNoCode, "[DbftService], CheckSignatures AddCcntmract failed.")
+			future := ldgractor.DefLedgerPid.RequestFuture(&ldgractor.AddBlockReq{Block:block}, 30*time.Second)
+			result, err := future.Result()
+			if err != nil {
+				return fmt.Errorf("CheckSignatures DefLedgerPid.RequestFuture Height:%d error:%s",block.Header.Height, err)
+			}
+			addBlockRsp :=  result.(*ldgractor.AddBlockRsp)
+			if addBlockRsp.Error != nil {
+				return fmt.Errorf("CheckSignatures AddBlockRsp Height:%d error:%s", block.Header.Height, err)
 			}
 
 			ds.ccntmext.State |= BlockGenerated
@@ -226,26 +237,8 @@ func (ds *DbftService) CreateBookkeepingTransaction(nonce uint64, fee Fixed64) *
 	bookKeepingPayload := &payload.BookKeeping{
 		Nonce: uint64(time.Now().UnixNano()),
 	}
-	//signatureRedeemScript, err := ccntmract.CreateSignatureRedeemScript(ds.ccntmext.Owner)
-	//if err != nil {
-	//	return nil
-	//}
-	//signatureRedeemScriptHashToCodeHash := ToCodeHash(signatureRedeemScript)
-	//if err != nil {
-	//	return nil
-	//}
-	//outputs := []*utxo.TxOutput{}
-	//if fee > 0 {
-	//	feeOutput := &utxo.TxOutput{
-	//		AssetID:     genesis.cntmTokenID,
-	//		Value:       fee,
-	//		Address: signatureRedeemScriptHashToCodeHash,
-	//	}
-	//	outputs = append(outputs, feeOutput)
-	//}
 	return &types.Transaction{
 		TxType: types.BookKeeping,
-		//PayloadVersion: payload.BookKeepingPayloadVersion,
 		Payload:    bookKeepingPayload,
 		Attributes: []*types.TxAttribute{},
 	}
