@@ -20,7 +20,6 @@ package rpc
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	. "github.com/Ontology/common"
@@ -32,8 +31,6 @@ import (
 	. "github.com/Ontology/http/base/actor"
 	. "github.com/Ontology/http/base/common"
 	"math/big"
-	"math/rand"
-	"os"
 )
 
 func GetBestBlockHash(params []interface{}) map[string]interface{} {

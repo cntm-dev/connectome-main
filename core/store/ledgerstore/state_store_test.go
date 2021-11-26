@@ -20,13 +20,12 @@ package ledgerstore
 
 import (
 	"fmt"
-	"github.com/Ontology/common"
-	//"github.com/Ontology/core/code"
 	"github.com/Ontology/core/states"
 	scommon "github.com/Ontology/core/store/common"
 	"github.com/Ontology/core/store/statestore"
+	"github.com/Ontology/core/payload"
 	"github.com/Ontology/crypto"
-	//"github.com/Ontology/vm/types"
+	vmtypes"github.com/Ontology/vm/types"
 	"testing"
 )
 
@@ -35,51 +34,65 @@ func init() {
 }
 
 func TestCcntmractState(t *testing.T) {
-	//batch, err := getStateBatch(common.Uint256{})
-	//if err != nil {
-	//	t.Errorf("NewStateBatch error %s", err)
-	//	return
-	//}
-	//testCode := []byte("testcode")
-	//codeHash := common.ToCodeHash(testCode)
-	//ccntmactState := &states.CcntmractState{
-	//	Code:        &code.FunctionCode{Code: testCode},
-	//	VmType:      types.NEOVM,
-	//	NeedStorage: false,
-	//	Name:        "test",
-	//	Version:     "1.0",
-	//	Author:      "test",
-	//	Email:       "test",
-	//	Description: "test",
-	//}
-	//batch.TryAdd(scommon.ST_Ccntmract, codeHash.ToArray(), ccntmactState, false)
-	//_, err = batch.CommitTo()
-	//if err != nil {
-	//	t.Errorf("batch.CommitTo error %s", err)
-	//	return
-	//}
-	//err = testStateStore.CommitTo()
-	//if err != nil {
-	//	t.Errorf("testStateStore.CommitTo error %s", err)
-	//	return
-	//}
-	//ccntmractState1, err := testStateStore.GetCcntmractState(codeHash)
-	//if err != nil {
-	//	t.Errorf("GetCcntmractState error %s", err)
-	//	return
-	//}
-	//if ccntmractState1.Name != ccntmactState.Name ||
-	//	ccntmractState1.Version != ccntmactState.Version ||
-	//	ccntmractState1.Author != ccntmactState.Author ||
-	//	ccntmractState1.Description != ccntmactState.Description ||
-	//	ccntmractState1.Email != ccntmactState.Email {
-	//	t.Errorf("TestCcntmractState failed %+v != %+v", ccntmractState1, ccntmactState)
-	//	return
-	//}
+	batch, err := getStateBatch()
+	if err != nil {
+		t.Errorf("NewStateBatch error %s", err)
+		return
+	}
+	testCode := []byte("testcode")
+
+	deploy := &payload.DeployCode{
+		Code:        testCode,
+		VmType:      vmtypes.NEOVM,
+		NeedStorage: false,
+		Name:        "testsm",
+		Version:     "v1.0",
+		Author:     "",
+		Email:       "",
+		Description: "",
+	}
+	code := &vmtypes.VmCode{
+		Code:   testCode,
+		VmType: vmtypes.NEOVM,
+	}
+	codeHash := code.AddressFromVmCode()
+	err = batch.TryGetOrAdd(
+		scommon.ST_Ccntmract,
+		codeHash[:],
+		deploy,
+		false)
+	if err != nil {
+		 t.Errorf("TryGetOrAdd ccntmract error %s", err)
+		 return
+	}
+
+	err = batch.CommitTo()
+	if err != nil {
+		t.Errorf("batch.CommitTo error %s", err)
+		return
+	}
+	err = testStateStore.CommitTo()
+	if err != nil {
+		t.Errorf("testStateStore.CommitTo error %s", err)
+		return
+	}
+	ccntmractState1, err := testStateStore.GetCcntmractState(codeHash)
+	if err != nil {
+		t.Errorf("GetCcntmractState error %s", err)
+		return
+	}
+	if ccntmractState1.Name != deploy.Name ||
+		ccntmractState1.Version != deploy.Version ||
+		ccntmractState1.Author != deploy.Author ||
+		ccntmractState1.Description != deploy.Description ||
+		ccntmractState1.Email != deploy.Email {
+		t.Errorf("TestCcntmractState failed %+v != %+v", ccntmractState1, deploy)
+		return
+	}
 }
 
 func TestBookKeeperState(t *testing.T) {
-	batch, err := getStateBatch(common.Uint256{})
+	batch, err := getStateBatch()
 	if err != nil {
 		t.Errorf("NewStateBatch error %s", err)
 		return
@@ -132,7 +145,7 @@ func TestBookKeeperState(t *testing.T) {
 	}
 }
 
-func getStateBatch(stateRoot common.Uint256) (*statestore.StateBatch, error) {
+func getStateBatch() (*statestore.StateBatch, error) {
 	err := testStateStore.NewBatch()
 	if err != nil {
 		return nil, fmt.Errorf("testStateStore.NewBatch error %s", err)

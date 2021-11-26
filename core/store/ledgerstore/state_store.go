@@ -67,12 +67,8 @@ func NewStateStore(dbDir, merklePath string) (*StateStore, error) {
 	return stateStore, nil
 }
 
-func (this *StateStore) NewBatch() error {
-	err := this.store.NewBatch()
-	if err != nil {
-		return fmt.Errorf("NewBatch error %s", err)
-	}
-	return nil
+func (this *StateStore) NewBatch(){
+	this.store.NewBatch()
 }
 
 func (this *StateStore) init(currBlockHeight uint32)error{
@@ -144,7 +140,8 @@ func (this *StateStore) AddMerkleTreeRoot(txRoot common.Uint256) error {
 			return err
 		}
 	}
-	return this.store.BatchPut(key, value.Bytes())
+	this.store.BatchPut(key, value.Bytes())
+	return nil
 }
 
 func (this *StateStore) NewStateBatch() *StateBatch {
@@ -154,26 +151,6 @@ func (this *StateStore) NewStateBatch() *StateBatch {
 func (this *StateStore) CommitTo() error {
 	return this.store.BatchCommit()
 }
-
-func (this *StateStore) GetCurrentStateRoot() (common.Uint256, error) {
-	key, err := this.getCurrentStateRootKey()
-	if err != nil {
-		return common.Uint256{}, err
-	}
-	value, err := this.store.Get(key)
-	if err != nil {
-		if err == leveldb.ErrNotFound{
-			return common.Uint256{}, nil
-		}
-		return common.Uint256{}, err
-	}
-	stateRoot, err := common.Uint256ParseFromBytes(value)
-	if err != nil {
-		return common.Uint256{}, err
-	}
-	return stateRoot, nil
-}
-
 
 func (this *StateStore) GetCcntmractState(ccntmractHash common.Address) (*payload.DeployCode, error) {
 	key, err := this.getCcntmractStateKey(ccntmractHash)
@@ -195,15 +172,6 @@ func (this *StateStore) GetCcntmractState(ccntmractHash common.Address) (*payloa
 		return nil, err
 	}
 	return ccntmractState, nil
-}
-
-func (this *StateStore) SaveCurrentStateRoot(stateRoot common.Uint256) error {
-	key, err := this.getCurrentStateRootKey()
-	if err != nil {
-		return err
-	}
-
-	return this.store.BatchPut(key, stateRoot.ToArray())
 }
 
 func (this *StateStore) GetBookKeeperState() (*BookKeeperState, error) {
@@ -315,22 +283,12 @@ func (this *StateStore) SaveCurrentBlock(height uint32, blockHash common.Uint256
 	value := bytes.NewBuffer(nil)
 	blockHash.Serialize(value)
 	serialization.WriteUint32(value, height)
-	err := this.store.BatchPut(key, value.Bytes())
-	if err != nil {
-		return fmt.Errorf("BatchPut error %s", err)
-	}
+	this.store.BatchPut(key, value.Bytes())
 	return nil
 }
 
 func (this *StateStore) getCurrentBlockKey() []byte {
 	return []byte{byte(SYS_CurrentBlock)}
-}
-
-func (this *StateStore) getCurrentStateRootKey() ([]byte, error) {
-	key := make([]byte, 1+len(CurrentStateRoot))
-	key[0] = byte(SYS_CurrentStateRoot)
-	copy(key[1:], []byte(CurrentStateRoot))
-	return key, nil
 }
 
 func (this *StateStore) getBookKeeperKey() ([]byte, error) {
@@ -365,16 +323,10 @@ func (this *StateStore) getMerkleTreeKey() ([]byte, error) {
 }
 
 func (this *StateStore) ClearAll() error {
-	err := this.store.NewBatch()
-	if err != nil {
-		return err
-	}
+	this.store.NewBatch()
 	iter := this.store.NewIterator(nil)
 	for iter.Next() {
-		err = this.store.BatchDelete(iter.Key())
-		if err != nil {
-			return fmt.Errorf("BatchDelete error %s", err)
-		}
+		this.store.BatchDelete(iter.Key())
 	}
 	iter.Release()
 	return this.store.BatchCommit()
