@@ -20,7 +20,7 @@ package actor
 
 import (
 	"github.com/Ontology/common/log"
-	"github.com/Ontology/eventbus/actor"
+	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/Ontology/net/protocol"
 	"reflect"
 )

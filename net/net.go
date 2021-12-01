@@ -24,7 +24,7 @@ import (
 	"github.com/Ontology/net/node"
 	"github.com/Ontology/net/protocol"
 	ns "github.com/Ontology/net/actor"
-	"github.com/Ontology/eventbus/actor"
+	"github.com/cntmio/cntmology-eventbus/actor"
 )
 
 type Neter interface {

@@ -25,10 +25,10 @@ import (
 	"github.com/Ontology/common/log"
 	tx "github.com/Ontology/core/types"
 	"github.com/Ontology/errors"
-	"github.com/Ontology/eventbus/actor"
 	"github.com/Ontology/events/message"
 	tc "github.com/Ontology/txnpool/common"
 	"github.com/Ontology/validator/types"
+	"github.com/cntmio/cntmology-eventbus/actor"
 )
 
 func NewTxActor(s *TXPoolServer) *TxActor {

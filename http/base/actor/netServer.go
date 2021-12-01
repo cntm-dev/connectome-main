@@ -20,7 +20,7 @@ package actor
 
 import (
 	"time"
-	"github.com/Ontology/eventbus/actor"
+	"github.com/cntmio/cntmology-eventbus/actor"
 	. "github.com/Ontology/net/protocol"
 	ac "github.com/Ontology/net/actor"
 	"errors"

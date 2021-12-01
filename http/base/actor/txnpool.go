@@ -23,7 +23,7 @@ import (
 	. "github.com/Ontology/common"
 	"github.com/Ontology/core/types"
 	. "github.com/Ontology/errors"
-	"github.com/Ontology/eventbus/actor"
+	"github.com/cntmio/cntmology-eventbus/actor"
 	tc "github.com/Ontology/txnpool/common"
 	"time"
 	"github.com/Ontology/common/log"
