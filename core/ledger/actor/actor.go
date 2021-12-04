@@ -46,6 +46,8 @@ func (this *LedgerActor) Start() *actor.PID {
 
 func (this *LedgerActor) Receive(ctx actor.Ccntmext) {
 	switch msg := ctx.Message().(type) {
+	case *actor.Started:
+	case *actor.Stop:
 	case *AddHeaderReq:
 		this.handleAddHeaderReq(ctx, msg)
 	case *AddHeadersReq:
@@ -78,8 +80,8 @@ func (this *LedgerActor) Receive(ctx actor.Ccntmext) {
 		this.handleGetCcntmractStateReq(ctx, msg)
 	case *GetStorageItemReq:
 		this.handleGetStorageItemReq(ctx, msg)
-	case *GetBookKeeperStateReq:
-		this.handleGetBookKeeperStateReq(ctx, msg)
+	case *GetBookkeeperStateReq:
+		this.handleGetBookkeeperStateReq(ctx, msg)
 	case *GetCurrentStateRootReq:
 		this.handleGetCurrentStateRootReq(ctx, msg)
 	case *IsCcntmainTransactionReq:
@@ -90,6 +92,10 @@ func (this *LedgerActor) Receive(ctx actor.Ccntmext) {
 		this.handleGetBlockRootWithNewTxRootReq(ctx, msg)
 	case *PreExecuteCcntmractReq:
 		this.handlePreExecuteCcntmractReq(ctx, msg)
+	case *GetEventNotifyByTxReq:
+		this.handleGetEventNotifyByTx(ctx, msg)
+	case *GetEventNotifyByBlockReq:
+		this.handleGetEventNotifyByBlock(ctx, msg)
 	default:
 		log.Warnf("LedgerActor cannot deal with type: %v %v", msg, reflect.TypeOf(msg))
 	}
@@ -271,9 +277,9 @@ func (this *LedgerActor) handleGetCurrentStateRootReq(ctx actor.Ccntmext, req *G
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleGetBookKeeperStateReq(ctx actor.Ccntmext, req *GetBookKeeperStateReq) {
-	bookKeep, err := ledger.DefLedger.GetBookKeeperState()
-	resp := &GetBookKeeperStateRsp{
+func (this *LedgerActor) handleGetBookkeeperStateReq(ctx actor.Ccntmext, req *GetBookkeeperStateReq) {
+	bookKeep, err := ledger.DefLedger.GetBookkeeperState()
+	resp := &GetBookkeeperStateRsp{
 		BookKeepState: bookKeep,
 		Error:         err,
 	}
@@ -303,6 +309,24 @@ func (this *LedgerActor) handlePreExecuteCcntmractReq(ctx actor.Ccntmext, req *P
 	resp := &PreExecuteCcntmractRsp{
 		Result: result,
 		Error:  err,
+	}
+	ctx.Sender().Request(resp, ctx.Self())
+}
+
+func (this *LedgerActor) handleGetEventNotifyByTx(ctx actor.Ccntmext, req *GetEventNotifyByTxReq){
+	result, err := ledger.DefLedger.GetEventNotifyByTx(req.Tx)
+	resp := &GetEventNotifyByTxRsp{
+		Notifies:result,
+		Error:err,
+	}
+	ctx.Sender().Request(resp, ctx.Self())
+}
+
+func (this *LedgerActor) handleGetEventNotifyByBlock(ctx actor.Ccntmext, req *GetEventNotifyByBlockReq){
+	result, err := ledger.DefLedger.GetEventNotifyByBlock(req.Height)
+	resp := &GetEventNotifyByBlockRsp{
+		TxHashes:result,
+		Error:err,
 	}
 	ctx.Sender().Request(resp, ctx.Self())
 }

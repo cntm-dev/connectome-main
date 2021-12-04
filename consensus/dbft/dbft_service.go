@@ -206,7 +206,7 @@ func (ds *DbftService) CheckSignatures() error {
 		//build block
 		block := ds.ccntmext.MakeHeader()
 		sigs := make([]SignaturesData, ds.ccntmext.M())
-		for i, j := 0, 0; i < len(ds.ccntmext.BookKeepers) && j < ds.ccntmext.M(); i++ {
+		for i, j := 0, 0; i < len(ds.ccntmext.Bookkeepers) && j < ds.ccntmext.M(); i++ {
 			if ds.ccntmext.Signatures[i] != nil {
 				sig := ds.ccntmext.Signatures[i]
 				sigs[j].Index = uint16(i)
@@ -217,7 +217,7 @@ func (ds *DbftService) CheckSignatures() error {
 			}
 		}
 
-		block.Header.BookKeepers = ds.ccntmext.BookKeepers
+		block.Header.Bookkeepers = ds.ccntmext.Bookkeepers
 
 		//fill transactions
 		block.Transactions = ds.ccntmext.Transactions
@@ -263,13 +263,13 @@ func (ds *DbftService) CreateBookkeepingTransaction(nonce uint64, fee Fixed64) *
 
 func (ds *DbftService) ChangeViewReceived(payload *p2pmsg.ConsensusPayload, message *ChangeView) {
 	log.Debug()
-	log.Info(fmt.Sprintf("Change View Received: height=%d View=%d index=%d nv=%d", payload.Height, message.ViewNumber(), payload.BookKeeperIndex, message.NewViewNumber))
+	log.Info(fmt.Sprintf("Change View Received: height=%d View=%d index=%d nv=%d", payload.Height, message.ViewNumber(), payload.BookkeeperIndex, message.NewViewNumber))
 
-	if message.NewViewNumber <= ds.ccntmext.ExpectedView[payload.BookKeeperIndex] {
+	if message.NewViewNumber <= ds.ccntmext.ExpectedView[payload.BookkeeperIndex] {
 		return
 	}
 
-	ds.ccntmext.ExpectedView[payload.BookKeeperIndex] = message.NewViewNumber
+	ds.ccntmext.ExpectedView[payload.BookkeeperIndex] = message.NewViewNumber
 
 	ds.CheckExpectedView(message.NewViewNumber)
 }
@@ -299,12 +299,12 @@ func (ds *DbftService) InitializeConsensus(viewNum byte) error {
 		ds.ccntmext.ChangeView(viewNum)
 	}
 
-	if ds.ccntmext.BookKeeperIndex < 0 {
+	if ds.ccntmext.BookkeeperIndex < 0 {
 		log.Info("You aren't bookkeeper")
 		return nil
 	}
 
-	if ds.ccntmext.BookKeeperIndex == int(ds.ccntmext.PrimaryIndex) {
+	if ds.ccntmext.BookkeeperIndex == int(ds.ccntmext.PrimaryIndex) {
 
 		//primary peer
 		ds.ccntmext.State |= Primary
@@ -347,7 +347,7 @@ func (ds *DbftService) LocalNodeNewInventory(v interface{}) {
 
 func (ds *DbftService) NewConsensusPayload(payload *p2pmsg.ConsensusPayload) {
 	//if payload from current peer, ignore it
-	if int(payload.BookKeeperIndex) == ds.ccntmext.BookKeeperIndex {
+	if int(payload.BookkeeperIndex) == ds.ccntmext.BookkeeperIndex {
 		return
 	}
 
@@ -364,7 +364,7 @@ func (ds *DbftService) NewConsensusPayload(payload *p2pmsg.ConsensusPayload) {
 		return
 	}
 
-	if int(payload.BookKeeperIndex) >= len(ds.ccntmext.BookKeepers) {
+	if int(payload.BookkeeperIndex) >= len(ds.ccntmext.Bookkeepers) {
 		return
 	}
 
@@ -409,13 +409,13 @@ func (ds *DbftService) NewConsensusPayload(payload *p2pmsg.ConsensusPayload) {
 }
 
 func (ds *DbftService) PrepareRequestReceived(payload *p2pmsg.ConsensusPayload, message *PrepareRequest) {
-	log.Info(fmt.Sprintf("Prepare Request Received: height=%d View=%d index=%d tx=%d", payload.Height, message.ViewNumber(), payload.BookKeeperIndex, len(message.Transactions)))
+	log.Info(fmt.Sprintf("Prepare Request Received: height=%d View=%d index=%d tx=%d", payload.Height, message.ViewNumber(), payload.BookkeeperIndex, len(message.Transactions)))
 
 	if !ds.ccntmext.State.HasFlag(Backup) || ds.ccntmext.State.HasFlag(RequestReceived) {
 		return
 	}
 
-	if uint32(payload.BookKeeperIndex) != ds.ccntmext.PrimaryIndex {
+	if uint32(payload.BookkeeperIndex) != ds.ccntmext.PrimaryIndex {
 		return
 	}
 
@@ -491,12 +491,12 @@ func (ds *DbftService) PrepareResponseReceived(payload *msg.ConsensusPayload, me
 		return
 	}
 	blockHash := header.Hash()
-	err := crypto.Verify(*ds.ccntmext.BookKeepers[payload.BookKeeperIndex], blockHash[:], message.Signature)
+	err := crypto.Verify(*ds.ccntmext.Bookkeepers[payload.BookkeeperIndex], blockHash[:], message.Signature)
 	if err != nil {
 		return
 	}
 
-	ds.ccntmext.Signatures[payload.BookKeeperIndex] = message.Signature
+	ds.ccntmext.Signatures[payload.BookkeeperIndex] = message.Signature
 	err = ds.CheckSignatures()
 	if err != nil {
 		log.Error("CheckSignatures failed")
@@ -506,14 +506,14 @@ func (ds *DbftService) PrepareResponseReceived(payload *msg.ConsensusPayload, me
 }
 
 func (ds *DbftService) BlockSignaturesReceived(payload *p2pmsg.ConsensusPayload, message *BlockSignatures) {
-	log.Info(fmt.Sprintf("BlockSignatures Received: height=%d View=%d index=%d", payload.Height, message.ViewNumber(), payload.BookKeeperIndex))
+	log.Info(fmt.Sprintf("BlockSignatures Received: height=%d View=%d index=%d", payload.Height, message.ViewNumber(), payload.BookkeeperIndex))
 
 	if ds.ccntmext.State.HasFlag(BlockGenerated) {
 		return
 	}
 
 	//if the signature already exist, needn't handle again
-	if ds.ccntmext.Signatures[payload.BookKeeperIndex] != nil {
+	if ds.ccntmext.Signatures[payload.BookkeeperIndex] != nil {
 		return
 	}
 
@@ -531,7 +531,7 @@ func (ds *DbftService) BlockSignaturesReceived(payload *p2pmsg.ConsensusPayload,
 			ccntminue
 		}
 
-		err := crypto.Verify(*ds.ccntmext.BookKeepers[sigdata.Index], blockHash[:], sigdata.Signature)
+		err := crypto.Verify(*ds.ccntmext.Bookkeepers[sigdata.Index], blockHash[:], sigdata.Signature)
 		if err != nil {
 			ccntminue
 		}
@@ -559,19 +559,19 @@ func (ds *DbftService) RequestChangeView() {
 		return
 	}
 	// FIXME if there is no save block notifcation, when the timeout call this function it will crash
-	if ds.ccntmext.ViewNumber > ds.ccntmext.ExpectedView[ds.ccntmext.BookKeeperIndex] {
-		ds.ccntmext.ExpectedView[ds.ccntmext.BookKeeperIndex] = ds.ccntmext.ViewNumber + 1
+	if ds.ccntmext.ViewNumber > ds.ccntmext.ExpectedView[ds.ccntmext.BookkeeperIndex] {
+		ds.ccntmext.ExpectedView[ds.ccntmext.BookkeeperIndex] = ds.ccntmext.ViewNumber + 1
 	} else {
-		ds.ccntmext.ExpectedView[ds.ccntmext.BookKeeperIndex] += 1
+		ds.ccntmext.ExpectedView[ds.ccntmext.BookkeeperIndex] += 1
 	}
 	log.Info(fmt.Sprintf("Request change view: height=%d View=%d nv=%d state=%s", ds.ccntmext.Height,
-		ds.ccntmext.ViewNumber, ds.ccntmext.ExpectedView[ds.ccntmext.BookKeeperIndex], ds.ccntmext.GetStateDetail()))
+		ds.ccntmext.ViewNumber, ds.ccntmext.ExpectedView[ds.ccntmext.BookkeeperIndex], ds.ccntmext.GetStateDetail()))
 
 	ds.timer.Stop()
-	ds.timer.Reset(genesis.GenBlockTime << (ds.ccntmext.ExpectedView[ds.ccntmext.BookKeeperIndex] + 1))
+	ds.timer.Reset(genesis.GenBlockTime << (ds.ccntmext.ExpectedView[ds.ccntmext.BookkeeperIndex] + 1))
 
 	ds.SignAndRelay(ds.ccntmext.MakeChangeView())
-	ds.CheckExpectedView(ds.ccntmext.ExpectedView[ds.ccntmext.BookKeeperIndex])
+	ds.CheckExpectedView(ds.ccntmext.ExpectedView[ds.ccntmext.BookkeeperIndex])
 }
 
 func (ds *DbftService) SignAndRelay(payload *p2pmsg.ConsensusPayload) {

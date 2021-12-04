@@ -90,7 +90,7 @@ func NewVersion(n Noder, isConsensus bool) ([]byte, error) {
 		msg.P.Relay = 0
 	}
 
-	msg.pk = n.GetBookKeeperAddr()
+	msg.pk = n.GetBookkeeperAddr()
 	log.Debug("new version msg.pk is ", msg.pk)
 	// TODO the function to wrap below process
 	// msg.HDR.init("version", n.GetID(), uint32(len(p.Bytes())))

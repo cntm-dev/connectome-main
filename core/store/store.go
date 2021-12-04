@@ -21,14 +21,15 @@ package store
 import (
 	"github.com/Ontology/common"
 	"github.com/Ontology/core/payload"
-	states "github.com/Ontology/core/states"
+	"github.com/Ontology/core/states"
 	"github.com/Ontology/core/types"
+	"github.com/Ontology/smartccntmract/event"
 	"github.com/Ontology/crypto"
 )
 
 // ILedgerStore provides func with store package.
 type ILedgerStore interface {
-	InitLedgerStoreWithGenesisBlock(genesisblock *types.Block, defaultBookKeeper []*crypto.PubKey) error
+	InitLedgerStoreWithGenesisBlock(genesisblock *types.Block, defaultBookkeeper []*crypto.PubKey) error
 	Close() error
 	AddHeaders(headers []*types.Header) error
 	AddBlock(block *types.Block) error
@@ -46,7 +47,9 @@ type ILedgerStore interface {
 	IsCcntmainTransaction(txHash common.Uint256) (bool, error)
 	GetBlockRootWithNewTxRoot(txRoot common.Uint256) common.Uint256
 	GetCcntmractState(ccntmractHash common.Address) (*payload.DeployCode, error)
-	GetBookKeeperState() (*states.BookKeeperState, error)
+	GetBookkeeperState() (*states.BookkeeperState, error)
 	GetStorageItem(key *states.StorageKey) (*states.StorageItem, error)
 	PreExecuteCcntmract(tx *types.Transaction) ([]interface{}, error)
+	GetEventNotifyByTx(tx common.Uint256)([]*event.NotifyEventInfo, error)
+	GetEventNotifyByBlock(height uint32)([]common.Uint256, error)
 }

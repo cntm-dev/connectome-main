@@ -28,6 +28,7 @@ import (
 	"github.com/Ontology/core/types"
 	"github.com/Ontology/crypto"
 	"github.com/Ontology/core/payload"
+	"github.com/Ontology/smartccntmract/event"
 )
 
 var DefLedger *Ledger
@@ -50,12 +51,12 @@ func (this *Ledger) GetStore() store.ILedgerStore {
 	return this.ldgStore
 }
 
-func (this *Ledger) Init(defaultBookKeeper []*crypto.PubKey) error {
-	genesisBlock, err := genesis.GenesisBlockInit(defaultBookKeeper)
+func (this *Ledger) Init(defaultBookkeeper []*crypto.PubKey) error {
+	genesisBlock, err := genesis.GenesisBlockInit(defaultBookkeeper)
 	if err != nil {
 		return fmt.Errorf("genesisBlock error %s", err)
 	}
-	err = this.ldgStore.InitLedgerStoreWithGenesisBlock(genesisBlock, defaultBookKeeper)
+	err = this.ldgStore.InitLedgerStoreWithGenesisBlock(genesisBlock, defaultBookkeeper)
 	if err != nil {
 		return fmt.Errorf("InitLedgerStoreWithGenesisBlock error %s", err)
 	}
@@ -127,17 +128,12 @@ func (this *Ledger) IsCcntmainBlock(blockHash common.Uint256) (bool, error) {
 	return this.ldgStore.IsCcntmainBlock(blockHash)
 }
 
-func (this *Ledger) IsDoubleSpend(tx *types.Transaction) (bool, error) {
-	//
-	return false, nil
-}
-
 func (this *Ledger) GetCurrentStateRoot() (common.Uint256, error) {
 	return common.Uint256{}, nil
 }
 
-func (this *Ledger) GetBookKeeperState() (*states.BookKeeperState, error) {
-	return this.ldgStore.GetBookKeeperState()
+func (this *Ledger) GetBookkeeperState() (*states.BookkeeperState, error) {
+	return this.ldgStore.GetBookkeeperState()
 }
 
 func (this *Ledger) GetStorageItem(codeHash *common.Address, key []byte) ([]byte, error) {
@@ -161,4 +157,12 @@ func (this *Ledger) GetCcntmractState(ccntmractHash common.Address) (*payload.De
 
 func (this *Ledger) PreExecuteCcntmract(tx *types.Transaction) ([]interface{}, error) {
 	return this.ldgStore.PreExecuteCcntmract(tx)
+}
+
+func (this *Ledger)GetEventNotifyByTx(tx common.Uint256)([]*event.NotifyEventInfo, error){
+	return this.ldgStore.GetEventNotifyByTx(tx)
+}
+
+func (this *Ledger)GetEventNotifyByBlock(height uint32)([]common.Uint256, error){
+	return this.ldgStore.GetEventNotifyByBlock(height)
 }

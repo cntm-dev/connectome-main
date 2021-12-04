@@ -18,30 +18,29 @@
 
 package common
 
-/*
-import (
-	. "github.com/Ontology/account"
-	. "github.com/Ontology/common"
-	"github.com/Ontology/common/log"
-	. "github.com/Ontology/core/asset"
-	"github.com/Ontology/core/ccntmract"
-	"github.com/Ontology/core/signature"
-	"github.com/Ontology/core/types"
-	"strconv"
-)
+// DataEntryPrefix
+type DataEntryPrefix byte
 
 const (
-	ASSETPREFIX = "Ontology"
-)
+	// DATA
+	DATA_Block DataEntryPrefix = iota
+	DATA_Header = 0x01
+	DATA_Transaction = 0x02
 
-func SignTx(admin *Account, tx *types.Transaction) {
-	signdate, err := signature.SignBySigner(tx, admin)
-	if err != nil {
-		log.Error(err, "signdate SignBySigner failed")
-	}
-	transactionCcntmract, _ := ccntmract.CreateSignatureCcntmract(admin.PublicKey)
-	transactionCcntmractCcntmext := ccntmract.NewCcntmractCcntmext(tx)
-	transactionCcntmractCcntmext.AddCcntmract(transactionCcntmract, admin.PublicKey, signdate)
-	tx.SetPrograms(transactionCcntmractCcntmext.GetPrograms())
-}
-*/
+	// Transaction
+	ST_Bookkeeper = 0x03
+	ST_Ccntmract = 0x04
+	ST_Storage = 0x05
+	ST_Validator = 0x07
+	ST_Vote = 0x08
+
+	IX_HeaderHashList = 0x09
+
+	//SYSTEM
+	SYS_CurrentBlock = 0x10
+	SYS_Version = 0x11
+	SYS_CurrentStateRoot = 0x12
+	SYS_BlockMerkleTree = 0x13
+
+	EVENT_Notify = 0x14
+)
