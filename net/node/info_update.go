@@ -145,7 +145,7 @@ func (node *node) ConnectSeeds() {
 				n.ReqNeighborList()
 			}
 		} else { //not found
-			go node.Connect(nodeAddr, false)
+			go node.Connect(nodeAddr)
 		}
 	}
 }
@@ -156,7 +156,6 @@ func getNodeAddr(n *node) NodeAddr {
 	addr.Time = n.GetTime()
 	addr.Services = n.Services()
 	addr.Port = n.GetPort()
-	addr.ConsensusPort = n.GetConsensusPort()
 	addr.ID = n.GetID()
 	return addr
 }
@@ -171,7 +170,7 @@ func (node *node) reconnect() {
 		log.Trace("Try to reconnect peer, peer addr is ", addr)
 		<-time.After(time.Duration(rand.Intn(CONNMAXBACK)) * time.Millisecond)
 		log.Trace("Back off time`s up, start connect node")
-		node.Connect(addr, false)
+		node.Connect(addr)
 		if node.RetryAddrs[addr] < MAXRETRYCOUNT {
 			lst[addr] = node.RetryAddrs[addr]
 		}

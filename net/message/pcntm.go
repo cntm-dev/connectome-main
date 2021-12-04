@@ -25,8 +25,8 @@ import (
 	"github.com/Ontology/common/log"
 	"github.com/Ontology/common/serialization"
 	//"github.com/Ontology/ledger"
-	. "github.com/Ontology/net/protocol"
 	"github.com/Ontology/net/actor"
+	. "github.com/Ontology/net/protocol"
 )
 
 type pcntm struct {
@@ -38,7 +38,6 @@ func NewPcntmMsg() ([]byte, error) {
 	var msg pcntm
 	msg.msgHdr.Magic = NETMAGIC
 	copy(msg.msgHdr.CMD[0:7], "pcntm")
-	//msg.height = uint64(ledger.DefaultLedger.Store.GetHeaderHeight())
 	height, _ := actor.GetCurrentHeaderHeight()
 	msg.height = uint64(height)
 	tmpBuffer := bytes.NewBuffer([]byte{})

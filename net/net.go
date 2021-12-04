@@ -21,9 +21,9 @@ package net
 import (
 	"github.com/Ontology/crypto"
 	"github.com/Ontology/events"
+	ns "github.com/Ontology/net/actor"
 	"github.com/Ontology/net/node"
 	"github.com/Ontology/net/protocol"
-	ns "github.com/Ontology/net/actor"
 	"github.com/cntmio/cntmology-eventbus/actor"
 )
 

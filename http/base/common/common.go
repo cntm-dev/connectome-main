@@ -46,11 +46,9 @@ type Fee struct {
 	Amount Fixed64
 	Payer  string
 }
-type PubKeyInfo struct {
-	X, Y string
-}
+
 type Sig struct {
-	PubKeys []PubKeyInfo
+	PubKeys []string
 	M       uint8
 	SigData []string
 }
@@ -76,7 +74,7 @@ type BlockHead struct {
 	ConsensusData    uint64
 	NextBookkeeper   string
 
-	Bookkeepers []PubKeyInfo
+	BookKeepers []string
 	SigData     []string
 
 	Hash string
@@ -135,7 +133,11 @@ func TransArryByteToHexString(ptx *types.Transaction) *Transactions {
 	for _, sig := range ptx.Sigs {
 		e := Sig{M: sig.M}
 		for i := 0; i < len(sig.PubKeys); i++ {
-			e.PubKeys = append(e.PubKeys, PubKeyInfo{sig.PubKeys[i].X.String(), sig.PubKeys[i].Y.String()})
+			pk,err := sig.PubKeys[i].EncodePoint(true)
+			if err != nil{
+				ccntminue
+			}
+			e.PubKeys = append(e.PubKeys, ToHexString(pk))
 		}
 		for i := 0; i < len(sig.SigData);i ++{
 			e.SigData = append(e.SigData, ToHexString(sig.SigData[i]))
@@ -167,7 +169,7 @@ func VerifyAndSendTx(txn *types.Transaction) ErrCode {
 
 func GetBlockInfo(block *types.Block) BlockInfo {
 	hash := block.Hash()
-	var bookkeepers = []PubKeyInfo{}
+	var bookKeepers = []string{}
 	var sigData = []string{}
 	for i := 0; i < len(block.Header.SigData); i++ {
 		s := ToHexString(block.Header.SigData[i])
@@ -175,7 +177,11 @@ func GetBlockInfo(block *types.Block) BlockInfo {
 	}
 	for i := 0; i < len(block.Header.Bookkeepers); i++ {
 		e := block.Header.Bookkeepers[i]
-		bookkeepers = append(bookkeepers, PubKeyInfo{e.X.String(), e.Y.String()})
+		pk,err := e.EncodePoint(true)
+		if err != nil{
+			ccntminue
+		}
+		bookKeepers = append(bookKeepers, ToHexString(pk))
 	}
 	blockHead := &BlockHead{
 		Version:          block.Header.Version,
@@ -185,8 +191,8 @@ func GetBlockInfo(block *types.Block) BlockInfo {
 		Timestamp:        block.Header.Timestamp,
 		Height:           block.Header.Height,
 		ConsensusData:    block.Header.ConsensusData,
-		NextBookkeeper:   ToHexString(block.Header.NextBookkeeper[:]),
-		Bookkeepers: bookkeepers,
+		NextBookkeeper:   block.Header.NextBookkeeper.ToBase58(),
+		BookKeepers: bookKeepers,
 		SigData:     sigData,
 		Hash: ToHexString(hash.ToArray()),
 	}

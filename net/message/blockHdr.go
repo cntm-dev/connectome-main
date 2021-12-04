@@ -27,8 +27,8 @@ import (
 	"github.com/Ontology/common/log"
 	"github.com/Ontology/common/serialization"
 	"github.com/Ontology/core/types"
-	. "github.com/Ontology/net/protocol"
 	"github.com/Ontology/net/actor"
+	. "github.com/Ontology/net/protocol"
 )
 
 type headersReq struct {
@@ -199,7 +199,7 @@ func (msg blkHeader) Handle(node Noder) error {
 	//}
 	var blkHdr []*types.Header
 	var i uint32
-	for i = 0; i < msg.cnt ; i++  {
+	for i = 0; i < msg.cnt; i++ {
 		blkHdr = append(blkHdr, &msg.blkHdr[i])
 	}
 	actor.AddHeaders(blkHdr)
@@ -224,7 +224,7 @@ func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]ty
 		} else {
 			//bkstop, err := ledger.DefaultLedger.Store.GetHeader(stopHash)
 			bkstop, err := actor.GetHeaderByHash(stopHash)
-			if err != nil {
+			if err != nil || bkstop == nil {
 				return nil, 0, err
 			}
 			stopHeight = bkstop.Height
@@ -235,13 +235,13 @@ func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]ty
 		}
 	} else {
 		bkstart, err := actor.GetHeaderByHash(startHash)
-		if err != nil {
+		if err != nil || bkstart == nil {
 			return nil, 0, err
 		}
 		startHeight = bkstart.Height
 		if stopHash != empty {
 			bkstop, err := actor.GetHeaderByHash(stopHash)
-			if err != nil {
+			if err != nil || bkstop == nil {
 				return nil, 0, err
 			}
 			stopHeight = bkstop.Height
@@ -269,9 +269,13 @@ func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]ty
 	var i uint32
 	for i = 1; i <= count; i++ {
 		hash, err := actor.GetBlockHashByHeight(stopHeight + i)
-		hd, err := actor.GetHeaderByHash(hash)
 		if err != nil {
-			log.Errorf("GetBlockWithHeight failed with err=%s, hash=%x,height=%d\n", err.Error(), hash, stopHeight+i)
+			log.Errorf("GetBlockHashByHeight failed with err=%s, hash=%x,height=%d\n", err.Error(), hash, stopHeight+i)
+			return nil, 0, err
+		}
+		hd, err := actor.GetHeaderByHash(hash)
+		if err != nil || hd == nil {
+			log.Errorf("GetHeaderByHash failed with err=%s, hash=%x,height=%d\n", err.Error(), hash, stopHeight+i)
 			return nil, 0, err
 		}
 		headers = append(headers, *hd)

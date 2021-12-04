@@ -20,8 +20,8 @@ package actor
 
 import (
 	"github.com/Ontology/common/log"
-	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/Ontology/net/protocol"
+	"github.com/cntmio/cntmology-eventbus/actor"
 	"reflect"
 )
 
@@ -114,7 +114,7 @@ func (state *NetServer) Receive(ccntmext actor.Ccntmext) {
 		nodePort := node.GetPort()
 		ccntmext.Sender().Request(&GetNodePortRsp{Port: nodePort}, ccntmext.Self())
 	case *GetConsensusPortReq:
-		conPort := node.GetConsensusPort()
+		conPort := node.GetPort()
 		ccntmext.Sender().Request(&GetConsensusPortRsp{Port: conPort}, ccntmext.Self())
 	case *GetNodeIdReq:
 		id := node.GetID()
