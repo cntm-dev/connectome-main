@@ -30,20 +30,21 @@ import (
 	. "github.com/Ontology/errors"
 	. "github.com/Ontology/http/base/actor"
 	. "github.com/Ontology/http/base/common"
+	Err "github.com/Ontology/http/base/error"
 	"math/big"
 )
 
 func GetGenerateBlockTime(params []interface{}) map[string]interface{} {
-	return Rpc(config.DEFAULTGENBLOCKTIME)
+	return responseSuccess(config.DEFAULTGENBLOCKTIME)
 }
 
 func GetBestBlockHash(params []interface{}) map[string]interface{} {
 	hash, err := CurrentBlockHash()
 	if err != nil {
 		log.Errorf("GetBestBlockHash error:%s", err)
-		return RpcFailed
+		return responsePacking(Err.INTERNAL_ERROR, false)
 	}
-	return Rpc(ToHexString(hash.ToArray()))
+	return responseSuccess(ToHexString(hash.ToArray()))
 }
 
 // Input JSON string examples for getblock method as following:
@@ -51,7 +52,7 @@ func GetBestBlockHash(params []interface{}) map[string]interface{} {
 //   {"jsonrpc": "2.0", "method": "getblock", "params": ["aabbcc.."], "id": 0}
 func GetBlock(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
-		return RpcNil
+		return responsePacking(Err.INVALID_PARAMS, nil)
 	}
 	var err error
 	var hash Uint256
@@ -400,34 +401,34 @@ func GetBlockHeightByTxHash(params []interface{}) map[string]interface{} {
 		str := params[0].(string)
 		hex, err := hex.DecodeString(str)
 		if err != nil {
-			return RpcInvalidParameter
+			return responsePacking(Err.INVALID_PARAMS, "")
 		}
 		var hash Uint256
 		if err := hash.Deserialize(bytes.NewReader(hex)); err != nil {
-			return RpcInvalidParameter
+			return responsePacking(Err.INVALID_PARAMS, "")
 		}
 		height,err := GetBlockHeightByTxHashFromStore(hash)
 		if err != nil{
-			return RpcInvalidParameter
+			return responsePacking(Err.INVALID_PARAMS, "")
 		}
-		return Rpc(height)
+		return responseSuccess(height)
 	default:
-		return RpcInvalidParameter
+		return responsePacking(Err.INVALID_PARAMS, "")
 	}
-	return RpcInvalidParameter
+	return responsePacking(Err.INVALID_PARAMS, "")
 }
 
 func GetBalance(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
-		return RpcInvalidParameter
+		return responsePacking(Err.INVALID_PARAMS, "")
 	}
 	addrBase58, ok := params[0].(string)
 	if !ok {
-		return RpcInvalidParameter
+		return responsePacking(Err.INVALID_PARAMS, "")
 	}
 	address, err := AddressFromBase58(addrBase58)
 	if err != nil {
-		return RpcInvalidParameter
+		return responsePacking(Err.INVALID_PARAMS, "")
 	}
 	cntm := new(big.Int)
 	cntm := new(big.Int)
@@ -435,7 +436,7 @@ func GetBalance(params []interface{}) map[string]interface{} {
 	cntmBalance, err := GetStorageItem(genesis.OntCcntmractAddress, address.ToArray())
 	if err != nil {
 		log.Errorf("GetOntBalanceOf GetStorageItem cntm address:%s error:%s", addrBase58, err)
-		return RpcInternalError
+		return responsePacking(Err.INTERNAL_ERROR, "internal error")
 	}
 	if cntmBalance != nil {
 		cntm.SetBytes(cntmBalance)
@@ -444,12 +445,12 @@ func GetBalance(params []interface{}) map[string]interface{} {
 		Ont: cntm.String(),
 		Ong: cntm.String(),
 	}
-	return Rpc(rsp)
+	return responseSuccess(rsp)
 }
 
 func RegDataFile(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
-		return RpcNil
+		return responsePacking(Err.INVALID_PARAMS, nil)
 	}
 	var hash Uint256
 	switch params[0].(type) {
