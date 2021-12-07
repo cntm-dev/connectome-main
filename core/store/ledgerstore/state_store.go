@@ -299,7 +299,7 @@ func (this *StateStore) getBookkeeperKey() ([]byte, error) {
 }
 
 func (this *StateStore) getCcntmractStateKey(ccntmractHash common.Address) ([]byte, error) {
-	data := ccntmractHash.ToArray()
+	data := ccntmractHash[:]
 	key := make([]byte, 1+len(data))
 	key[0] = byte(scom.ST_Ccntmract)
 	copy(key[1:], []byte(data))
@@ -309,7 +309,7 @@ func (this *StateStore) getCcntmractStateKey(ccntmractHash common.Address) ([]by
 func (this *StateStore) getStorageKey(key *states.StorageKey) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 	buf.WriteByte( byte(scom.ST_Storage))
-	buf.Write(key.CodeHash.ToArray())
+	buf.Write(key.CodeHash[:])
 	buf.Write(key.Key)
 	return buf.Bytes(), nil
 }

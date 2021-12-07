@@ -457,7 +457,7 @@ func (cl *ClientImpl) LoadCcntmracts() map[Address]*ct.Ccntmract {
 		ct := new(ct.Ccntmract)
 		ct.Deserialize(rdreader)
 
-		programhash, err := Uint160ParseFromBytes(ph)
+		programhash, err := AddressParseFromBytes(ph)
 		ct.ProgramHash = programhash
 		ccntmracts[ct.ProgramHash] = ct
 		i++
