@@ -27,6 +27,8 @@ import (
 	"github.com/Ontology/core/utils"
 	"github.com/Ontology/crypto"
 	vmtypes "github.com/Ontology/vm/types"
+	"github.com/Ontology/smartccntmract/service/native/states"
+	"bytes"
 )
 
 const (
@@ -82,6 +84,7 @@ func GenesisBlockInit(defaultBookkeeper []*crypto.PubKey) (*types.Block, error) 
 			cntm,
 			cntm,
 			NewGoverningInit(),
+			NewUtilityInit(),
 		},
 	}
 	return genesisBlock, nil
@@ -100,9 +103,32 @@ func NewUtilityToken() *types.Transaction {
 }
 
 func NewGoverningInit() *types.Transaction {
+	init := states.Ccntmract{
+		Address: OntCcntmractAddress,
+		Method: "init",
+		Args: []byte{},
+	}
+	bf := new(bytes.Buffer)
+	init.Serialize(bf)
 	vmCode := vmtypes.VmCode{
 		VmType: vmtypes.Native,
-		Code: []byte{14, 84, 111, 107, 101, 110, 46, 79, 110, 116, 46, 73, 110, 105, 116},
+		Code: bf.Bytes(),
+	}
+	tx := utils.NewInvokeTransaction(vmCode)
+	return tx
+}
+
+func NewUtilityInit() *types.Transaction {
+	init := states.Ccntmract{
+		Address: OngCcntmractAddress,
+		Method: "init",
+		Args: []byte{},
+	}
+	bf := new(bytes.Buffer)
+	init.Serialize(bf)
+	vmCode := vmtypes.VmCode{
+		VmType: vmtypes.Native,
+		Code: bf.Bytes(),
 	}
 	tx := utils.NewInvokeTransaction(vmCode)
 	return tx

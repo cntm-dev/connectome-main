@@ -17,247 +17,91 @@
 package smartccntmract
 
 import (
-	"github.com/Ontology/common"
-	"github.com/Ontology/core/ccntmract"
-	sig "github.com/Ontology/core/signature"
-	"github.com/Ontology/smartccntmract/service/neovm"
-	"github.com/Ontology/vm/types"
-	"github.com/Ontology/vm/neovm"
+	vmtypes "github.com/Ontology/vm/types"
 	"github.com/Ontology/vm/neovm/interfaces"
-	"math/big"
-	storecomm"github.com/Ontology/core/store/common"
-	"github.com/Ontology/errors"
-	"github.com/Ontology/common/log"
-	scommon "github.com/Ontology/smartccntmract/common"
-	"reflect"
-	"github.com/Ontology/vm/wasmvm/memory"
-	"encoding/binary"
-	"github.com/Ontology/vm/wasmvm/exec"
-	"github.com/Ontology/vm/wasmvm/util"
-	"github.com/Ontology/smartccntmract/service/wasm"
+	ctypes "github.com/Ontology/core/types"
+	"github.com/Ontology/smartccntmract/service/native"
+	scommon "github.com/Ontology/core/store/common"
+	sneovm "github.com/Ontology/smartccntmract/service/neovm"
+	"github.com/Ontology/core/store"
+	stypes "github.com/Ontology/smartccntmract/types"
+	"github.com/Ontology/vm/neovm"
+	"github.com/Ontology/smartccntmract/ccntmext"
+	"github.com/Ontology/smartccntmract/event"
 )
 
 type SmartCcntmract struct {
-	Engine         Engine
-	Code           []byte
-	Input          []byte
-	ParameterTypes []ccntmract.CcntmractParameterType
-	Caller         common.Address
-	CodeHash       common.Address
-	VMType         types.VmType
-	ReturnType     ccntmract.CcntmractParameterType
+	Ccntmext []*ccntmext.Ccntmext
+	Config *Config
+	Engine Engine
+	Notifications []*event.NotifyEventInfo
 }
 
-type Ccntmext struct {
-	VmType         types.VmType
-	Caller         common.Address
-	StateMachine   *service.StateMachine
-	WasmStateMachine *wasm.WasmStateMachine //add for wasm state machine
-	DBCache        storecomm.IStateStore
-	Code           []byte
-	Input          []byte
-	CodeHash       common.Address
-	Time           *big.Int
-	BlockNumber    *big.Int
-	CacheCodeTable interfaces.ICodeTable
-	SignableData   sig.SignableData
-	Gas            common.Fixed64
-	ReturnType     ccntmract.CcntmractParameterType
-	ParameterTypes []ccntmract.CcntmractParameterType
+type Config struct {
+	Time uint32
+	Height uint32
+	Tx *ctypes.Transaction
+	Table interfaces.ICodeTable
+	DBCache scommon.IStateStore
+	Store store.ILedgerStore
 }
 
 type Engine interface {
-	Create(caller common.Address, code []byte) ([]byte, error)
-	Call(caller common.Address, code, input []byte) ([]byte, error)
+	StepInto()
 }
 
-func NewSmartCcntmract(ccntmext *Ccntmext) (*SmartCcntmract, error) {
-	var e Engine
-	switch ccntmext.VmType {
-	case types.NEOVM:
-		e = neovm.NewExecutionEngine(
-			ccntmext.SignableData,
+//put current ccntmext to smart ccntmract
+func(sc *SmartCcntmract) LoadCcntmext(ccntmext *ccntmext.Ccntmext) {
+	sc.Ccntmext = append(sc.Ccntmext, ccntmext)
+}
+
+//get smart ccntmract current ccntmext
+func(sc *SmartCcntmract) CurrentCcntmext() *ccntmext.Ccntmext {
+	if len(sc.Ccntmext) < 1 {
+		return nil
+	}
+	return sc.Ccntmext[len(sc.Ccntmext) - 1]
+}
+
+//get smart ccntmract caller ccntmext
+func(sc *SmartCcntmract) CallingCcntmext() *ccntmext.Ccntmext {
+	if len(sc.Ccntmext) < 2 {
+		return nil
+	}
+	return sc.Ccntmext[len(sc.Ccntmext) - 2]
+}
+
+//get smart ccntmract entry entrance ccntmext
+func(sc *SmartCcntmract) EntryCcntmext() *ccntmext.Ccntmext {
+	if len(sc.Ccntmext) < 1 {
+		return nil
+	}
+	return sc.Ccntmext[0]
+}
+
+func (sc *SmartCcntmract) Execute() error {
+	ctx := sc.CurrentCcntmext()
+	switch ctx.Code.VmType {
+	case vmtypes.Native:
+		service := native.NewNativeService(sc.Config.DBCache, sc.Config.Height, sc.Config.Tx, sc)
+		if err := service.Invoke(); err != nil {
+			return err
+		}
+		sc.Notifications = append(sc.Notifications, service.Notifications...)
+	case vmtypes.NEOVM:
+		stateMachine := sneovm.NewStateMachine(sc.Config.Store, sc.Config.DBCache, stypes.Application, sc.Config.Time)
+		engine := neovm.NewExecutionEngine(
+			sc.Config.Tx,
 			new(neovm.ECDsaCrypto),
-			ccntmext.CacheCodeTable,
-			ccntmext.StateMachine,
+			sc.Config.Table,
+			stateMachine,
 		)
-		//add wasmvm case
-	case types.WASMVM:
-		e = exec.NewExecutionEngine(ccntmext.SignableData,
-			new(neovm.ECDsaCrypto),
-			ccntmext.CacheCodeTable,
-			ccntmext.WasmStateMachine)
-	default:
-		return nil, errors.NewErr("[NewSmartCcntmract] Invalid vm type!")
-	}
-	return &SmartCcntmract{
-		Engine:         e,
-		Code:           ccntmext.Code,
-		CodeHash:       ccntmext.CodeHash,
-		Input:          ccntmext.Input,
-		Caller:         ccntmext.Caller,
-		VMType:         ccntmext.VmType,
-		ReturnType:     ccntmext.ReturnType,
-		ParameterTypes: ccntmext.ParameterTypes,
-	}, nil
-}
-
-func (sc *SmartCcntmract) DeployCcntmract() ([]byte, error) {
-	return sc.Engine.Create(sc.Caller, sc.Code)
-}
-
-func (sc *SmartCcntmract) InvokeCcntmract() (interface{}, error) {
-	res, err := sc.Engine.Call(sc.Caller, sc.Code, sc.Input)
-	if err != nil {
-		return nil, err
-	}
-	switch sc.VMType {
-	case types.NEOVM:
-		return sc.InvokeResult()
-	case types.WASMVM:
-		//todo add trasmform types
-		//todo current we have multi-interface per wasm smart ccntmract
-		mem := sc.Engine.(*exec.ExecutionEngine).GetMemory()
-		switch sc.ReturnType {
-		case ccntmract.Boolean:
-			if len(res) > 0 && int(res[0]) == 0 {
-				return false, nil
-			} else {
-				return true, nil
-			}
-		case ccntmract.Integer:
-			if len(res) == 4 { //int32 case
-				return int32(binary.LittleEndian.Uint32(res)), nil
-			}
-			if len(res) == 8 { //int64 case
-				return int64(binary.LittleEndian.Uint64(res)), nil
-			}
-
-		case ccntmract.ByteArray:
-			var idx int
-			if len(res) == 4 {
-				idx = int(binary.LittleEndian.Uint32(res))
-			}else if len(res) == 8 {
-				idx = int(binary.LittleEndian.Uint64(res))
-			}
-			bytes,err := mem.GetPointerMemory(uint64(idx))
-			if err != nil{
-				return nil,err
-			}
-			return bytes,nil
-
-		case ccntmract.String:
-			var idx int
-			if len(res) == 4 {
-				idx = int(binary.LittleEndian.Uint32(res))
-			}else if len(res) == 8 {
-				idx = int(binary.LittleEndian.Uint64(res))
-			}
-			bytes,err := mem.GetPointerMemory(uint64(idx))
-			if err != nil{
-				return nil,err
-			}
-			return string(bytes),nil
-		case ccntmract.Hash160,ccntmract.Hash256,ccntmract.PublicKey:
-			var idx int
-			if len(res) == 4 {
-				idx = int(binary.LittleEndian.Uint32(res))
-			}else if len(res) == 8 {
-				idx = int(binary.LittleEndian.Uint64(res))
-			}
-			bytes,err := mem.GetPointerMemory(uint64(idx))
-			if err != nil{
-				return nil,err
-			}
-
-			return common.ToHexString(bytes), nil
-
-		case ccntmract.InteropInterface:
-			return common.ToHexString(res), nil
-		case ccntmract.Array:
-			var idx int
-			if len(res) == 4 {
-				idx = int(binary.LittleEndian.Uint32(res))
-			}else if len(res) == 8 {
-				idx = int(binary.LittleEndian.Uint64(res))
-			}
-			bytes,err := mem.GetPointerMemory(uint64(idx))
-			if err != nil{
-				return nil,err
-			}
-			tl,_ := mem.MemPoints[uint64(idx)]
-			switch tl.Ptype {
-			case memory.P_INT32:
-				tmp := make([]int,tl.Length / 4)
-				for i:= 0 ;i < tl.Length / 4;i++{
-					tmp[i] = int(binary.LittleEndian.Uint32(bytes[i*4:(i+1)*4]))
-				}
-				return tmp,nil
-			case memory.P_INT64:
-				tmp := make([]int64,tl.Length / 8)
-				for i:= 0 ;i < tl.Length / 8;i++{
-					tmp[i] = int64(binary.LittleEndian.Uint64(bytes[i*8:(i+1)*8]))
-				}
-				return tmp,nil
-			case memory.P_FLOAT32:
-				tmp := make([]float32,tl.Length / 4)
-				for i:= 0 ;i < tl.Length / 4;i++{
-					tmp[i] = util.ByteToFloat32(bytes[i*4:(i+1)*4])
-				}
-				return tmp,nil
-			case memory.P_FLOAT64:
-				tmp := make([]float64,tl.Length / 8)
-				for i:= 0 ;i < tl.Length / 8;i++{
-					tmp[i] = util.ByteToFloat64(bytes[i*8:(i+1)*8])
-				}
-				return tmp,nil
-			}
-		default:
-			return common.ToHexString(res), nil
+		engine.LoadCode(ctx.Code.Code, false)
+		if err := engine.Execute(); err != nil {
+			return err
 		}
-
-		return res, nil
-	default:
-		return nil, errors.NewErr("not a support vm")
+		sc.Notifications = append(sc.Notifications, stateMachine.Notifications...)
+	case vmtypes.WASMVM:
 	}
-
-}
-
-func (sc *SmartCcntmract) InvokeResult() (interface{}, error) {
-	switch sc.VMType {
-	case types.NEOVM:
-		engine := sc.Engine.(*neovm.ExecutionEngine)
-		if engine.GetEvaluationStackCount() > 0 && neovm.Peek(engine).GetStackItem() != nil {
-			switch sc.ReturnType {
-			case ccntmract.Boolean:
-				return neovm.PopBoolean(engine), nil
-			case ccntmract.Integer:
-				log.Error(reflect.TypeOf(neovm.Peek(engine).GetStackItem().GetByteArray()))
-				return neovm.PopBigInt(engine).Int64(), nil
-			case ccntmract.ByteArray:
-				return common.ToHexString(neovm.PopByteArray(engine)), nil
-			case ccntmract.String:
-				return string(neovm.PopByteArray(engine)), nil
-			case ccntmract.Hash160, ccntmract.Hash256:
-				return common.ToHexString(neovm.PopByteArray(engine)), nil
-			case ccntmract.PublicKey:
-				return common.ToHexString(neovm.PopByteArray(engine)), nil
-			case ccntmract.InteropInterface:
-				if neovm.PeekInteropInterface(engine) != nil {
-					return common.ToHexString(neovm.PopInteropInterface(engine).ToArray()), nil
-				}
-				return nil, nil
-			case ccntmract.Array:
-				var states []interface{}
-				arr := neovm.PeekArray(engine)
-				for _, v := range arr {
-					states = append(states, scommon.ConvertReturnTypes(v)...)
-				}
-				return states, nil
-			default:
-				return common.ToHexString(neovm.PopByteArray(engine)), nil
-			}
-		}
-	}
-	return nil, nil
+	return nil
 }

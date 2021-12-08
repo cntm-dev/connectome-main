@@ -16,7 +16,7 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package service
+package neovm
 
 import (
 	"bytes"
@@ -103,7 +103,7 @@ func (s *StateMachine) CcntmractCreate(engine *vm.ExecutionEngine) (bool, error)
 		return false, errors.NewErr("[CcntmractCreate] Desc too lcntm!")
 	}
 	ccntmractState := &payload.DeployCode{
-		Code:        codeByte,
+		Code:        &vmtypes.VmCode{VmType:vmtypes.NEOVM, Code: codeByte},
 		Name:        string(nameByte),
 		Version:     string(versionByte),
 		Author:      string(authorByte),
@@ -111,7 +111,7 @@ func (s *StateMachine) CcntmractCreate(engine *vm.ExecutionEngine) (bool, error)
 		Description: string(descByte),
 	}
 	codeHash := common.ToCodeHash(codeByte)
-	state, err := s.CloneCache.GetOrAdd(scommon.ST_Ccntmract, codeHash.ToArray(), ccntmractState)
+	state, err := s.CloneCache.GetOrAdd(scommon.ST_Ccntmract, codeHash[:], ccntmractState)
 	if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractCreate] GetOrAdd error!")
 	}
@@ -128,7 +128,7 @@ func (s *StateMachine) CcntmractMigrate(engine *vm.ExecutionEngine) (bool, error
 		return false, errors.NewErr("[CcntmractMigrate] Code too lcntm!")
 	}
 	codeHash := common.ToCodeHash(codeByte)
-	item, err := s.CloneCache.Get(scommon.ST_Ccntmract, codeHash.ToArray())
+	item, err := s.CloneCache.Get(scommon.ST_Ccntmract, codeHash[:])
 	if err != nil {
 		return false, errors.NewErr("[CcntmractMigrate] Get Ccntmract error!")
 	}
@@ -157,15 +157,15 @@ func (s *StateMachine) CcntmractMigrate(engine *vm.ExecutionEngine) (bool, error
 		return false, errors.NewErr("[CcntmractMigrate] Desc too lcntm!")
 	}
 	ccntmractState := &payload.DeployCode{
-		Code:        codeByte,
+		Code:        &vmtypes.VmCode{VmType:vmtypes.NEOVM, Code: codeByte},
 		Name:        string(nameByte),
 		Version:     string(versionByte),
 		Author:      string(authorByte),
 		Email:       string(emailByte),
 		Description: string(descByte),
 	}
-	s.CloneCache.Add(scommon.ST_Ccntmract, codeHash.ToArray(), ccntmractState)
-	stateValues, err := s.CloneCache.Store.Find(scommon.ST_Ccntmract, codeHash.ToArray())
+	s.CloneCache.Add(scommon.ST_Ccntmract, codeHash[:], ccntmractState)
+	stateValues, err := s.CloneCache.Store.Find(scommon.ST_Ccntmract, codeHash[:])
 	if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractMigrate] Find error!")
 	}
@@ -195,15 +195,15 @@ func (s *StateMachine) CcntmractDestory(engine *vm.ExecutionEngine) (bool, error
 	if err != nil {
 		return false, nil
 	}
-	item, err := s.CloneCache.Store.TryGet(scommon.ST_Ccntmract, hash.ToArray())
+	item, err := s.CloneCache.Store.TryGet(scommon.ST_Ccntmract, hash[:])
 	if err != nil {
 		return false, err
 	}
 	if item == nil {
 		return false, nil
 	}
-	s.CloneCache.Delete(scommon.ST_Ccntmract, hash.ToArray())
-	stateValues, err := s.CloneCache.Store.Find(scommon.ST_Ccntmract, hash.ToArray())
+	s.CloneCache.Delete(scommon.ST_Ccntmract, hash[:])
+	stateValues, err := s.CloneCache.Store.Find(scommon.ST_Ccntmract, hash[:])
 	if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractDestory] Find error!")
 	}
@@ -214,7 +214,7 @@ func (s *StateMachine) CcntmractDestory(engine *vm.ExecutionEngine) (bool, error
 }
 
 func (s *StateMachine) CheckStorageCcntmext(ccntmext *StorageCcntmext) (bool, error) {
-	item, err := s.CloneCache.Get(scommon.ST_Ccntmract, ccntmext.codeHash.ToArray())
+	item, err := s.CloneCache.Get(scommon.ST_Ccntmract, ccntmext.codeHash[:])
 	if err != nil {
 		return false, err
 	}
@@ -302,12 +302,8 @@ func (s *StateMachine) GetStorageCcntmext(engine *vm.ExecutionEngine) (bool, err
 		return false, errors.NewErr("[GetStorageCcntmext] Get StorageCcntmext nil")
 	}
 	ccntmractState := opInterface.(*payload.DeployCode)
-	code := &vmtypes.VmCode{
-		VmType: ccntmractState.VmType,
-		Code: ccntmractState.Code,
-	}
-	codeHash := code.AddressFromVmCode()
-	item, err := s.CloneCache.Store.TryGet(scommon.ST_Ccntmract, codeHash.ToArray())
+	codeHash := ccntmractState.Code.AddressFromVmCode()
+	item, err := s.CloneCache.Store.TryGet(scommon.ST_Ccntmract, codeHash[:])
 	if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[GetStorageCcntmext] Get StorageCcntmext nil")
 	}

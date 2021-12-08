@@ -16,7 +16,7 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package service
+package neovm
 
 import (
 	"github.com/Ontology/common"
@@ -33,6 +33,6 @@ func NewStorageCcntmext(codeHash common.Address) *StorageCcntmext {
 }
 
 func (sc *StorageCcntmext) ToArray() []byte {
-	return sc.codeHash.ToArray()
+	return sc.codeHash[:]
 }
 

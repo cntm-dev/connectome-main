@@ -394,7 +394,7 @@ func GetBalance(cmd map[string]interface{}) map[string]interface{} {
 	cntm := new(big.Int)
 	cntm := new(big.Int)
 
-	cntmBalance, err := GetStorageItem(genesis.OntCcntmractAddress, address.ToArray())
+	cntmBalance, err := GetStorageItem(genesis.OntCcntmractAddress, address[:])
 	if err != nil {
 		log.Errorf("GetOntBalanceOf GetStorageItem cntm address:%s error:%s", address, err)
 		return ResponsePack(Err.INTERNAL_ERROR)

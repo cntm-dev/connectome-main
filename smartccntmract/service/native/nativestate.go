@@ -22,14 +22,27 @@ import (
 	"github.com/Ontology/smartccntmract/storage"
 	scommon "github.com/Ontology/core/store/common"
 	"bytes"
-	"github.com/Ontology/common/serialization"
 	"github.com/Ontology/core/types"
 	"github.com/Ontology/smartccntmract/event"
+	"github.com/Ontology/common"
+	"github.com/Ontology/smartccntmract/ccntmext"
+	"github.com/Ontology/core/genesis"
+	"github.com/Ontology/smartccntmract/service/native/states"
+	"github.com/Ontology/errors"
+	vmtypes "github.com/Ontology/vm/types"
 	"fmt"
 )
 
 type (
-	Handler func(native *NativeService) (bool, error)
+	Handler func(native *NativeService) error
+	RegisterService func(native *NativeService)
+)
+
+var (
+	Ccntmracts = map[common.Address]RegisterService{
+		genesis.OntCcntmractAddress: RegisterOntCcntmract,
+		genesis.OngCcntmractAddress: RegisterOngCcntmract,
+	}
 )
 
 type NativeService struct {
@@ -38,16 +51,17 @@ type NativeService struct {
 	Notifications []*event.NotifyEventInfo
 	Input []byte
 	Tx *types.Transaction
+	Height uint32
+	CcntmextRef ccntmext.CcntmextRef
 }
 
-func NewNativeService(dbCache scommon.IStateStore, input []byte, tx *types.Transaction) *NativeService {
+func NewNativeService(dbCache scommon.IStateStore, height uint32, tx *types.Transaction, ctxRef ccntmext.CcntmextRef) *NativeService {
 	var nativeService NativeService
 	nativeService.CloneCache = storage.NewCloneCache(dbCache)
-	nativeService.Input = input
 	nativeService.Tx = tx
+	nativeService.Height = height
+	nativeService.CcntmextRef = ctxRef
 	nativeService.ServiceMap = make(map[string]Handler)
-	nativeService.Register("Token.Common.Transfer", Transfer)
-	nativeService.Register("Token.Ont.Init", OntInit)
 	return &nativeService
 }
 
@@ -55,16 +69,64 @@ func(native *NativeService) Register(methodName string, handler Handler) {
 	native.ServiceMap[methodName] = handler
 }
 
-func(native *NativeService) Invoke() (bool, error){
-	bf := bytes.NewBuffer(native.Input)
-	serviceName, err := serialization.ReadVarBytes(bf); if err != nil {
-		return false, err
+func(native *NativeService) Invoke() error {
+	ctx := native.CcntmextRef.CurrentCcntmext()
+	if ctx == nil {
+		return errors.NewErr("Native service current ccntmext doesn't exist!")
 	}
-	service, ok := native.ServiceMap[string(serviceName)]; if !ok {
-		return false, fmt.Errorf("Native does not support this service:%s !",serviceName)
+	bf := bytes.NewBuffer(ctx.Code.Code)
+	ccntmract := new(states.Ccntmract)
+	if err := ccntmract.Deserialize(bf); err != nil {
+		return err
 	}
+	services, ok := Ccntmracts[ccntmract.Address]; if !ok {
+		return fmt.Errorf("Native ccntmract address %x haven't been registered.", ccntmract.Address)
+	}
+	services(native)
+	service, ok := native.ServiceMap[ccntmract.Method]; if !ok {
+		return fmt.Errorf("Native ccntmract %x doesn't support this function %s.", ccntmract.Address, ccntmract.Method)
+	}
+	native.CcntmextRef.LoadCcntmext(&ccntmext.Ccntmext{CcntmractAddress: ccntmract.Address})
 	native.Input = bf.Bytes()
 	return service(native)
+}
+
+func(native *NativeService) AppCall(address common.Address, method string, args []byte) error {
+	bf := new(bytes.Buffer)
+	ccntmract := &states.Ccntmract{
+		Address: address,
+		Method: method,
+		Args: args,
+	}
+
+	if err := ccntmract.Serialize(bf); err != nil {
+		return err
+	}
+
+	native.CcntmextRef.LoadCcntmext(&ccntmext.Ccntmext{
+		Code: vmtypes.VmCode{
+			VmType: vmtypes.Native,
+			Code: bf.Bytes(),
+		},
+	})
+	if err := native.CcntmextRef.Execute(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func RegisterOntCcntmract(native *NativeService) {
+	native.Register("init", OntInit)
+	native.Register("transfer", OntTransfer)
+	native.Register("approve", OntApprove)
+	native.Register("transferFrom", OntTransferFrom)
+}
+
+func RegisterOngCcntmract(native *NativeService) {
+	native.Register("init", OngInit)
+	native.Register("transfer", OngTransfer)
+	native.Register("approve", OngApprove)
+	native.Register("transferFrom", OngTransferFrom)
 }
 
 
