@@ -87,7 +87,7 @@ func(native *NativeService) Invoke() error {
 		return fmt.Errorf("Native ccntmract %x doesn't support this function %s.", ccntmract.Address, ccntmract.Method)
 	}
 	native.CcntmextRef.LoadCcntmext(&ccntmext.Ccntmext{CcntmractAddress: ccntmract.Address})
-	native.Input = bf.Bytes()
+	native.Input = ccntmract.Args
 	return service(native)
 }
 

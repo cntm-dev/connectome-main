@@ -14,10 +14,10 @@ var (
 	addressHeight = []byte("addressHeight")
 )
 
-func checkWitness(native *NativeService, u160 common.Address) bool {
+func checkWitness(native *NativeService, address common.Address) bool {
 	addresses := native.Tx.GetSignatureAddresses()
 	for _, v := range addresses {
-		if v == u160 {
+		if v == address {
 			return true
 		}
 	}
@@ -131,7 +131,7 @@ func isSenderValid(native *NativeService, sender common.Address) error {
 		if callCcntmext != nil {
 			return errors.NewErr("[Sender] CallingCcntmext nil, Authentication failed!")
 		}
-		if sender == callCcntmext.CcntmractAddress {
+		if sender != callCcntmext.CcntmractAddress {
 			return errors.NewErr("[Sender] CallingCcntmext invalid, Authentication failed!")
 		}
 	} else {
