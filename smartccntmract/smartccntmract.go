@@ -51,7 +51,7 @@ type Engine interface {
 }
 
 //put current ccntmext to smart ccntmract
-func(sc *SmartCcntmract) LoadCcntmext(ccntmext *ccntmext.Ccntmext) {
+func(sc *SmartCcntmract) PushCcntmext(ccntmext *ccntmext.Ccntmext) {
 	sc.Ccntmext = append(sc.Ccntmext, ccntmext)
 }
 
@@ -77,6 +77,11 @@ func(sc *SmartCcntmract) EntryCcntmext() *ccntmext.Ccntmext {
 		return nil
 	}
 	return sc.Ccntmext[0]
+}
+
+//pop smart ccntmract current ccntmext
+func(sc *SmartCcntmract) PopCcntmext() {
+	sc.Ccntmext = sc.Ccntmext[:len(sc.Ccntmext) - 1]
 }
 
 func (sc *SmartCcntmract) Execute() error {

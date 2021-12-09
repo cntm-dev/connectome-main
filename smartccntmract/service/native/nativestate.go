@@ -72,7 +72,7 @@ func(native *NativeService) Register(methodName string, handler Handler) {
 func(native *NativeService) Invoke() error {
 	ctx := native.CcntmextRef.CurrentCcntmext()
 	if ctx == nil {
-		return errors.NewErr("Native service current ccntmext doesn't exist!")
+		return errors.NewErr("[Invoke] Native service current ccntmext doesn't exist!")
 	}
 	bf := bytes.NewBuffer(ctx.Code.Code)
 	ccntmract := new(states.Ccntmract)
@@ -86,9 +86,13 @@ func(native *NativeService) Invoke() error {
 	service, ok := native.ServiceMap[ccntmract.Method]; if !ok {
 		return fmt.Errorf("Native ccntmract %x doesn't support this function %s.", ccntmract.Address, ccntmract.Method)
 	}
-	native.CcntmextRef.LoadCcntmext(&ccntmext.Ccntmext{CcntmractAddress: ccntmract.Address})
+	native.CcntmextRef.PushCcntmext(&ccntmext.Ccntmext{CcntmractAddress: ccntmract.Address})
 	native.Input = ccntmract.Args
-	return service(native)
+	if err := service(native); err != nil {
+		return errors.NewDetailErr(err, errors.ErrNoCode, "[Invoke] Native serivce function execute error!")
+	}
+	native.CcntmextRef.PopCcntmext()
+	return nil
 }
 
 func(native *NativeService) AppCall(address common.Address, method string, args []byte) error {
@@ -103,7 +107,7 @@ func(native *NativeService) AppCall(address common.Address, method string, args 
 		return err
 	}
 
-	native.CcntmextRef.LoadCcntmext(&ccntmext.Ccntmext{
+	native.CcntmextRef.PushCcntmext(&ccntmext.Ccntmext{
 		Code: vmtypes.VmCode{
 			VmType: vmtypes.Native,
 			Code: bf.Bytes(),

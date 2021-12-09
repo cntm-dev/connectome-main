@@ -36,7 +36,7 @@ type pcntm struct {
 
 func NewPcntmMsg() ([]byte, error) {
 	var msg pcntm
-	msg.msgHdr.Magic = NETMAGIC
+	msg.msgHdr.Magic = NET_MAGIC
 	copy(msg.msgHdr.CMD[0:7], "pcntm")
 	height, _ := actor.GetCurrentHeaderHeight()
 	msg.height = uint64(height)

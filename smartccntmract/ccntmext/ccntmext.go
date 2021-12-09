@@ -6,10 +6,11 @@ import (
 )
 
 type CcntmextRef interface {
-	LoadCcntmext(ccntmext *Ccntmext)
+	PushCcntmext(ccntmext *Ccntmext)
 	CurrentCcntmext() *Ccntmext
 	CallingCcntmext() *Ccntmext
 	EntryCcntmext() *Ccntmext
+	PopCcntmext()
 	Execute() error
 }
 

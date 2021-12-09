@@ -93,7 +93,7 @@ func (this *StateStore) HandleInvokeTransaction(store store.ILedgerStore, stateB
 	}
 
 	//load current ccntmext to smart ccntmract
-	sc.LoadCcntmext(ctx)
+	sc.PushCcntmext(ctx)
 
 	//start the smart ccntmract executive function
 	if err := sc.Execute(); err != nil {

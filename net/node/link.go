@@ -31,7 +31,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -172,18 +171,16 @@ func initNonTlsListen() (net.Listener, error) {
 }
 
 func initTlsListen() (net.Listener, error) {
-	CertPath := Parameters.CertPath
-	KeyPath := Parameters.KeyPath
-	CAPath := Parameters.CAPath
+	certPath := Parameters.CertPath
+	keyPath := Parameters.KeyPath
+	caPath := Parameters.CAPath
 
-	// load cert
-	cert, err := tls.LoadX509KeyPair(CertPath, KeyPath)
+	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
 		log.Error("load keys fail", err)
 		return nil, err
 	}
-	// load root ca
-	caData, err := ioutil.ReadFile(CAPath)
+	caData, err := ioutil.ReadFile(caPath)
 	if err != nil {
 		log.Error("read ca fail", err)
 		return nil, err
@@ -268,19 +265,19 @@ func NonTLSDial(nodeAddr string) (net.Conn, error) {
 }
 
 func TLSDial(nodeAddr string) (net.Conn, error) {
-	CertPath := Parameters.CertPath
-	KeyPath := Parameters.KeyPath
-	CAPath := Parameters.CAPath
+	certPath := Parameters.CertPath
+	keyPath := Parameters.KeyPath
+	caPath := Parameters.CAPath
 
 	clientCertPool := x509.NewCertPool()
 
-	cacert, err := ioutil.ReadFile(CAPath)
-	cert, err := tls.LoadX509KeyPair(CertPath, KeyPath)
+	caCert, err := ioutil.ReadFile(caPath)
+	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := clientCertPool.AppendCertsFromPEM(cacert)
+	ret := clientCertPool.AppendCertsFromPEM(caCert)
 	if !ret {
 		return nil, errors.New("failed to parse root certificate")
 	}
@@ -291,7 +288,7 @@ func TLSDial(nodeAddr string) (net.Conn, error) {
 	}
 
 	var dialer net.Dialer
-	dialer.Timeout = time.Second * DIALTIMEOUT
+	dialer.Timeout = time.Second * DIAL_TIMEOUT
 	conn, err := tls.DialWithDialer(&dialer, "tcp", nodeAddr, conf)
 	if err != nil {
 		return nil, err
