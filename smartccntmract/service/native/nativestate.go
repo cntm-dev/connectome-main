@@ -92,6 +92,7 @@ func(native *NativeService) Invoke() error {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[Invoke] Native serivce function execute error!")
 	}
 	native.CcntmextRef.PopCcntmext()
+	native.CloneCache.Commit()
 	return nil
 }
 
@@ -106,16 +107,18 @@ func(native *NativeService) AppCall(address common.Address, method string, args 
 	if err := ccntmract.Serialize(bf); err != nil {
 		return err
 	}
-
+	code := vmtypes.VmCode{
+		VmType: vmtypes.Native,
+		Code: bf.Bytes(),
+	}
 	native.CcntmextRef.PushCcntmext(&ccntmext.Ccntmext{
-		Code: vmtypes.VmCode{
-			VmType: vmtypes.Native,
-			Code: bf.Bytes(),
-		},
+		Code: code,
+		CcntmractAddress: code.AddressFromVmCode(),
 	})
 	if err := native.CcntmextRef.Execute(); err != nil {
 		return err
 	}
+	native.CcntmextRef.PopCcntmext()
 	return nil
 }
 

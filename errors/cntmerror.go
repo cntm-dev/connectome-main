@@ -18,25 +18,25 @@
 
 package errors
 
-type dnaError struct {
+type cntmError struct {
 	errmsg    string
 	callstack *CallStack
 	root      error
 	code      ErrCode
 }
 
-func (e dnaError) Error() string {
+func (e cntmError) Error() string {
 	return e.errmsg
 }
 
-func (e dnaError) GetErrCode() ErrCode {
+func (e cntmError) GetErrCode() ErrCode {
 	return e.code
 }
 
-func (e dnaError) GetRoot() error {
+func (e cntmError) GetRoot() error {
 	return e.root
 }
 
-func (e dnaError) GetCallStack() *CallStack {
+func (e cntmError) GetCallStack() *CallStack {
 	return e.callstack
 }

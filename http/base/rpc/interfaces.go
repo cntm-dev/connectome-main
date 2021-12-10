@@ -22,15 +22,15 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	. "github.com/Ontology/common"
+	"github.com/Ontology/common"
 	"github.com/Ontology/common/config"
 	"github.com/Ontology/common/log"
 	"github.com/Ontology/core/genesis"
 	"github.com/Ontology/core/types"
-	. "github.com/Ontology/errors"
-	. "github.com/Ontology/http/base/actor"
-	. "github.com/Ontology/http/base/common"
-	Err "github.com/Ontology/http/base/error"
+	cntmerr "github.com/Ontology/errors"
+	bactor "github.com/Ontology/http/base/actor"
+	bcomn "github.com/Ontology/http/base/common"
+	berr "github.com/Ontology/http/base/error"
 	"math/big"
 )
 
@@ -39,12 +39,12 @@ func GetGenerateBlockTime(params []interface{}) map[string]interface{} {
 }
 
 func GetBestBlockHash(params []interface{}) map[string]interface{} {
-	hash, err := CurrentBlockHash()
+	hash, err := bactor.CurrentBlockHash()
 	if err != nil {
 		log.Errorf("GetBestBlockHash error:%s", err)
-		return responsePacking(Err.INTERNAL_ERROR, false)
+		return responsePack(berr.INTERNAL_ERROR, false)
 	}
-	return responseSuccess(ToHexString(hash.ToArray()))
+	return responseSuccess(common.ToHexString(hash.ToArray()))
 }
 
 // Input JSON string examples for getblock method as following:
@@ -401,47 +401,47 @@ func GetBlockHeightByTxHash(params []interface{}) map[string]interface{} {
 		str := params[0].(string)
 		hex, err := hex.DecodeString(str)
 		if err != nil {
-			return responsePacking(Err.INVALID_PARAMS, "")
+			return responsePack(berr.INVALID_PARAMS, "")
 		}
-		var hash Uint256
+		var hash common.Uint256
 		if err := hash.Deserialize(bytes.NewReader(hex)); err != nil {
-			return responsePacking(Err.INVALID_PARAMS, "")
+			return responsePack(berr.INVALID_PARAMS, "")
 		}
-		height,err := GetBlockHeightByTxHashFromStore(hash)
+		height,err := bactor.GetBlockHeightByTxHashFromStore(hash)
 		if err != nil{
-			return responsePacking(Err.INVALID_PARAMS, "")
+			return responsePack(berr.INVALID_PARAMS, "")
 		}
 		return responseSuccess(height)
 	default:
-		return responsePacking(Err.INVALID_PARAMS, "")
+		return responsePack(berr.INVALID_PARAMS, "")
 	}
-	return responsePacking(Err.INVALID_PARAMS, "")
+	return responsePack(berr.INVALID_PARAMS, "")
 }
 
 func GetBalance(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
-		return responsePacking(Err.INVALID_PARAMS, "")
+		return responsePack(berr.INVALID_PARAMS, "")
 	}
 	addrBase58, ok := params[0].(string)
 	if !ok {
-		return responsePacking(Err.INVALID_PARAMS, "")
+		return responsePack(berr.INVALID_PARAMS, "")
 	}
-	address, err := AddressFromBase58(addrBase58)
+	address, err := common.AddressFromBase58(addrBase58)
 	if err != nil {
-		return responsePacking(Err.INVALID_PARAMS, "")
+		return responsePack(berr.INVALID_PARAMS, "")
 	}
 	cntm := new(big.Int)
 	cntm := new(big.Int)
 
-	cntmBalance, err := GetStorageItem(genesis.OntCcntmractAddress, address[:])
+	cntmBalance, err := bactor.GetStorageItem(genesis.OntCcntmractAddress, address[:])
 	if err != nil {
 		log.Errorf("GetOntBalanceOf GetStorageItem cntm address:%s error:%s", addrBase58, err)
-		return responsePacking(Err.INTERNAL_ERROR, "internal error")
+		return responsePack(berr.INTERNAL_ERROR, "internal error")
 	}
 	if cntmBalance != nil {
 		cntm.SetBytes(cntmBalance)
 	}
-	rsp := &BalanceOfRsp{
+	rsp := &bcomn.BalanceOfRsp{
 		Ont: cntm.String(),
 		Ong: cntm.String(),
 	}

@@ -40,7 +40,7 @@ func NewDetailErr(err error, errcode ErrCode, errmsg string) DetailError {
 		return nil
 	}
 
-	dnaerr, ok := err.(dnaError)
+	dnaerr, ok := err.(cntmError)
 	if !ok {
 		dnaerr.root = err
 		dnaerr.errmsg = err.Error()
