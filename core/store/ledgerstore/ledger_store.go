@@ -63,7 +63,7 @@ type LedgerStore struct {
 	headerCache      map[common.Uint256]*ledgerCacheItem
 	blockCache       map[common.Uint256]*ledgerCacheItem
 	headerIndex      map[uint32]common.Uint256
-	savingBlockHash  common.Uint256
+	savingBlockHashes  map[common.Uint256]bool
 	lock             sync.RWMutex
 	exitCh           chan interface{}
 }
@@ -74,6 +74,7 @@ func NewLedgerStore() (*LedgerStore, error) {
 		headerIndex: make(map[uint32]common.Uint256),
 		headerCache: make(map[common.Uint256]*ledgerCacheItem),
 		blockCache:  make(map[common.Uint256]*ledgerCacheItem),
+		savingBlockHashes:make(map[common.Uint256]bool, 0),
 	}
 
 	blockStore, err := NewBlockStore(DBDirBlock, true)
@@ -234,6 +235,7 @@ func (this *LedgerStore) initStore() error {
 		if err != nil {
 			return fmt.Errorf("blockStore.GetBlock height:%d error:%s", i, err)
 		}
+		this.stateStore.NewBatch()
 		err = this.saveBlockToStateStore(block)
 		if err != nil {
 			return fmt.Errorf("save to state store height:%d error:%s", i, err)
@@ -253,6 +255,7 @@ func (this *LedgerStore) initStore() error {
 		if err != nil {
 			return fmt.Errorf("blockStore.GetBlock height:%d error:%s", i, err)
 		}
+		this.eventStore.NewBatch()
 		err = this.saveBlockToEventStore(block)
 		if err != nil {
 			return fmt.Errorf("save to event store height:%d error:%s", i, err)
@@ -538,35 +541,35 @@ func (this *LedgerStore) verifyBlock(block *types.Block) error {
 	return nil
 }
 
-func (this *LedgerStore) savingBlock(block *types.Block) bool {
-	var empty common.Uint256
-	blockHash := block.Hash()
+func (this *LedgerStore) addSavingBlock(blockHash common.Uint256) bool {
 	this.lock.Lock()
 	defer this.lock.Unlock()
 
-	if this.savingBlockHash == empty {
-		this.savingBlockHash = blockHash
+	_, ok := this.savingBlockHashes[blockHash]
+	if ok {
 		return false
 	}
 
-	return this.savingBlockHash == blockHash
+	this.savingBlockHashes[blockHash] = true
+	return true
 }
 
-func (this *LedgerStore) resetSavingBlock() {
+func (this *LedgerStore) deleteSavingBlock(blockHash common.Uint256) {
 	this.lock.Lock()
 	defer this.lock.Unlock()
-	this.savingBlockHash = common.Uint256{}
+
+	delete(this.savingBlockHashes, blockHash)
 }
 
 func (this *LedgerStore) AddBlock(block *types.Block) error {
-	if this.savingBlock(block) {
+	if !this.addSavingBlock(block.Hash()) {
 		return nil
 	}
 
 	currBlockHeight := this.GetCurrentBlockHeight()
 	blockHeight := block.Header.Height
 	if blockHeight <= currBlockHeight {
-		return fmt.Errorf("block height %d not larger then current block height %d", blockHeight, currBlockHeight)
+		return nil
 	}
 
 	nextBlockHeight := currBlockHeight + 1
@@ -603,7 +606,6 @@ func (this *LedgerStore) saveBlockToBlockStore(block *types.Block) error {
 	blockHash := block.Hash()
 	blockHeight := block.Header.Height
 
-	this.blockStore.NewBatch()
 	this.setHeaderIndex(blockHeight, blockHash)
 	err := this.saveHeaderIndexList()
 	if err != nil {
@@ -629,7 +631,6 @@ func (this *LedgerStore) saveBlockToStateStore(block *types.Block) error {
 	blockHash := block.Hash()
 	blockHeight := block.Header.Height
 
-	this.stateStore.NewBatch()
 	stateBatch := this.stateStore.NewStateBatch()
 
 	for _, tx := range block.Transactions {
@@ -668,7 +669,6 @@ func (this *LedgerStore) saveBlockToEventStore(block *types.Block) error {
 			invokeTxs = append(invokeTxs, txHash)
 		}
 	}
-	this.eventStore.NewBatch()
 	if len(invokeTxs) > 0 {
 		err := this.eventStore.SaveEventNotifyByBlock(block.Header.Height, invokeTxs)
 		if err != nil {
@@ -687,11 +687,13 @@ func (this *LedgerStore) saveBlockToEventStore(block *types.Block) error {
 }
 
 func (this *LedgerStore) saveBlock(block *types.Block) error {
-	defer this.resetSavingBlock()
-
 	blockHash := block.Hash()
 	blockHeight := block.Header.Height
+	defer this.deleteSavingBlock(blockHash)
 
+	this.blockStore.NewBatch()
+	this.stateStore.NewBatch()
+	this.eventStore.NewBatch()
 	err := this.saveBlockToBlockStore(block)
 	if err != nil {
 		return fmt.Errorf("save to block store error:%s", err)

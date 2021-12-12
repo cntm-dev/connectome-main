@@ -54,7 +54,7 @@ func NewStateMachine(ldgerStore store.ILedgerStore, dbCache scommon.IStateStore,
 
 	stateMachine.StateReader.Register("Neo.Ccntmract.Create", stateMachine.CcntmractCreate)
 	stateMachine.StateReader.Register("Neo.Ccntmract.Migrate", stateMachine.CcntmractMigrate)
-	stateMachine.StateReader.Register("Neo .Ccntmract.GetStorageCcntmext", stateMachine.GetStorageCcntmext)
+	stateMachine.StateReader.Register("Neo.Ccntmract.GetStorageCcntmext", stateMachine.GetStorageCcntmext)
 	stateMachine.StateReader.Register("Neo.Ccntmract.GetScript", stateMachine.CcntmractGetCode)
 	stateMachine.StateReader.Register("Neo.Ccntmract.Destroy", stateMachine.CcntmractDestory)
 

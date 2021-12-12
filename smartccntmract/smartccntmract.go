@@ -28,6 +28,7 @@ import (
 	"github.com/Ontology/vm/neovm"
 	"github.com/Ontology/smartccntmract/ccntmext"
 	"github.com/Ontology/smartccntmract/event"
+	"github.com/Ontology/common"
 )
 
 type SmartCcntmract struct {
@@ -109,4 +110,23 @@ func (sc *SmartCcntmract) Execute() error {
 	case vmtypes.WASMVM:
 	}
 	return nil
+}
+
+func (sc *SmartCcntmract) CheckWitness(address common.Address) bool {
+	if vmtypes.IsVmCodeAddress(address) {
+		for _, v := range sc.Ccntmext {
+			if v.CcntmractAddress == address {
+				return true
+			}
+		}
+	} else {
+		addresses := sc.Config.Tx.GetSignatureAddresses()
+		for _, v := range addresses {
+			if v == address {
+				return true
+			}
+		}
+	}
+
+	return false
 }

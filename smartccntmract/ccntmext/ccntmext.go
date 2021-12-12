@@ -11,6 +11,7 @@ type CcntmextRef interface {
 	CallingCcntmext() *Ccntmext
 	EntryCcntmext() *Ccntmext
 	PopCcntmext()
+	CheckWitness(address common.Address) bool
 	Execute() error
 }
 

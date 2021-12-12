@@ -31,6 +31,11 @@ import (
 	"github.com/Ontology/smartccntmract"
 	"github.com/Ontology/core/store"
 	"github.com/Ontology/smartccntmract/ccntmext"
+	"github.com/Ontology/smartccntmract/event"
+)
+
+const (
+	INVOKE_TRANSACTION = "InvokeTransaction"
 )
 
 func (this *StateStore) HandleDeployTransaction(stateBatch *statestore.StateBatch, tx *types.Transaction) error {
@@ -69,7 +74,7 @@ func (this *StateStore) HandleDeployTransaction(stateBatch *statestore.StateBatc
 
 func (this *StateStore) HandleInvokeTransaction(store store.ILedgerStore, stateBatch *statestore.StateBatch, tx *types.Transaction, block *types.Block, eventStore scommon.IEventStore) error {
 	invoke := tx.Payload.(*payload.InvokeCode)
-	//txHash := tx.Hash()
+	txHash := tx.Hash()
 
 	// init smart ccntmract configuration info
 	config := &smartccntmract.Config{
@@ -100,12 +105,12 @@ func (this *StateStore) HandleInvokeTransaction(store store.ILedgerStore, stateB
 		return err
 	}
 
-	//if len(sc.Notifications) > 0 {
-	//	if err := eventStore.SaveEventNotifyByTx(txHash, sc.Notifications); err != nil {
-	//		return fmt.Errorf("SaveEventNotifyByTx error %s", err)
-	//	}
-	//}
-
+	if len(sc.Notifications) > 0 {
+		if err := eventStore.SaveEventNotifyByTx(txHash, sc.Notifications); err != nil {
+			return fmt.Errorf("SaveEventNotifyByTx error %s", err)
+		}
+		event.PushSmartCodeEvent(txHash, 0, INVOKE_TRANSACTION, sc.Notifications)
+	}
 	return nil
 }
 
