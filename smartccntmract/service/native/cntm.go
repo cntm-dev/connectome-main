@@ -24,7 +24,6 @@ import (
 	"github.com/Ontology/core/genesis"
 	ctypes "github.com/Ontology/core/types"
 	"math/big"
-	"github.com/Ontology/smartccntmract/event"
 	"github.com/Ontology/smartccntmract/service/native/states"
 	cstates "github.com/Ontology/core/states"
 	"bytes"
@@ -56,11 +55,7 @@ func OntInit(native *NativeService) error {
 		address := ctypes.AddressFromPubKey(v)
 		native.CloneCache.Add(scommon.ST_Storage, append(ccntmract[:], address[:]...), &cstates.StorageItem{Value: ts.Bytes()})
 		native.CloneCache.Add(scommon.ST_Storage, getTotalSupplyKey(ccntmract), &cstates.StorageItem{Value: ts.Bytes()})
-		native.Notifications = append(native.Notifications, &event.NotifyEventInfo{
-			Ccntmainer: native.Tx.Hash(),
-			CodeHash: genesis.OntCcntmractAddress,
-			States: []interface{}{nil, address, ts},
-		})
+		addNotifications(native, ccntmract, &states.State{To: address, Value: ts})
 	}
 
 	return nil
@@ -85,11 +80,7 @@ func OntTransfer(native *NativeService) error {
 			return err
 		}
 
-		native.Notifications = append(native.Notifications, &event.NotifyEventInfo{
-			Ccntmainer: native.Tx.Hash(),
-			CodeHash: native.CcntmextRef.CurrentCcntmext().CcntmractAddress,
-			States: []interface{}{v.From, v.To, v.Value},
-		})
+		addNotifications(native, ccntmract, v)
 	}
 	return nil
 }
@@ -103,12 +94,7 @@ func OntTransferFrom(native *NativeService) error {
 	if err := transferFrom(native, ccntmract, state); err != nil {
 		return err
 	}
-	native.Notifications = append(native.Notifications,
-		&event.NotifyEventInfo{
-			Ccntmainer: native.Tx.Hash(),
-			CodeHash: ccntmract,
-			States: []interface{}{state.From, state.To, state.Value},
-		})
+	addNotifications(native, ccntmract, &states.State{From: state.From, To: state.To, Value: state.Value})
 	return nil
 }
 

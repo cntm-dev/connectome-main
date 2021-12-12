@@ -3,6 +3,7 @@ package ccntmext
 import (
 	"github.com/Ontology/common"
 	vmtypes "github.com/Ontology/vm/types"
+	"github.com/Ontology/smartccntmract/event"
 )
 
 type CcntmextRef interface {
@@ -12,6 +13,7 @@ type CcntmextRef interface {
 	EntryCcntmext() *Ccntmext
 	PopCcntmext()
 	CheckWitness(address common.Address) bool
+	PushNotifications(notifications []*event.NotifyEventInfo)
 	Execute() error
 }
 

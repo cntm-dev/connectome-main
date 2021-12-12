@@ -92,6 +92,7 @@ func(native *NativeService) Invoke() error {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[Invoke] Native serivce function execute error!")
 	}
 	native.CcntmextRef.PopCcntmext()
+	native.CcntmextRef.PushNotifications(native.Notifications)
 	native.CloneCache.Commit()
 	return nil
 }

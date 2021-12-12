@@ -85,6 +85,10 @@ func(sc *SmartCcntmract) PopCcntmext() {
 	sc.Ccntmext = sc.Ccntmext[:len(sc.Ccntmext) - 1]
 }
 
+func(sc *SmartCcntmract) PushNotifications(notifications []*event.NotifyEventInfo) {
+	sc.Notifications = append(sc.Notifications, notifications...)
+}
+
 func (sc *SmartCcntmract) Execute() error {
 	ctx := sc.CurrentCcntmext()
 	switch ctx.Code.VmType {
@@ -93,7 +97,6 @@ func (sc *SmartCcntmract) Execute() error {
 		if err := service.Invoke(); err != nil {
 			return err
 		}
-		sc.Notifications = append(sc.Notifications, service.Notifications...)
 	case vmtypes.NEOVM:
 		stateMachine := sneovm.NewStateMachine(sc.Config.Store, sc.Config.DBCache, stypes.Application, sc.Config.Time)
 		engine := neovm.NewExecutionEngine(
