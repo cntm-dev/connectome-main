@@ -109,6 +109,7 @@ func (sc *SmartCcntmract) Execute() error {
 		if err := engine.Execute(); err != nil {
 			return err
 		}
+		stateMachine.CloneCache.Commit()
 		sc.Notifications = append(sc.Notifications, stateMachine.Notifications...)
 	case vmtypes.WASMVM:
 	}
