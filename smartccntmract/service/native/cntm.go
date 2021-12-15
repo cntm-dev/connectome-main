@@ -137,7 +137,7 @@ func grantOng(native *NativeService, ccntmract common.Address, state *states.Sta
 		amount += (iend - istart) * generationAmount[ustart]
 	}
 
-	args, err := getApproveArgs(native, ccntmract, state, amount); if err != nil {
+	args, err := getApproveArgs(native, ccntmract, genesis.OngCcntmractAddress, state, amount); if err != nil {
 		return err
 	}
 
@@ -149,7 +149,7 @@ func grantOng(native *NativeService, ccntmract common.Address, state *states.Sta
 	return nil
 }
 
-func getApproveArgs(native *NativeService, ccntmract common.Address, state *states.State, amount uint32) ([]byte, error) {
+func getApproveArgs(native *NativeService, ccntmract, cntmCcntmract common.Address, state *states.State, amount uint32) ([]byte, error) {
 	bf := new(bytes.Buffer)
 	approve := &states.State {
 		From: ccntmract,
@@ -157,7 +157,7 @@ func getApproveArgs(native *NativeService, ccntmract common.Address, state *stat
 		Value: big.NewInt(state.Value.Int64() / int64(genesis.OntRegisterAmount) * int64(amount)),
 	}
 
-	stateValue, err := getStorageBigInt(native, getApproveKey(ccntmract, state)); if err != nil {
+	stateValue, err := getStorageBigInt(native, getApproveKey(cntmCcntmract, state)); if err != nil {
 		return nil, err
 	}
 
