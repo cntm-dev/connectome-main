@@ -22,7 +22,6 @@ import (
 	"github.com/Ontology/common"
 	"github.com/Ontology/common/log"
 	"github.com/Ontology/core/ccntmract"
-	"github.com/Ontology/core/signature"
 	"github.com/Ontology/core/states"
 	"github.com/Ontology/core/store"
 	"github.com/Ontology/core/types"
@@ -171,25 +170,14 @@ func (s *StateReader) RuntimeLog(e *vm.ExecutionEngine) (bool, error) {
 	return true, nil
 }
 
-func (s *StateReader) CheckWitnessHash(engine *vm.ExecutionEngine, programHash common.Address) (bool, error) {
-	signableData := engine.GetCodeCcntmainer().(signature.SignableData)
-	programs := signableData.GetPrograms()
-	hashes := make([]common.Address, 0, len(programs))
-	for _, program := range programs {
-		hash := common.ToCodeHash(program.Code)
-		hashes = append(hashes, hash)
-	}
-
-	return ccntmains(hashes, programHash), nil
+func (s *StateReader) CheckWitnessHash(engine *vm.ExecutionEngine, address common.Address) (bool, error) {
+	tx := engine.GetCodeCcntmainer().(*types.Transaction)
+	addresses := tx.GetSignatureAddresses()
+	return ccntmains(addresses, address), nil
 }
 
 func (s *StateReader) CheckWitnessPublicKey(engine *vm.ExecutionEngine, publicKey *crypto.PubKey) (bool, error) {
-	c, err := ccntmract.CreateSignatureRedeemScript(publicKey)
-	if err != nil {
-		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[CheckWitnessPublicKey] CreateSignatureRedeemScript error!")
-	}
-	h := common.ToCodeHash(c)
-	return s.CheckWitnessHash(engine, h)
+	return s.CheckWitnessHash(engine, types.AddressFromPubKey(publicKey))
 }
 
 func (s *StateReader) RuntimeCheckWitness(e *vm.ExecutionEngine) (bool, error) {

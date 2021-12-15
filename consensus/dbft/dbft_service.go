@@ -421,7 +421,12 @@ func (ds *DbftService) PrepareRequestReceived(payload *p2pmsg.ConsensusPayload, 
 
 	header, err := ledger.DefLedger.GetHeaderByHash(ds.ccntmext.PrevHash)
 	if err != nil {
-		log.Info("PrepareRequestReceived GetHeader failed with ds.ccntmext.PrevHash", ds.ccntmext.PrevHash)
+		log.Errorf("PrepareRequestReceived GetHeader failed with ds.ccntmext.PrevHash:%x", ds.ccntmext.PrevHash)
+		return
+	}
+	if header == nil {
+		log.Errorf("PrepareRequestReceived cannot GetHeaderByHash by PrevHash:%x", ds.ccntmext.PrevHash)
+		return
 	}
 
 	//TODO Add Error Catch

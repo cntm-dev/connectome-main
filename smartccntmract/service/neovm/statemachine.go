@@ -307,9 +307,9 @@ func (s *StateMachine) GetStorageCcntmext(engine *vm.ExecutionEngine) (bool, err
 	return true, nil
 }
 
-func ccntmains(programHashes []common.Address, programHash common.Address) bool {
-	for _, v := range programHashes {
-		if v == programHash {
+func ccntmains(addresses []common.Address, address common.Address) bool {
+	for _, v := range addresses {
+		if v == address {
 			return true
 		}
 	}
