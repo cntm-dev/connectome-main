@@ -21,9 +21,9 @@ package dbft
 import (
 	"bytes"
 	"fmt"
-	"time"
 	"reflect"
-	ldgractor"github.com/Ontology/core/ledger/actor"
+	"time"
+
 	"github.com/Ontology/account"
 	. "github.com/Ontology/common"
 	"github.com/Ontology/common/config"
@@ -31,15 +31,16 @@ import (
 	actorTypes "github.com/Ontology/consensus/actor"
 	"github.com/Ontology/core/genesis"
 	"github.com/Ontology/core/ledger"
+	ldgractor "github.com/Ontology/core/ledger/actor"
 	"github.com/Ontology/core/payload"
+	"github.com/Ontology/core/signature"
 	"github.com/Ontology/core/types"
 	"github.com/Ontology/core/vote"
-	"github.com/Ontology/crypto"
-	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/Ontology/events"
 	"github.com/Ontology/events/message"
 	p2pmsg "github.com/Ontology/net/message"
 	"github.com/Ontology/validator/increment"
+	"github.com/cntmio/cntmology-eventbus/actor"
 )
 
 type DbftService struct {
@@ -50,7 +51,7 @@ type DbftService struct {
 	timeView          byte
 	blockReceivedTime time.Time
 	started           bool
-	incrValidator *increment.IncrementValidator
+	incrValidator     *increment.IncrementValidator
 	poolActor         *actorTypes.TxPoolActor
 	p2p               *actorTypes.P2PActor
 
@@ -61,12 +62,12 @@ type DbftService struct {
 func NewDbftService(bkAccount *account.Account, txpool, p2p *actor.PID) (*DbftService, error) {
 
 	service := &DbftService{
-		Account:   bkAccount,
-		timer:     time.NewTimer(time.Second * 15),
-		started:   false,
+		Account:       bkAccount,
+		timer:         time.NewTimer(time.Second * 15),
+		started:       false,
 		incrValidator: increment.NewIncrementValidator(10),
-		poolActor: &actorTypes.TxPoolActor{Pool: txpool},
-		p2p:       &actorTypes.P2PActor{P2P: p2p},
+		poolActor:     &actorTypes.TxPoolActor{Pool: txpool},
+		p2p:           &actorTypes.P2PActor{P2P: p2p},
 	}
 
 	if !service.timer.Stop() {
@@ -230,12 +231,12 @@ func (ds *DbftService) CheckSignatures() error {
 		}
 		if !isExist {
 			// save block
-			future := ldgractor.DefLedgerPid.RequestFuture(&ldgractor.AddBlockReq{Block:block}, 30*time.Second)
+			future := ldgractor.DefLedgerPid.RequestFuture(&ldgractor.AddBlockReq{Block: block}, 30*time.Second)
 			result, err := future.Result()
 			if err != nil {
-				return fmt.Errorf("CheckSignatures DefLedgerPid.RequestFuture Height:%d error:%s",block.Header.Height, err)
+				return fmt.Errorf("CheckSignatures DefLedgerPid.RequestFuture Height:%d error:%s", block.Header.Height, err)
 			}
-			addBlockRsp :=  result.(*ldgractor.AddBlockRsp)
+			addBlockRsp := result.(*ldgractor.AddBlockRsp)
 			if addBlockRsp.Error != nil {
 				return fmt.Errorf("CheckSignatures AddBlockRsp Height:%d error:%s", block.Header.Height, addBlockRsp.Error)
 			}
@@ -255,7 +256,7 @@ func (ds *DbftService) CreateBookkeepingTransaction(nonce uint64, fee Fixed64) *
 		Nonce: uint64(time.Now().UnixNano()),
 	}
 	return &types.Transaction{
-		TxType: types.BookKeeping,
+		TxType:     types.BookKeeping,
 		Payload:    bookKeepingPayload,
 		Attributes: []*types.TxAttribute{},
 	}
@@ -353,18 +354,17 @@ func (ds *DbftService) NewConsensusPayload(payload *p2pmsg.ConsensusPayload) {
 
 	//if payload is not same height with current ccntmex, ignore it
 	if payload.Version != CcntmextVersion || payload.PrevHash != ds.ccntmext.PrevHash || payload.Height != ds.ccntmext.Height {
+		log.Debug("unmatched height")
 		return
 	}
 
 	if ds.ccntmext.State.HasFlag(BlockGenerated) {
-		return
-	}
-
-	if ds.ccntmext.State.HasFlag(BlockGenerated) {
+		log.Debug("has flag 'BlockGenerated'")
 		return
 	}
 
 	if int(payload.BookkeeperIndex) >= len(ds.ccntmext.Bookkeepers) {
+		log.Debug("bookkeeper index out of range")
 		return
 	}
 
@@ -405,6 +405,8 @@ func (ds *DbftService) NewConsensusPayload(payload *p2pmsg.ConsensusPayload) {
 			ds.BlockSignaturesReceived(payload, blockSigs)
 		}
 		break
+	default:
+		log.Warn("unknown consensus message type")
 	}
 }
 
@@ -496,7 +498,7 @@ func (ds *DbftService) PrepareResponseReceived(payload *msg.ConsensusPayload, me
 		return
 	}
 	blockHash := header.Hash()
-	err := crypto.Verify(*ds.ccntmext.Bookkeepers[payload.BookkeeperIndex], blockHash[:], message.Signature)
+	err := signature.Verify(ds.ccntmext.Bookkeepers[payload.BookkeeperIndex], blockHash[:], message.Signature)
 	if err != nil {
 		return
 	}
@@ -536,7 +538,7 @@ func (ds *DbftService) BlockSignaturesReceived(payload *p2pmsg.ConsensusPayload,
 			ccntminue
 		}
 
-		err := crypto.Verify(*ds.ccntmext.Bookkeepers[sigdata.Index], blockHash[:], sigdata.Signature)
+		err := signature.Verify(ds.ccntmext.Bookkeepers[sigdata.Index], blockHash[:], sigdata.Signature)
 		if err != nil {
 			ccntminue
 		}

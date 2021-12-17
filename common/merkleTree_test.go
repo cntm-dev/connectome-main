@@ -1,3 +1,4 @@
+package common
 /*
  * Copyright (C) 2018 The cntmology Authors
  * This file is part of The cntmology library.
@@ -15,9 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-package crypto
-
 import (
 	"crypto/sha256"
 	"fmt"

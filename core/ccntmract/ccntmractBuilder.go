@@ -19,21 +19,19 @@
 package ccntmract
 
 import (
-	. "github.com/Ontology/common"
-	pg "github.com/Ontology/core/ccntmract/program"
-	"github.com/Ontology/crypto"
-	. "github.com/Ontology/errors"
-	vm "github.com/Ontology/vm/neovm"
 	"math/big"
 	"sort"
+
+	. "github.com/Ontology/common"
+	pg "github.com/Ontology/core/ccntmract/program"
+	. "github.com/Ontology/errors"
+	vm "github.com/Ontology/vm/neovm"
+	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
 //create a Single Singature ccntmract for owner
-func CreateSignatureCcntmract(ownerPubKey *crypto.PubKey) (*Ccntmract, error) {
-	temp, err := ownerPubKey.EncodePoint(true)
-	if err != nil {
-		return nil, NewDetailErr(err, ErrNoCode, "[Ccntmract],CreateSignatureCcntmract failed.")
-	}
+func CreateSignatureCcntmract(ownerPubKey keypair.PublicKey) (*Ccntmract, error) {
+	temp := keypair.SerializePublicKey(ownerPubKey)
 	signatureRedeemScript, err := CreateSignatureRedeemScript(ownerPubKey)
 	if err != nil {
 		return nil, NewDetailErr(err, ErrNoCode, "[Ccntmract],CreateSignatureCcntmract failed.")
@@ -48,11 +46,8 @@ func CreateSignatureCcntmract(ownerPubKey *crypto.PubKey) (*Ccntmract, error) {
 	}, nil
 }
 
-func CreateSignatureRedeemScript(pubkey *crypto.PubKey) ([]byte, error) {
-	temp, err := pubkey.EncodePoint(true)
-	if err != nil {
-		return nil, NewDetailErr(err, ErrNoCode, "[Ccntmract],CreateSignatureRedeemScript failed.")
-	}
+func CreateSignatureRedeemScript(pubkey keypair.PublicKey) ([]byte, error) {
+	temp := keypair.SerializePublicKey(pubkey)
 	sb := pg.NewProgramBuilder()
 	sb.PushData(temp)
 	sb.AddOp(vm.CHECKSIG)
@@ -60,7 +55,7 @@ func CreateSignatureRedeemScript(pubkey *crypto.PubKey) ([]byte, error) {
 }
 
 //create a Multi Singature ccntmract for owner  。
-func CreateMultiSigCcntmract(publicKeyHash Address, m int, publicKeys []*crypto.PubKey) (*Ccntmract, error) {
+func CreateMultiSigCcntmract(publicKeyHash Address, m int, publicKeys []keypair.PublicKey) (*Ccntmract, error) {
 
 	params := make([]CcntmractParameterType, m)
 	for i, _ := range params {
@@ -79,7 +74,7 @@ func CreateMultiSigCcntmract(publicKeyHash Address, m int, publicKeys []*crypto.
 	}, nil
 }
 
-func CreateMultiSigRedeemScript(m int, pubkeys []*crypto.PubKey) ([]byte, error) {
+func CreateMultiSigRedeemScript(m int, pubkeys []keypair.PublicKey) ([]byte, error) {
 	if !(m >= 1 && m <= len(pubkeys) && len(pubkeys) <= 24) {
 		return nil, nil //TODO: add panic
 	}
@@ -88,13 +83,10 @@ func CreateMultiSigRedeemScript(m int, pubkeys []*crypto.PubKey) ([]byte, error)
 	sb.PushNumber(big.NewInt(int64(m)))
 
 	//sort pubkey
-	sort.Sort(crypto.PubKeySlice(pubkeys))
+	sort.Sort(keypair.NewPublicList(pubkeys))
 
 	for _, pubkey := range pubkeys {
-		temp, err := pubkey.EncodePoint(true)
-		if err != nil {
-			return nil, NewDetailErr(err, ErrNoCode, "[Ccntmract],CreateSignatureCcntmract failed.")
-		}
+		temp := keypair.SerializePublicKey(pubkey)
 		sb.PushData(temp)
 	}
 

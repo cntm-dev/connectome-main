@@ -20,26 +20,27 @@ package ccntmract
 
 import (
 	"errors"
+	"math/big"
+	"sort"
+
 	. "github.com/Ontology/common"
 	"github.com/Ontology/common/log"
 	pg "github.com/Ontology/core/ccntmract/program"
 	sig "github.com/Ontology/core/signature"
-	"github.com/Ontology/crypto"
 	_ "github.com/Ontology/errors"
-	"math/big"
-	"sort"
+	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
 type CcntmractCcntmext struct {
-	Data            sig.SignableData
-	ProgramHashes   []Address
-	Codes           [][]byte
-	Parameters      [][][]byte
+	Data          sig.SignableData
+	ProgramHashes []Address
+	Codes         [][]byte
+	Parameters    [][][]byte
 
 	MultiPubkeyPara [][]PubkeyParameter
 
 	//temp index for multi sig
-	tempParaIndex   int
+	tempParaIndex int
 }
 
 func NewCcntmractCcntmext(data sig.SignableData) *CcntmractCcntmext {
@@ -74,7 +75,7 @@ func (cxt *CcntmractCcntmext) Add(ccntmract *Ccntmract, index int, parameter []b
 	return nil
 }
 
-func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.PubKey, parameter []byte) error {
+func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey keypair.PublicKey, parameter []byte) error {
 	log.Debug()
 	if ccntmract.GetType() == MultiSigCcntmract {
 		log.Debug()
@@ -145,14 +146,11 @@ func (cxt *CcntmractCcntmext) AddCcntmract(ccntmract *Ccntmract, pubkey *crypto.
 	return nil
 }
 
-func (cxt *CcntmractCcntmext) AddSignatureToMultiList(ccntmractIndex int, ccntmract *Ccntmract, pubkey *crypto.PubKey, parameter []byte) error {
+func (cxt *CcntmractCcntmext) AddSignatureToMultiList(ccntmractIndex int, ccntmract *Ccntmract, pubkey keypair.PublicKey, parameter []byte) error {
 	if cxt.MultiPubkeyPara[ccntmractIndex] == nil {
 		cxt.MultiPubkeyPara[ccntmractIndex] = make([]PubkeyParameter, len(ccntmract.Parameters))
 	}
-	pk, err := pubkey.EncodePoint(true)
-	if err != nil {
-		return err
-	}
+	pk := keypair.SerializePublicKey(pubkey)
 
 	pubkeyPara := PubkeyParameter{
 		PubKey:    ToHexString(pk),
@@ -163,7 +161,7 @@ func (cxt *CcntmractCcntmext) AddSignatureToMultiList(ccntmractIndex int, ccntmr
 	return nil
 }
 
-func (cxt *CcntmractCcntmext) AddMultiSignatures(index int, ccntmract *Ccntmract, pubkey *crypto.PubKey, parameter []byte) error {
+func (cxt *CcntmractCcntmext) AddMultiSignatures(index int, ccntmract *Ccntmract, pubkey keypair.PublicKey, parameter []byte) error {
 	pkIndexs, err := cxt.ParseCcntmractPubKeys(ccntmract)
 	if err != nil {
 		return errors.New("Ccntmract Parameters are not supported.")
@@ -215,10 +213,6 @@ func (cxt *CcntmractCcntmext) ParseCcntmractPubKeys(ccntmract *Ccntmract) (map[s
 	}
 	for ccntmract.Code[i] == 33 {
 		i++
-		//pubkey, err := crypto.DecodePoint(ccntmract.Code[i:33])
-		//if err != nil {
-		//	return nil, errors.New("[Ccntmract],AddCcntmract DecodePoint failed.")
-		//}
 
 		//add to parameter index
 		pubkeyIndex[ToHexString(ccntmract.Code[i:33])] = Index

@@ -35,6 +35,7 @@ var (
 	decrementInterval = uint32(2000000)
 	generationAmount = [17]uint32{80, 70, 60, 50, 40, 30, 20, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10}
 	gl = uint32(len(generationAmount))
+	cntmTotalSupply = big.NewInt(1000000000)
 )
 
 func OntInit(native *NativeService) error {
@@ -50,7 +51,7 @@ func OntInit(native *NativeService) error {
 		return errors.NewErr("Init cntm has been completed!")
 	}
 
-	ts := new(big.Int).Div(totalSupply, big.NewInt(int64(len(booKeepers))))
+	ts := new(big.Int).Div(cntmTotalSupply, big.NewInt(int64(len(booKeepers))))
 	for _, v := range booKeepers {
 		address := ctypes.AddressFromPubKey(v)
 		native.CloneCache.Add(scommon.ST_Storage, append(ccntmract[:], address[:]...), &cstates.StorageItem{Value: ts.Bytes()})
@@ -68,15 +69,23 @@ func OntTransfer(native *NativeService) error {
 	}
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
 	for _, v := range transfers.States {
-		if err := transfer(native, ccntmract, v); err != nil {
+		fromBalance, toBalance, err := transfer(native, ccntmract, v); if err != nil {
 			return err
 		}
 
-		startHeight, err := getStartHeight(native, ccntmract, v.From); if err != nil {
+		fromStartHeight, err := getStartHeight(native, ccntmract, v.From); if err != nil {
 			return err
 		}
 
-		if err := grantOng(native, ccntmract, v, startHeight); err != nil {
+		toStartHeight, err := getStartHeight(native, ccntmract, v.From); if err != nil {
+			return err
+		}
+
+		if err := grantOng(native, ccntmract, v.From, fromBalance, fromStartHeight); err != nil {
+			return err
+		}
+
+		if err := grantOng(native, ccntmract, v.To, toBalance, toStartHeight); err != nil {
 			return err
 		}
 
@@ -111,7 +120,7 @@ func OntApprove(native *NativeService) error {
 	return nil
 }
 
-func grantOng(native *NativeService, ccntmract common.Address, state *states.State, startHeight uint32) error {
+func grantOng(native *NativeService, ccntmract, address common.Address, balance *big.Int, startHeight uint32) error {
 	var amount uint32 = 0
 	ustart := startHeight / decrementInterval
 	if ustart < gl {
@@ -137,7 +146,7 @@ func grantOng(native *NativeService, ccntmract common.Address, state *states.Sta
 		amount += (iend - istart) * generationAmount[ustart]
 	}
 
-	args, err := getApproveArgs(native, ccntmract, genesis.OngCcntmractAddress, state, amount); if err != nil {
+	args, err := getApproveArgs(native, ccntmract, genesis.OngCcntmractAddress, address, balance, amount); if err != nil {
 		return err
 	}
 
@@ -145,19 +154,19 @@ func grantOng(native *NativeService, ccntmract common.Address, state *states.Sta
 		return err
 	}
 
-	native.CloneCache.Add(scommon.ST_Storage, getAddressHeightKey(ccntmract, state.From), getHeightStorageItem(native.Height))
+	native.CloneCache.Add(scommon.ST_Storage, getAddressHeightKey(ccntmract, address), getHeightStorageItem(native.Height))
 	return nil
 }
 
-func getApproveArgs(native *NativeService, ccntmract, cntmCcntmract common.Address, state *states.State, amount uint32) ([]byte, error) {
+func getApproveArgs(native *NativeService, ccntmract, cntmCcntmract, address common.Address, balance *big.Int, amount uint32) ([]byte, error) {
 	bf := new(bytes.Buffer)
 	approve := &states.State {
 		From: ccntmract,
-		To: state.From,
-		Value: big.NewInt(state.Value.Int64() / int64(genesis.OntRegisterAmount) * int64(amount)),
+		To: address,
+		Value: new(big.Int).Mul(balance, big.NewInt(int64(amount))),
 	}
 
-	stateValue, err := getStorageBigInt(native, getApproveKey(cntmCcntmract, state)); if err != nil {
+	stateValue, err := getStorageBigInt(native, getApproveKey(cntmCcntmract, approve)); if err != nil {
 		return nil, err
 	}
 
