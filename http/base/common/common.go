@@ -161,11 +161,12 @@ func VerifyAndSendTx(txn *types.Transaction) cntmerr.ErrCode {
 		log.Info("[httpjsonrpc] VerifyTransaction failed when AppendTxnPool.")
 		return errCode
 	}
-
-	if err := bactor.Xmit(txn); err != nil {
-		log.Error("Xmit Tx Error:Xmit transaction failed.", err)
-		return cntmerr.ErrXmitFail
-	}
+	/* moveto txpool actor
+		if err := bactor.Xmit(txn); err != nil {
+			log.Error("Xmit Tx Error:Xmit transaction failed.", err)
+			return cntmerr.ErrXmitFail
+		}
+	*/
 	return cntmerr.ErrNoError
 }
 

@@ -39,6 +39,9 @@ func SetTxnPoolPid(actr *actor.PID) {
 	txnPoolPid = actr
 }
 func AppendTxToPool(txn *types.Transaction) cntmerr.ErrCode {
+	txnPid.Tell(txn)
+	return cntmerr.ErrNoError
+	/*
 	future := txnPid.RequestFuture(txn, ReqTimeout*time.Second)
 	result, err := future.Result()
 	if err != nil {
@@ -52,6 +55,7 @@ func AppendTxToPool(txn *types.Transaction) cntmerr.ErrCode {
 	} else {
 		return result.ErrCode
 	}
+	*/
 }
 
 func GetTxsFromPool(byCount bool) (map[common.Uint256]*types.Transaction, common.Fixed64) {
