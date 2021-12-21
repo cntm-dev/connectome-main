@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/Ontology/account"
-	. "github.com/Ontology/common"
+	"github.com/Ontology/common"
 	"github.com/Ontology/common/config"
 	"github.com/Ontology/common/log"
 	actorTypes "github.com/Ontology/consensus/actor"
@@ -249,7 +249,7 @@ func (ds *DbftService) CheckSignatures() error {
 	return nil
 }
 
-func (ds *DbftService) CreateBookkeepingTransaction(nonce uint64, fee Fixed64) *types.Transaction {
+func (ds *DbftService) CreateBookkeepingTransaction(nonce uint64, fee common.Fixed64) *types.Transaction {
 	log.Debug()
 	//TODO: sysfee
 	bookKeepingPayload := &payload.BookKeeping{
@@ -336,8 +336,8 @@ func (ds *DbftService) InitializeConsensus(viewNum byte) error {
 
 func (ds *DbftService) LocalNodeNewInventory(v interface{}) {
 	log.Debug()
-	if inventory, ok := v.(Inventory); ok {
-		if inventory.Type() == CONSENSUS {
+	if inventory, ok := v.(common.Inventory); ok {
+		if inventory.Type() == common.CONSENSUS {
 			payload, ret := inventory.(*p2pmsg.ConsensusPayload)
 			if ret == true {
 				ds.NewConsensusPayload(payload)

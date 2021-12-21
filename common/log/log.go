@@ -31,6 +31,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Ontology/common/config"
 )
 
 const (
@@ -83,7 +85,7 @@ func LevelName(level int) string {
 	if name, ok := levels[level]; ok {
 		return name
 	}
-	return namePrefix + strconv.Itoa(level)
+	return NAME_PREFIX + strconv.Itoa(level)
 }
 
 func NameLevel(name string) int {
@@ -93,8 +95,8 @@ func NameLevel(name string) int {
 		}
 	}
 	var level int
-	if strings.HasPrefix(name, namePrefix) {
-		level, _ = strconv.Atoi(name[len(namePrefix):])
+	if strings.HasPrefix(name, NAME_PREFIX) {
+		level, _ = strconv.Atoi(name[len(NAME_PREFIX):])
 	}
 	return level
 }
@@ -193,7 +195,7 @@ func Trace(a ...interface{}) {
 }
 
 func Debug(a ...interface{}) {
-	if debugLog < Log.level {
+	if DebugLog < Log.level {
 		return
 	}
 
@@ -209,7 +211,7 @@ func Debug(a ...interface{}) {
 }
 
 func Debugf(format string, a ...interface{}) {
-	if debugLog < Log.level {
+	if DebugLog < Log.level {
 		return
 	}
 
@@ -269,7 +271,7 @@ func FileOpen(path string) (*os.File, error) {
 		return nil, err
 	}
 
-	var currenttime string = time.Now().Format("2006-01-02_15.04.05")
+	var currenttime = time.Now().Format("2006-01-02_15.04.05")
 
 	logfile, err := os.OpenFile(path + currenttime + "_LOG.log", os.O_RDWR | os.O_CREATE, 0666)
 	if err != nil {
@@ -317,9 +319,9 @@ func GetLogFileSize() (int64, error) {
 
 func GetMaxLogChangeInterval() int64 {
 	if config.Parameters.MaxLogSize != 0 {
-		return (config.Parameters.MaxLogSize * byteToMb)
+		return (config.Parameters.MaxLogSize * BYTE_TO_MB)
 	} else {
-		return (defaultMaxLogSize * byteToMb)
+		return (DEFAULT_MAX_LOG_SIZE * BYTE_TO_MB)
 	}
 }
 
