@@ -54,8 +54,8 @@ func OntInit(native *NativeService) error {
 	ts := new(big.Int).Div(cntmTotalSupply, big.NewInt(int64(len(booKeepers))))
 	for _, v := range booKeepers {
 		address := ctypes.AddressFromPubKey(v)
-		native.CloneCache.Add(scommon.ST_Storage, append(ccntmract[:], address[:]...), &cstates.StorageItem{Value: ts.Bytes()})
-		native.CloneCache.Add(scommon.ST_Storage, getTotalSupplyKey(ccntmract), &cstates.StorageItem{Value: ts.Bytes()})
+		native.CloneCache.Add(scommon.ST_STORAGE, append(ccntmract[:], address[:]...), &cstates.StorageItem{Value: ts.Bytes()})
+		native.CloneCache.Add(scommon.ST_STORAGE, getTotalSupplyKey(ccntmract), &cstates.StorageItem{Value: ts.Bytes()})
 		addNotifications(native, ccntmract, &states.State{To: address, Value: ts})
 	}
 
@@ -116,7 +116,7 @@ func OntApprove(native *NativeService) error {
 		return err
 	}
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-	native.CloneCache.Add(scommon.ST_Storage, getApproveKey(ccntmract, state), &cstates.StorageItem{Value: state.Value.Bytes()})
+	native.CloneCache.Add(scommon.ST_STORAGE, getApproveKey(ccntmract, state), &cstates.StorageItem{Value: state.Value.Bytes()})
 	return nil
 }
 
@@ -154,7 +154,7 @@ func grantOng(native *NativeService, ccntmract, address common.Address, balance 
 		return err
 	}
 
-	native.CloneCache.Add(scommon.ST_Storage, getAddressHeightKey(ccntmract, address), getHeightStorageItem(native.Height))
+	native.CloneCache.Add(scommon.ST_STORAGE, getAddressHeightKey(ccntmract, address), getHeightStorageItem(native.Height))
 	return nil
 }
 

@@ -282,7 +282,7 @@ func (ds *DbftService) halt() error {
 	}
 
 	if ds.started {
-		ds.sub.Unsubscribe(message.TopicSaveBlockComplete)
+		ds.sub.Unsubscribe(message.TOPIC_SAVE_BLOCK_COMPLETE)
 	}
 	return nil
 }

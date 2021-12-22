@@ -35,13 +35,13 @@ import (
 
 type StateMachine struct {
 	*StateReader
-	ldgerStore store.ILedgerStore
+	ldgerStore store.LedgerStore
 	CloneCache *storage.CloneCache
 	trigger    stypes.TriggerType
 	time       uint32
 }
 
-func NewStateMachine(ldgerStore store.ILedgerStore, dbCache scommon.IStateStore, trigger stypes.TriggerType, time uint32) *StateMachine {
+func NewStateMachine(ldgerStore store.LedgerStore, dbCache scommon.StateStore, trigger stypes.TriggerType, time uint32) *StateMachine {
 	var stateMachine StateMachine
 	stateMachine.ldgerStore = ldgerStore
 	stateMachine.CloneCache = storage.NewCloneCache(dbCache)
@@ -108,7 +108,7 @@ func (s *StateMachine) CcntmractCreate(engine *vm.ExecutionEngine) (bool, error)
 		Description: string(desc),
 	}
 	ccntmractAddress := vmCode.AddressFromVmCode()
-	state, err := s.CloneCache.GetOrAdd(scommon.ST_Ccntmract, ccntmractAddress[:], ccntmractState)
+	state, err := s.CloneCache.GetOrAdd(scommon.ST_CcntmRACT, ccntmractAddress[:], ccntmractState)
 	if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractCreate] GetOrAdd error!")
 	}
@@ -128,7 +128,7 @@ func (s *StateMachine) CcntmractMigrate(engine *vm.ExecutionEngine) (bool, error
 		VmType: vmtypes.NEOVM,
 	}
 	ccntmractAddress := vmCode.AddressFromVmCode()
-	item, err := s.CloneCache.Get(scommon.ST_Ccntmract, ccntmractAddress[:]); if err != nil {
+	item, err := s.CloneCache.Get(scommon.ST_CcntmRACT, ccntmractAddress[:]); if err != nil {
 		return false, errors.NewErr("[CcntmractMigrate] Get Ccntmract error!")
 	}
 	if item != nil {
@@ -158,8 +158,8 @@ func (s *StateMachine) CcntmractMigrate(engine *vm.ExecutionEngine) (bool, error
 		Email:       string(emailByte),
 		Description: string(descByte),
 	}
-	s.CloneCache.Add(scommon.ST_Ccntmract, ccntmractAddress[:], ccntmractState)
-	stateValues, err := s.CloneCache.Store.Find(scommon.ST_Ccntmract, ccntmractAddress[:]); if err != nil {
+	s.CloneCache.Add(scommon.ST_CcntmRACT, ccntmractAddress[:], ccntmractState)
+	stateValues, err := s.CloneCache.Store.Find(scommon.ST_CcntmRACT, ccntmractAddress[:]); if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractMigrate] Find error!")
 	}
 	for _, v := range stateValues {
@@ -173,7 +173,7 @@ func (s *StateMachine) CcntmractMigrate(engine *vm.ExecutionEngine) (bool, error
 		if _, err := key.Serialize(b); err != nil {
 			return false, errors.NewErr("[CcntmractMigrate] Key Serialize error!")
 		}
-		s.CloneCache.Add(scommon.ST_Storage, key.ToArray(), v.Value)
+		s.CloneCache.Add(scommon.ST_STORAGE, key.ToArray(), v.Value)
 	}
 	vm.PushData(engine, ccntmractState)
 	return s.CcntmractDestory(engine)
@@ -186,24 +186,24 @@ func (s *StateMachine) CcntmractDestory(engine *vm.ExecutionEngine) (bool, error
 	hash, err := ccntmext.GetCodeHash(); if err != nil {
 		return false, nil
 	}
-	item, err := s.CloneCache.Store.TryGet(scommon.ST_Ccntmract, hash[:]); if err != nil {
+	item, err := s.CloneCache.Store.TryGet(scommon.ST_CcntmRACT, hash[:]); if err != nil {
 		return false, err
 	}
 	if item == nil {
 		return false, nil
 	}
-	s.CloneCache.Delete(scommon.ST_Ccntmract, hash[:])
-	stateValues, err := s.CloneCache.Store.Find(scommon.ST_Ccntmract, hash[:]); if err != nil {
+	s.CloneCache.Delete(scommon.ST_CcntmRACT, hash[:])
+	stateValues, err := s.CloneCache.Store.Find(scommon.ST_CcntmRACT, hash[:]); if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractDestory] Find error!")
 	}
 	for _, v := range stateValues {
-		s.CloneCache.Delete(scommon.ST_Storage, []byte(v.Key))
+		s.CloneCache.Delete(scommon.ST_STORAGE, []byte(v.Key))
 	}
 	return true, nil
 }
 
 func (s *StateMachine) CheckStorageCcntmext(ccntmext *StorageCcntmext) (bool, error) {
-	item, err := s.CloneCache.Get(scommon.ST_Ccntmract, ccntmext.codeHash[:])
+	item, err := s.CloneCache.Get(scommon.ST_CcntmRACT, ccntmext.codeHash[:])
 	if err != nil {
 		return false, err
 	}
@@ -229,7 +229,7 @@ func (s *StateMachine) StoragePut(engine *vm.ExecutionEngine) (bool, error) {
 	k, err := serializeStorageKey(ccntmext.codeHash, key); if err != nil {
 		return false, err
 	}
-	s.CloneCache.Add(scommon.ST_Storage, k, &states.StorageItem{Value: value})
+	s.CloneCache.Add(scommon.ST_STORAGE, k, &states.StorageItem{Value: value})
 	return true, nil
 }
 
@@ -246,7 +246,7 @@ func (s *StateMachine) StorageDelete(engine *vm.ExecutionEngine) (bool, error) {
 	k, err := serializeStorageKey(ccntmext.codeHash, key); if err != nil {
 		return false, err
 	}
-	s.CloneCache.Delete(scommon.ST_Storage, k)
+	s.CloneCache.Delete(scommon.ST_STORAGE, k)
 	return true, nil
 }
 
@@ -266,7 +266,7 @@ func (s *StateMachine) StorageGet(engine *vm.ExecutionEngine) (bool, error) {
 	k, err := serializeStorageKey(ccntmext.codeHash, key); if err != nil {
 		return false, err
 	}
-	item, err := s.CloneCache.Get(scommon.ST_Storage, k); if err != nil {
+	item, err := s.CloneCache.Get(scommon.ST_STORAGE, k); if err != nil {
 		return false, err
 	}
 	if item == nil {
@@ -287,7 +287,7 @@ func (s *StateMachine) GetStorageCcntmext(engine *vm.ExecutionEngine) (bool, err
 	}
 	ccntmractState := opInterface.(*payload.DeployCode)
 	codeHash := ccntmractState.Code.AddressFromVmCode()
-	item, err := s.CloneCache.Store.TryGet(scommon.ST_Ccntmract, codeHash[:])
+	item, err := s.CloneCache.Store.TryGet(scommon.ST_CcntmRACT, codeHash[:])
 	if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[GetStorageCcntmext] Get StorageCcntmext nil")
 	}
