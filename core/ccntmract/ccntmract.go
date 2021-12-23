@@ -22,7 +22,7 @@ import (
 	"bytes"
 	"io"
 
-	. "github.com/Ontology/common"
+	"github.com/Ontology/common"
 	"github.com/Ontology/common/serialization"
 	vm "github.com/Ontology/vm/neovm"
 )
@@ -40,10 +40,10 @@ type Ccntmract struct {
 	Parameters      []CcntmractParameterType
 
 	//The program hash as ccntmract address
-	ProgramHash Address
+	ProgramHash common.Address
 
 	//owner's pubkey hash indicate the owner of ccntmract
-	OwnerPubkeyHash Address
+	OwnerPubkeyHash common.Address
 }
 
 func (c *Ccntmract) IsStandard() bool {
@@ -79,7 +79,7 @@ func (c *Ccntmract) IsMultiSigCcntmract() bool {
 		break
 	case 2:
 		i++
-		m = BytesToInt16(c.Code[i:])
+		m = common.BytesToInt16(c.Code[i:])
 		i += 2
 		break
 	default:
@@ -113,7 +113,7 @@ func (c *Ccntmract) IsMultiSigCcntmract() bool {
 		break
 	case 2:
 		i++
-		if n != BytesToInt16(c.Code[i:]) {
+		if n != common.BytesToInt16(c.Code[i:]) {
 			return false
 		}
 		i += 2
