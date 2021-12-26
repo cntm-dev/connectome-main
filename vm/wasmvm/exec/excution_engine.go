@@ -22,9 +22,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"github.com/Ontology/common"
 	"github.com/Ontology/vm/neovm/interfaces"
 	"github.com/Ontology/vm/wasmvm/memory"
+	"github.com/Ontology/vm/wasmvm/util"
 	"github.com/Ontology/vm/wasmvm/validate"
 	"github.com/Ontology/vm/wasmvm/wasm"
 	"math"
@@ -35,13 +37,44 @@ import (
 const (
 	CcntmRACT_METHOD_NAME = "invoke"
 	PARAM_SPLITER        = "|"
+	VM_STACK_DEPTH       = 10
 )
+
+// backup vm while call other ccntmracts
+type vmstack struct {
+	top   int
+	stack []*VM
+}
+
+func (s *vmstack) push(vm *VM) error {
+	if s.top == len(s.stack) {
+		return errors.New(fmt.Sprintf("[vm stack push] stack is full, only support %d ccntmracts calls", VM_STACK_DEPTH))
+	}
+	s.stack[s.top+1] = vm
+	s.top += 1
+	return nil
+}
+
+func (s *vmstack) pop() (*VM, error) {
+	if s.top == 0 {
+		return nil, errors.New("[vm stack pop] stack is empty")
+	}
+
+	retvm := s.stack[s.top]
+	s.top -= 1
+	return retvm, nil
+}
+
+func newStack(depth int) *vmstack {
+	return &vmstack{top: 0, stack: make([]*VM, depth)}
+}
 
 //todo add parameters
 func NewExecutionEngine(iccntmainer interfaces.ICodeCcntmainer, icrypto interfaces.ICrypto, itable interfaces.ICodeTable, iservice IInteropService, ver string) *ExecutionEngine {
 
 	engine := &ExecutionEngine{
-		crypto: icrypto, table: itable,
+		crypto:        icrypto,
+		table:         itable,
 		codeCcntmainer: iccntmainer,
 		service:       NewInteropService(),
 		version:       ver,
@@ -49,6 +82,8 @@ func NewExecutionEngine(iccntmainer interfaces.ICodeCcntmainer, icrypto interfac
 	if iservice != nil {
 		engine.service.MergeMap(iservice.GetServiceMap())
 	}
+
+	engine.backupVM = newStack(VM_STACK_DEPTH)
 	return engine
 }
 
@@ -57,16 +92,42 @@ type ExecutionEngine struct {
 	table         interfaces.ICodeTable
 	service       *InteropService
 	codeCcntmainer interfaces.ICodeCcntmainer
-	//memory  		*memory.VMmemory
-	vm      *VM
-	version string //for test different ccntmracts
+	vm            *VM
+	//todo ,move to ccntmract info later
+	version  string //for test different ccntmracts
+	backupVM *vmstack
 }
 
 func (e *ExecutionEngine) GetVM() *VM {
 	return e.vm
 }
 
-//todo use this method just for test
+//for call other ccntmract,
+// 1.store current vm
+// 2.load new vm
+func (e *ExecutionEngine) SetNewVM(vm *VM) error {
+
+	err := e.backupVM.push(e.vm)
+	if err != nil {
+		return err
+	}
+	e.vm = vm
+	return nil
+}
+
+//for call other ccntmract,
+// 1.pop stored vm
+// 2.reset vm
+func (e *ExecutionEngine) RestoreVM() error {
+	backupVM, err := e.backupVM.pop()
+	if err != nil {
+		return err
+	}
+	e.vm = backupVM
+	return nil
+}
+
+//use this method just for test
 func (e *ExecutionEngine) CallInf(caller common.Address, code []byte, input []interface{}, message []interface{}) ([]byte, error) {
 	methodName := input[0].(string)
 
@@ -138,13 +199,6 @@ func (e *ExecutionEngine) CallInf(caller common.Address, code []byte, input []in
 					return nil, err
 				}
 				params[i] = uint64(offset)
-
-				/*				offset, err := vm.SetMemory(param)
-								if err != nil {
-									return nil, err
-								}
-								vm.GetMemory().MemPoints[uint64(offset)] = &memory.TypeLength{Ptype:memory.P_STRING,Length:len(param.(string))}
-								params[i] = uint64(offset)*/
 			case int:
 				params[i] = uint64(param.(int))
 			case int64:
@@ -226,13 +280,13 @@ func (e *ExecutionEngine) CallInf(caller common.Address, code []byte, input []in
 
 	switch ftype.ReturnTypes[0] {
 	case wasm.ValueTypeI32:
-		return Int32ToBytes(res.(uint32)), nil
+		return util.Int32ToBytes(res.(uint32)), nil
 	case wasm.ValueTypeI64:
-		return Int64ToBytes(res.(uint64)), nil
+		return util.Int64ToBytes(res.(uint64)), nil
 	case wasm.ValueTypeF32:
-		return Float32ToBytes(res.(float32)), nil
+		return util.Float32ToBytes(res.(float32)), nil
 	case wasm.ValueTypeF64:
-		return Float64ToBytes(res.(float64)), nil
+		return util.Float64ToBytes(res.(float64)), nil
 	default:
 		return nil, errors.New("the return type is not supported")
 	}
@@ -243,10 +297,6 @@ func (e *ExecutionEngine) CallInf(caller common.Address, code []byte, input []in
 func (e *ExecutionEngine) GetMemory() *memory.VMmemory {
 	return e.vm.memory
 }
-
-//func (e *ExecutionEngine)GetMemStruct() *memory.VMmemory{
-//	return e.memory
-//}
 
 func (e *ExecutionEngine) Create(caller common.Address, code []byte) ([]byte, error) {
 	return code, nil
@@ -259,7 +309,7 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 	defer func() {
 		if err := recover(); err != nil {
 			returnbytes = nil
-			er = errors.New("error happend")
+			er = errors.New("[Call]error happend")
 		}
 	}()
 
@@ -269,7 +319,7 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 
 		tmparr := bytes.Split(input, []byte(PARAM_SPLITER))
 		if len(tmparr) != 2 {
-			return nil, errors.New("input format is not right!")
+			return nil, errors.New("[Call]input format is not right!")
 		}
 
 		//1. read code
@@ -278,7 +328,7 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 		//2. read module
 		m, err := wasm.ReadModule(bf, importer)
 		if err != nil {
-			return nil, errors.New("Verify wasm failed!" + err.Error())
+			return nil, errors.New("[Call]Verify wasm failed!" + err.Error())
 		}
 
 		//3. verify the module
@@ -287,7 +337,7 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 		//4. check the export
 		//every wasm should have at least 1 export
 		if m.Export == nil {
-			return nil, errors.New("No export in wasm!")
+			return nil, errors.New("[Call]No export in wasm!")
 		}
 
 		vm, err := NewVM(m)
@@ -299,15 +349,15 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 		}
 		e.vm = vm
 		vm.Engine = e
-		//todo add message from input
-		//vm.SetMessage(message)
+		//no message support for now
+		// vm.SetMessage(message)
 
 		vm.Caller = caller
 		vm.CodeHash = common.ToCodeHash(code)
 
 		entry, ok := m.Export.Entries[methodName]
 		if ok == false {
-			return nil, errors.New("Method:" + methodName + " does not exist!")
+			return nil, errors.New("[Call]Method:" + methodName + " does not exist!")
 		}
 		//get entry index
 		index := int64(entry.Index)
@@ -318,6 +368,7 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 		//get  function type
 		ftype := m.Types.Entries[int(fidx)]
 
+		//method ,param bytes
 		params := make([]uint64, 2)
 
 		actionName := string(tmparr[0])
@@ -339,7 +390,7 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 
 		res, err := vm.ExecCode(false, index, params...)
 		if err != nil {
-			return nil, errors.New("ExecCode error!" + err.Error())
+			return nil, errors.New("[Call]ExecCode error!" + err.Error())
 		}
 
 		if len(ftype.ReturnTypes) == 0 {
@@ -348,15 +399,15 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 
 		switch ftype.ReturnTypes[0] {
 		case wasm.ValueTypeI32:
-			return Int32ToBytes(res.(uint32)), nil
+			return util.Int32ToBytes(res.(uint32)), nil
 		case wasm.ValueTypeI64:
-			return Int64ToBytes(res.(uint64)), nil
+			return util.Int64ToBytes(res.(uint64)), nil
 		case wasm.ValueTypeF32:
-			return Float32ToBytes(res.(float32)), nil
+			return util.Float32ToBytes(res.(float32)), nil
 		case wasm.ValueTypeF64:
-			return Float64ToBytes(res.(float64)), nil
+			return util.Float64ToBytes(res.(float64)), nil
 		default:
-			return nil, errors.New("the return type is not supported")
+			return nil, errors.New("[Call]the return type is not supported")
 		}
 
 	} else {
@@ -372,7 +423,7 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 		//2. read module
 		m, err := wasm.ReadModule(bf, importer)
 		if err != nil {
-			return nil, errors.New("Verify wasm failed!" + err.Error())
+			return nil, errors.New("[Call]Verify wasm failed!" + err.Error())
 		}
 
 		//3. verify the module
@@ -381,7 +432,7 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 		//4. check the export
 		//every wasm should have at least 1 export
 		if m.Export == nil {
-			return nil, errors.New("No export in wasm!")
+			return nil, errors.New("[Call]No export in wasm!")
 		}
 
 		vm, err := NewVM(m)
@@ -397,7 +448,7 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 		//vm.SetMessage(message)
 		entry, ok := m.Export.Entries[methodName]
 		if ok == false {
-			return nil, errors.New("Method:" + methodName + " does not exist!")
+			return nil, errors.New("[Call]Method:" + methodName + " does not exist!")
 		}
 		//get entry index
 		index := int64(entry.Index)
@@ -416,12 +467,12 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 		}
 
 		if len(params) != len(ftype.ParamTypes) {
-			return nil, errors.New("Parameters count is not right")
+			return nil, errors.New("[Call]Parameters count is not right")
 		}
 
 		res, err := vm.ExecCode(false, index, params...)
 		if err != nil {
-			return nil, errors.New("ExecCode error!" + err.Error())
+			return nil, errors.New("[Call]ExecCode error!" + err.Error())
 		}
 
 		if len(ftype.ReturnTypes) == 0 {
@@ -430,15 +481,15 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 
 		switch ftype.ReturnTypes[0] {
 		case wasm.ValueTypeI32:
-			return Int32ToBytes(res.(uint32)), nil
+			return util.Int32ToBytes(res.(uint32)), nil
 		case wasm.ValueTypeI64:
-			return Int64ToBytes(res.(uint64)), nil
+			return util.Int64ToBytes(res.(uint64)), nil
 		case wasm.ValueTypeF32:
-			return Float32ToBytes(res.(float32)), nil
+			return util.Float32ToBytes(res.(float32)), nil
 		case wasm.ValueTypeF64:
-			return Float64ToBytes(res.(float64)), nil
+			return util.Float64ToBytes(res.(float64)), nil
 		default:
-			return nil, errors.New("the return type is not supported")
+			return nil, errors.New("[Call]the return type is not supported")
 		}
 
 	}
@@ -474,20 +525,19 @@ func importer(name string) (*wasm.Module, error) {
 func getCallMethodName(input []byte) (string, error) {
 
 	if len(input) <= 1 {
-		return "", errors.New("input format error!")
+		return "", errors.New("[Call]input format error!")
 	}
 
 	length := int(input[0])
 
 	if length > len(input[1:]) {
-		return "", errors.New("input method name length error!")
+		return "", errors.New("[Call]input method name length error!")
 	}
 
 	return string(input[1 : length+1]), nil
 }
 
 func getParams(input []byte) ([]uint64, error) {
-	//log.Error(fmt.Sprintf("in getParams: input is %v\n",input))
 
 	nameLength := int(input[0])
 
@@ -504,7 +554,7 @@ func getParams(input []byte) ([]uint64, error) {
 		pl := int(paramlengthSlice[i])
 
 		if (i+1)*pl > len(paramSlice) {
-			return nil, errors.New("get param failed!")
+			return nil, errors.New("[Call]get param failed!")
 		}
 		param := paramSlice[i*pl : (i+1)*pl]
 
@@ -516,33 +566,5 @@ func getParams(input []byte) ([]uint64, error) {
 			res[i] = binary.LittleEndian.Uint64(param)
 		}
 	}
-	//log.Error(res)
 	return res, nil
-
-}
-
-func Int32ToBytes(i32 uint32) []byte {
-	bytesBuffer := bytes.NewBuffer([]byte{})
-	binary.Write(bytesBuffer, binary.LittleEndian, i32)
-	return bytesBuffer.Bytes()
-}
-
-func Int64ToBytes(i64 uint64) []byte {
-	bytesBuffer := bytes.NewBuffer([]byte{})
-	binary.Write(bytesBuffer, binary.LittleEndian, i64)
-	return bytesBuffer.Bytes()
-}
-func Float32ToBytes(float float32) []byte {
-	bits := math.Float32bits(float)
-	bytes := make([]byte, 4)
-	binary.LittleEndian.PutUint32(bytes, bits)
-
-	return bytes
-}
-
-func Float64ToBytes(float float64) []byte {
-	bits := math.Float64bits(float)
-	bytes := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bytes, bits)
-	return bytes
 }

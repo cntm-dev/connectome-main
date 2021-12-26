@@ -23,11 +23,8 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"github.com/Ontology/common"
-	"github.com/Ontology/core/ledger"
-	"github.com/Ontology/vm/types"
 	"github.com/Ontology/vm/wasmvm/memory"
-	"github.com/Ontology/vm/wasmvm/wasm"
+	"github.com/Ontology/vm/wasmvm/util"
 	"strconv"
 	"strings"
 )
@@ -65,7 +62,8 @@ func NewInteropService() *InteropService {
 	service.Register("arrayLen", arrayLen)
 	service.Register("memcpy", memcpy)
 	service.Register("read_message", readMessage)
-	service.Register("callCcntmract", callCcntmract)
+	//todo move this to wasmstatemachine
+	//service.Register("callCcntmract", callCcntmract)
 	service.Register("ReadInt32Param", readInt32Param)
 	service.Register("ReadInt64Param", readInt64Param)
 	service.Register("ReadStringParam", readStringParam)
@@ -114,7 +112,7 @@ func (i *InteropService) GetServiceMap() map[string]func(*ExecutionEngine) (bool
 }
 
 //******************* basic functions ***************************
-//TODO deside to replace the PUNKNOW type
+//TODO decide to replace the P_UNKNOW type
 
 //for the c language "calloc" function
 func calloc(engine *ExecutionEngine) (bool, error) {
@@ -259,51 +257,6 @@ func readMessage(engine *ExecutionEngine) (bool, error) {
 	engine.vm.ctx = envCall.envPreCtx
 	if envCall.envReturns {
 		engine.vm.pushUint64(uint64(length))
-	}
-
-	return true, nil
-}
-
-//call other ccntmract
-func callCcntmract(engine *ExecutionEngine) (bool, error) {
-	envCall := engine.vm.envCall
-	params := envCall.envParams
-	if len(params) < 2 {
-		return false, errors.New("parameter count error while call readMessage")
-	}
-	ccntmractAddressIdx := params[0]
-	addr, err := engine.vm.GetPointerMemory(ccntmractAddressIdx)
-	if err != nil {
-		return false, errors.New("get Ccntmract address failed")
-	}
-	//the ccntmract codes
-	ccntmractBytes, err := getCcntmractFromAddr(addr)
-	if err != nil {
-		return false, err
-	}
-	bf := bytes.NewBuffer(ccntmractBytes)
-	module, err := wasm.ReadModule(bf, emptyImporter)
-	if err != nil {
-		return false, errors.New("load Module failed")
-	}
-
-	methodName, err := engine.vm.GetPointerMemory(params[1])
-	if err != nil {
-		return false, errors.New("get Ccntmract address failed")
-	}
-	//if has args
-	var args []uint64
-	if len(params) > 2 {
-		args = params[2:]
-	}
-
-	res, err := engine.vm.CallCcntmract(module, trimBuffToString(methodName), args...)
-	if err != nil {
-		return false, errors.New("call ccntmract " + trimBuffToString(methodName) + " failed")
-	}
-	//engine.vm.RestoreStat()
-	if envCall.envReturns {
-		engine.vm.pushUint64(res)
 	}
 
 	return true, nil
@@ -582,7 +535,7 @@ func jsonMashal(engine *ExecutionEngine) (bool, error) {
 
 	ret := &Result{}
 
-	pstype := strings.ToLower(trimBuffToString(tpstr))
+	pstype := strings.ToLower(util.TrimBuffToString(tpstr))
 	ret.Ptype = pstype
 	switch pstype {
 	case "int":
@@ -668,7 +621,7 @@ func stringcmp(engine *ExecutionEngine) (bool, error) {
 			return false, err
 		}
 
-		if trimBuffToString(bytes1) == trimBuffToString(bytes2) {
+		if util.TrimBuffToString(bytes1) == util.TrimBuffToString(bytes2) {
 			ret = 0
 		} else {
 			ret = 1
@@ -685,7 +638,7 @@ func GetCaller(engine *ExecutionEngine) (bool, error) {
 	envCall := engine.vm.envCall
 
 	caller := engine.vm.Caller
-	idx, err := engine.vm.SetPointerMemory(caller.ToArray())
+	idx, err := engine.vm.SetPointerMemory(caller.ToHexString())
 	if err != nil {
 		return false, err
 	}
@@ -700,7 +653,7 @@ func GetCodeHash(engine *ExecutionEngine) (bool, error) {
 	envCall := engine.vm.envCall
 
 	codeHash := engine.vm.CodeHash
-	idx, err := engine.vm.SetPointerMemory(codeHash.ToArray())
+	idx, err := engine.vm.SetPointerMemory(codeHash.ToHexString())
 	if err != nil {
 		return false, err
 	}
@@ -709,50 +662,4 @@ func GetCodeHash(engine *ExecutionEngine) (bool, error) {
 		engine.vm.pushUint64(uint64(idx))
 	}
 	return true, nil
-}
-
-func emptyImporter(name string) (*wasm.Module, error) {
-	return nil, nil
-}
-
-func getCcntmractFromAddr(addr []byte) ([]byte, error) {
-
-	//todo get the ccntmract code from ledger
-	//just for test
-	/*		ccntmract := trimBuffToString(addr)
-			code, err := ioutil.ReadFile(fmt.Sprintf("./testdata2/%s.wasm",ccntmract))
-			if err != nil {
-				fmt.Printf("./testdata2/%s.wasm is not exist",ccntmract)
-				return nil,err
-			}
-
-			return code,nil*/
-	codeHash, err := common.Uint160ParseFromBytes(addr)
-	if err != nil {
-		return nil, errors.New("get address Code hash failed")
-	}
-
-	ccntmract, err := ledger.DefLedger.GetCcntmractState(codeHash)
-	if err != nil {
-		return nil, errors.New("get ccntmract state failed")
-	}
-
-	if ccntmract.VmType != types.WASMVM {
-		return nil, errors.New(" ccntmract is not a wasm ccntmract")
-	}
-
-	return ccntmract.Code, nil
-
-}
-
-//trim the '\00' byte
-func trimBuffToString(bytes []byte) string {
-
-	for i, b := range bytes {
-		if b == 0 {
-			return string(bytes[:i])
-		}
-	}
-	return string(bytes)
-
 }

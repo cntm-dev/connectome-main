@@ -123,10 +123,13 @@ func (vm *VM) GetPointerMemory(addr uint64) ([]byte, error) {
 	return vm.memory.GetPointerMemory(addr)
 }
 
+//alloc memory for any pointer type
 func (vm *VM) SetPointerMemory(val interface{}) (int, error) {
 	return vm.memory.SetPointerMemory(val)
 }
 
+//alloc memory for struct
+//todo move to the SetPointerMemory
 func (vm *VM) SetStructMemory(val interface{}) (int, error) {
 	return vm.memory.SetStructMemory(val)
 
@@ -144,6 +147,7 @@ func (vm *VM) RestoreCtx() bool {
 	return true
 }
 
+//support EOS like message
 func (vm *VM) SetMessage(message []interface{}) {
 	if message != nil {
 		if vm.envCall == nil {
@@ -185,6 +189,7 @@ func (vm *VM) GetMessageBytes() ([]byte, error) {
 
 		default:
 			//todo need support array types???
+			return nil, errors.New("[GetMessageBytes] unsupported type")
 
 		}
 	}
@@ -440,8 +445,61 @@ outer:
 	return 0
 }
 
-//todo implement the "call other ccntmract function"
 //start a new vm
+func (vm *VM) CallProductCcntmract(module *wasm.Module, actionName []byte, arg []byte) (uint64, error) {
+
+	methodName := CcntmRACT_METHOD_NAME
+
+	//1. exec the method code
+	entry, ok := module.Export.Entries[methodName]
+	if ok == false {
+		return uint64(0), errors.New("Method:" + methodName + " does not exist!")
+	}
+
+	//get entry index
+	index := int64(entry.Index)
+
+	//new vm
+	newvm, err := NewVM(module)
+	if err != nil {
+		return uint64(0), err
+	}
+	newvm.Services = vm.Services
+
+	engine := vm.Engine
+	newvm.Engine = engine
+
+	engine.SetNewVM(newvm)
+
+	actionIdx, err := newvm.SetPointerMemory(actionName)
+	if err != nil {
+		return uint64(0), err
+	}
+	argIdx, err := newvm.SetPointerMemory(arg)
+	if err != nil {
+		return uint64(0), err
+	}
+
+	res, err := newvm.ExecCode(true, int64(index), uint64(actionIdx), uint64(argIdx))
+	if err != nil {
+		return uint64(0), err
+	}
+	resBytes, err := newvm.GetPointerMemory(res.(uint64))
+	if err != nil {
+		return uint64(0), err
+	}
+	//copy memory if need!!!
+	engine.RestoreVM()
+	idx, err := vm.SetPointerMemory(resBytes)
+	if err != nil {
+		return uint64(0), err
+	}
+
+	return uint64(idx), nil
+}
+
+//todo implement the "call other ccntmract function"
+//this is for the "test" version call
 func (vm *VM) CallCcntmract(module *wasm.Module, methodName string, args ...uint64) (uint64, error) {
 
 	//1. exec the method code

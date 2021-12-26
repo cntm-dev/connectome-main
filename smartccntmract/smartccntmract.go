@@ -28,7 +28,12 @@ import (
 	"github.com/Ontology/vm/neovm"
 	"github.com/Ontology/smartccntmract/ccntmext"
 	"github.com/Ontology/smartccntmract/event"
+
 	"github.com/Ontology/common"
+	"github.com/Ontology/smartccntmract/service/wasm"
+	"github.com/Ontology/vm/wasmvm/exec"
+	"github.com/Ontology/vm/wasmvm/util"
+
 )
 
 type SmartCcntmract struct {
@@ -50,6 +55,7 @@ type Config struct {
 type Engine interface {
 	StepInto()
 }
+
 
 //put current ccntmext to smart ccntmract
 func(sc *SmartCcntmract) PushCcntmext(ccntmext *ccntmext.Ccntmext) {
@@ -112,6 +118,17 @@ func (sc *SmartCcntmract) Execute() error {
 		stateMachine.CloneCache.Commit()
 		sc.Notifications = append(sc.Notifications, stateMachine.Notifications...)
 	case vmtypes.WASMVM:
+		stateMachine:= wasm.NewWasmStateMachine(sc.Config.Store, sc.Config.DBCache, stypes.Application,sc.Config.Time)
+		engine := exec.NewExecutionEngine(
+			sc.Config.Tx,
+			new(util.ECDsaCrypto),
+			sc.Config.Table,
+			stateMachine,
+			"product",
+		)
+		//todo how to get the input
+		//engine.Call(ctx.CcntmractAddress,ctx.Code.Code,input)
+		sc.Notifications = append(sc.Notifications, stateMachine.Notifications...)
 	}
 	return nil
 }
