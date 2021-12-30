@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2018 The cntmology Authors
+ * This file is part of The cntmology library.
+ *
+ * The cntmology is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The cntmology is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package exec
 
 import (
@@ -14,7 +32,7 @@ import (
 func TestCcntmract1(t *testing.T){
 	engine := NewExecutionEngine(nil,nil,nil,nil,"product")
 	//test
-	code, err := ioutil.ReadFile("./testdata2/ccntmract.wasm")
+	code, err := ioutil.ReadFile("./test_data2/ccntmract.wasm")
 	if err != nil {
 		fmt.Println("error in read file", err.Error())
 		return
@@ -71,7 +89,7 @@ func TestCcntmract1(t *testing.T){
 func TestCcntmract2(t *testing.T){
 	engine := NewExecutionEngine(nil,nil,nil,nil,"product")
 	//test
-	code, err := ioutil.ReadFile("./testdata2/ccntmract.wasm")
+	code, err := ioutil.ReadFile("./test_data2/ccntmract.wasm")
 	if err != nil {
 		fmt.Println("error in read file", err.Error())
 		return
@@ -127,7 +145,7 @@ func TestCcntmract2(t *testing.T){
 func TestCcntmract3(t *testing.T){
 	engine := NewExecutionEngine(nil,nil,nil,nil,"product")
 	//test
-	code, err := ioutil.ReadFile("./testdata2/ccntmract.wasm")
+	code, err := ioutil.ReadFile("./test_data2/ccntmract.wasm")
 	if err != nil {
 		fmt.Println("error in read file", err.Error())
 		return
@@ -177,7 +195,7 @@ func TestCcntmract3(t *testing.T){
 func TestCcntmract4(t *testing.T){
 	engine := NewExecutionEngine(nil,nil,nil,nil,"product")
 	//test
-	code, err := ioutil.ReadFile("./testdata2/ccntmract.wasm")
+	code, err := ioutil.ReadFile("./test_data2/ccntmract.wasm")
 	if err != nil {
 		fmt.Println("error in read file", err.Error())
 		return
@@ -227,7 +245,7 @@ func TestCcntmract4(t *testing.T){
 func TestRawCcntmract(t *testing.T){
 	engine := NewExecutionEngine(nil,nil,nil,nil,"product")
 	//test
-	code, err := ioutil.ReadFile("./testdata2/rawccntmract.wasm")
+	code, err := ioutil.ReadFile("./test_data2/rawccntmract.wasm")
 	if err != nil {
 		fmt.Println("error in read file", err.Error())
 		return
@@ -268,7 +286,7 @@ func TestRawCcntmract(t *testing.T){
 func TestRawCcntmract2(t *testing.T){
 	engine := NewExecutionEngine(nil,nil,nil,nil,"product")
 	//test
-	code, err := ioutil.ReadFile("./testdata2/rawccntmract.wasm")
+	code, err := ioutil.ReadFile("./test_data2/rawccntmract.wasm")
 	if err != nil {
 		fmt.Println("error in read file", err.Error())
 		return
@@ -314,7 +332,7 @@ func TestRawCcntmract2(t *testing.T){
 func TestRawCcntmract3(t *testing.T){
 	engine := NewExecutionEngine(nil,nil,nil,nil,"product")
 	//test
-	code, err := ioutil.ReadFile("./testdata2/rawccntmract2.wasm")
+	code, err := ioutil.ReadFile("./test_data2/rawccntmract2.wasm")
 	if err != nil {
 		fmt.Println("error in read file", err.Error())
 		return
@@ -361,7 +379,7 @@ func TestRawCcntmract3(t *testing.T){
 func TestRawCcntmract4(t *testing.T){
 	engine := NewExecutionEngine(nil,nil,nil,nil,"product")
 	//test
-	code, err := ioutil.ReadFile("./testdata2/rawccntmract2.wasm")
+	code, err := ioutil.ReadFile("./test_data2/rawccntmract2.wasm")
 	if err != nil {
 		fmt.Println("error in read file", err.Error())
 		return
@@ -405,7 +423,7 @@ func TestRawCcntmract4(t *testing.T){
 func TestCallCcntmract(t *testing.T){
 	engine := NewExecutionEngine(nil,nil,nil,nil,"product")
 	//test
-	code, err := ioutil.ReadFile("./testdata2/callccntmract.wasm")
+	code, err := ioutil.ReadFile("./test_data2/callccntmract.wasm")
 	if err != nil {
 		fmt.Println("error in read file", err.Error())
 		return
