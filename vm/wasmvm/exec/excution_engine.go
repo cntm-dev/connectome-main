@@ -70,17 +70,17 @@ func newStack(depth int) *vmstack {
 }
 
 //todo add parameters
-func NewExecutionEngine(iccntmainer interfaces.ICodeCcntmainer, icrypto interfaces.ICrypto, itable interfaces.ICodeTable, iservice InteropServiceInterface, ver string) *ExecutionEngine {
+func NewExecutionEngine(ccntmainer interfaces.CodeCcntmainer, crypto interfaces.Crypto, table interfaces.CodeTable, service InteropServiceInterface, ver string) *ExecutionEngine {
 
 	engine := &ExecutionEngine{
-		crypto:        icrypto,
-		table:         itable,
-		codeCcntmainer: iccntmainer,
+		crypto:        crypto,
+		table:         table,
+		codeCcntmainer: ccntmainer,
 		service:       NewInteropService(),
 		version:       ver,
 	}
-	if iservice != nil {
-		engine.service.MergeMap(iservice.GetServiceMap())
+	if service != nil {
+		engine.service.MergeMap(service.GetServiceMap())
 	}
 
 	engine.backupVM = newStack(VM_STACK_DEPTH)
@@ -88,10 +88,10 @@ func NewExecutionEngine(iccntmainer interfaces.ICodeCcntmainer, icrypto interfac
 }
 
 type ExecutionEngine struct {
-	crypto        interfaces.ICrypto
-	table         interfaces.ICodeTable
+	crypto        interfaces.Crypto
+	table         interfaces.CodeTable
 	service       *InteropService
-	codeCcntmainer interfaces.ICodeCcntmainer
+	codeCcntmainer interfaces.CodeCcntmainer
 	vm            *VM
 	//todo ,move to ccntmract info later
 	version  string //for test different ccntmracts

@@ -152,12 +152,11 @@ func (n *node) initConnection() {
 		n.link.connCnt++
 
 		node := NewNode()
-		node.addr, err = parseIPaddr(conn.RemoteAddr().String())
+		node.addr, err = parseIPAddr(conn.RemoteAddr().String())
 		node.local = n
 		node.conn = conn
 		go node.rx()
 	}
-	//TODO Release the net listen resouce
 }
 
 func initNonTlsListen() (net.Listener, error) {
@@ -207,7 +206,7 @@ func initTlsListen() (net.Listener, error) {
 	return listener, nil
 }
 
-func parseIPaddr(s string) (string, error) {
+func parseIPAddr(s string) (string, error) {
 	i := strings.Index(s, ":")
 	if i < 0 {
 		log.Warn("Split IP address&port error")

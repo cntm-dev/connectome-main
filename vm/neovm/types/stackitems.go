@@ -23,13 +23,13 @@ import (
 	"github.com/Ontology/vm/neovm/interfaces"
 )
 
-type StackItemInterface interface {
-	Equals(other StackItemInterface) bool
+type StackItems interface {
+	Equals(other StackItems) bool
 	GetBigInteger() *big.Int
 	GetBoolean() bool
 	GetByteArray() []byte
-	GetInterface() interfaces.IInteropInterface
-	GetArray() []StackItemInterface
-	GetStruct() []StackItemInterface
+	GetInterface() interfaces.Interop
+	GetArray() []StackItems
+	GetStruct() []StackItems
 }
 

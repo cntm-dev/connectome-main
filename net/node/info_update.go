@@ -98,9 +98,9 @@ func (node *node) HeartBeatMonitor() {
 	noders := node.local.GetNeighborNoder()
 	var periodUpdateTime uint
 	if config.Parameters.GenBlockTime > config.MIN_GEN_BLOCK_TIME {
-		periodUpdateTime = config.Parameters.GenBlockTime / TIMES_OF_UPDATE_TIME
+		periodUpdateTime = config.Parameters.GenBlockTime / UPDATE_RATE_PER_BLOCK
 	} else {
-		periodUpdateTime = config.DEFAULT_GEN_BLOCK_TIME / TIMES_OF_UPDATE_TIME
+		periodUpdateTime = config.DEFAULT_GEN_BLOCK_TIME / UPDATE_RATE_PER_BLOCK
 	}
 	for _, n := range noders {
 		if n.GetState() == ESTABLISH {
@@ -132,8 +132,8 @@ func (node *node) ConnectSeeds() {
 		for _, tn := range node.nbrNodes.List {
 			addr := getNodeAddr(tn)
 			ip = addr.IpAddr[:]
-			addrstring := ip.To16().String() + ":" + strconv.Itoa(int(addr.Port))
-			if nodeAddr == addrstring {
+			addrString := ip.To16().String() + ":" + strconv.Itoa(int(addr.Port))
+			if nodeAddr == addrString {
 				n = tn
 				found = true
 				break
@@ -144,7 +144,7 @@ func (node *node) ConnectSeeds() {
 			if n.GetState() == ESTABLISH {
 				n.ReqNeighborList()
 			}
-		} else { //not found
+		} else {
 			go node.Connect(nodeAddr)
 		}
 	}
@@ -180,16 +180,16 @@ func (node *node) reconnect() {
 }
 
 func (n *node) TryConnect() {
-	if n.fetchRetryNodeFromNeiborList() > 0 {
+	if n.fetchRetryNodeFromNeighborList() > 0 {
 		n.reconnect()
 	}
 }
 
-func (n *node) fetchRetryNodeFromNeiborList() int {
+func (n *node) fetchRetryNodeFromNeighborList() int {
 	n.nbrNodes.Lock()
 	defer n.nbrNodes.Unlock()
 	var ip net.IP
-	neibornodes := make(map[uint64]*node)
+	neighborNodes := make(map[uint64]*node)
 	for _, tn := range n.nbrNodes.List {
 		addr := getNodeAddr(tn)
 		ip = addr.IpAddr[:]
@@ -204,22 +204,19 @@ func (n *node) fetchRetryNodeFromNeiborList() int {
 		} else {
 			//add others to tmp node map
 			n.RemoveFromRetryList(nodeAddr)
-			neibornodes[tn.GetID()] = tn
+			neighborNodes[tn.GetID()] = tn
 		}
 	}
-	n.nbrNodes.List = neibornodes
+	n.nbrNodes.List = neighborNodes
 	return len(n.RetryAddrs)
 }
 
-// FIXME part of node info update function could be a node method itself intead of
-// a node map method
-// Fixme the Nodes should be a parameter
 func (node *node) updateNodeInfo() {
 	var periodUpdateTime uint
 	if config.Parameters.GenBlockTime > config.MIN_GEN_BLOCK_TIME {
-		periodUpdateTime = config.Parameters.GenBlockTime / TIMES_OF_UPDATE_TIME
+		periodUpdateTime = config.Parameters.GenBlockTime / UPDATE_RATE_PER_BLOCK
 	} else {
-		periodUpdateTime = config.DEFAULT_GEN_BLOCK_TIME / TIMES_OF_UPDATE_TIME
+		periodUpdateTime = config.DEFAULT_GEN_BLOCK_TIME / UPDATE_RATE_PER_BLOCK
 	}
 	ticker := time.NewTicker(time.Second * (time.Duration(periodUpdateTime)))
 	quit := make(chan struct{})
@@ -235,7 +232,6 @@ func (node *node) updateNodeInfo() {
 			return
 		}
 	}
-	// TODO when to close the timer
 }
 
 func (node *node) updateConnection() {
@@ -249,5 +245,4 @@ func (node *node) updateConnection() {
 			t.Reset(time.Second * CONN_MONITOR)
 		}
 	}
-
 }

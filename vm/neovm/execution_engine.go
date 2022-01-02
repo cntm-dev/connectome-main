@@ -19,14 +19,12 @@ package neovm
 import (
 	"github.com/Ontology/vm/neovm/interfaces"
 	"io"
-	_ "math/big"
-	_ "sort"
-	. "github.com/Ontology/vm/neovm/errors"
 	"github.com/Ontology/common"
 	"github.com/Ontology/common/log"
+	"github.com/Ontology/vm/neovm/errors"
 )
 
-func NewExecutionEngine(ccntmainer interfaces.ICodeCcntmainer, crypto interfaces.ICrypto, table interfaces.ICodeTable, service IInteropService) *ExecutionEngine {
+func NewExecutionEngine(ccntmainer interfaces.CodeCcntmainer, crypto interfaces.Crypto, table interfaces.CodeTable, service InteropServices) *ExecutionEngine {
 	var engine ExecutionEngine
 
 	engine.crypto = crypto
@@ -52,11 +50,11 @@ func NewExecutionEngine(ccntmainer interfaces.ICodeCcntmainer, crypto interfaces
 }
 
 type ExecutionEngine struct {
-	crypto          interfaces.ICrypto
-	table           interfaces.ICodeTable
+	crypto          interfaces.Crypto
+	table           interfaces.CodeTable
 	service         *InteropService
 
-	codeCcntmainer   interfaces.ICodeCcntmainer
+	codeCcntmainer   interfaces.CodeCcntmainer
 	invocationStack *RandomAccessStack
 	opCount         int
 
@@ -85,7 +83,7 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) ([]byt
 	return nil, nil
 }
 
-func (e *ExecutionEngine) GetCodeCcntmainer() interfaces.ICodeCcntmainer {
+func (e *ExecutionEngine) GetCodeCcntmainer() interfaces.CodeCcntmainer {
 	return e.codeCcntmainer
 }
 
@@ -111,11 +109,11 @@ func (e *ExecutionEngine) GetExecuteResult() bool {
 func (e *ExecutionEngine) CurrentCcntmext() (*ExecutionCcntmext, error) {
 	if e.invocationStack.Count() < 1 {
 		log.Error("[CurrentCcntmext], Get current ccntmext fail!")
-		return nil, ErrOverStackLen
+		return nil, errors.ERR_OVER_STACK_LEN
 	}
 	ccntmext := e.invocationStack.Peek(0).GetExecutionCcntmext()
 	if ccntmext == nil {
-		return nil, ErrCurrentCcntmextNil
+		return nil, errors.ERR_CURRENT_CcntmEXT_NIL
 	}
 	return ccntmext, nil
 }
@@ -123,11 +121,11 @@ func (e *ExecutionEngine) CurrentCcntmext() (*ExecutionCcntmext, error) {
 func (e *ExecutionEngine) CallingCcntmext() (*ExecutionCcntmext, error) {
 	if e.invocationStack.Count() < 2 {
 		log.Error("[CallingCcntmext], Get calling ccntmext fail!")
-		return nil, ErrOverStackLen
+		return nil, errors.ERR_OVER_STACK_LEN
 	}
 	ccntmext := e.invocationStack.Peek(1).GetExecutionCcntmext()
 	if ccntmext == nil {
-		return nil, ErrCallingCcntmextNil
+		return nil, errors.ERR_CALLING_CcntmEXT_NIL
 	}
 	return ccntmext, nil
 }
@@ -135,11 +133,11 @@ func (e *ExecutionEngine) CallingCcntmext() (*ExecutionCcntmext, error) {
 func (e *ExecutionEngine) EntryCcntmext() (*ExecutionCcntmext, error) {
 	if e.invocationStack.Count() < 1 {
 		log.Error("[EntryCcntmext], Get entry ccntmext fail!")
-		return nil, ErrOverStackLen
+		return nil, errors.ERR_OVER_STACK_LEN
 	}
 	ccntmext := e.invocationStack.Peek(e.invocationStack.Count() - 1).GetExecutionCcntmext()
 	if ccntmext == nil {
-		return nil, ErrEntryCcntmextNil
+		return nil, errors.ERR_ENTRY_CcntmEXT_NIL
 	}
 	return ccntmext, nil
 }
@@ -186,7 +184,7 @@ func (e *ExecutionEngine) StepInto() error {
 	e.opCode = opCode
 	e.ccntmext = ccntmext
 	if !e.checkStackSize() {
-		return ErrOverLimitStack
+		return errors.ERR_OVER_LIMIT_STACK
 	}
 	state, err := e.ExecuteOp()
 
@@ -205,7 +203,7 @@ func (e *ExecutionEngine) StepInto() error {
 
 func (e *ExecutionEngine) ExecuteOp() (VMState, error) {
 	if e.opCode > PUSH16 && e.opCode != RET && e.ccntmext.PushOnly {
-		return FAULT, ErrBadValue
+		return FAULT, errors.ERR_BAD_VALUE
 	}
 
 	if e.opCode >= PUSHBYTES1 && e.opCode <= PUSHBYTES75 {
@@ -215,7 +213,7 @@ func (e *ExecutionEngine) ExecuteOp() (VMState, error) {
 
 	opExec := OpExecList[e.opCode]
 	if opExec.Exec == nil {
-		return FAULT, ErrNotSupportOpCode
+		return FAULT, errors.ERR_NOT_SUPPORT_OPCODE
 	}
 
 	if opExec.Validator != nil {

@@ -129,7 +129,6 @@ func rmNode(node *node) {
 	log.Debug(fmt.Sprintf("Remove unused/deuplicate node: 0x%0x", node.id))
 }
 
-// TODO pass pointer to method only need modify it
 func (node *node) backend() {
 	for f := range node.chF {
 		f()

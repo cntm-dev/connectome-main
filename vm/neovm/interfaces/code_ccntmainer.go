@@ -18,7 +18,7 @@
 
 package interfaces
 
-type ICodeCcntmainer interface {
+type CodeCcntmainer interface {
 	GetMessage() []byte
-	IInteropInterface
+	Interop
 }

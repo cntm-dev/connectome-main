@@ -31,13 +31,15 @@ import (
 	. "github.com/Ontology/net/protocol"
 )
 
+type hdrHashReq struct {
+	len       uint8
+	hashStart [HASH_LEN]byte
+	hashEnd   [HASH_LEN]byte
+}
+
 type headersReq struct {
 	hdr msgHdr
-	p   struct {
-		len       uint8
-		hashStart [HASH_LEN]byte
-		hashEnd   [HASH_LEN]byte
-	}
+	p	hdrHashReq
 }
 
 type blkHeader struct {
@@ -69,13 +71,11 @@ func NewHeadersReq(n Noder) ([]byte, error) {
 }
 
 func (msg headersReq) Verify(buf []byte) error {
-	// TODO Verify the message Ccntment
 	err := msg.hdr.Verify(buf)
 	return err
 }
 
 func (msg blkHeader) Verify(buf []byte) error {
-	// TODO Verify the message Ccntment
 	err := msg.hdr.Verify(buf)
 	return err
 }
@@ -232,11 +232,11 @@ func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]ty
 		}
 		startHeight = bkStart.Height
 		if stopHash != empty {
-			bkstop, err := actor.GetHeaderByHash(stopHash)
-			if err != nil || bkstop == nil {
+			bkStop, err := actor.GetHeaderByHash(stopHash)
+			if err != nil || bkStop == nil {
 				return nil, 0, err
 			}
-			stopHeight = bkstop.Height
+			stopHeight = bkStop.Height
 
 			// avoid unsigned integer underflow
 			if startHeight < stopHeight {
@@ -298,7 +298,7 @@ func NewHeaders(headers []types.Header, count uint32) ([]byte, error) {
 	s := sha256.Sum256(b.Bytes())
 	s2 := s[:]
 	s = sha256.Sum256(s2)
-	buf := bytes.NewBuffer(s[:4])
+	buf := bytes.NewBuffer(s[:CHECKSUM_LEN])
 	binary.Read(buf, binary.LittleEndian, &(msg.hdr.Checksum))
 	msg.hdr.Length = uint32(len(b.Bytes()))
 

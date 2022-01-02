@@ -18,6 +18,6 @@
 
 package interfaces
 
-type ICodeTable interface {
+type CodeTable interface {
 	GetCode(scriptHash []byte) ([]byte, error)
 }

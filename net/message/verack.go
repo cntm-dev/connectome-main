@@ -29,12 +29,10 @@ import (
 
 type verACK struct {
 	msgHdr
-	// No payload
 }
 
 func NewVerack() ([]byte, error) {
 	var msg verACK
-	// Fixme the check is the []byte{0} instead of 0
 	var sum []byte
 	sum = []byte{0x5d, 0xf6, 0xe0, 0xe2}
 	msg.msgHdr.init("verack", sum, 0)

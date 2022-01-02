@@ -78,7 +78,7 @@ func (ec *ExecutionCcntmext) Clone() *ExecutionCcntmext {
 	return executionCcntmext
 }
 
-func (ec *ExecutionCcntmext) GetStackItem() types.StackItemInterface {
+func (ec *ExecutionCcntmext) GetStackItem() types.StackItems {
 	return nil
 }
 
