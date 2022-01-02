@@ -21,8 +21,8 @@ package errors
 import "errors"
 
 var (
-	ErrAssetNameInvalid = errors.New("asset name invalid, too lcntm")
-	ErrAssetPrecisionInvalid = errors.New("asset precision invalid")
-	ErrAssetAmountInvalid = errors.New("asset amount invalid")
-	ErrAssetCheckOwnerInvalid = errors.New("asset owner invalid")
+	ERR_ASSET_NAME_INVALID = errors.New("asset name invalid, too lcntm")
+	ERR_ASSET_PRECISION_INVALID = errors.New("asset precision invalid")
+	ERR_ASSET_AMOUNT_INVALID = errors.New("asset amount invalid")
+	ERR_ASSET_CHECK_OWNER_INVALID = errors.New("asset owner invalid")
 )

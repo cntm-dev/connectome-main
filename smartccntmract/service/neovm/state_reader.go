@@ -19,11 +19,12 @@
 package neovm
 
 import (
+	"fmt"
 	"math/big"
 	"strings"
-
 	"github.com/Ontology/common"
 	"github.com/Ontology/common/log"
+	"github.com/Ontology/core/payload"
 	"github.com/Ontology/core/states"
 	"github.com/Ontology/core/store"
 	"github.com/Ontology/core/types"
@@ -34,13 +35,11 @@ import (
 	vm "github.com/Ontology/vm/neovm"
 	vmtypes "github.com/Ontology/vm/neovm/types"
 	"github.com/cntmio/cntmology-crypto/keypair"
-	"github.com/Ontology/core/payload"
 )
 
 var (
-	ErrDBNotFound = "leveldb: not found"
-	Notify        = "Notify"
-	Log           = "Log"
+	ERR_DB_NOT_FOUND = "leveldb: not found"
+	LOG = "Log"
 )
 
 type StateReader struct {
@@ -165,18 +164,14 @@ func (s *StateReader) RuntimeLog(e *vm.ExecutionEngine) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	event.PushSmartCodeEvent(tran.Hash(), 0, Log, event.LogEventArgs{tran.Hash(), hash, string(item)})
+	event.PushSmartCodeEvent(tran.Hash(), 0, LOG, event.LogEventArgs{tran.Hash(), hash, string(item)})
 	return true, nil
 }
 
-func (s *StateReader) CheckWitnessHash(engine *vm.ExecutionEngine, address common.Address) (bool, error) {
+func (s *StateReader) CheckWitness(engine *vm.ExecutionEngine, address common.Address) (bool, error) {
 	tx := engine.GetCodeCcntmainer().(*types.Transaction)
 	addresses := tx.GetSignatureAddresses()
 	return ccntmains(addresses, address), nil
-}
-
-func (s *StateReader) CheckWitnessPublicKey(engine *vm.ExecutionEngine, publicKey keypair.PublicKey) (bool, error) {
-	return s.CheckWitnessHash(engine, types.AddressFromPubKey(publicKey))
 }
 
 func (s *StateReader) RuntimeCheckWitness(e *vm.ExecutionEngine) (bool, error) {
@@ -184,25 +179,22 @@ func (s *StateReader) RuntimeCheckWitness(e *vm.ExecutionEngine) (bool, error) {
 		return false, errors.NewErr("[RuntimeCheckWitness] Too few input parameters ")
 	}
 	data := vm.PopByteArray(e)
-	var (
-		result bool
-		err    error
-	)
+	var addr common.Address
 	if len(data) == 20 {
-		program, err := common.AddressParseFromBytes(data)
+		temp, err := common.AddressParseFromBytes(data)
 		if err != nil {
 			return false, err
 		}
-		result, err = s.CheckWitnessHash(e, program)
-	} else if len(data) == 33 + 2 {
+		addr = temp
+	} else {
 		publicKey, err := keypair.DeserializePublicKey(data)
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("[RuntimeCheckWitness] data invalid: %s", err)
 		}
-		result, err = s.CheckWitnessPublicKey(e, publicKey)
-	} else {
-		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[RuntimeCheckWitness] data invalid.")
+		addr = types.AddressFromPubKey(publicKey)
 	}
+
+	result, err := s.CheckWitness(e, addr)
 	if err != nil {
 		return false, err
 	}
@@ -224,7 +216,7 @@ func (s *StateReader) BlockChainGetHeader(e *vm.ExecutionEngine) (bool, error) {
 	data := vm.PopByteArray(e)
 	var (
 		header *types.Header
-		err    error
+		err error
 	)
 	l := len(data)
 	if l <= 5 {
@@ -671,7 +663,7 @@ func (s *StateReader) StorageGet(e *vm.ExecutionEngine) (bool, error) {
 		return false, errors.NewErr("[StorageGet] Wrcntm type!")
 	}
 	c, err := s.ldgerStore.GetCcntmractState(ccntmext.codeHash)
-	if err != nil && !strings.EqualFold(err.Error(), ErrDBNotFound) {
+	if err != nil && !strings.EqualFold(err.Error(), ERR_DB_NOT_FOUND) {
 		return false, err
 	}
 	if c == nil {
@@ -679,7 +671,7 @@ func (s *StateReader) StorageGet(e *vm.ExecutionEngine) (bool, error) {
 	}
 	key := vm.PopByteArray(e)
 	item, err := s.ldgerStore.GetStorageItem(&states.StorageKey{CodeHash: ccntmext.codeHash, Key: key})
-	if err != nil && !strings.EqualFold(err.Error(), ErrDBNotFound) {
+	if err != nil && !strings.EqualFold(err.Error(), ERR_DB_NOT_FOUND) {
 		return false, err
 	}
 	if item == nil {
