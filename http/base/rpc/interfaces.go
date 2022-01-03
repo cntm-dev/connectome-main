@@ -22,17 +22,18 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"math/big"
+
 	"github.com/Ontology/common"
 	"github.com/Ontology/common/config"
 	"github.com/Ontology/common/log"
 	"github.com/Ontology/core/genesis"
+	"github.com/Ontology/core/payload"
 	"github.com/Ontology/core/types"
-	cntmerr "github.com/Ontology/errors"
+	cntmErrors "github.com/Ontology/errors"
 	bactor "github.com/Ontology/http/base/actor"
 	bcomn "github.com/Ontology/http/base/common"
 	berr "github.com/Ontology/http/base/error"
-	"math/big"
-	"github.com/Ontology/core/payload"
 )
 
 func GetGenerateBlockTime(params []interface{}) map[string]interface{} {
@@ -408,8 +409,8 @@ func GetBlockHeightByTxHash(params []interface{}) map[string]interface{} {
 		if err := hash.Deserialize(bytes.NewReader(hex)); err != nil {
 			return responsePack(berr.INVALID_PARAMS, "")
 		}
-		height,err := bactor.GetBlockHeightByTxHashFromStore(hash)
-		if err != nil{
+		height, err := bactor.GetBlockHeightByTxHashFromStore(hash)
+		if err != nil {
 			return responsePack(berr.INVALID_PARAMS, "")
 		}
 		return responseSuccess(height)

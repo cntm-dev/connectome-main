@@ -24,7 +24,7 @@ import (
 
 	"github.com/Ontology/common"
 	"github.com/Ontology/common/log"
-	. "github.com/Ontology/errors"
+	cntmErrors "github.com/Ontology/errors"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	s "github.com/cntmio/cntmology-crypto/signature"
 )
@@ -51,13 +51,13 @@ func (c *ECDsaCrypto) VerifySignature(message []byte, signature []byte, pubkey [
 
 	pk, err := keypair.DeserializePublicKey(pubkey)
 	if err != nil {
-		return false, NewDetailErr(errors.New("[ECDsaCrypto], deserializing public key failed."), ErrNoCode, "")
+		return false, cntmErrors.NewDetailErr(errors.New("[ECDsaCrypto], deserializing public key failed."), cntmErrors.ErrNoCode, "")
 	}
 
 	sig, err := s.Deserialize(signature)
 	ok := s.Verify(pk, message, sig)
 	if !ok {
-		return false, NewDetailErr(errors.New("[ECDsaCrypto], VerifySignature failed."), ErrNoCode, "")
+		return false, cntmErrors.NewDetailErr(errors.New("[ECDsaCrypto], VerifySignature failed."), cntmErrors.ErrNoCode, "")
 	}
 
 	return true, nil

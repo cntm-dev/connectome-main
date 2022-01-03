@@ -22,11 +22,10 @@ import (
 	"github.com/Ontology/common"
 	"github.com/Ontology/common/log"
 	"github.com/Ontology/core/types"
-	cntmerr "github.com/Ontology/errors"
+	cntmErrors "github.com/Ontology/errors"
 	bactor "github.com/Ontology/http/base/actor"
 	"github.com/cntmio/cntmology-crypto/keypair"
 )
-
 
 type BalanceOfRsp struct {
 	Ont string `json:"cntm"`
@@ -127,7 +126,7 @@ func TransArryByteToHexString(ptx *types.Transaction) *Transactions {
 		trans.Attributes[i].Usage = v.Usage
 		trans.Attributes[i].Data = common.ToHexString(v.Data)
 	}
-	trans.Fee  = []Fee{}
+	trans.Fee = []Fee{}
 	for _, fee := range ptx.Fee {
 		e := Fee{fee.Amount, common.ToHexString(fee.Payer[:])}
 		trans.Fee = append(trans.Fee, e)
@@ -152,13 +151,13 @@ func TransArryByteToHexString(ptx *types.Transaction) *Transactions {
 	return trans
 }
 
-func VerifyAndSendTx(txn *types.Transaction) cntmerr.ErrCode {
+func VerifyAndSendTx(txn *types.Transaction) cntmErrors.ErrCode {
 	// if transaction is verified unsucessfully then will not put it into transaction pool
-	if errCode := bactor.AppendTxToPool(txn); errCode != cntmerr.ErrNoError {
+	if errCode := bactor.AppendTxToPool(txn); errCode != cntmErrors.ErrNoError {
 		log.Warn("Can NOT add the transaction to TxnPool")
 		return errCode
 	}
-	return cntmerr.ErrNoError
+	return cntmErrors.ErrNoError
 }
 
 func GetBlockInfo(block *types.Block) BlockInfo {
@@ -186,7 +185,7 @@ func GetBlockInfo(block *types.Block) BlockInfo {
 		NextBookkeeper:   block.Header.NextBookkeeper.ToBase58(),
 		Bookkeepers:      bookKeepers,
 		SigData:          sigData,
-		Hash: common.ToHexString(hash.ToArray()),
+		Hash:             common.ToHexString(hash.ToArray()),
 	}
 
 	trans := make([]*Transactions, len(block.Transactions))

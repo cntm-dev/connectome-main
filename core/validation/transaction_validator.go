@@ -28,27 +28,27 @@ import (
 	"github.com/Ontology/core/payload"
 	"github.com/Ontology/core/signature"
 	"github.com/Ontology/core/types"
-	cntmError "github.com/Ontology/errors"
+	cntmErrors "github.com/Ontology/errors"
 )
 
 // VerifyTransaction verifys received single transaction
-func VerifyTransaction(tx *types.Transaction) cntmError.ErrCode {
+func VerifyTransaction(tx *types.Transaction) cntmErrors.ErrCode {
 	if err := checkTransactionSignatures(tx); err != nil {
 		log.Info("transaction verify error:", err)
-		return cntmError.ErrTransactionCcntmracts
+		return cntmErrors.ErrTransactionCcntmracts
 	}
 
 	if err := checkTransactionPayload(tx); err != nil {
 		log.Warn("[VerifyTransaction],", err)
-		return cntmError.ErrTransactionPayload
+		return cntmErrors.ErrTransactionPayload
 	}
 
-	return cntmError.ErrNoError
+	return cntmErrors.ErrNoError
 }
 
-func VerifyTransactionWithLedger(tx *types.Transaction, ledger *ledger.Ledger) cntmError.ErrCode {
+func VerifyTransactionWithLedger(tx *types.Transaction, ledger *ledger.Ledger) cntmErrors.ErrCode {
 	//TODO: replay check
-	return cntmError.ErrNoError
+	return cntmErrors.ErrNoError
 }
 
 func checkTransactionSignatures(tx *types.Transaction) error {

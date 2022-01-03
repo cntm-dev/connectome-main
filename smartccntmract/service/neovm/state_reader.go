@@ -22,6 +22,9 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+
+	"github.com/cntmio/cntmology-crypto/keypair"
+
 	"github.com/Ontology/common"
 	"github.com/Ontology/common/log"
 	"github.com/Ontology/core/payload"
@@ -29,12 +32,11 @@ import (
 	"github.com/Ontology/core/store"
 	"github.com/Ontology/core/types"
 	"github.com/Ontology/errors"
-	. "github.com/Ontology/smartccntmract/common"
+	scommon "github.com/Ontology/smartccntmract/common"
 	"github.com/Ontology/smartccntmract/event"
 	trigger "github.com/Ontology/smartccntmract/types"
 	vm "github.com/Ontology/vm/neovm"
 	vmtypes "github.com/Ontology/vm/neovm/types"
-	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
 var (
@@ -140,7 +142,7 @@ func (s *StateReader) RuntimeNotify(e *vm.ExecutionEngine) (bool, error) {
 		return false, err
 	}
 	txid := tran.Hash()
-	s.Notifications = append(s.Notifications, &event.NotifyEventInfo{TxHash: txid, CodeHash: hash, States: ConvertReturnTypes(item)})
+	s.Notifications = append(s.Notifications, &event.NotifyEventInfo{TxHash: txid, CodeHash: hash, States: scommon.ConvertReturnTypes(item)})
 	return true, nil
 }
 

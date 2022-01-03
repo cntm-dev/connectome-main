@@ -28,7 +28,6 @@ import (
 	"github.com/Ontology/vm/neovm"
 	"github.com/Ontology/smartccntmract/ccntmext"
 	"github.com/Ontology/smartccntmract/event"
-
 	"github.com/Ontology/common"
 	"github.com/Ontology/smartccntmract/service/wasm"
 	"github.com/Ontology/vm/wasmvm/exec"

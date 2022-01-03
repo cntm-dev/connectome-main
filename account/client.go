@@ -31,14 +31,14 @@ import (
 	"sync"
 	"time"
 
-	. "github.com/Ontology/common"
+	"github.com/Ontology/common"
 	"github.com/Ontology/common/config"
 	"github.com/Ontology/common/log"
 	"github.com/Ontology/common/password"
 	"github.com/Ontology/core/ccntmract"
 	ct "github.com/Ontology/core/ccntmract"
 	sig "github.com/Ontology/core/signature"
-	. "github.com/Ontology/errors"
+	cntmErrors "github.com/Ontology/errors"
 	"github.com/Ontology/net/protocol"
 	"github.com/cntmio/cntmology-crypto/aes"
 	"github.com/cntmio/cntmology-crypto/keypair"
@@ -64,10 +64,10 @@ type ClientImpl struct {
 	iv        []byte
 	masterKey []byte
 
-	accounts  map[Address]*Account
-	ccntmracts map[Address]*ct.Ccntmract
+	accounts  map[common.Address]*Account
+	ccntmracts map[common.Address]*ct.Ccntmract
 
-	watchOnly     []Address
+	watchOnly     []common.Address
 	currentHeight uint32
 
 	FileStore
@@ -107,8 +107,8 @@ func Open(path string, passwordKey []byte) *ClientImpl {
 func NewClient(path string, password []byte, create bool) *ClientImpl {
 	newClient := &ClientImpl{
 		path:      path,
-		accounts:  map[Address]*Account{},
-		ccntmracts: map[Address]*ct.Ccntmract{},
+		accounts:  map[common.Address]*Account{},
+		ccntmracts: map[common.Address]*ct.Ccntmract{},
 		FileStore: FileStore{path: path},
 		isrunning: true,
 	}
@@ -118,7 +118,7 @@ func NewClient(path string, password []byte, create bool) *ClientImpl {
 		//create new client
 		newClient.iv = make([]byte, 16)
 		newClient.masterKey = make([]byte, 32)
-		newClient.watchOnly = []Address{}
+		newClient.watchOnly = []common.Address{}
 		newClient.currentHeight = 0
 
 		//generate random number for iv/masterkey
@@ -194,19 +194,19 @@ func (cl *ClientImpl) GetDefaultAccount() (*Account, error) {
 		return cl.GetAccountByProgramHash(programHash), nil
 	}
 
-	return nil, NewDetailErr(errors.New("Can't load default account."), ErrNoCode, "")
+	return nil, cntmErrors.NewDetailErr(errors.New("Can't load default account."), cntmErrors.ErrNoCode, "")
 }
 
 func (cl *ClientImpl) GetAccount(pubKey keypair.PublicKey) (*Account, error) {
 	signatureRedeemScript, err := ccntmract.CreateSignatureRedeemScript(pubKey)
 	if err != nil {
-		return nil, NewDetailErr(err, ErrNoCode, "CreateSignatureRedeemScript failed")
+		return nil, cntmErrors.NewDetailErr(err, cntmErrors.ErrNoCode, "CreateSignatureRedeemScript failed")
 	}
-	programHash := ToCodeHash(signatureRedeemScript)
+	programHash := common.ToCodeHash(signatureRedeemScript)
 	return cl.GetAccountByProgramHash(programHash), nil
 }
 
-func (cl *ClientImpl) GetAccountByProgramHash(programHash Address) *Account {
+func (cl *ClientImpl) GetAccountByProgramHash(programHash common.Address) *Account {
 	cl.mu.Lock()
 	defer cl.mu.Unlock()
 
@@ -216,7 +216,7 @@ func (cl *ClientImpl) GetAccountByProgramHash(programHash Address) *Account {
 	return nil
 }
 
-func (cl *ClientImpl) GetCcntmract(programHash Address) *ct.Ccntmract {
+func (cl *ClientImpl) GetCcntmract(programHash common.Address) *ct.Ccntmract {
 	log.Debug()
 	cl.mu.Lock()
 	defer cl.mu.Unlock()
@@ -268,7 +268,7 @@ func (cl *ClientImpl) CcntmainsAccount(pubKey keypair.PublicKey) bool {
 	if err != nil {
 		return false
 	}
-	programHash := ToCodeHash(signatureRedeemScript)
+	programHash := common.ToCodeHash(signatureRedeemScript)
 	if cl.GetAccountByProgramHash(programHash) != nil {
 		return true
 	} else {
@@ -358,7 +358,7 @@ func (cl *ClientImpl) verifyPasswordKey(passwordKey []byte) bool {
 	}
 	passwordHash := sha256.Sum256(passwordKey)
 	///ClearBytes(passwordKey, len(passwordKey))
-	if !IsEqualBytes(savedPasswordHash, passwordHash[:]) {
+	if !common.IsEqualBytes(savedPasswordHash, passwordHash[:]) {
 		fmt.Println("error: password wrcntm")
 		return false
 	}
@@ -376,7 +376,7 @@ func (cl *ClientImpl) EncryptPrivateKey(prikey []byte) ([]byte, error) {
 
 func (cl *ClientImpl) DecryptPrivateKey(prikey []byte) ([]byte, error) {
 	if prikey == nil {
-		return nil, NewDetailErr(errors.New("The PriKey is nil"), ErrNoCode, "")
+		return nil, cntmErrors.NewDetailErr(errors.New("The PriKey is nil"), cntmErrors.ErrNoCode, "")
 	}
 
 	dec, err := aes.AesDecrypt(prikey, cl.masterKey, cl.iv)
@@ -404,9 +404,9 @@ func (cl *ClientImpl) SaveAccount(ac *Account) error {
 	return nil
 }
 
-func (cl *ClientImpl) LoadAccount() map[Address]*Account {
+func (cl *ClientImpl) LoadAccount() map[common.Address]*Account {
 	i := 0
-	accounts := map[Address]*Account{}
+	accounts := map[common.Address]*Account{}
 	for true {
 		_, prikeyenc, err := cl.LoadAccountData(i)
 		if err != nil {
@@ -433,9 +433,9 @@ func (cl *ClientImpl) LoadAccount() map[Address]*Account {
 	return accounts
 }
 
-func (cl *ClientImpl) LoadCcntmracts() map[Address]*ct.Ccntmract {
+func (cl *ClientImpl) LoadCcntmracts() map[common.Address]*ct.Ccntmract {
 	i := 0
-	ccntmracts := map[Address]*ct.Ccntmract{}
+	ccntmracts := map[common.Address]*ct.Ccntmract{}
 
 	for true {
 		ph, _, rd, err := cl.LoadCcntmractData(i)
@@ -448,7 +448,7 @@ func (cl *ClientImpl) LoadCcntmracts() map[Address]*ct.Ccntmract {
 		ct := new(ct.Ccntmract)
 		ct.Deserialize(rdreader)
 
-		programhash, err := AddressParseFromBytes(ph)
+		programhash, err := common.AddressParseFromBytes(ph)
 		ct.ProgramHash = programhash
 		ccntmracts[ct.ProgramHash] = ct
 		i++
@@ -463,7 +463,7 @@ func (cl *ClientImpl) AddCcntmract(ct *ccntmract.Ccntmract) error {
 	defer cl.mu.Unlock()
 
 	if cl.accounts[ct.ProgramHash] == nil {
-		return NewDetailErr(errors.New("AddCcntmract(): ccntmract.OwnerPubkeyHash not in []accounts"), ErrNoCode, "")
+		return cntmErrors.NewDetailErr(errors.New("AddCcntmract(): ccntmract.OwnerPubkeyHash not in []accounts"), cntmErrors.ErrNoCode, "")
 	}
 
 	cl.ccntmracts[ct.ProgramHash] = ct
@@ -517,7 +517,7 @@ func nodeType(typeName string) int {
 }
 
 func GetClient() Client {
-	if !FileExisted(WalletFileName) {
+	if !common.FileExisted(WalletFileName) {
 		log.Fatal(fmt.Sprintf("No %s detected, please create a wallet by using command line.", WalletFileName))
 		os.Exit(1)
 	}

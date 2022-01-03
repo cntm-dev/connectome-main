@@ -18,7 +18,7 @@
 
 package error
 
-import cntmerr "github.com/Ontology/errors"
+import cntmErrors "github.com/Ontology/errors"
 
 const (
 	SUCCESS            int64 = 0
@@ -63,17 +63,17 @@ var ErrMap = map[int64]string{
 
 	INTERNAL_ERROR:                 "INTERNAL ERROR",
 	SMARTCODE_ERROR:                "SMARTCODE EXEC ERROR",
-	int64(cntmerr.ErrDuplicatedTx):         "INTERNAL ERROR, ErrDuplicatedTx",
-	int64(cntmerr.ErrDuplicateInput):       "INTERNAL ERROR, ErrDuplicateInput",
-	int64(cntmerr.ErrAssetPrecision):       "INTERNAL ERROR, ErrAssetPrecision",
-	int64(cntmerr.ErrTransactionBalance):   "INTERNAL ERROR, ErrTransactionBalance",
-	int64(cntmerr.ErrAttributeProgram):     "INTERNAL ERROR, ErrAttributeProgram",
-	int64(cntmerr.ErrTransactionCcntmracts): "INTERNAL ERROR, ErrTransactionCcntmracts",
-	int64(cntmerr.ErrTransactionPayload):   "INTERNAL ERROR, ErrTransactionPayload",
-	int64(cntmerr.ErrDoubleSpend):          "INTERNAL ERROR, ErrDoubleSpend",
-	int64(cntmerr.ErrTxHashDuplicate):      "INTERNAL ERROR, ErrTxHashDuplicate",
-	int64(cntmerr.ErrStateUpdaterVaild):    "INTERNAL ERROR, ErrStateUpdaterVaild",
-	int64(cntmerr.ErrSummaryAsset):         "INTERNAL ERROR, ErrSummaryAsset",
-	int64(cntmerr.ErrXmitFail):             "INTERNAL ERROR, ErrXmitFail",
-	int64(cntmerr.ErrNoAccount):            "INTERNAL ERROR, ErrNoAccount",
+	int64(cntmErrors.ErrDuplicatedTx):         "INTERNAL ERROR, ErrDuplicatedTx",
+	int64(cntmErrors.ErrDuplicateInput):       "INTERNAL ERROR, ErrDuplicateInput",
+	int64(cntmErrors.ErrAssetPrecision):       "INTERNAL ERROR, ErrAssetPrecision",
+	int64(cntmErrors.ErrTransactionBalance):   "INTERNAL ERROR, ErrTransactionBalance",
+	int64(cntmErrors.ErrAttributeProgram):     "INTERNAL ERROR, ErrAttributeProgram",
+	int64(cntmErrors.ErrTransactionCcntmracts): "INTERNAL ERROR, ErrTransactionCcntmracts",
+	int64(cntmErrors.ErrTransactionPayload):   "INTERNAL ERROR, ErrTransactionPayload",
+	int64(cntmErrors.ErrDoubleSpend):          "INTERNAL ERROR, ErrDoubleSpend",
+	int64(cntmErrors.ErrTxHashDuplicate):      "INTERNAL ERROR, ErrTxHashDuplicate",
+	int64(cntmErrors.ErrStateUpdaterVaild):    "INTERNAL ERROR, ErrStateUpdaterVaild",
+	int64(cntmErrors.ErrSummaryAsset):         "INTERNAL ERROR, ErrSummaryAsset",
+	int64(cntmErrors.ErrXmitFail):             "INTERNAL ERROR, ErrXmitFail",
+	int64(cntmErrors.ErrNoAccount):            "INTERNAL ERROR, ErrNoAccount",
 }

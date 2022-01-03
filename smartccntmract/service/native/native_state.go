@@ -19,9 +19,11 @@
 package native
 
 import (
+	"bytes"
+	"fmt"
+
 	"github.com/Ontology/smartccntmract/storage"
 	scommon "github.com/Ontology/core/store/common"
-	"bytes"
 	"github.com/Ontology/core/types"
 	"github.com/Ontology/smartccntmract/event"
 	"github.com/Ontology/common"
@@ -30,7 +32,6 @@ import (
 	"github.com/Ontology/smartccntmract/service/native/states"
 	"github.com/Ontology/errors"
 	vmtypes "github.com/Ontology/vm/types"
-	"fmt"
 )
 
 type (
