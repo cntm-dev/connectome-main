@@ -23,6 +23,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+
 	"github.com/Ontology/common"
 	"github.com/Ontology/common/log"
 	"github.com/Ontology/common/serialization"
@@ -39,7 +40,7 @@ type hdrHashReq struct {
 
 type headersReq struct {
 	hdr msgHdr
-	p	hdrHashReq
+	p   hdrHashReq
 }
 
 type blkHeader struct {

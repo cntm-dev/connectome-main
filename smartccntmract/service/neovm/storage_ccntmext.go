@@ -35,4 +35,3 @@ func NewStorageCcntmext(codeHash common.Address) *StorageCcntmext {
 func (sc *StorageCcntmext) ToArray() []byte {
 	return sc.codeHash[:]
 }
-

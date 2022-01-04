@@ -19,9 +19,10 @@
 package events
 
 import (
+	"fmt"
+
 	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology-eventbus/eventhub"
-	"fmt"
 )
 
 var DefEvtHub *eventhub.EventHub
@@ -33,7 +34,7 @@ func Init() {
 	DefEvtHub = eventhub.GlobalEventHub
 	defPublisherProps = actor.FromFunc(func(ccntmext actor.Ccntmext) {})
 	var err error
-	DefPublisherPID , err = actor.SpawnNamed(defPublisherProps, "DefPublisherActor")
+	DefPublisherPID, err = actor.SpawnNamed(defPublisherProps, "DefPublisherActor")
 	if err != nil {
 		panic(fmt.Errorf("DefPublisherPID SpawnNamed error:%s", err))
 	}

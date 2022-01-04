@@ -19,19 +19,20 @@
 package actor
 
 import (
-	"time"
-	"github.com/cntmio/cntmology-eventbus/actor"
-	"github.com/Ontology/core/types"
-	lactor "github.com/Ontology/core/ledger/actor"
-	"github.com/Ontology/common"
 	"errors"
-	"github.com/Ontology/smartccntmract/event"
-	"github.com/Ontology/core/payload"
+	"time"
+
+	"github.com/Ontology/common"
 	"github.com/Ontology/common/log"
+	lactor "github.com/Ontology/core/ledger/actor"
+	"github.com/Ontology/core/payload"
+	"github.com/Ontology/core/types"
+	"github.com/Ontology/smartccntmract/event"
+	"github.com/cntmio/cntmology-eventbus/actor"
 )
 
 const (
-	REQ_TIMEOUT   = 5
+	REQ_TIMEOUT    = 5
 	ERR_ACTOR_COMM = "[http] Actor comm error: %v"
 )
 
@@ -133,7 +134,7 @@ func GetCcntmractStateFromStore(hash common.Address) (*payload.DeployCode, error
 		return nil, err
 	}
 	if rsp, ok := result.(*lactor.GetCcntmractStateRsp); !ok {
-		log.Error(ERR_ACTOR_COMM,"GetCcntmractStateRsp")
+		log.Error(ERR_ACTOR_COMM, "GetCcntmractStateRsp")
 		return nil, errors.New("fail")
 	} else {
 		return rsp.CcntmractState, rsp.Error
@@ -190,9 +191,9 @@ func GetEventNotifyByTxHash(txHash common.Uint256) ([]*event.NotifyEventInfo, er
 		return nil, err
 	}
 	if rsp, ok := result.(*lactor.GetEventNotifyByTxRsp); !ok {
-		return nil,errors.New("fail")
-	}else {
-		return rsp.Notifies,rsp.Error
+		return nil, errors.New("fail")
+	} else {
+		return rsp.Notifies, rsp.Error
 	}
 }
 
@@ -204,8 +205,8 @@ func GetEventNotifyByHeight(height uint32) ([]common.Uint256, error) {
 		return nil, err
 	}
 	if rsp, ok := result.(*lactor.GetEventNotifyByBlockRsp); !ok {
-		return nil,errors.New("fail")
-	}else {
-		return rsp.TxHashes,rsp.Error
+		return nil, errors.New("fail")
+	} else {
+		return rsp.TxHashes, rsp.Error
 	}
 }

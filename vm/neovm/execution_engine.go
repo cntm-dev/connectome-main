@@ -50,9 +50,9 @@ func NewExecutionEngine(ccntmainer interfaces.CodeCcntmainer, crypto interfaces.
 }
 
 type ExecutionEngine struct {
-	crypto          interfaces.Crypto
-	table           interfaces.CodeTable
-	service         *InteropService
+	crypto  interfaces.Crypto
+	table   interfaces.CodeTable
+	service *InteropService
 
 	codeCcntmainer   interfaces.CodeCcntmainer
 	invocationStack *RandomAccessStack
@@ -62,11 +62,11 @@ type ExecutionEngine struct {
 	altStack        *RandomAccessStack
 	state           VMState
 
-	ccntmext         *ExecutionCcntmext
+	ccntmext *ExecutionCcntmext
 
 	//current opcode
-	opCode          OpCode
-	gas             int64
+	opCode OpCode
+	gas    int64
 }
 
 func (e *ExecutionEngine) Create(caller common.Address, code []byte) ([]byte, error) {

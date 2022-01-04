@@ -17,67 +17,66 @@
 package smartccntmract
 
 import (
-	vmtypes "github.com/Ontology/vm/types"
-	"github.com/Ontology/vm/neovm/interfaces"
-	ctypes "github.com/Ontology/core/types"
-	"github.com/Ontology/smartccntmract/service/native"
-	scommon "github.com/Ontology/core/store/common"
-	sneovm "github.com/Ontology/smartccntmract/service/neovm"
+	"github.com/Ontology/common"
 	"github.com/Ontology/core/store"
-	stypes "github.com/Ontology/smartccntmract/types"
-	"github.com/Ontology/vm/neovm"
+	scommon "github.com/Ontology/core/store/common"
+	ctypes "github.com/Ontology/core/types"
 	"github.com/Ontology/smartccntmract/ccntmext"
 	"github.com/Ontology/smartccntmract/event"
-	"github.com/Ontology/common"
+	"github.com/Ontology/smartccntmract/service/native"
+	sneovm "github.com/Ontology/smartccntmract/service/neovm"
 	"github.com/Ontology/smartccntmract/service/wasm"
+	stypes "github.com/Ontology/smartccntmract/types"
+	"github.com/Ontology/vm/neovm"
+	"github.com/Ontology/vm/neovm/interfaces"
+	vmtypes "github.com/Ontology/vm/types"
 	"github.com/Ontology/vm/wasmvm/exec"
 	"github.com/Ontology/vm/wasmvm/util"
 )
 
 type SmartCcntmract struct {
-	Ccntmext []*ccntmext.Ccntmext
-	Config *Config
-	Engine Engine
+	Ccntmext       []*ccntmext.Ccntmext
+	Config        *Config
+	Engine        Engine
 	Notifications []*event.NotifyEventInfo
 }
 
 type Config struct {
-	Time uint32
-	Height uint32
-	Tx *ctypes.Transaction
-	Table interfaces.CodeTable
+	Time    uint32
+	Height  uint32
+	Tx      *ctypes.Transaction
+	Table   interfaces.CodeTable
 	DBCache scommon.StateStore
-	Store store.LedgerStore
+	Store   store.LedgerStore
 }
 
 type Engine interface {
 	StepInto()
 }
 
-
 //put current ccntmext to smart ccntmract
-func(sc *SmartCcntmract) PushCcntmext(ccntmext *ccntmext.Ccntmext) {
+func (sc *SmartCcntmract) PushCcntmext(ccntmext *ccntmext.Ccntmext) {
 	sc.Ccntmext = append(sc.Ccntmext, ccntmext)
 }
 
 //get smart ccntmract current ccntmext
-func(sc *SmartCcntmract) CurrentCcntmext() *ccntmext.Ccntmext {
+func (sc *SmartCcntmract) CurrentCcntmext() *ccntmext.Ccntmext {
 	if len(sc.Ccntmext) < 1 {
 		return nil
 	}
-	return sc.Ccntmext[len(sc.Ccntmext) - 1]
+	return sc.Ccntmext[len(sc.Ccntmext)-1]
 }
 
 //get smart ccntmract caller ccntmext
-func(sc *SmartCcntmract) CallingCcntmext() *ccntmext.Ccntmext {
+func (sc *SmartCcntmract) CallingCcntmext() *ccntmext.Ccntmext {
 	if len(sc.Ccntmext) < 2 {
 		return nil
 	}
-	return sc.Ccntmext[len(sc.Ccntmext) - 2]
+	return sc.Ccntmext[len(sc.Ccntmext)-2]
 }
 
 //get smart ccntmract entry entrance ccntmext
-func(sc *SmartCcntmract) EntryCcntmext() *ccntmext.Ccntmext {
+func (sc *SmartCcntmract) EntryCcntmext() *ccntmext.Ccntmext {
 	if len(sc.Ccntmext) < 1 {
 		return nil
 	}
@@ -85,11 +84,11 @@ func(sc *SmartCcntmract) EntryCcntmext() *ccntmext.Ccntmext {
 }
 
 //pop smart ccntmract current ccntmext
-func(sc *SmartCcntmract) PopCcntmext() {
-	sc.Ccntmext = sc.Ccntmext[:len(sc.Ccntmext) - 1]
+func (sc *SmartCcntmract) PopCcntmext() {
+	sc.Ccntmext = sc.Ccntmext[:len(sc.Ccntmext)-1]
 }
 
-func(sc *SmartCcntmract) PushNotifications(notifications []*event.NotifyEventInfo) {
+func (sc *SmartCcntmract) PushNotifications(notifications []*event.NotifyEventInfo) {
 	sc.Notifications = append(sc.Notifications, notifications...)
 }
 
@@ -116,7 +115,7 @@ func (sc *SmartCcntmract) Execute() error {
 		stateMachine.CloneCache.Commit()
 		sc.Notifications = append(sc.Notifications, stateMachine.Notifications...)
 	case vmtypes.WASMVM:
-		stateMachine:= wasm.NewWasmStateMachine(sc.Config.Store, sc.Config.DBCache, stypes.Application,sc.Config.Time)
+		stateMachine := wasm.NewWasmStateMachine(sc.Config.Store, sc.Config.DBCache, stypes.Application, sc.Config.Time)
 
 		engine := exec.NewExecutionEngine(
 			sc.Config.Tx,
@@ -126,9 +125,10 @@ func (sc *SmartCcntmract) Execute() error {
 			"product",
 		)
 		//todo how to get the input
-		input:= []byte{}
-		engine.Call(ctx.CcntmractAddress,ctx.Code.Code,input)
+		input := []byte{}
+		engine.Call(ctx.CcntmractAddress, ctx.Code.Code, input)
 		//fmt.Println(engine)
+		stateMachine.CloneCache.Commit()
 		sc.Notifications = append(sc.Notifications, stateMachine.Notifications...)
 	}
 	return nil

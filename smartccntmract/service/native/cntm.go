@@ -22,21 +22,21 @@ import (
 	"bytes"
 	"math/big"
 
-	scommon "github.com/Ontology/core/store/common"
-	"github.com/Ontology/errors"
-	"github.com/Ontology/core/genesis"
-	ctypes "github.com/Ontology/core/types"
-	"github.com/Ontology/smartccntmract/service/native/states"
-	cstates "github.com/Ontology/core/states"
 	"github.com/Ontology/account"
 	"github.com/Ontology/common"
+	"github.com/Ontology/core/genesis"
+	cstates "github.com/Ontology/core/states"
+	scommon "github.com/Ontology/core/store/common"
+	ctypes "github.com/Ontology/core/types"
+	"github.com/Ontology/errors"
+	"github.com/Ontology/smartccntmract/service/native/states"
 )
 
 var (
 	DECREMENT_INTERVAL = uint32(2000000)
-	GENERATION_AMOUNT = [17]uint32{80, 70, 60, 50, 40, 30, 20, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10}
-	GL = uint32(len(GENERATION_AMOUNT))
-	cntm_TOTAL_SUPPLY = big.NewInt(1000000000)
+	GENERATION_AMOUNT  = [17]uint32{80, 70, 60, 50, 40, 30, 20, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10}
+	GL                 = uint32(len(GENERATION_AMOUNT))
+	cntm_TOTAL_SUPPLY   = big.NewInt(1000000000)
 )
 
 func OntInit(native *NativeService) error {
@@ -70,15 +70,18 @@ func OntTransfer(native *NativeService) error {
 	}
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
 	for _, v := range transfers.States {
-		fromBalance, toBalance, err := transfer(native, ccntmract, v); if err != nil {
+		fromBalance, toBalance, err := transfer(native, ccntmract, v)
+		if err != nil {
 			return err
 		}
 
-		fromStartHeight, err := getStartHeight(native, ccntmract, v.From); if err != nil {
+		fromStartHeight, err := getStartHeight(native, ccntmract, v.From)
+		if err != nil {
 			return err
 		}
 
-		toStartHeight, err := getStartHeight(native, ccntmract, v.From); if err != nil {
+		toStartHeight, err := getStartHeight(native, ccntmract, v.From)
+		if err != nil {
 			return err
 		}
 
@@ -147,7 +150,8 @@ func grantOng(native *NativeService, ccntmract, address common.Address, balance 
 		amount += (iend - istart) * GENERATION_AMOUNT[ustart]
 	}
 
-	args, err := getApproveArgs(native, ccntmract, genesis.OngCcntmractAddress, address, balance, amount); if err != nil {
+	args, err := getApproveArgs(native, ccntmract, genesis.OngCcntmractAddress, address, balance, amount)
+	if err != nil {
 		return err
 	}
 
@@ -161,13 +165,14 @@ func grantOng(native *NativeService, ccntmract, address common.Address, balance 
 
 func getApproveArgs(native *NativeService, ccntmract, cntmCcntmract, address common.Address, balance *big.Int, amount uint32) ([]byte, error) {
 	bf := new(bytes.Buffer)
-	approve := &states.State {
-		From: ccntmract,
-		To: address,
+	approve := &states.State{
+		From:  ccntmract,
+		To:    address,
 		Value: new(big.Int).Mul(balance, big.NewInt(int64(amount))),
 	}
 
-	stateValue, err := getStorageBigInt(native, getApproveKey(cntmCcntmract, approve)); if err != nil {
+	stateValue, err := getStorageBigInt(native, getApproveKey(cntmCcntmract, approve))
+	if err != nil {
 		return nil, err
 	}
 
@@ -178,4 +183,3 @@ func getApproveArgs(native *NativeService, ccntmract, cntmCcntmract, address com
 	}
 	return bf.Bytes(), nil
 }
-

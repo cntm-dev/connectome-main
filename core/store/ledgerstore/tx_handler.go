@@ -21,17 +21,18 @@ package ledgerstore
 import (
 	"bytes"
 	"fmt"
+
+	"github.com/Ontology/common"
 	"github.com/Ontology/core/payload"
 	"github.com/Ontology/core/states"
+	"github.com/Ontology/core/store"
 	scommon "github.com/Ontology/core/store/common"
-	"github.com/Ontology/common"
 	"github.com/Ontology/core/store/statestore"
 	"github.com/Ontology/core/types"
-	vmtypes "github.com/Ontology/vm/types"
 	"github.com/Ontology/smartccntmract"
-	"github.com/Ontology/core/store"
 	"github.com/Ontology/smartccntmract/ccntmext"
 	"github.com/Ontology/smartccntmract/event"
+	vmtypes "github.com/Ontology/vm/types"
 )
 
 const (
@@ -78,17 +79,17 @@ func (this *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 
 	// init smart ccntmract configuration info
 	config := &smartccntmract.Config{
-		Time: block.Header.Timestamp,
-		Height: block.Header.Height,
-		Tx: tx,
-		Table: &CacheCodeTable{stateBatch},
+		Time:    block.Header.Timestamp,
+		Height:  block.Header.Height,
+		Tx:      tx,
+		Table:   &CacheCodeTable{stateBatch},
 		DBCache: stateBatch,
-		Store: store,
+		Store:   store,
 	}
 
 	//init smart ccntmract ccntmext info
 	ctx := &ccntmext.Ccntmext{
-		Code: invoke.Code,
+		Code:            invoke.Code,
 		CcntmractAddress: invoke.Code.AddressFromVmCode(),
 	}
 
@@ -126,7 +127,3 @@ func (this *StateStore) HandleVoteTransaction(stateBatch *statestore.StateBatch,
 	stateBatch.TryAdd(scommon.ST_VOTE, buf.Bytes(), &states.VoteState{PublicKeys: vote.PubKeys}, false)
 	return nil
 }
-
-
-
-

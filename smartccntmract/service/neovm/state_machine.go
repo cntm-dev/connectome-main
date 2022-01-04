@@ -23,14 +23,14 @@ import (
 	"fmt"
 
 	"github.com/Ontology/common"
+	"github.com/Ontology/core/payload"
 	"github.com/Ontology/core/states"
-	scommon "github.com/Ontology/core/store/common"
 	"github.com/Ontology/core/store"
+	scommon "github.com/Ontology/core/store/common"
 	"github.com/Ontology/errors"
 	"github.com/Ontology/smartccntmract/storage"
 	stypes "github.com/Ontology/smartccntmract/types"
 	vm "github.com/Ontology/vm/neovm"
-	"github.com/Ontology/core/payload"
 	vmtypes "github.com/Ontology/vm/types"
 )
 
@@ -79,26 +79,32 @@ func (s *StateMachine) CcntmractCreate(engine *vm.ExecutionEngine) (bool, error)
 	if vm.EvaluationStackCount(engine) < 7 {
 		return false, errors.NewErr("[CcntmractCreate] Too few input parameters")
 	}
-	code := vm.PopByteArray(engine); if len(code) > 1024 * 1024 {
+	code := vm.PopByteArray(engine)
+	if len(code) > 1024*1024 {
 		return false, errors.NewErr("[CcntmractCreate] Code too lcntm!")
 	}
 	needStorage := vm.PopBoolean(engine)
-	name := vm.PopByteArray(engine); if len(name) > 252 {
+	name := vm.PopByteArray(engine)
+	if len(name) > 252 {
 		return false, errors.NewErr("[CcntmractCreate] Name too lcntm!")
 	}
-	version := vm.PopByteArray(engine); if len(version) > 252 {
+	version := vm.PopByteArray(engine)
+	if len(version) > 252 {
 		return false, errors.NewErr("[CcntmractCreate] Version too lcntm!")
 	}
-	author := vm.PopByteArray(engine); if len(author) > 252 {
+	author := vm.PopByteArray(engine)
+	if len(author) > 252 {
 		return false, errors.NewErr("[CcntmractCreate] Author too lcntm!")
 	}
-	email := vm.PopByteArray(engine); if len(email) > 252 {
+	email := vm.PopByteArray(engine)
+	if len(email) > 252 {
 		return false, errors.NewErr("[CcntmractCreate] Email too lcntm!")
 	}
-	desc := vm.PopByteArray(engine); if len(desc) > 65536 {
+	desc := vm.PopByteArray(engine)
+	if len(desc) > 65536 {
 		return false, errors.NewErr("[CcntmractCreate] Desc too lcntm!")
 	}
-	vmCode := &vmtypes.VmCode{VmType:vmtypes.NEOVM, Code: code}
+	vmCode := &vmtypes.VmCode{VmType: vmtypes.NEOVM, Code: code}
 	ccntmractState := &payload.DeployCode{
 		Code:        vmCode,
 		NeedStorage: needStorage,
@@ -121,34 +127,41 @@ func (s *StateMachine) CcntmractMigrate(engine *vm.ExecutionEngine) (bool, error
 	if vm.EvaluationStackCount(engine) < 7 {
 		return false, errors.NewErr("[CcntmractMigrate] Too few input parameters ")
 	}
-	code := vm.PopByteArray(engine); if len(code) > 1024 * 1024 {
+	code := vm.PopByteArray(engine)
+	if len(code) > 1024*1024 {
 		return false, errors.NewErr("[CcntmractMigrate] Code too lcntm!")
 	}
 	vmCode := &vmtypes.VmCode{
-		Code: code,
+		Code:   code,
 		VmType: vmtypes.NEOVM,
 	}
 	ccntmractAddress := vmCode.AddressFromVmCode()
-	item, err := s.CloneCache.Get(scommon.ST_CcntmRACT, ccntmractAddress[:]); if err != nil {
+	item, err := s.CloneCache.Get(scommon.ST_CcntmRACT, ccntmractAddress[:])
+	if err != nil {
 		return false, errors.NewErr("[CcntmractMigrate] Get Ccntmract error!")
 	}
 	if item != nil {
 		return false, errors.NewErr("[CcntmractMigrate] Migrate Ccntmract has exist!")
 	}
 
-	nameByte := vm.PopByteArray(engine); if len(nameByte) > 252 {
+	nameByte := vm.PopByteArray(engine)
+	if len(nameByte) > 252 {
 		return false, errors.NewErr("[CcntmractMigrate] Name too lcntm!")
 	}
-	versionByte := vm.PopByteArray(engine); if len(versionByte) > 252 {
+	versionByte := vm.PopByteArray(engine)
+	if len(versionByte) > 252 {
 		return false, errors.NewErr("[CcntmractMigrate] Version too lcntm!")
 	}
-	authorByte := vm.PopByteArray(engine); if len(authorByte) > 252 {
+	authorByte := vm.PopByteArray(engine)
+	if len(authorByte) > 252 {
 		return false, errors.NewErr("[CcntmractMigrate] Author too lcntm!")
 	}
-	emailByte := vm.PopByteArray(engine); if len(emailByte) > 252 {
+	emailByte := vm.PopByteArray(engine)
+	if len(emailByte) > 252 {
 		return false, errors.NewErr("[CcntmractMigrate] Email too lcntm!")
 	}
-	descByte := vm.PopByteArray(engine); if len(descByte) > 65536 {
+	descByte := vm.PopByteArray(engine)
+	if len(descByte) > 65536 {
 		return false, errors.NewErr("[CcntmractMigrate] Desc too lcntm!")
 	}
 	ccntmractState := &payload.DeployCode{
@@ -160,7 +173,8 @@ func (s *StateMachine) CcntmractMigrate(engine *vm.ExecutionEngine) (bool, error
 		Description: string(descByte),
 	}
 	s.CloneCache.Add(scommon.ST_CcntmRACT, ccntmractAddress[:], ccntmractState)
-	stateValues, err := s.CloneCache.Store.Find(scommon.ST_CcntmRACT, ccntmractAddress[:]); if err != nil {
+	stateValues, err := s.CloneCache.Store.Find(scommon.ST_CcntmRACT, ccntmractAddress[:])
+	if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractMigrate] Find error!")
 	}
 	for _, v := range stateValues {
@@ -181,20 +195,24 @@ func (s *StateMachine) CcntmractMigrate(engine *vm.ExecutionEngine) (bool, error
 }
 
 func (s *StateMachine) CcntmractDestory(engine *vm.ExecutionEngine) (bool, error) {
-	ccntmext, err := engine.CurrentCcntmext(); if err != nil {
+	ccntmext, err := engine.CurrentCcntmext()
+	if err != nil {
 		return false, err
 	}
-	hash, err := ccntmext.GetCodeHash(); if err != nil {
+	hash, err := ccntmext.GetCodeHash()
+	if err != nil {
 		return false, nil
 	}
-	item, err := s.CloneCache.Store.TryGet(scommon.ST_CcntmRACT, hash[:]); if err != nil {
+	item, err := s.CloneCache.Store.TryGet(scommon.ST_CcntmRACT, hash[:])
+	if err != nil {
 		return false, err
 	}
 	if item == nil {
 		return false, nil
 	}
 	s.CloneCache.Delete(scommon.ST_CcntmRACT, hash[:])
-	stateValues, err := s.CloneCache.Store.Find(scommon.ST_CcntmRACT, hash[:]); if err != nil {
+	stateValues, err := s.CloneCache.Store.Find(scommon.ST_CcntmRACT, hash[:])
+	if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractDestory] Find error!")
 	}
 	for _, v := range stateValues {
@@ -218,7 +236,8 @@ func (s *StateMachine) StoragePut(engine *vm.ExecutionEngine) (bool, error) {
 	if vm.EvaluationStackCount(engine) < 3 {
 		return false, errors.NewErr("[StoragePut] Too few input parameters ")
 	}
-	opInterface := vm.PopInteropInterface(engine); if opInterface == nil {
+	opInterface := vm.PopInteropInterface(engine)
+	if opInterface == nil {
 		return false, errors.NewErr("[StoragePut] Get StorageCcntmext nil")
 	}
 	ccntmext := opInterface.(*StorageCcntmext)
@@ -227,7 +246,8 @@ func (s *StateMachine) StoragePut(engine *vm.ExecutionEngine) (bool, error) {
 		return false, errors.NewErr("[StoragePut] Get Storage key to lcntm")
 	}
 	value := vm.PopByteArray(engine)
-	k, err := serializeStorageKey(ccntmext.codeHash, key); if err != nil {
+	k, err := serializeStorageKey(ccntmext.codeHash, key)
+	if err != nil {
 		return false, err
 	}
 	s.CloneCache.Add(scommon.ST_STORAGE, k, &states.StorageItem{Value: value})
@@ -244,7 +264,8 @@ func (s *StateMachine) StorageDelete(engine *vm.ExecutionEngine) (bool, error) {
 	}
 	ccntmext := opInterface.(*StorageCcntmext)
 	key := vm.PopByteArray(engine)
-	k, err := serializeStorageKey(ccntmext.codeHash, key); if err != nil {
+	k, err := serializeStorageKey(ccntmext.codeHash, key)
+	if err != nil {
 		return false, err
 	}
 	s.CloneCache.Delete(scommon.ST_STORAGE, k)
@@ -264,10 +285,12 @@ func (s *StateMachine) StorageGet(engine *vm.ExecutionEngine) (bool, error) {
 		return false, err
 	}
 	key := vm.PopByteArray(engine)
-	k, err := serializeStorageKey(ccntmext.codeHash, key); if err != nil {
+	k, err := serializeStorageKey(ccntmext.codeHash, key)
+	if err != nil {
 		return false, err
 	}
-	item, err := s.CloneCache.Get(scommon.ST_STORAGE, k); if err != nil {
+	item, err := s.CloneCache.Get(scommon.ST_STORAGE, k)
+	if err != nil {
 		return false, err
 	}
 	if item == nil {
@@ -292,13 +315,15 @@ func (s *StateMachine) GetStorageCcntmext(engine *vm.ExecutionEngine) (bool, err
 	if err != nil {
 		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[GetStorageCcntmext] Get StorageCcntmext nil")
 	}
-	ccntmext, err := engine.CurrentCcntmext(); if err != nil {
+	ccntmext, err := engine.CurrentCcntmext()
+	if err != nil {
 		return false, err
 	}
 	if item == nil {
 		return false, errors.NewErr(fmt.Sprintf("[GetStorageCcntmext] Get ccntmract by codehash:%v nil", codeHash))
 	}
-	currentHash, err := ccntmext.GetCodeHash(); if err != nil {
+	currentHash, err := ccntmext.GetCodeHash()
+	if err != nil {
 		return false, err
 	}
 	if codeHash != currentHash {

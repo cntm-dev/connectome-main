@@ -25,9 +25,9 @@ import (
 	"github.com/Ontology/core/ledger"
 	"github.com/Ontology/core/types"
 	"github.com/Ontology/errors"
-	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/Ontology/validator/db"
 	vatypes "github.com/Ontology/validator/types"
+	"github.com/cntmio/cntmology-eventbus/actor"
 )
 
 type Validator interface {

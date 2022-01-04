@@ -32,4 +32,3 @@ type StackItems interface {
 	GetArray() []StackItems
 	GetStruct() []StackItems
 }
-

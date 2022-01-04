@@ -2,8 +2,8 @@ package ccntmext
 
 import (
 	"github.com/Ontology/common"
-	vmtypes "github.com/Ontology/vm/types"
 	"github.com/Ontology/smartccntmract/event"
+	vmtypes "github.com/Ontology/vm/types"
 )
 
 type CcntmextRef interface {
@@ -17,8 +17,7 @@ type CcntmextRef interface {
 	Execute() error
 }
 
-
 type Ccntmext struct {
 	CcntmractAddress common.Address
-	Code vmtypes.VmCode
+	Code            vmtypes.VmCode
 }

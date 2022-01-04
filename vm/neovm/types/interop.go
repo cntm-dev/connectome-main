@@ -70,4 +70,3 @@ func (this *Interop) GetArray() []StackItems {
 func (this *Interop) GetStruct() []StackItems {
 	return []StackItems{this}
 }
-
