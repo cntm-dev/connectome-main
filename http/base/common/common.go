@@ -30,6 +30,7 @@ import (
 type BalanceOfRsp struct {
 	Ont string `json:"cntm"`
 	Ong string `json:"cntm"`
+	OngAppove string `json:"cntm_appove"`
 }
 
 type TxAttributeInfo struct {
