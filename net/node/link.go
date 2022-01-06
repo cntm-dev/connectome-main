@@ -125,7 +125,7 @@ func (link *link) CloseConn() {
 }
 
 func (n *node) initConnection() {
-	isTls := Parameters.IsTLS
+	isTls := config.Parameters.IsTLS
 	var listener net.Listener
 	var err error
 	if isTls {
@@ -161,7 +161,7 @@ func (n *node) initConnection() {
 
 func initNonTlsListen() (net.Listener, error) {
 	log.Debug()
-	listener, err := net.Listen("tcp", ":"+strconv.Itoa(Parameters.NodePort))
+	listener, err := net.Listen("tcp", ":"+strconv.Itoa(config.Parameters.NodePort))
 	if err != nil {
 		log.Error("Error listening\n", err.Error())
 		return nil, err
@@ -170,9 +170,9 @@ func initNonTlsListen() (net.Listener, error) {
 }
 
 func initTlsListen() (net.Listener, error) {
-	certPath := Parameters.CertPath
-	keyPath := Parameters.KeyPath
-	caPath := Parameters.CAPath
+	certPath := config.Parameters.CertPath
+	keyPath := config.Parameters.KeyPath
+	caPath := config.Parameters.CAPath
 
 	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
@@ -197,8 +197,8 @@ func initTlsListen() (net.Listener, error) {
 		ClientCAs:    pool,
 	}
 
-	log.Info("TLS listen port is ", strconv.Itoa(Parameters.NodePort))
-	listener, err := tls.Listen("tcp", ":"+strconv.Itoa(Parameters.NodePort), tlsConfig)
+	log.Info("TLS listen port is ", strconv.Itoa(config.Parameters.NodePort))
+	listener, err := tls.Listen("tcp", ":"+strconv.Itoa(config.Parameters.NodePort), tlsConfig)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -264,9 +264,9 @@ func NonTLSDial(nodeAddr string) (net.Conn, error) {
 }
 
 func TLSDial(nodeAddr string) (net.Conn, error) {
-	certPath := Parameters.CertPath
-	keyPath := Parameters.KeyPath
-	caPath := Parameters.CAPath
+	certPath := config.Parameters.CertPath
+	keyPath := config.Parameters.KeyPath
+	caPath := config.Parameters.CAPath
 
 	clientCertPool := x509.NewCertPool()
 
@@ -287,7 +287,7 @@ func TLSDial(nodeAddr string) (net.Conn, error) {
 	}
 
 	var dialer net.Dialer
-	dialer.Timeout = time.Second * DIAL_TIMEOUT
+	dialer.Timeout = time.Second * protocol.DIAL_TIMEOUT
 	conn, err := tls.DialWithDialer(&dialer, "tcp", nodeAddr, conf)
 	if err != nil {
 		return nil, err
