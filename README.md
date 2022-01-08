@@ -82,14 +82,34 @@ After building the source code sucessfully, you should see two executable progra
 
 ## Create cntm wallet file
 
-Create wallet file 
+## create cntmology wallet
+cntm supports multiple encryption methods for generating accounts, but can set a default in config.json such as SHA256withECDSA, 
 
-```
-- Through command line program, on each host create wallet file wallet.dat needed for node implement.
-     `$ ./nodectl wallet -c -p password` 
-     Note: Set wallet password by parameter -p.
+1. create wallet cmd：
+```shell
+$ ./nodectl wallet --create --name wallet.dat --password passwordtest --encrypt=SHA512withEdDSA
 
+Note: Set wallet password by parameter -p.
 ```
+
+
+2. to show the wallet info：
+```shell
+$ ./nodectl wallet --list account
+```
+
+3. cntm supported crypto( <hash>with<dsa> ):
+ - SHA224withECDSA 
+ - SHA256withECDSA
+ - SHA384withECDSA
+ - SHA512withECDSA
+ - SHA3-224withECDSA
+ - SHA3-256withECDSA
+ - SHA3-384withECDSA
+ - SHA3-512withECDSA
+ - RIPEMD160withECDSA
+ - SM3withSM2
+ - SHA512withEdDSA
 
 ## Server Deployment
 
@@ -216,8 +236,17 @@ $ - Input your wallet password
 Run `./nodectl --h` for details.
 
 # examples
+## ccntmract
 [click this link](https://github.com/cntmio/documentation/tree/master/smart-ccntmract-tutorial)
 
+## cntm transfer sample
+
+ ```shell
+ nodectl transfer --ccntmract ff00000000000000000000000000000000000001 --value 10
+                  --from 5c1bbd3568145a1bdce46f89ed9881ca0eb7324d --to 5c1bbd3568145a1bdce46f89ed9881ca0eb7324d
+
+  ccntmract:ccntmract address； - from: transfer from； - to: transfer to； - value: amount；
+ ```
 # Ccntmributing
 
 Please open a pull request with signed-off commits. We appreciate your help! You can also send your codes as emails to the developer mailing list. You're welcomed to join the Ontology mailing list or developer forum.

@@ -110,6 +110,9 @@ func getBlock(hash common.Uint256, getTxBytes bool) (interface{}, int64) {
 	if err != nil {
 		return nil, berr.UNKNOWN_BLOCK
 	}
+	if block == nil {
+		return nil, berr.UNKNOWN_BLOCK
+	}
 	if block.Header == nil {
 		return nil, berr.UNKNOWN_BLOCK
 	}
@@ -261,7 +264,6 @@ func SendRawTransaction(cmd map[string]interface{}) map[string]interface{} {
 	}
 	if txn.TxType == types.Invoke {
 		if preExec, ok := cmd["PreExec"].(string); ok && preExec == "1" {
-			log.Tracef("PreExec SMARTCODE")
 			if _, ok := txn.Payload.(*payload.InvokeCode); ok {
 				resp["Result"], err = bactor.PreExecuteCcntmract(&txn)
 				if err != nil {
