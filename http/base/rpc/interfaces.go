@@ -434,6 +434,7 @@ func GetBalance(params []interface{}) map[string]interface{} {
 	}
 	cntm := new(big.Int)
 	cntm := new(big.Int)
+	appove := big.NewInt(0)
 
 	cntmBalance, err := bactor.GetStorageItem(genesis.OntCcntmractAddress, address[:])
 	if err != nil {
@@ -443,10 +444,19 @@ func GetBalance(params []interface{}) map[string]interface{} {
 	if cntmBalance != nil {
 		cntm.SetBytes(cntmBalance)
 	}
-	rsp := &bcomn.BalanceOfRsp{
-		Ont: cntm.String(),
-		Ong: cntm.String(),
+
+	appoveKey := append(genesis.OntCcntmractAddress[:], address[:]...)
+	cntmappove, err := bactor.GetStorageItem(genesis.OngCcntmractAddress, appoveKey[:])
+
+	if cntmappove != nil {
+		appove.SetBytes(cntmappove)
 	}
+	rsp := &bcomn.BalanceOfRsp{
+		Ont:       cntm.String(),
+		Ong:       cntm.String(),
+		OngAppove: appove.String(),
+	}
+
 	return responseSuccess(rsp)
 }
 

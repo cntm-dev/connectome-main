@@ -22,7 +22,7 @@ import (
 	"math/big"
 	"sort"
 
-	. "github.com/Ontology/common"
+	"github.com/Ontology/common"
 	pg "github.com/Ontology/core/ccntmract/program"
 	"github.com/Ontology/errors"
 	vm "github.com/Ontology/vm/neovm"
@@ -36,8 +36,8 @@ func CreateSignatureCcntmract(ownerPubKey keypair.PublicKey) (*Ccntmract, error)
 	if err != nil {
 		return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[Ccntmract],CreateSignatureCcntmract failed.")
 	}
-	hash := ToCodeHash(temp)
-	signatureRedeemScriptHashToCodeHash := ToCodeHash(signatureRedeemScript)
+	hash := common.ToCodeHash(temp)
+	signatureRedeemScriptHashToCodeHash := common.ToCodeHash(signatureRedeemScript)
 	return &Ccntmract{
 		Code:            signatureRedeemScript,
 		Parameters:      []CcntmractParameterType{Signature},
@@ -55,7 +55,7 @@ func CreateSignatureRedeemScript(pubkey keypair.PublicKey) ([]byte, error) {
 }
 
 //create a Multi Singature ccntmract for owner  。
-func CreateMultiSigCcntmract(publicKeyHash Address, m int, publicKeys []keypair.PublicKey) (*Ccntmract, error) {
+func CreateMultiSigCcntmract(publicKeyHash common.Address, m int, publicKeys []keypair.PublicKey) (*Ccntmract, error) {
 
 	params := make([]CcntmractParameterType, m)
 	for i, _ := range params {
@@ -65,7 +65,7 @@ func CreateMultiSigCcntmract(publicKeyHash Address, m int, publicKeys []keypair.
 	if err != nil {
 		return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[Ccntmract],CreateSignatureRedeemScript failed.")
 	}
-	signatureRedeemScriptHashToCodeHash := ToCodeHash(MultiSigRedeemScript)
+	signatureRedeemScriptHashToCodeHash := common.ToCodeHash(MultiSigRedeemScript)
 	return &Ccntmract{
 		Code:            MultiSigRedeemScript,
 		Parameters:      params,

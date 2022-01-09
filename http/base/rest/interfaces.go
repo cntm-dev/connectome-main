@@ -386,6 +386,7 @@ func GetStorage(cmd map[string]interface{}) map[string]interface{} {
 	resp["Result"] = common.ToHexString(value)
 	return resp
 }
+
 func GetBalance(cmd map[string]interface{}) map[string]interface{} {
 	resp := ResponsePack(berr.SUCCESS)
 	addrBase58 := cmd["Addr"].(string)
@@ -393,9 +394,10 @@ func GetBalance(cmd map[string]interface{}) map[string]interface{} {
 	if err != nil {
 		return ResponsePack(berr.INVALID_PARAMS)
 	}
-	cntm := new(big.Int)
-	cntm := new(big.Int)
-	appove := new(big.Int)
+
+	cntm := big.NewInt(0)
+	cntm := big.NewInt(0)
+	appove := big.NewInt(0)
 
 	cntmBalance, err := bactor.GetStorageItem(genesis.OntCcntmractAddress, address[:])
 	if err != nil {
@@ -417,6 +419,7 @@ func GetBalance(cmd map[string]interface{}) map[string]interface{} {
 
 	appoveKey := append(genesis.OntCcntmractAddress[:], address[:]...)
 	cntmappove, err := bactor.GetStorageItem(genesis.OngCcntmractAddress, appoveKey[:])
+
 	if cntmappove != nil {
 		appove.SetBytes(cntmappove)
 	}

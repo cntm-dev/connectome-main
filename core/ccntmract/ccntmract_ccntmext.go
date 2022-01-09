@@ -23,7 +23,7 @@ import (
 	"math/big"
 	"sort"
 
-	. "github.com/Ontology/common"
+	"github.com/Ontology/common"
 	"github.com/Ontology/common/log"
 	pg "github.com/Ontology/core/ccntmract/program"
 	sig "github.com/Ontology/core/signature"
@@ -33,7 +33,7 @@ import (
 
 type CcntmractCcntmext struct {
 	Data          sig.SignableData
-	ProgramHashes []Address
+	ProgramHashes []common.Address
 	Codes         [][]byte
 	Parameters    [][][]byte
 
@@ -153,8 +153,8 @@ func (cxt *CcntmractCcntmext) AddSignatureToMultiList(ccntmractIndex int, ccntmr
 	pk := keypair.SerializePublicKey(pubkey)
 
 	pubkeyPara := PubkeyParameter{
-		PubKey:    ToHexString(pk),
-		Parameter: ToHexString(parameter),
+		PubKey:    common.ToHexString(pk),
+		Parameter: common.ToHexString(parameter),
 	}
 	cxt.MultiPubkeyPara[ccntmractIndex] = append(cxt.MultiPubkeyPara[ccntmractIndex], pubkeyPara)
 
@@ -169,7 +169,7 @@ func (cxt *CcntmractCcntmext) AddMultiSignatures(index int, ccntmract *Ccntmract
 
 	paraIndexs := []ParameterIndex{}
 	for _, pubkeyPara := range cxt.MultiPubkeyPara[index] {
-		pubKeyBytes, err := HexToBytes(pubkeyPara.Parameter)
+		pubKeyBytes, err := common.HexToBytes(pubkeyPara.Parameter)
 		if err != nil {
 			return errors.New("Ccntmract AddCcntmract pubKeyBytes HexToBytes failed.")
 		}
@@ -215,7 +215,7 @@ func (cxt *CcntmractCcntmext) ParseCcntmractPubKeys(ccntmract *Ccntmract) (map[s
 		i++
 
 		//add to parameter index
-		pubkeyIndex[ToHexString(ccntmract.Code[i:33])] = Index
+		pubkeyIndex[common.ToHexString(ccntmract.Code[i:33])] = Index
 
 		i += 33
 		Index++
@@ -224,7 +224,7 @@ func (cxt *CcntmractCcntmext) ParseCcntmractPubKeys(ccntmract *Ccntmract) (map[s
 	return pubkeyIndex, nil
 }
 
-func (cxt *CcntmractCcntmext) GetIndex(programHash Address) int {
+func (cxt *CcntmractCcntmext) GetIndex(programHash common.Address) int {
 	for i := 0; i < len(cxt.ProgramHashes); i++ {
 		if cxt.ProgramHashes[i] == programHash {
 			return i

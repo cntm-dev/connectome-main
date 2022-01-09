@@ -19,15 +19,13 @@
 package wallet
 
 import (
-	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/Ontology/account"
-	. "github.com/Ontology/cli/common"
-	. "github.com/Ontology/common"
+	cliCommon "github.com/Ontology/cli/common"
+	"github.com/Ontology/common"
 	"github.com/Ontology/common/password"
 	"github.com/Ontology/http/base/rpc"
 	"github.com/cntmio/cntmology-crypto/keypair"
@@ -48,7 +46,7 @@ func walletAction(c *cli.Ccntmext) error {
 		fmt.Println("Invalid wallet name.")
 		os.Exit(1)
 	}
-	if FileExisted(name) && create {
+	if common.FileExisted(name) && create {
 		fmt.Printf("CAUTION: '%s' already exists!\n", name)
 		os.Exit(1)
 	}
@@ -69,7 +67,8 @@ func walletAction(c *cli.Ccntmext) error {
 	}
 	var wallet *account.ClientImpl
 	if create {
-		wallet = account.Create(name, []byte(passwd))
+		encrypt := c.String("encrypt")
+		wallet = account.Create(name, encrypt, []byte(passwd))
 	} else {
 		// list wallet or change wallet password
 		wallet = account.Open(name, []byte(passwd))
@@ -94,18 +93,13 @@ func walletAction(c *cli.Ccntmext) error {
 	address := account.Address
 
 	pubKeyBytes := keypair.SerializePublicKey(pubKey)
-	fmt.Println("public key:   ", ToHexString(pubKeyBytes))
-	fmt.Println("hex address: ", ToHexString(address[:]))
+	fmt.Println("public key:   ", common.ToHexString(pubKeyBytes))
+	fmt.Println("hex address: ", common.ToHexString(address[:]))
 	fmt.Println("base58 address:      ", address.ToBase58())
-	asset := c.String("asset")
-	if list && asset != "" {
-		var buffer bytes.Buffer
-		err := address.Serialize(&buffer)
-		if err != nil {
-			return err
-		}
-		resp, err := rpc.Call(RpcAddress(), "getunspendoutput", 0,
-			[]interface{}{hex.EncodeToString(buffer.Bytes()), asset})
+	balance := c.Bool("balance")
+	if list && balance {
+		resp, err := rpc.Call(cliCommon.RpcAddress(), "getbalance", 0,
+			[]interface{}{address.ToBase58()})
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return err
@@ -116,17 +110,15 @@ func walletAction(c *cli.Ccntmext) error {
 			fmt.Println("Unmarshal JSON failed")
 			return err
 		}
-		switch r["result"].(type) {
+
+		switch res := r["result"].(type) {
 		case map[string]interface{}:
-			ammount := 0
-			unspend := r["result"].(map[string]interface{})
-			for _, v := range unspend {
-				out := v.(map[string]interface{})
-				ammount += int(out["Value"].(float64))
+			for k, v := range res {
+				fmt.Printf("%s: %v\n", k, v)
 			}
-			fmt.Println("Ammount: ", ammount)
+			return nil
 		case string:
-			fmt.Println(r["result"].(string))
+			fmt.Println(res)
 			return nil
 		}
 	}
@@ -152,9 +144,18 @@ func NewCommand() *cli.Command {
 				Name:  "changepassword",
 				Usage: "change wallet password",
 			},
+			cli.BoolFlag{
+				Name:  "balance, b",
+				Usage: "get cntm/cntm balance",
+			},
 			cli.StringFlag{
-				Name:  "asset, a",
-				Usage: "asset uniq ID",
+				Name: "encrypt, e",
+				Usage: `encrypt type,just as:
+				SHA224withECDSA, SHA256withECDSA,
+				SHA384withECDSA, SHA512withECDSA,
+				SHA3-224withECDSA, SHA3-256withECDSA,
+				SHA3-384withECDSA, SHA3-512withECDSA,
+				RIPEMD160withECDSA, SM3withSM2, SHA512withEdDSA`,
 			},
 			cli.StringFlag{
 				Name:  "name, n",
@@ -168,7 +169,7 @@ func NewCommand() *cli.Command {
 		},
 		Action: walletAction,
 		OnUsageError: func(c *cli.Ccntmext, err error, isSubcommand bool) error {
-			PrintError(c, err, "wallet")
+			cliCommon.PrintError(c, err, "wallet")
 			return cli.NewExitError("", 1)
 		},
 	}
