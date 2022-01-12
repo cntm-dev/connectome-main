@@ -22,17 +22,17 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/core/payload"
-	"github.com/Ontology/core/states"
-	"github.com/Ontology/core/store"
-	scommon "github.com/Ontology/core/store/common"
-	"github.com/Ontology/core/store/statestore"
-	"github.com/Ontology/core/types"
-	"github.com/Ontology/smartccntmract"
-	"github.com/Ontology/smartccntmract/ccntmext"
-	"github.com/Ontology/smartccntmract/event"
-	vmtypes "github.com/Ontology/vm/types"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/payload"
+	"github.com/cntmio/cntmology/core/states"
+	"github.com/cntmio/cntmology/core/store"
+	scommon "github.com/cntmio/cntmology/core/store/common"
+	"github.com/cntmio/cntmology/core/store/statestore"
+	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/smartccntmract"
+	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
+	"github.com/cntmio/cntmology/smartccntmract/event"
+	vmtypes "github.com/cntmio/cntmology/vm/types"
 )
 
 const (

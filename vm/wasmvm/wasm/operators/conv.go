@@ -25,7 +25,7 @@ package operators
 import (
 	"regexp"
 
-	"github.com/Ontology/vm/wasmvm/wasm"
+	"github.com/cntmio/cntmology/vm/wasmvm/wasm"
 )
 
 var reCvrtOp = regexp.MustCompile(`(.+)\.(?:[a-z]|\_)+\/(.+)`)

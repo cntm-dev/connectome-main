@@ -1,7 +1,7 @@
 language: go
 
 install:
-  - grep 'import' -rl ./| grep ".go"| xargs sed -i 's#"github.com/Ontology/#"github.com/Ontology/Ontology/#g'
+  - grep 'import' -rl ./| grep ".go"| xargs sed -i 's#"github.com/cntmio/cntmology/#"github.com/cntmio/cntmology/Ontology/#g'
   - go get github.com/Masterminds/glide
   - glide install
 

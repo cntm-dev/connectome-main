@@ -19,7 +19,7 @@
 package leveldbstore
 
 import (
-	"github.com/Ontology/core/store/common"
+	"github.com/cntmio/cntmology/core/store/common"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/filter"

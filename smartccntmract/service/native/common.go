@@ -22,12 +22,12 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/Ontology/common"
-	cstates "github.com/Ontology/core/states"
-	scommon "github.com/Ontology/core/store/common"
-	"github.com/Ontology/errors"
-	"github.com/Ontology/smartccntmract/event"
-	"github.com/Ontology/smartccntmract/service/native/states"
+	"github.com/cntmio/cntmology/common"
+	cstates "github.com/cntmio/cntmology/core/states"
+	scommon "github.com/cntmio/cntmology/core/store/common"
+	"github.com/cntmio/cntmology/errors"
+	"github.com/cntmio/cntmology/smartccntmract/event"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/states"
 )
 
 var (

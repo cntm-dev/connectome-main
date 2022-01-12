@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Ontology/common/config"
-	"github.com/Ontology/common/log"
-	"github.com/Ontology/common/serialization"
-	"github.com/Ontology/net/actor"
-	"github.com/Ontology/net/protocol"
+	"github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/common/serialization"
+	"github.com/cntmio/cntmology/net/actor"
+	"github.com/cntmio/cntmology/net/protocol"
 	"github.com/cntmio/cntmology-crypto/keypair"
 )
 

@@ -22,14 +22,14 @@ import (
 	"bytes"
 	"math/big"
 
-	"github.com/Ontology/account"
-	"github.com/Ontology/common"
-	"github.com/Ontology/core/genesis"
-	cstates "github.com/Ontology/core/states"
-	scommon "github.com/Ontology/core/store/common"
-	ctypes "github.com/Ontology/core/types"
-	"github.com/Ontology/errors"
-	"github.com/Ontology/smartccntmract/service/native/states"
+	"github.com/cntmio/cntmology/account"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/genesis"
+	cstates "github.com/cntmio/cntmology/core/states"
+	scommon "github.com/cntmio/cntmology/core/store/common"
+	ctypes "github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/errors"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/states"
 )
 
 var (

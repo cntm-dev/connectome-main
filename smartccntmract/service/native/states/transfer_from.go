@@ -22,9 +22,9 @@ import (
 	"io"
 	"math/big"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/common/serialization"
-	"github.com/Ontology/errors"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/serialization"
+	"github.com/cntmio/cntmology/errors"
 )
 
 type TransferFrom struct {

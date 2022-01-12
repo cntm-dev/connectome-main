@@ -29,15 +29,15 @@ import (
 
 	"github.com/urfave/cli"
 
-	"github.com/Ontology/account"
-	clicommon "github.com/Ontology/cli/common"
-	"github.com/Ontology/common"
-	"github.com/Ontology/core/signature"
-	ctypes "github.com/Ontology/core/types"
-	cutils "github.com/Ontology/core/utils"
-	"github.com/Ontology/http/base/rpc"
-	"github.com/Ontology/smartccntmract/service/native/states"
-	vmtypes "github.com/Ontology/vm/types"
+	"github.com/cntmio/cntmology/account"
+	clicommon "github.com/cntmio/cntmology/cli/common"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/signature"
+	ctypes "github.com/cntmio/cntmology/core/types"
+	cutils "github.com/cntmio/cntmology/core/utils"
+	"github.com/cntmio/cntmology/http/base/rpc"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/states"
+	vmtypes "github.com/cntmio/cntmology/vm/types"
 	"github.com/cntmio/cntmology-crypto/keypair"
 )
 

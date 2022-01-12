@@ -21,9 +21,9 @@ package stateless
 import (
 	"reflect"
 
-	"github.com/Ontology/common/log"
-	"github.com/Ontology/core/validation"
-	vatypes "github.com/Ontology/validator/types"
+	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/core/validation"
+	vatypes "github.com/cntmio/cntmology/validator/types"
 	"github.com/cntmio/cntmology-eventbus/actor"
 )
 

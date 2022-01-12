@@ -1,9 +1,9 @@
 package common
 
 import (
-	"github.com/Ontology/common"
-	"github.com/Ontology/core/payload"
-	"github.com/Ontology/core/types"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/payload"
+	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
@@ -88,9 +88,9 @@ func TransPayloadToHex(p types.Payload) PayloadInfo {
 		obj := new(BookkeeperInfo)
 		pubKeyBytes := keypair.SerializePublicKey(object.PubKey)
 		obj.PubKey = common.ToHexString(pubKeyBytes)
-		if object.Action == payload.BookKeeperAction_ADD {
+		if object.Action == payload.BookkeeperAction_ADD {
 			obj.Action = "add"
-		} else if object.Action == payload.BookKeeperAction_SUB {
+		} else if object.Action == payload.BookkeeperAction_SUB {
 			obj.Action = "sub"
 		} else {
 			obj.Action = "nil"

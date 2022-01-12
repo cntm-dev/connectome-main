@@ -4,7 +4,7 @@
 
 Welcome to Ontology's source code library!
 
-Ontology is dedicated to creating a freely configurable, componentized, cross-chain supported, high-performance, and horizcntmally scalable blockchain infrastructure system. Ontology makes deploying and calling Decentralization applications even more easier.
+Ontology is dedicated to creating a freely configurable, componentized, interoperability across chains, high-performance, and horizcntmally scalable blockchain infrastructure system. Ontology makes deploying and calling Decentralization applications even more easier.
 
 The code is currently alpha-quality, but in the rapid development process. The master code may be unstable, stable versions can be downloaded in the release page.
 
@@ -26,7 +26,7 @@ The public test network described in the page below, and we sincerely welcome an
 
 * [Build development environment](#build-development-environment)
 * [Deployment and test](#deployment-and-test)
-	* [Get Ontology](#get-cntmology)
+	* [Get cntmology](#get-cntmology)
 		* [Get from source code](#get-from-source-code)
 	* [Create cntm wallet file](#create-cntm-wallet-file)
 	* [Server Deployment](#server-deployment)
@@ -34,7 +34,7 @@ The public test network described in the page below, and we sincerely welcome an
 		* [Multi-hosts deployment configuration](#multi-hosts-deployment-configuration)
 		* [Deploy nodes on public test network](#deploy-nodes-on-public-test-network)
 		* [Inplement](#inplement)
-* [examples](#examples)
+* [Examples](#Examples)
 * [Ccntmributing](#ccntmributing)
 * [Open source community](#open-source-community)
 	* [Site](#site)
@@ -42,7 +42,7 @@ The public test network described in the page below, and we sincerely welcome an
 
 # Build development environment
 
-The requirements to build Ontology are:
+The requirements to build cntmology are:
 
 - Golang version 1.9 or later
 - Glide (a third-party package management tool)
@@ -50,10 +50,10 @@ The requirements to build Ontology are:
 - Golang supported operating systems
 
 # Deployment and test
-## Get Ontology
+## Get cntmology
 ### Get from source code
 
-Clone the Ontology repository into the appropriate $GOPATH/src directory.
+Clone the cntmology repository into the appropriate $GOPATH/src directory.
 
 ```
 $ git clone https://github.com/cntmio/cntmology.git
@@ -63,7 +63,7 @@ $ git clone https://github.com/cntmio/cntmology.git
 Fetch the dependent third-party packages with glide.
 
 ```
-$ cd Ontology
+$ cd cntmology
 $ glide install
 
 ```
@@ -85,20 +85,21 @@ After building the source code sucessfully, you should see two executable progra
 ## create cntmology wallet
 cntm supports multiple encryption methods for generating accounts, but can set a default in config.json such as SHA256withECDSA, 
 
-1. create wallet cmd：
+Create wallet cmd：
 ```shell
 $ ./nodectl wallet --create --name wallet.dat --password passwordtest --encrypt=SHA512withEdDSA
 
 Note: Set wallet password by parameter -p.
+
 ```
 
+To show the wallet info：
 
-2. to show the wallet info：
 ```shell
 $ ./nodectl wallet --list account
 ```
 
-3. cntm supported crypto( <hash>with<dsa> ):
+cntm supported crypto( <hash>with<dsa> ):
  - SHA224withECDSA 
  - SHA256withECDSA
  - SHA384withECDSA
@@ -113,7 +114,7 @@ $ ./nodectl wallet --list account
 
 ## Server Deployment
 
-To run Ontology successfully,  nodes can be deployed by the following two way:
+To run cntmology successfully,  nodes can be deployed by the following two way:
 
 - Single-host deployment
 - Multi-hosts deployment
@@ -201,7 +202,7 @@ $ cat config.json
 	   "139.219.69.70:20338",
 	   "40.125.165.118:20338"
     ],
-    "BookKeepers": [
+    "Bookkeepers": [
 "1202021c6750d2c5d99813997438cee0740b04a73e42664c444e778e001196eed96c9d",
 "12020339541a43af2206358714cf6bd385fc9ac8b5df554fec5497d9e947d583f985fc",
 "120203bdf0d966f98ff4af5c563c4a3e2fe499d98542115e1ffd75fbca44b12c56a591",
@@ -235,15 +236,14 @@ $ - Input your wallet password
 
 Run `./nodectl --h` for details.
 
-# examples
-## ccntmract
-[click this link](https://github.com/cntmio/documentation/tree/master/smart-ccntmract-tutorial)
+# Examples
+## Ccntmract
+[Smart Ccntmract guide](https://github.com/cntmio/documentation/tree/master/smart-ccntmract-tutorial)
 
 ## cntm transfer sample
 
  ```shell
- nodectl transfer --ccntmract ff00000000000000000000000000000000000001 --value 10
-                  --from 5c1bbd3568145a1bdce46f89ed9881ca0eb7324d --to 5c1bbd3568145a1bdce46f89ed9881ca0eb7324d
+  ./nodectl transfer --ccntmract ff00000000000000000000000000000000000001 --value 10 --from 0181beb9cfba23c777421eaf57e357e0fc331cbf --to 01f3aecd2ba7a5b704fbd5bac673e141d5109e3e
 
   ccntmract:ccntmract address； - from: transfer from； - to: transfer to； - value: amount；
  ```
@@ -266,7 +266,7 @@ Reported-by: whoever-reported-it  Signed-off-by: Your Name [youremail@yourhost.c
 # Open source community
 ## Site
 
-- <http://cntm.io/>
+- <https://cntm.io/>
 
 # License
 

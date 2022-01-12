@@ -19,7 +19,7 @@
 package rpc
 
 import (
-	Err "github.com/Ontology/http/base/error"
+	Err "github.com/cntmio/cntmology/http/base/error"
 )
 
 func responseSuccess(result interface{}) map[string]interface{} {

@@ -21,10 +21,10 @@ package vote
 import (
 	"sort"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/core/genesis"
-	"github.com/Ontology/core/states"
-	"github.com/Ontology/core/types"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/genesis"
+	"github.com/cntmio/cntmology/core/states"
+	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology-crypto/keypair"
 )
 

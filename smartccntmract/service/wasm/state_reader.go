@@ -21,10 +21,10 @@ package wasm
 import (
 	"errors"
 
-	"github.com/Ontology/core/store"
-	"github.com/Ontology/smartccntmract/event"
-	trigger "github.com/Ontology/smartccntmract/types"
-	"github.com/Ontology/vm/wasmvm/exec"
+	"github.com/cntmio/cntmology/core/store"
+	"github.com/cntmio/cntmology/smartccntmract/event"
+	trigger "github.com/cntmio/cntmology/smartccntmract/types"
+	"github.com/cntmio/cntmology/vm/wasmvm/exec"
 )
 
 type WasmStateReader struct {

@@ -22,10 +22,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Ontology/core/ledger"
-	"github.com/Ontology/core/signature"
-	"github.com/Ontology/core/types"
-	cntmErrors "github.com/Ontology/errors"
+	"github.com/cntmio/cntmology/core/ledger"
+	"github.com/cntmio/cntmology/core/signature"
+	"github.com/cntmio/cntmology/core/types"
+	cntmErrors "github.com/cntmio/cntmology/errors"
 )
 
 func VerifyBlock(block *types.Block, ld *ledger.Ledger, completely bool) error {

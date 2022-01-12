@@ -22,7 +22,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/Ontology/common/log"
+	"github.com/cntmio/cntmology/common/log"
 )
 
 func init() {

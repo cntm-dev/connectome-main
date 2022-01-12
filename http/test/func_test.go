@@ -26,14 +26,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Ontology/account"
-	"github.com/Ontology/common"
-	"github.com/Ontology/core/signature"
-	"github.com/Ontology/core/types"
-	ctypes "github.com/Ontology/core/types"
-	"github.com/Ontology/core/utils"
-	"github.com/Ontology/vm/neovm"
-	vmtypes "github.com/Ontology/vm/types"
+	"github.com/cntmio/cntmology/account"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/signature"
+	"github.com/cntmio/cntmology/core/types"
+	ctypes "github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/core/utils"
+	"github.com/cntmio/cntmology/vm/neovm"
+	vmtypes "github.com/cntmio/cntmology/vm/types"
 	"github.com/cntmio/cntmology-crypto/keypair"
 )
 

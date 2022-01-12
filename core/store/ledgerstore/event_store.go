@@ -24,11 +24,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/common/serialization"
-	scom "github.com/Ontology/core/store/common"
-	"github.com/Ontology/core/store/leveldbstore"
-	"github.com/Ontology/smartccntmract/event"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/serialization"
+	scom "github.com/cntmio/cntmology/core/store/common"
+	"github.com/cntmio/cntmology/core/store/leveldbstore"
+	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 

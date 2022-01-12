@@ -21,16 +21,16 @@ package websocket
 import (
 	"bytes"
 
-	"github.com/Ontology/common"
-	cfg "github.com/Ontology/common/config"
-	"github.com/Ontology/common/log"
-	"github.com/Ontology/core/types"
-	"github.com/Ontology/events/message"
-	bactor "github.com/Ontology/http/base/actor"
-	bcomn "github.com/Ontology/http/base/common"
-	Err "github.com/Ontology/http/base/error"
-	"github.com/Ontology/http/base/rest"
-	"github.com/Ontology/http/websocket/websocket"
+	"github.com/cntmio/cntmology/common"
+	cfg "github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/events/message"
+	bactor "github.com/cntmio/cntmology/http/base/actor"
+	bcomn "github.com/cntmio/cntmology/http/base/common"
+	Err "github.com/cntmio/cntmology/http/base/error"
+	"github.com/cntmio/cntmology/http/base/rest"
+	"github.com/cntmio/cntmology/http/websocket/websocket"
 )
 
 var ws *websocket.WsServer

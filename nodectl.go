@@ -24,11 +24,11 @@ import (
 
 	"github.com/urfave/cli"
 
-	_ "github.com/Ontology/cli"
-	"github.com/Ontology/cli/common"
-	"github.com/Ontology/cli/test"
-	"github.com/Ontology/cli/transfer"
-	"github.com/Ontology/cli/wallet"
+	_ "github.com/cntmio/cntmology/cli"
+	"github.com/cntmio/cntmology/cli/common"
+	"github.com/cntmio/cntmology/cli/test"
+	"github.com/cntmio/cntmology/cli/transfer"
+	"github.com/cntmio/cntmology/cli/wallet"
 )
 
 var Version string

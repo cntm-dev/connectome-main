@@ -26,8 +26,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	ct "github.com/Ontology/core/ccntmract"
-	cntmErrors "github.com/Ontology/errors"
+	ct "github.com/cntmio/cntmology/core/ccntmract"
+	cntmErrors "github.com/cntmio/cntmology/errors"
 )
 
 type FileData struct {

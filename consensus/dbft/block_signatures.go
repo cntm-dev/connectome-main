@@ -22,7 +22,7 @@ import (
 	"errors"
 	"io"
 
-	ser "github.com/Ontology/common/serialization"
+	ser "github.com/cntmio/cntmology/common/serialization"
 )
 
 type BlockSignatures struct {

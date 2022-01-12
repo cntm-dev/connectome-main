@@ -18,7 +18,7 @@
 
 package actor
 
-import "github.com/Ontology/core/types"
+import "github.com/cntmio/cntmology/core/types"
 
 type StartConsensus struct{}
 type StopConsensus struct{}

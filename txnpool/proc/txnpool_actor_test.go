@@ -23,10 +23,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Ontology/core/types"
-	"github.com/Ontology/events/message"
-	tc "github.com/Ontology/txnpool/common"
-	vt "github.com/Ontology/validator/types"
+	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/events/message"
+	tc "github.com/cntmio/cntmology/txnpool/common"
+	vt "github.com/cntmio/cntmology/validator/types"
 )
 
 func TestTxActor(t *testing.T) {

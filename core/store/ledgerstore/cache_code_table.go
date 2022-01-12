@@ -21,8 +21,8 @@ package ledgerstore
 import (
 	"fmt"
 
-	"github.com/Ontology/core/payload"
-	scom "github.com/Ontology/core/store/common"
+	"github.com/cntmio/cntmology/core/payload"
+	scom "github.com/cntmio/cntmology/core/store/common"
 )
 
 type CacheCodeTable struct {

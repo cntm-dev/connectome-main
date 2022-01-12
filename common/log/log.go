@@ -32,7 +32,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Ontology/common/config"
+	"github.com/cntmio/cntmology/common/config"
 )
 
 const (

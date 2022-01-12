@@ -18,7 +18,7 @@
 
 package error
 
-import cntmErrors "github.com/Ontology/errors"
+import cntmErrors "github.com/cntmio/cntmology/errors"
 
 const (
 	SUCCESS            int64 = 0

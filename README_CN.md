@@ -8,7 +8,7 @@ Ontology致力于创建一个组件化、可自由配置、跨链支持、高性
 
 目前代码还处于内部测试阶段，但处于快速的开发过程中，master代码可能是不稳定的，稳定的版本可以在releases中下载。
 
-公开的测试网可以在下面找到，也非常欢迎及希望能有更多的开发者加入到cntmology中来。
+公开的测试网可以在下面找到，也非常欢迎及希望能有更多的开发者加入到Ontology中来。
 
 ## 特性
 
@@ -42,7 +42,7 @@ Ontology致力于创建一个组件化、可自由配置、跨链支持、高性
 * [许可证](#许可证)
 
 # 构建开发环境
-成功编译Ontology需要以下准备：
+成功编译cntmology需要以下准备：
 
 * Golang版本在1.9及以上
 * 安装第三方包管理工具glide
@@ -52,7 +52,7 @@ Ontology致力于创建一个组件化、可自由配置、跨链支持、高性
 # 部署及测试
 ## 获取cntmology
 ### 从源码获取
-克隆Ontology仓库到$GOPATH/src目录
+克隆cntmology仓库到$GOPATH/src目录
 ```shell
 $ git clone https://github.com/cntmio/cntmology.git
 ```
@@ -60,7 +60,7 @@ $ git clone https://github.com/cntmio/cntmology.git
 用第三方包管理工具glide拉取依赖库
 
 ````shell
-$ cd Ontology
+$ cd cntmology
 $ glide install
 ````
 
@@ -82,18 +82,18 @@ $ make
 ## cntm钱包创建示例
 钱包创建的时候，支持用户手动选择签名方案；如果用户没有手动选择，将会使用config.json中的默认配置项(SignatureScheme); 如果以上两种方式都没有配置，或者使用了系统不支持的签名方案，系统将会提供最终的默认签名方案(SHA256withECDSA). 
 
-1. 创建钱包示例如下：
+创建钱包示例如下：
 ```shell
 $ ./nodectl wallet --create --name wallet.dat --password passwordtest --encrypt=SHA512withEdDSA
 ```
         注：通过-p参数设置钱包密码
 
-2. 展示钱包示例(需要输入密码)：
+展示钱包示例(需要输入密码)：
 ```shell
 $ ./nodectl wallet --list account
 ```
 
-3. cntm可签名方案说明( <hash>with<dsa> 前面是散列算法，后面是签名算法):
+cntm可签名方案说明( <hash>with<dsa> 前面是散列算法，后面是签名算法):
  - SHA224withECDSA 
  - SHA256withECDSA
  - SHA384withECDSA
@@ -107,7 +107,7 @@ $ ./nodectl wallet --list account
  - SHA512withEdDSA
 
 ## 服务器部署
-成功运行Ontology可以通过以下两种方式进行部署
+成功运行cntmology可以通过以下两种方式进行部署
 
 * 单机部署
 * 多机部署
@@ -188,7 +188,7 @@ $ cat config.json
      "139.219.69.70:20338",
      "40.125.165.118:20338"
     ],
-    "BookKeepers": [
+    "Bookkeepers": [
 "1202021c6750d2c5d99813997438cee0740b04a73e42664c444e778e001196eed96c9d",
 "12020339541a43af2206358714cf6bd385fc9ac8b5df554fec5497d9e947d583f985fc",
 "120203bdf0d966f98ff4af5c563c4a3e2fe499d98542115e1ffd75fbca44b12c56a591",
@@ -221,14 +221,12 @@ $ - 输入你的钱包口令
 
 # 简单示例
 ## 合约
-[请看这里](https://github.com/cntmio/documentation/tree/master/smart-ccntmract-tutorial)
+[合约Guide](https://github.com/cntmio/documentation/tree/master/smart-ccntmract-tutorial)
 
 ## cntm转账调用示例
 
  ```shell
- nodectl transfer --ccntmract ff00000000000000000000000000000000000001 --value 10
-                  --from 5c1bbd3568145a1bdce46f89ed9881ca0eb7324d --to 5c1bbd3568145a1bdce46f89ed9881ca0eb7324d
-
+  ./nodectl transfer --ccntmract ff00000000000000000000000000000000000001 --value 10 --from 0181beb9cfba23c777421eaf57e357e0fc331cbf --to 01f3aecd2ba7a5b704fbd5bac673e141d5109e3e
   ccntmract:合约地址； - from: 转出地址； - to: 转入地址； - value: 资产转移数量；
  ```
 
@@ -262,7 +260,7 @@ $ - 输入你的钱包口令
 
 ## 网站
 
-- http://cntm.io/
+- https://cntm.io/
 
 # 许可证
 

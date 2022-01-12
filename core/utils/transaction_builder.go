@@ -19,9 +19,9 @@
 package utils
 
 import (
-	"github.com/Ontology/core/payload"
-	"github.com/Ontology/core/types"
-	vmtypes "github.com/Ontology/vm/types"
+	"github.com/cntmio/cntmology/core/payload"
+	"github.com/cntmio/cntmology/core/types"
+	vmtypes "github.com/cntmio/cntmology/vm/types"
 )
 
 func NewDeployTransaction(code *vmtypes.VmCode, name, version, author, email, desp string, needStorage bool) *types.Transaction {

@@ -19,8 +19,8 @@
 package storage
 
 import (
-	"github.com/Ontology/core/states"
-	"github.com/Ontology/core/store/common"
+	"github.com/cntmio/cntmology/core/states"
+	"github.com/cntmio/cntmology/core/store/common"
 )
 
 type StateItem struct {

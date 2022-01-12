@@ -19,9 +19,9 @@
 package ccntmext
 
 import (
-	"github.com/Ontology/common"
-	"github.com/Ontology/smartccntmract/event"
-	vmtypes "github.com/Ontology/vm/types"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/smartccntmract/event"
+	vmtypes "github.com/cntmio/cntmology/vm/types"
 )
 
 type CcntmextRef interface {

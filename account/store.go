@@ -19,8 +19,8 @@
 package account
 
 import (
-	"github.com/Ontology/common"
-	ct "github.com/Ontology/core/ccntmract"
+	"github.com/cntmio/cntmology/common"
+	ct "github.com/cntmio/cntmology/core/ccntmract"
 )
 
 type ClientStore interface {

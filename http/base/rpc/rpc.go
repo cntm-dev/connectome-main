@@ -27,7 +27,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Ontology/common/log"
+	"github.com/cntmio/cntmology/common/log"
 )
 
 func init() {

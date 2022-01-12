@@ -25,9 +25,9 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/Ontology/common/config"
-	"github.com/Ontology/core/ledger"
-	"github.com/Ontology/net/protocol"
+	"github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/core/ledger"
+	"github.com/cntmio/cntmology/net/protocol"
 	"github.com/cntmio/cntmology-crypto/keypair"
 )
 

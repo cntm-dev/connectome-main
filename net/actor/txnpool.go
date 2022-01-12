@@ -21,11 +21,11 @@ package actor
 import (
 	"time"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/common/log"
-	"github.com/Ontology/core/types"
-	"github.com/Ontology/errors"
-	tc "github.com/Ontology/txnpool/common"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/errors"
+	tc "github.com/cntmio/cntmology/txnpool/common"
 	"github.com/cntmio/cntmology-eventbus/actor"
 )
 

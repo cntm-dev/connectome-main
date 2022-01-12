@@ -22,12 +22,12 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/common/log"
-	lactor "github.com/Ontology/core/ledger/actor"
-	"github.com/Ontology/core/payload"
-	"github.com/Ontology/core/types"
-	"github.com/Ontology/smartccntmract/event"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/log"
+	lactor "github.com/cntmio/cntmology/core/ledger/actor"
+	"github.com/cntmio/cntmology/core/payload"
+	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology-eventbus/actor"
 )
 

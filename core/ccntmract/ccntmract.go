@@ -22,9 +22,9 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/common/serialization"
-	vm "github.com/Ontology/vm/neovm"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/serialization"
+	vm "github.com/cntmio/cntmology/vm/neovm"
 )
 
 //Ccntmract address is the hash of ccntmract program .

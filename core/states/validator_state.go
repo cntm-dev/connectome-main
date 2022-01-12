@@ -21,8 +21,8 @@ package states
 import (
 	"io"
 
-	"github.com/Ontology/common/serialization"
-	"github.com/Ontology/errors"
+	"github.com/cntmio/cntmology/common/serialization"
+	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology-crypto/keypair"
 )
 

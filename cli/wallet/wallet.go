@@ -23,11 +23,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Ontology/account"
-	cliCommon "github.com/Ontology/cli/common"
-	"github.com/Ontology/common"
-	"github.com/Ontology/common/password"
-	"github.com/Ontology/http/base/rpc"
+	"github.com/cntmio/cntmology/account"
+	cliCommon "github.com/cntmio/cntmology/cli/common"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/password"
+	"github.com/cntmio/cntmology/http/base/rpc"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/urfave/cli"
 )

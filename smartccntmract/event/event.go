@@ -19,10 +19,10 @@
 package event
 
 import (
-	"github.com/Ontology/common"
-	"github.com/Ontology/core/types"
-	"github.com/Ontology/events"
-	"github.com/Ontology/events/message"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/events"
+	"github.com/cntmio/cntmology/events/message"
 )
 
 func PushSmartCodeEvent(txHash common.Uint256, errcode int64, action string, result interface{}) {

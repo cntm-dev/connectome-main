@@ -19,8 +19,8 @@
 package event
 
 import (
-	"github.com/Ontology/common"
-	"github.com/Ontology/vm/neovm/types"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/vm/neovm/types"
 )
 
 type NotifyEventArgs struct {

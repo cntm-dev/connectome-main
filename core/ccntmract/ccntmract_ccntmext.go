@@ -23,11 +23,11 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/common/log"
-	pg "github.com/Ontology/core/ccntmract/program"
-	sig "github.com/Ontology/core/signature"
-	_ "github.com/Ontology/errors"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/log"
+	pg "github.com/cntmio/cntmology/core/ccntmract/program"
+	sig "github.com/cntmio/cntmology/core/signature"
+	_ "github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology-crypto/keypair"
 )
 

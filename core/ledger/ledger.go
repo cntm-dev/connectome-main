@@ -21,14 +21,14 @@ package ledger
 import (
 	"fmt"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/core/genesis"
-	"github.com/Ontology/core/payload"
-	"github.com/Ontology/core/states"
-	"github.com/Ontology/core/store"
-	"github.com/Ontology/core/store/ledgerstore"
-	"github.com/Ontology/core/types"
-	"github.com/Ontology/smartccntmract/event"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/genesis"
+	"github.com/cntmio/cntmology/core/payload"
+	"github.com/cntmio/cntmology/core/states"
+	"github.com/cntmio/cntmology/core/store"
+	"github.com/cntmio/cntmology/core/store/ledgerstore"
+	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology-crypto/keypair"
 )
 

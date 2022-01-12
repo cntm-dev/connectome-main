@@ -22,9 +22,9 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/Ontology/core/payload"
-	"github.com/Ontology/core/states"
-	"github.com/Ontology/core/store/common"
+	"github.com/cntmio/cntmology/core/payload"
+	"github.com/cntmio/cntmology/core/states"
+	"github.com/cntmio/cntmology/core/store/common"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 

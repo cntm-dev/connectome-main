@@ -12,12 +12,12 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/Ontology/vm/wasmvm/disasm"
-	"github.com/Ontology/vm/wasmvm/exec/internal/compile"
-	"github.com/Ontology/vm/wasmvm/memory"
-	"github.com/Ontology/vm/wasmvm/wasm"
-	ops "github.com/Ontology/vm/wasmvm/wasm/operators"
-	"github.com/Ontology/common"
+	"github.com/cntmio/cntmology/vm/wasmvm/disasm"
+	"github.com/cntmio/cntmology/vm/wasmvm/exec/internal/compile"
+	"github.com/cntmio/cntmology/vm/wasmvm/memory"
+	"github.com/cntmio/cntmology/vm/wasmvm/wasm"
+	ops "github.com/cntmio/cntmology/vm/wasmvm/wasm/operators"
+	"github.com/cntmio/cntmology/common"
 )
 
 var (

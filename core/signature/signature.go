@@ -24,9 +24,9 @@ import (
 	"errors"
 	"io"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/core/ccntmract/program"
-	"github.com/Ontology/vm/neovm/interfaces"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/ccntmract/program"
+	"github.com/cntmio/cntmology/vm/neovm/interfaces"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	s "github.com/cntmio/cntmology-crypto/signature"
 )

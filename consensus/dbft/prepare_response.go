@@ -21,7 +21,7 @@ package dbft
 import (
 	"io"
 
-	ser "github.com/Ontology/common/serialization"
+	ser "github.com/cntmio/cntmology/common/serialization"
 )
 
 type PrepareResponse struct {

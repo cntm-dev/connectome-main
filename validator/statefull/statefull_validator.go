@@ -21,12 +21,12 @@ package statefull
 import (
 	"reflect"
 
-	"github.com/Ontology/common/log"
-	"github.com/Ontology/core/ledger"
-	"github.com/Ontology/core/types"
-	"github.com/Ontology/errors"
-	"github.com/Ontology/validator/db"
-	vatypes "github.com/Ontology/validator/types"
+	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/core/ledger"
+	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/errors"
+	"github.com/cntmio/cntmology/validator/db"
+	vatypes "github.com/cntmio/cntmology/validator/types"
 	"github.com/cntmio/cntmology-eventbus/actor"
 )
 

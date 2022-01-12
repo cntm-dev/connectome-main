@@ -30,11 +30,11 @@ import (
 	"sync"
 	"time"
 
-	cfg "github.com/Ontology/common/config"
-	"github.com/Ontology/common/log"
-	berr "github.com/Ontology/http/base/error"
-	"github.com/Ontology/http/base/rest"
-	"github.com/Ontology/http/websocket"
+	cfg "github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/log"
+	berr "github.com/cntmio/cntmology/http/base/error"
+	"github.com/cntmio/cntmology/http/base/rest"
+	"github.com/cntmio/cntmology/http/websocket"
 )
 
 type handler func(map[string]interface{}) map[string]interface{}

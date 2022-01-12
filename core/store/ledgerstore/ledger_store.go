@@ -24,20 +24,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/common/log"
-	"github.com/Ontology/core/payload"
-	"github.com/Ontology/core/signature"
-	"github.com/Ontology/core/states"
-	"github.com/Ontology/core/store/statestore"
-	"github.com/Ontology/core/types"
-	"github.com/Ontology/events"
-	"github.com/Ontology/events/message"
-	scommon "github.com/Ontology/smartccntmract/common"
-	"github.com/Ontology/smartccntmract/event"
-	neoservice "github.com/Ontology/smartccntmract/service/neovm"
-	stypes "github.com/Ontology/smartccntmract/types"
-	"github.com/Ontology/vm/neovm"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/core/payload"
+	"github.com/cntmio/cntmology/core/signature"
+	"github.com/cntmio/cntmology/core/states"
+	"github.com/cntmio/cntmology/core/store/statestore"
+	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/events"
+	"github.com/cntmio/cntmology/events/message"
+	scommon "github.com/cntmio/cntmology/smartccntmract/common"
+	"github.com/cntmio/cntmology/smartccntmract/event"
+	neoservice "github.com/cntmio/cntmology/smartccntmract/service/neovm"
+	stypes "github.com/cntmio/cntmology/smartccntmract/types"
+	"github.com/cntmio/cntmology/vm/neovm"
 	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
@@ -45,6 +45,7 @@ const (
 	SYSTEM_VERSION          = byte(1)
 	HEADER_INDEX_BATCH_SIZE = uint32(2000)
 	BLOCK_CACHE_TIMEOUT     = time.Minute * 30
+	MAX_BLOCK_CACHE_SIZE    = 2000
 )
 
 var (
@@ -410,6 +411,11 @@ func (this *LedgerStoreImp) GetCurrentBlockHeight() uint32 {
 func (this *LedgerStoreImp) addToHeaderCache(header *types.Header) {
 	this.lock.Lock()
 	defer this.lock.Unlock()
+
+	if len(this.headerCache) > MAX_BLOCK_CACHE_SIZE {
+		return
+	}
+
 	cacheItem := &ledgerCacheItem{
 		item:      header,
 		cacheTime: time.Now(),
@@ -430,6 +436,11 @@ func (this *LedgerStoreImp) getFromHeaderCache(blockHash common.Uint256) *types.
 func (this *LedgerStoreImp) addToBlockCache(block *types.Block) {
 	this.lock.Lock()
 	defer this.lock.Unlock()
+
+	if len(this.blockCache) > MAX_BLOCK_CACHE_SIZE {
+		return
+	}
+
 	cacheItem := &ledgerCacheItem{
 		item:      block,
 		cacheTime: time.Now(),

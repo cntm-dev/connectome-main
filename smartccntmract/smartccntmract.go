@@ -17,21 +17,21 @@
 package smartccntmract
 
 import (
-	"github.com/Ontology/common"
-	"github.com/Ontology/core/store"
-	scommon "github.com/Ontology/core/store/common"
-	ctypes "github.com/Ontology/core/types"
-	"github.com/Ontology/smartccntmract/ccntmext"
-	"github.com/Ontology/smartccntmract/event"
-	"github.com/Ontology/smartccntmract/service/native"
-	sneovm "github.com/Ontology/smartccntmract/service/neovm"
-	"github.com/Ontology/smartccntmract/service/wasm"
-	stypes "github.com/Ontology/smartccntmract/types"
-	"github.com/Ontology/vm/neovm"
-	"github.com/Ontology/vm/neovm/interfaces"
-	vmtypes "github.com/Ontology/vm/types"
-	"github.com/Ontology/vm/wasmvm/exec"
-	"github.com/Ontology/vm/wasmvm/util"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/store"
+	scommon "github.com/cntmio/cntmology/core/store/common"
+	ctypes "github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
+	"github.com/cntmio/cntmology/smartccntmract/event"
+	"github.com/cntmio/cntmology/smartccntmract/service/native"
+	sneovm "github.com/cntmio/cntmology/smartccntmract/service/neovm"
+	"github.com/cntmio/cntmology/smartccntmract/service/wasm"
+	stypes "github.com/cntmio/cntmology/smartccntmract/types"
+	"github.com/cntmio/cntmology/vm/neovm"
+	"github.com/cntmio/cntmology/vm/neovm/interfaces"
+	vmtypes "github.com/cntmio/cntmology/vm/types"
+	"github.com/cntmio/cntmology/vm/wasmvm/exec"
+	"github.com/cntmio/cntmology/vm/wasmvm/util"
 )
 
 type SmartCcntmract struct {

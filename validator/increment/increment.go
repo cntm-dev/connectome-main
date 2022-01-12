@@ -21,9 +21,9 @@ package increment
 import (
 	"fmt"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/common/log"
-	"github.com/Ontology/core/types"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/core/types"
 )
 
 type IncrementValidator struct {

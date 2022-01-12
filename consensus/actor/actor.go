@@ -22,9 +22,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Ontology/core/types"
-	cntmErrors "github.com/Ontology/errors"
-	txpool "github.com/Ontology/txnpool/common"
+	"github.com/cntmio/cntmology/core/types"
+	cntmErrors "github.com/cntmio/cntmology/errors"
+	txpool "github.com/cntmio/cntmology/txnpool/common"
 	"github.com/cntmio/cntmology-eventbus/actor"
 )
 

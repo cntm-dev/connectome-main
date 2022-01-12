@@ -29,8 +29,8 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/Ontology/vm/wasmvm/wasm/internal/readpos"
-	"github.com/Ontology/vm/wasmvm/wasm/leb128"
+	"github.com/cntmio/cntmology/vm/wasmvm/wasm/internal/readpos"
+	"github.com/cntmio/cntmology/vm/wasmvm/wasm/leb128"
 )
 
 // SectionID is a 1-byte code that encodes the section code of both known and custom sections.

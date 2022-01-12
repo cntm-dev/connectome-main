@@ -19,9 +19,9 @@
 package common
 
 import (
-	"github.com/Ontology/common"
-	"github.com/Ontology/core/states"
-	"github.com/Ontology/smartccntmract/event"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/states"
+	"github.com/cntmio/cntmology/smartccntmract/event"
 )
 
 type StoreIterator interface {

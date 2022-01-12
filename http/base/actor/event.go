@@ -19,8 +19,8 @@
 package actor
 
 import (
-	"github.com/Ontology/events"
-	"github.com/Ontology/events/message"
+	"github.com/cntmio/cntmology/events"
+	"github.com/cntmio/cntmology/events/message"
 	"github.com/cntmio/cntmology-eventbus/actor"
 )
 

@@ -22,9 +22,9 @@ import (
 	"crypto/sha256"
 	"errors"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/common/log"
-	cntmErrors "github.com/Ontology/errors"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/log"
+	cntmErrors "github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	s "github.com/cntmio/cntmology-crypto/signature"
 )

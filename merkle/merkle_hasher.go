@@ -21,7 +21,7 @@ package merkle
 import (
 	"crypto/sha256"
 
-	"github.com/Ontology/common"
+	"github.com/cntmio/cntmology/common"
 )
 
 type TreeHasher struct {

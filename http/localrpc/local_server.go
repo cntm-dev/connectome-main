@@ -22,9 +22,9 @@ import (
 	"net/http"
 	"strconv"
 
-	cfg "github.com/Ontology/common/config"
-	"github.com/Ontology/common/log"
-	"github.com/Ontology/http/base/rpc"
+	cfg "github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/http/base/rpc"
 )
 
 const (

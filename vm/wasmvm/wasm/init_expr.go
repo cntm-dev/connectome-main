@@ -29,7 +29,7 @@ import (
 	"io"
 	"math"
 
-	"github.com/Ontology/vm/wasmvm/wasm/leb128"
+	"github.com/cntmio/cntmology/vm/wasmvm/wasm/leb128"
 )
 
 const (

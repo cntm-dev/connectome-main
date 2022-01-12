@@ -22,8 +22,8 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/common/serialization"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/serialization"
 )
 
 type StorageKey struct {

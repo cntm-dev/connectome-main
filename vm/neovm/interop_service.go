@@ -19,7 +19,7 @@
 package neovm
 
 import (
-	"github.com/Ontology/vm/neovm/errors"
+	"github.com/cntmio/cntmology/vm/neovm/errors"
 )
 
 type InteropServices interface {

@@ -22,10 +22,10 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/Ontology/common"
-	pg "github.com/Ontology/core/ccntmract/program"
-	"github.com/Ontology/errors"
-	vm "github.com/Ontology/vm/neovm"
+	"github.com/cntmio/cntmology/common"
+	pg "github.com/cntmio/cntmology/core/ccntmract/program"
+	"github.com/cntmio/cntmology/errors"
+	vm "github.com/cntmio/cntmology/vm/neovm"
 	"github.com/cntmio/cntmology-crypto/keypair"
 )
 

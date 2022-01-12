@@ -21,11 +21,11 @@ package ledgerstore
 import (
 	"testing"
 
-	"github.com/Ontology/core/payload"
-	"github.com/Ontology/core/states"
-	scommon "github.com/Ontology/core/store/common"
-	"github.com/Ontology/core/store/statestore"
-	vmtypes "github.com/Ontology/vm/types"
+	"github.com/cntmio/cntmology/core/payload"
+	"github.com/cntmio/cntmology/core/states"
+	scommon "github.com/cntmio/cntmology/core/store/common"
+	"github.com/cntmio/cntmology/core/store/statestore"
+	vmtypes "github.com/cntmio/cntmology/vm/types"
 	"github.com/cntmio/cntmology-crypto/keypair"
 )
 

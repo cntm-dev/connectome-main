@@ -22,10 +22,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Ontology/common/log"
-	bactor "github.com/Ontology/http/base/actor"
-	"github.com/Ontology/http/base/common"
-	berr "github.com/Ontology/http/base/error"
+	"github.com/cntmio/cntmology/common/log"
+	bactor "github.com/cntmio/cntmology/http/base/actor"
+	"github.com/cntmio/cntmology/http/base/common"
+	berr "github.com/cntmio/cntmology/http/base/error"
 )
 
 const (

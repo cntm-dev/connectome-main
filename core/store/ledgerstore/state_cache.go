@@ -19,7 +19,7 @@
 package ledgerstore
 
 import (
-	"github.com/Ontology/core/states"
+	"github.com/cntmio/cntmology/core/states"
 	"github.com/hashicorp/golang-lru"
 )
 

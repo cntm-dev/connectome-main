@@ -24,7 +24,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Ontology/common"
+	"github.com/cntmio/cntmology/common"
 )
 
 func TestMerkleLeaf3(t *testing.T) {

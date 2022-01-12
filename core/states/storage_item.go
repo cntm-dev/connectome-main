@@ -22,7 +22,7 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/Ontology/common/serialization"
+	"github.com/cntmio/cntmology/common/serialization"
 )
 
 type StorageItem struct {

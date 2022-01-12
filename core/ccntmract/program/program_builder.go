@@ -22,8 +22,8 @@ import (
 	"bytes"
 	"math/big"
 
-	"github.com/Ontology/common"
-	vm "github.com/Ontology/vm/neovm"
+	"github.com/cntmio/cntmology/common"
+	vm "github.com/cntmio/cntmology/vm/neovm"
 )
 
 type ProgramBuilder struct {

@@ -25,10 +25,10 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/common/config"
-	"github.com/Ontology/common/serialization"
-	"github.com/Ontology/core/payload"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/serialization"
+	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology-crypto/keypair"
 )
 

@@ -23,12 +23,12 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/common/config"
-	"github.com/Ontology/core/types"
-	"github.com/Ontology/core/utils"
-	"github.com/Ontology/smartccntmract/service/native/states"
-	vmtypes "github.com/Ontology/vm/types"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/core/utils"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/states"
+	vmtypes "github.com/cntmio/cntmology/vm/types"
 	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
@@ -55,7 +55,7 @@ var GenBlockTime = (config.DEFAULT_GEN_BLOCK_TIME * time.Second)
 var GenesisBookkeepers []keypair.PublicKey
 
 func GenesisBlockInit(defaultBookkeeper []keypair.PublicKey) (*types.Block, error) {
-	//getBookKeeper
+	//getBookkeeper
 	GenesisBookkeepers = defaultBookkeeper
 	nextBookkeeper, err := types.AddressFromBookkeepers(defaultBookkeeper)
 	if err != nil {

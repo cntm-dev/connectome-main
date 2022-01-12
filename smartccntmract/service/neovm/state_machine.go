@@ -22,16 +22,16 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/core/payload"
-	"github.com/Ontology/core/states"
-	"github.com/Ontology/core/store"
-	scommon "github.com/Ontology/core/store/common"
-	"github.com/Ontology/errors"
-	"github.com/Ontology/smartccntmract/storage"
-	stypes "github.com/Ontology/smartccntmract/types"
-	vm "github.com/Ontology/vm/neovm"
-	vmtypes "github.com/Ontology/vm/types"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/payload"
+	"github.com/cntmio/cntmology/core/states"
+	"github.com/cntmio/cntmology/core/store"
+	scommon "github.com/cntmio/cntmology/core/store/common"
+	"github.com/cntmio/cntmology/errors"
+	"github.com/cntmio/cntmology/smartccntmract/storage"
+	stypes "github.com/cntmio/cntmology/smartccntmract/types"
+	vm "github.com/cntmio/cntmology/vm/neovm"
+	vmtypes "github.com/cntmio/cntmology/vm/types"
 )
 
 type StateMachine struct {

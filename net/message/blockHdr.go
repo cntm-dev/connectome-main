@@ -24,12 +24,12 @@ import (
 	"encoding/binary"
 	"errors"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/common/log"
-	"github.com/Ontology/common/serialization"
-	"github.com/Ontology/core/types"
-	"github.com/Ontology/net/actor"
-	"github.com/Ontology/net/protocol"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/common/serialization"
+	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/net/actor"
+	"github.com/cntmio/cntmology/net/protocol"
 )
 
 type hdrHashReq struct {

@@ -27,8 +27,8 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/Ontology/common/log"
-	"github.com/Ontology/net/protocol"
+	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/net/protocol"
 )
 
 type addrReq struct {

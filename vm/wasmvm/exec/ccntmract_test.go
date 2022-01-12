@@ -26,9 +26,9 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/common/serialization"
-	"github.com/Ontology/common"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/serialization"
+	"github.com/cntmio/cntmology/common"
 )
 
 func TestCcntmract1(t *testing.T) {

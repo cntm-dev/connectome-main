@@ -23,7 +23,7 @@
 package operators
 
 import (
-	"github.com/Ontology/vm/wasmvm/wasm"
+	"github.com/cntmio/cntmology/vm/wasmvm/wasm"
 )
 
 var (

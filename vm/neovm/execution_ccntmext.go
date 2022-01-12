@@ -21,10 +21,10 @@ package neovm
 import (
 	"io"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/vm/neovm/types"
-	"github.com/Ontology/vm/neovm/utils"
-	vmtypes "github.com/Ontology/vm/types"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/vm/neovm/types"
+	"github.com/cntmio/cntmology/vm/neovm/utils"
+	vmtypes "github.com/cntmio/cntmology/vm/types"
 )
 
 type ExecutionCcntmext struct {

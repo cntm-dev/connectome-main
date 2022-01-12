@@ -22,13 +22,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/common/log"
-	"github.com/Ontology/core/ledger"
-	"github.com/Ontology/core/payload"
-	"github.com/Ontology/core/signature"
-	"github.com/Ontology/core/types"
-	cntmErrors "github.com/Ontology/errors"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/core/ledger"
+	"github.com/cntmio/cntmology/core/payload"
+	"github.com/cntmio/cntmology/core/signature"
+	"github.com/cntmio/cntmology/core/types"
+	cntmErrors "github.com/cntmio/cntmology/errors"
 )
 
 // VerifyTransaction verifys received single transaction

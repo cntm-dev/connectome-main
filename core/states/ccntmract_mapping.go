@@ -3,8 +3,8 @@ package states
 import (
 	"io"
 
-	"github.com/Ontology/common"
-	"github.com/Ontology/errors"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/errors"
 )
 
 type CcntmractMapping struct {
