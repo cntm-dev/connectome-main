@@ -1,19 +1,21 @@
 
 <h1 align="center">Ontology </h1>
-<h4 align="center">Version V0.6.0 </h4> 
+<h4 align="center">Version 0.6.0 </h4>
 
 [![GoDoc](https://godoc.org/github.com/cntmio/cntmology?status.svg)](https://godoc.org/github.com/cntmio/cntmology)
 [![Go Report Card](https://goreportcard.com/badge/github.com/cntmio/cntmology)](https://goreportcard.com/report/github.com/cntmio/cntmology)
 [![Travis](https://travis-ci.org/cntmio/cntmology.svg?branch=master)](https://travis-ci.org/cntmio/cntmology)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/cntmio/cntmology?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
+English | [中文](README_CN.md)
+
 Welcome to Ontology's source code library!
 
-Ontology is dedicated to creating a modularized, freely configurable, interoperable cross-chain, high-performance, and horizcntmally scalable blockchain infrastructure system. Ontology makes deploying and invoking decentralized applications even more easier.
+Ontology is dedicated to creating a modularized, freely configurable, interoperable cross-chain, high-performance, and horizcntmally scalable blockchain infrastructure system. Ontology makes deploying and invoking decentralized applications easier.
 
 The code is currently alpha quality, but is in the process of rapid development. The master code may be unstable; stable versions can be downloaded in the release page.
 
-The public test network is described below. We sincerely welcome and hope more developers to join Ontology.
+The public test network is described below. We sincerely welcome and hope more developers join Ontology.
 
 ## Features
 
@@ -31,12 +33,12 @@ The public test network is described below. We sincerely welcome and hope more d
 
 * [Build development environment](#build-development-environment)
 * [Deployment and test](#deployment-and-test)
-	* [Get cntmology](#get-cntmology)
+	* [Get Ontology](#get-cntmology)
 		* [Get from source code](#get-from-source-code)
 	* [Create cntm wallet file](#create-cntm-wallet-file)
 	* [Server deployment](#server-deployment)
 		* [Single-host deployment configuration](#single-host-deployment-configuration)
-		* [Multi-hosts deployment configuration](#multi-hosts-deployment-configuration)
+		* [Multi-host deployment configuration](#multi-hosts-deployment-configuration)
 		* [Deploy nodes on public test network](#deploy-nodes-on-public-test-network)
 		* [Implement](#implement)
 * [Examples](#Examples)
@@ -55,14 +57,13 @@ The requirements to build Ontology are:
 - Golang supported operating system
 
 # Deployment and test
-## Get cntmology
+## Get Ontology
 ### Get from source code
 
-Clone the cntmology repository into the appropriate $GOPATH/src directory.
+Clone the Ontology repository into the appropriate $GOPATH/src directory.
 
 ```
 $ git clone https://github.com/cntmio/cntmology.git
-
 ```
 
 Fetch the dependent third party packages with glide.
@@ -70,14 +71,12 @@ Fetch the dependent third party packages with glide.
 ```
 $ cd cntmology
 $ glide install
-
 ```
 
 Build the source code with make.
 
 ```
 $ make
-
 ```
 
 After building the source code sucessfully, you should see two executable programs:
@@ -87,18 +86,18 @@ After building the source code sucessfully, you should see two executable progra
 
 ## Create cntm wallet file
 
-## Create cntmology wallet
+## Create Ontology wallet
 cntm supports multiple encryption methods for generating accounts, but can set a default in config.json such as SHA256withECDSA. 
 
-Create wallet cmd：
+Create wallet cmd:
+
 ```shell
 $ ./nodectl wallet --create --name wallet.dat --password passwordtest --encrypt=SHA512withEdDSA
+```
 
 Note: Set wallet password by parameter -p.
 
-```
-
-To show the wallet info：
+To show the wallet info:
 
 ```shell
 $ ./nodectl wallet --list account
@@ -128,7 +127,7 @@ cntm supported crypto (<hash>with<dsa>):
 
 ## Server deployment
 
-To run cntmology successfully,  nodes can be deployed by two ways:
+To run Ontology successfully,  nodes can be deployed by two ways:
 
 - Single-host deployment
 - Multi-hosts deployment
@@ -159,7 +158,7 @@ $ tree
 
 We can perform a quick deployment by modifying the default configuration file `config.json`.
 
-1. Copy related file into target host, including：
+1. Copy related file into target host, including:
 
    - Default configuration file`config.json`
    - Node program`cntmology`
@@ -168,11 +167,11 @@ We can perform a quick deployment by modifying the default configuration file `c
 2. Set the network connection port number for each node (recommend using the default port configuration, instead of modifying)
 
    - `NodePort`is P2P connection port number (default: 20338)
-   - `HttpJsonPort` and `HttpLocalPort` are RPC port number (default: 20336，20337)
+   - `HttpJsonPort` and `HttpLocalPort` are RPC port numbers (default: 20336, 20337)
 
 3. Seed nodes configuration
 
-   - Select at least one seed node out of 4 hosts and fill the seed node address into the `SeelList` of each configuration file. The format is `Seed node IP address + Seed node NodePort`
+   - Select at least one seed node out of 4 hosts and fill the seed node address into the `SeelList` of each configuration file. The format is `Seed node IP address + Seed node NodePort`.
 
 4. Create wallet file
 
@@ -195,7 +194,6 @@ Now multi-host configuration is completed, directory structure of each node is a
 ```
 $ ls
 config.json cntmology nodectl wallet.dat
-
 ```
 
 A configuration file fragment is as follows, you refer to the config.json file in the root directory.
@@ -234,18 +232,15 @@ $ cat config.json
     "MultiCoreNum": 4
   }
 }
-
-
 ```
 
-### Inplement
+### Implement
 
 Run each node program in any order and enter the node's wallet password after the `Password:` prompt appears.
 
 ```
 $ ./cntmology
 $ - Input your wallet password
-
 ```
 
 Run `./nodectl --h` for details.
@@ -256,11 +251,12 @@ Run `./nodectl --h` for details.
 
 ## cntm transfer sample
 
- ```shell
+```shell
   ./nodectl transfer --ccntmract ff00000000000000000000000000000000000001 --value 10 --from 0181beb9cfba23c777421eaf57e357e0fc331cbf --to 01f3aecd2ba7a5b704fbd5bac673e141d5109e3e
 
   ccntmract:ccntmract address； - from: transfer from； - to: transfer to； - value: amount；
- ```
+```
+
 # Ccntmributions
 
 Please open a pull request with a signed commit. We appreciate your help! You can also send your code as emails to the developer mailing list. You're welcome to join the Ontology mailing list or developer forum.
@@ -275,7 +271,7 @@ The body of the commit message can be several paragraphs. Please do proper word-
 
 Make sure you explain your solution and why you are doing what you are  doing, as opposed to describing what you are doing. Reviewers and your  future self can read the patch, but might not understand why a  particular solution was implemented.
 
-Reported-by: whoever-reported-it 
+Reported-by: whoever-reported-it &
 Signed-off-by: Your Name [youremail@yourhost.com](mailto:youremail@yourhost.com)
 
 # Open source community
