@@ -76,7 +76,7 @@ func NewExecutionEngine(ccntmainer interfaces.CodeCcntmainer, crypto interfaces.
 	engine := &ExecutionEngine{
 		crypto:        crypto,
 		table:         table,
-		codeCcntmainer: ccntmainer,
+		CodeCcntmainer: ccntmainer,
 		service:       NewInteropService(),
 		version:       ver,
 	}
@@ -92,7 +92,7 @@ type ExecutionEngine struct {
 	crypto        interfaces.Crypto
 	table         interfaces.CodeTable
 	service       *InteropService
-	codeCcntmainer interfaces.CodeCcntmainer
+	CodeCcntmainer interfaces.CodeCcntmainer
 	vm            *VM
 	//todo ,move to ccntmract info later
 	version  string //for test different ccntmracts
@@ -310,12 +310,11 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 	defer func() {
 		if err := recover(); err != nil {
 			returnbytes = nil
-			er = errors.New("[Call]error happend")
+			er = errors.New("[Call] error happened")
 		}
 	}()
 
 	if e.version != "test" {
-
 		methodName := CcntmRACT_METHOD_NAME //fix to "invoke"
 
 		tmparr := bytes.Split(input, []byte(PARAM_SPLITER))
@@ -331,7 +330,6 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 		if err != nil {
 			return nil, errors.New("[Call]Verify wasm failed!" + err.Error())
 		}
-
 		//3. verify the module
 		//already verified in step 2
 
@@ -368,7 +366,6 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 
 		//get  function type
 		ftype := m.Types.Entries[int(fidx)]
-
 		//method ,param bytes
 		params := make([]uint64, 2)
 

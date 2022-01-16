@@ -29,7 +29,7 @@ import (
 	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
-//create a Single Singature ccntmract for owner
+// create a Single Signature ccntmract for owner
 func CreateSignatureCcntmract(ownerPubKey keypair.PublicKey) (*Ccntmract, error) {
 	temp := keypair.SerializePublicKey(ownerPubKey)
 	signatureRedeemScript, err := CreateSignatureRedeemScript(ownerPubKey)
@@ -54,7 +54,7 @@ func CreateSignatureRedeemScript(pubkey keypair.PublicKey) ([]byte, error) {
 	return sb.ToArray(), nil
 }
 
-//create a Multi Singature ccntmract for owner  。
+// create a Multi Signature ccntmract for owner  。
 func CreateMultiSigCcntmract(publicKeyHash common.Address, m int, publicKeys []keypair.PublicKey) (*Ccntmract, error) {
 
 	params := make([]CcntmractParameterType, m)

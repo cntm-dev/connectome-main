@@ -26,10 +26,10 @@ import (
 )
 
 type Program struct {
-	//the ccntmract program code,which will be run on VM or specific envrionment
+	// the ccntmract program code,which will be run on VM or specific environment
 	Code []byte
 
-	//the program code's parameter
+	// the program code's parameter
 	Parameter []byte
 }
 

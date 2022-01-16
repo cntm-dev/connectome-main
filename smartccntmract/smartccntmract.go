@@ -17,10 +17,14 @@
 package smartccntmract
 
 import (
+	"bytes"
+	"encoding/binary"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/store"
 	scommon "github.com/cntmio/cntmology/core/store/common"
 	ctypes "github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
@@ -115,8 +119,8 @@ func (sc *SmartCcntmract) Execute() error {
 		stateMachine.CloneCache.Commit()
 		sc.Notifications = append(sc.Notifications, stateMachine.Notifications...)
 	case vmtypes.WASMVM:
+		//todo refactor following code to match Neovm
 		stateMachine := wasm.NewWasmStateMachine(sc.Config.Store, sc.Config.DBCache, stypes.Application, sc.Config.Time)
-
 		engine := exec.NewExecutionEngine(
 			sc.Config.Tx,
 			new(util.ECDsaCrypto),
@@ -124,10 +128,35 @@ func (sc *SmartCcntmract) Execute() error {
 			stateMachine,
 			"product",
 		)
-		//todo how to get the input
-		input := []byte{}
-		engine.Call(ctx.CcntmractAddress, ctx.Code.Code, input)
-		//fmt.Println(engine)
+
+		tmpcodes := bytes.Split(ctx.Code.Code, []byte(exec.PARAM_SPLITER))
+		if len(tmpcodes) != 3 {
+			return errors.NewErr("Wasm paramter count error")
+		}
+		ccntmractCode := tmpcodes[0]
+
+		addr, err := common.AddressParseFromBytes(ccntmractCode)
+		if err != nil {
+			return errors.NewErr("get ccntmract address error")
+		}
+
+		dpcode, err := stateMachine.GetCcntmractCodeFromAddress(addr)
+		if err != nil {
+			return errors.NewErr("get ccntmract  error")
+		}
+
+		input := ctx.Code.Code[len(ccntmractCode)+1:]
+		res, err := engine.Call(ctx.CcntmractAddress, dpcode, input)
+		if err != nil {
+			return err
+		}
+
+		//todo how to deal with the result???
+		_, err = engine.GetVM().GetPointerMemory(uint64(binary.LittleEndian.Uint32(res)))
+		if err != nil {
+			return err
+		}
+
 		stateMachine.CloneCache.Commit()
 		sc.Notifications = append(sc.Notifications, stateMachine.Notifications...)
 	}

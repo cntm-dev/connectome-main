@@ -21,8 +21,8 @@ package wasm
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io/ioutil"
+	"fmt"
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/states"
@@ -33,6 +33,7 @@ import (
 	"github.com/cntmio/cntmology/vm/wasmvm/exec"
 	"github.com/cntmio/cntmology/vm/wasmvm/util"
 	"github.com/cntmio/cntmology/vm/wasmvm/wasm"
+
 )
 
 type WasmStateMachine struct {
@@ -111,19 +112,17 @@ func (s *WasmStateMachine) getstore(engine *exec.ExecutionEngine) (bool, error) 
 	if err != nil {
 		return false, err
 	}
-
 	k, err := serializeStorageKey(vm.CodeHash, key)
 	if err != nil {
 		return false, err
 	}
+
 	item, err := s.CloneCache.Get(scommon.ST_STORAGE, k)
 	if err != nil {
 		return false, err
 	}
 
-	// idx = int64.max value if item is nil
-	//todo need more  test about the nil case
-	idx, err := vm.SetPointerMemory(item)
+	idx, err := vm.SetPointerMemory(item.(*states.StorageItem).Value)
 	if err != nil {
 		return false, err
 	}
@@ -159,6 +158,17 @@ func (s *WasmStateMachine) deletestore(engine *exec.ExecutionEngine) (bool, erro
 	vm.RestoreCtx()
 
 	return true, nil
+}
+
+func (s *WasmStateMachine) GetCcntmractCodeFromAddress(address common.Address) ([]byte, error) {
+
+	dcode, err := s.ldgerStore.GetCcntmractState(address)
+	if err != nil {
+		return nil, err
+	}
+
+	return dcode.Code.Code, nil
+
 }
 
 //call other ccntmract

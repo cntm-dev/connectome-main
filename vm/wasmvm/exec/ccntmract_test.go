@@ -26,7 +26,6 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/common"
 )
