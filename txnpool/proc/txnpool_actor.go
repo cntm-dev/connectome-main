@@ -22,12 +22,13 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/cntmio/cntmology-eventbus/actor"
+
 	"github.com/cntmio/cntmology/common/log"
 	tx "github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/events/message"
 	tc "github.com/cntmio/cntmology/txnpool/common"
 	"github.com/cntmio/cntmology/validator/types"
-	"github.com/cntmio/cntmology-eventbus/actor"
 )
 
 func NewTxActor(s *TXPoolServer) *TxActor {

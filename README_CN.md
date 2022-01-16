@@ -25,7 +25,7 @@ Ontology致力于创建一个组件化、可自由配置、跨链支持、高性
 * 多种加密算法支持 
 * 高度优化的交易处理速度
 * P2P连接链路加密(可选择模块)
-* 多种共识算法支持 (VBFT/DBFT/SBFT/SOLO...)
+* 多种共识算法支持 (VBFT/DBFT/SBFT/PoW/SOLO...)
 * 快速的区块生成时间
 
 ## 目录
@@ -93,7 +93,7 @@ $ make
 创建钱包示例如下：
 
 ```shell
-$ ./nodectl wallet --create --name wallet.dat --password passwordtest --encrypt=SHA512withEdDSA
+$ ./nodectl wallet --create --name wallet.dat --password passwordtest
 ```
 
 注：通过-p参数设置钱包密码
