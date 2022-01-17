@@ -24,6 +24,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/payload"
@@ -38,14 +39,14 @@ import (
 	neoservice "github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 	"github.com/cntmio/cntmology/vm/neovm"
-	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
 const (
 	SYSTEM_VERSION          = byte(1)
 	HEADER_INDEX_BATCH_SIZE = uint32(2000)
 	BLOCK_CACHE_TIMEOUT     = time.Minute * 30
-	MAX_BLOCK_CACHE_SIZE    = 2000
+	MAX_HEADER_CACHE_SIZE   = 10000
+	MAX_BLOCK_CACHE_SIZE    = 1000
 )
 
 var (
@@ -246,6 +247,10 @@ func (this *LedgerStoreImp) initStore() error {
 		if err != nil {
 			return fmt.Errorf("save to state store height:%d error:%s", i, err)
 		}
+		err = this.stateStore.CommitTo()
+		if err != nil {
+			return fmt.Errorf("stateStore.CommitTo height:%d error %s", i, err)
+		}
 	}
 
 	_, eventHeight, err := this.eventStore.GetCurrentBlock()
@@ -265,6 +270,10 @@ func (this *LedgerStoreImp) initStore() error {
 		err = this.saveBlockToEventStore(block)
 		if err != nil {
 			return fmt.Errorf("save to event store height:%d error:%s", i, err)
+		}
+		err = this.eventStore.CommitTo()
+		if err != nil {
+			return fmt.Errorf("eventStore.CommitTo height:%d error %s", i, err)
 		}
 	}
 	return nil
@@ -408,12 +417,12 @@ func (this *LedgerStoreImp) GetCurrentBlockHeight() uint32 {
 	return this.currBlockHeight
 }
 
-func (this *LedgerStoreImp) addToHeaderCache(header *types.Header) {
+func (this *LedgerStoreImp) addToHeaderCache(header *types.Header) bool {
 	this.lock.Lock()
 	defer this.lock.Unlock()
 
-	if len(this.headerCache) > MAX_BLOCK_CACHE_SIZE {
-		return
+	if len(this.headerCache) > MAX_HEADER_CACHE_SIZE {
+		return false
 	}
 
 	cacheItem := &ledgerCacheItem{
@@ -421,6 +430,7 @@ func (this *LedgerStoreImp) addToHeaderCache(header *types.Header) {
 		cacheTime: time.Now(),
 	}
 	this.headerCache[header.Hash()] = cacheItem
+	return true
 }
 
 func (this *LedgerStoreImp) getFromHeaderCache(blockHash common.Uint256) *types.Header {
@@ -433,12 +443,12 @@ func (this *LedgerStoreImp) getFromHeaderCache(blockHash common.Uint256) *types.
 	return cacheItem.item.(*types.Header)
 }
 
-func (this *LedgerStoreImp) addToBlockCache(block *types.Block) {
+func (this *LedgerStoreImp) addToBlockCache(block *types.Block) bool {
 	this.lock.Lock()
 	defer this.lock.Unlock()
 
 	if len(this.blockCache) > MAX_BLOCK_CACHE_SIZE {
-		return
+		return false
 	}
 
 	cacheItem := &ledgerCacheItem{
@@ -446,6 +456,7 @@ func (this *LedgerStoreImp) addToBlockCache(block *types.Block) {
 		cacheTime: time.Now(),
 	}
 	this.blockCache[block.Hash()] = cacheItem
+	return true
 }
 
 func (this *LedgerStoreImp) getFromBlockCache(blockHash common.Uint256) *types.Block {
@@ -516,8 +527,9 @@ func (this *LedgerStoreImp) AddHeader(header *types.Header) error {
 		fmt.Errorf("verifyHeader error %s", err)
 	}
 	blockHash := header.Hash()
-	this.setHeaderIndex(header.Height, blockHash)
-	this.addToHeaderCache(header)
+	if this.addToHeaderCache(header) {
+		this.setHeaderIndex(header.Height, blockHash)
+	}
 	return nil
 }
 
@@ -612,10 +624,6 @@ func (this *LedgerStoreImp) saveBlockToBlockStore(block *types.Block) error {
 	if err != nil {
 		return fmt.Errorf("SaveBlock height %d hash %x error %s", blockHeight, blockHash, err)
 	}
-	err = this.blockStore.CommitTo()
-	if err != nil {
-		return fmt.Errorf("blockStore.CommitTo error %s", err)
-	}
 	return nil
 }
 
@@ -644,10 +652,6 @@ func (this *LedgerStoreImp) saveBlockToStateStore(block *types.Block) error {
 	if err != nil {
 		return fmt.Errorf("stateBatch.CommitTo error %s", err)
 	}
-	err = this.stateStore.CommitTo()
-	if err != nil {
-		return fmt.Errorf("stateStore.CommitTo error %s", err)
-	}
 	return nil
 }
 
@@ -670,10 +674,6 @@ func (this *LedgerStoreImp) saveBlockToEventStore(block *types.Block) error {
 	err := this.eventStore.SaveCurrentBlock(blockHeight, blockHash)
 	if err != nil {
 		return fmt.Errorf("SaveCurrentBlock error %s", err)
-	}
-	err = this.eventStore.CommitTo()
-	if err != nil {
-		return fmt.Errorf("eventStore.CommitTo error %s", err)
 	}
 	return nil
 }
@@ -709,17 +709,28 @@ func (this *LedgerStoreImp) saveBlock(block *types.Block) error {
 	this.eventStore.NewBatch()
 	err := this.saveBlockToBlockStore(block)
 	if err != nil {
-		return fmt.Errorf("save to block store error:%s", err)
+		return fmt.Errorf("save to block store height:%d error:%s", blockHeight, err)
 	}
 	err = this.saveBlockToStateStore(block)
 	if err != nil {
-		return fmt.Errorf("save to state store error:%s", err)
+		return fmt.Errorf("save to state store height:%d error:%s", blockHeight, err)
 	}
 	err = this.saveBlockToEventStore(block)
 	if err != nil {
-		return fmt.Errorf("save to event store error:%s", err)
+		return fmt.Errorf("save to event store height:%d error:%s", blockHeight, err)
 	}
-
+	err = this.blockStore.CommitTo()
+	if err != nil {
+		return fmt.Errorf("blockStore.CommitTo height:%d error %s", blockHeight, err)
+	}
+	err = this.stateStore.CommitTo()
+	if err != nil {
+		return fmt.Errorf("stateStore.CommitTo height:%d error %s", blockHeight, err)
+	}
+	err = this.eventStore.CommitTo()
+	if err != nil {
+		return fmt.Errorf("eventStore.CommitTo height:%d error %s", blockHeight, err)
+	}
 	this.setCurrentBlock(blockHeight, blockHash)
 
 	if events.DefActorPublisher != nil {
