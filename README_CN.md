@@ -46,6 +46,7 @@ Ontology致力于创建一个组件化、可自由配置、跨链支持、高性
 * [贡献代码](#贡献代码)
 * [开源社区](#开源社区)
   * [网站](#网站)
+  * [Discord开发者社区](#discord开发者社区)
 * [许可证](#许可证)
 
 # 构建开发环境
@@ -140,7 +141,7 @@ cntm可签名方案说明( <hash>with<dsa> 前面是散列算法，后面是签�
 - 节点程序`cntmology`
 - 节点控制程序`nodectl`
 - 钱包文件`wallet.dat`
-把source根目录下的config-solo.config配置文件的内容复制到config.json内，然后启动节点即可。
+把source根目录下的config-solo.config配置文件的内容复制到config.json内，修改Bookkeepers配置，替换钱包公钥，然后启动节点即可。钱包公钥可以使用`$ ./nodectl wallet -l -p password` 获取
 
 单机配置的例子如下：
 - 目录结构
@@ -152,6 +153,10 @@ $ tree
     ├── cntmology
     ├── nodectl
     └── wallet.dat
+```
+config.json中Bookkeepers的配置：
+```
+"Bookkeepers": [ "1202021c6750d2c5d99813997438cee0740b04a73e42664c444e778e001196eed96c9d" ],
 ```
 
 ### 多机部署配置
@@ -284,6 +289,10 @@ $ - 输入你的钱包口令
 ## 网站
 
 - https://cntm.io/
+
+## Discord开发者社区
+
+- https://discord.gg/4TQujHj/
 
 # 许可证
 

@@ -41,10 +41,11 @@ The public test network is described below. We sincerely welcome and hope more d
 		* [Multi-host deployment configuration](#multi-hosts-deployment-configuration)
 		* [Deploy nodes on public test network](#deploy-nodes-on-public-test-network)
 		* [Implement](#implement)
-* [Examples](#Examples)
-* [Ccntmributions](#ccntmributing)
+* [Examples](#examples)
+* [Ccntmributions](#ccntmributions)
 * [Open source community](#open-source-community)
 	* [Site](#site)
+	* [Developer Discord Group](#developer-discord-group)
 * [License](#license)
 
 # Build development environment
@@ -144,6 +145,7 @@ Create a directory on the host and store the following files in the directory:
 - Node program `cntmology`
 - Node ccntmrol program `nodectl`
 - Wallet file`wallet.dat`, copy the ccntments of the configuration file config-solo.config in the root directory to config.json and start the node.
+- Edit the config.json file and replace the bookkeeper entries with the public key of your wallet (created above). Use `$ ./nodectl wallet -l -p password` to get your public key.
 
 Here's a example of single-host configuration:
 
@@ -155,6 +157,11 @@ $ tree
     ├── cntmology
     ├── nodectl
     └── wallet.dat
+```
+
+Bookkeepers in the config.json file:
+```
+"Bookkeepers": [ "1202021c6750d2c5d99813997438cee0740b04a73e42664c444e778e001196eed96c9d" ],
 ```
 
 ### Multi-hosts deployment configuration
@@ -281,6 +288,10 @@ Signed-off-by: Your Name [youremail@yourhost.com](mailto:youremail@yourhost.com)
 ## Site
 
 - <https://cntm.io/>
+
+## Developer Discord Group
+
+- <https://discord.gg/4TQujHj/>
 
 # License
 

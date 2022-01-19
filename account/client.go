@@ -20,17 +20,18 @@ package account
 
 import (
 	"bytes"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"math/rand"
 	"os"
 	"sort"
 	"strings"
 	"sync"
-	"time"
 
+	"github.com/cntmio/cntmology-crypto/aes"
+	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
@@ -40,8 +41,6 @@ import (
 	sig "github.com/cntmio/cntmology/core/signature"
 	cntmErrors "github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/net/protocol"
-	"github.com/cntmio/cntmology-crypto/aes"
-	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
 const (
@@ -122,12 +121,15 @@ func NewClient(path string, password []byte, create bool) *ClientImpl {
 		newClient.currentHeight = 0
 
 		//generate random number for iv/masterkey
-		r := rand.New(rand.NewSource(time.Now().UnixNano()))
-		for i := 0; i < 16; i++ {
-			newClient.iv[i] = byte(r.Intn(256))
+		_, err := rand.Read(newClient.iv)
+		if err != nil {
+			log.Error(err)
+			return nil
 		}
-		for i := 0; i < 32; i++ {
-			newClient.masterKey[i] = byte(r.Intn(256))
+		_, err = rand.Read(newClient.masterKey)
+		if err != nil {
+			log.Error(err)
+			return nil
 		}
 
 		//new client store (build DB)
@@ -135,7 +137,7 @@ func NewClient(path string, password []byte, create bool) *ClientImpl {
 
 		// SaveStoredData
 		pwdhash := sha256.Sum256(passwordKey)
-		err := newClient.SaveStoredData("PasswordHash", pwdhash[:])
+		err = newClient.SaveStoredData("PasswordHash", pwdhash[:])
 		if err != nil {
 			log.Error(err)
 			return nil
@@ -491,7 +493,7 @@ func (cl *ClientImpl) GetBookkeepers() ([]keypair.PublicKey, error) {
 		k, err := keypair.DeserializePublicKey(pubKey)
 		if err != nil {
 			log.Error("Incorrectly book keepers key")
-			return nil, fmt.Errorf("Incorrectly book keepers key:%s")
+			return nil, fmt.Errorf("Incorrectly book keepers key:%s", key)
 		}
 		pubKeys = append(pubKeys, k)
 	}
