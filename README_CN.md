@@ -60,16 +60,20 @@ Ontology致力于创建一个组件化、可自由配置、跨链支持、高性
 # 部署及测试
 ## 获取cntmology
 ### 从源码获取
-克隆cntmology仓库到$GOPATH/src目录
+克隆cntmology仓库到 **$GOPATH/src/github.com/cntmio** 目录
 
 ```shell
 $ git clone https://github.com/cntmio/cntmology.git
+```
+或者
+```shell
+$ go get github.com/cntmio/cntmology
 ```
 
 用第三方包管理工具glide拉取依赖库
 
 ````shell
-$ cd cntmology
+$ cd $GOPATH/src/github.com/cntmio/cntmology
 $ glide install
 ````
 
