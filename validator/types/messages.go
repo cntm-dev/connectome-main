@@ -19,10 +19,10 @@
 package types
 
 import (
+	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
-	"github.com/cntmio/cntmology-eventbus/actor"
 )
 
 // message

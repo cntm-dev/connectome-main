@@ -22,10 +22,10 @@ import (
 	"errors"
 	"time"
 
+	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
 	txpool "github.com/cntmio/cntmology/txnpool/common"
-	"github.com/cntmio/cntmology-eventbus/actor"
 )
 
 type TxPoolActor struct {
@@ -33,7 +33,7 @@ type TxPoolActor struct {
 }
 
 func (self *TxPoolActor) GetTxnPool(byCount bool, height uint32) []*txpool.TXEntry {
-	poolmsg := &txpool.GetTxnPoolReq{ByCount: byCount}
+	poolmsg := &txpool.GetTxnPoolReq{ByCount: byCount, Height: height}
 	future := self.Pool.RequestFuture(poolmsg, time.Second*10)
 	entry, err := future.Result()
 	if err != nil {

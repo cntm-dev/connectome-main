@@ -39,12 +39,12 @@ func ConvertBigIntegerToBytes(data *big.Int) []byte {
 		temp2 := big.NewInt(0)
 		temp2.Add(temp, big.NewInt(1))
 		bs = temp2.Bytes()
-		common.BytesReverse(bs)
+		bytesReverse(bs)
 		if b>>7 == 1 {
 			bs = append(bs, 255)
 		}
 	} else {
-		common.BytesReverse(bs)
+		bytesReverse(bs)
 		if b>>7 == 1 {
 			bs = append(bs, 0)
 		}
@@ -61,7 +61,7 @@ func ConvertBytesToBigInteger(ba []byte) *big.Int {
 
 	bytes := make([]byte, 0, l)
 	bytes = append(bytes, ba...)
-	common.BytesReverse(bytes)
+	bytesReverse(bytes)
 
 	if bytes[0]>>7 == 1 {
 		for i, b := range bytes {
