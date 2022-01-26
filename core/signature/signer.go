@@ -18,7 +18,10 @@
 
 package signature
 
-import "github.com/cntmio/cntmology-crypto/keypair"
+import (
+	"github.com/cntmio/cntmology-crypto/keypair"
+	"github.com/cntmio/cntmology-crypto/signature"
+)
 
 // Signer is the abstract interface of user's information(Keys) for signing data.
 type Signer interface {
@@ -27,4 +30,6 @@ type Signer interface {
 
 	//get signer's public key
 	PubKey() keypair.PublicKey
+
+	Scheme() signature.SignatureScheme
 }

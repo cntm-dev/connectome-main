@@ -24,6 +24,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
@@ -40,7 +41,6 @@ import (
 	"github.com/cntmio/cntmology/events/message"
 	p2pmsg "github.com/cntmio/cntmology/net/message"
 	"github.com/cntmio/cntmology/validator/increment"
-	"github.com/cntmio/cntmology-eventbus/actor"
 )
 
 type DbftService struct {

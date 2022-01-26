@@ -19,18 +19,18 @@
 package account
 
 import (
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/config"
-	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	s "github.com/cntmio/cntmology-crypto/signature"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/core/types"
 )
 
 type Account struct {
 	PrivateKey keypair.PrivateKey
 	PublicKey  keypair.PublicKey
 	Address    common.Address
+	SigScheme  s.SignatureScheme
 }
 
 func NewAccount(encrypt string) *Account {
@@ -44,7 +44,7 @@ func NewAccount(encrypt string) *Account {
 	if "" != encrypt {
 		scheme, err = s.GetScheme(encrypt)
 	} else {
-		scheme, err = s.GetScheme(config.Parameters.SignatureScheme)
+		scheme = s.SHA256withECDSA
 	}
 	if err != nil {
 		log.Warn("unknown signature scheme, use SHA256withECDSA as default.")
@@ -77,6 +77,7 @@ func NewAccount(encrypt string) *Account {
 		PrivateKey: pri,
 		PublicKey:  pub,
 		Address:    address,
+		SigScheme:  scheme,
 	}
 }
 
@@ -100,4 +101,8 @@ func (ac *Account) PrivKey() keypair.PrivateKey {
 
 func (ac *Account) PubKey() keypair.PublicKey {
 	return ac.PublicKey
+}
+
+func (ac *Account) Scheme() s.SignatureScheme {
+	return ac.SigScheme
 }

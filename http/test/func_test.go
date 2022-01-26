@@ -26,72 +26,106 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/signature"
 	"github.com/cntmio/cntmology/core/types"
 	ctypes "github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/core/utils"
+	"github.com/cntmio/cntmology/merkle"
 	"github.com/cntmio/cntmology/vm/neovm"
 	vmtypes "github.com/cntmio/cntmology/vm/types"
-	"github.com/cntmio/cntmology-crypto/keypair"
+	"github.com/stretchr/testify/assert"
 )
+
+func TestMerkleVerifier(t *testing.T) {
+	type merkleProof struct {
+		Type             string
+		TransactionsRoot string
+		BlockHeight      uint32
+		CurBlockRoot     string
+		CurBlockHeight   uint32
+		TargetHashes     []string
+	}
+	proof := merkleProof{
+		Type:             "MerkleProof",
+		TransactionsRoot: "4b74e15973ce3964ba4a33ddaf92efbff922ea2225bca7676f62eab05829f11f",
+		BlockHeight:      2,
+		CurBlockRoot:     "a5094c1daeeceab46319ce62b600c68a7accc806bd9fe2fdb869560bf66b5251",
+		CurBlockHeight:   6,
+		TargetHashes: []string{
+			"c7ac8087b4ce292d654001b1ab1bfe5e68fa6f7b8492a5b2f83560f8ac28f5fa",
+			"5205a22b07c6072d60d28b41f1321ab993799d70693a3bb70bab7e58b49acc30",
+			"c0de7f3035a7960450ec9a64e7835b958b0fec1ddb90cbeb0779073c0a9a8f53",
+		},
+	}
+
+	verify := merkle.NewMerkleVerifier()
+	var leaf_hash common.Uint256
+	bys, _ := common.HexToBytes(proof.TransactionsRoot)
+	leaf_hash.Deserialize(bytes.NewReader(bys))
+
+	var root_hash common.Uint256
+	bys, _ = common.HexToBytes(proof.CurBlockRoot)
+	root_hash.Deserialize(bytes.NewReader(bys))
+
+	var hashes []common.Uint256
+	for _, v := range proof.TargetHashes {
+		var hash common.Uint256
+		bys, _ = common.HexToBytes(v)
+		hash.Deserialize(bytes.NewReader(bys))
+		hashes = append(hashes, hash)
+	}
+	res := verify.VerifyLeafHashInclusion(leaf_hash, proof.BlockHeight, hashes, root_hash, proof.CurBlockHeight+1)
+	assert.Nil(t, res)
+
+}
 
 func TestCodeHash(t *testing.T) {
 	code, _ := common.HexToBytes("")
 	vmcode := vmtypes.VmCode{vmtypes.NEOVM, code}
 	codehash := vmcode.AddressFromVmCode()
-	fmt.Println(codehash.ToHexString())
-	os.Exit(0)
+	assert.Ccntmains(t,codehash.ToHexString(),"")
 }
 
 func TestTxDeserialize(t *testing.T) {
 	bys, _ := common.HexToBytes("")
 	var txn types.Transaction
-	if err := txn.Deserialize(bytes.NewReader(bys)); err != nil {
-		fmt.Print("Deserialize Err:", err)
-		os.Exit(0)
-	}
-	fmt.Printf("TxType:%x\n", txn.TxType)
-	os.Exit(0)
+	err := txn.Deserialize(bytes.NewReader(bys));
+	assert.Nil(t, err)
+
+	assert.Ccntmains(t,txn.TxType,0)
 }
 func TestAddress(t *testing.T) {
 	pubkey, _ := common.HexToBytes("120203a4e50edc1e59979442b83f327030a56bffd08c2de3e0a404cefb4ed2cc04ca3e")
 	pk, err := keypair.DeserializePublicKey(pubkey)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(0)
-	}
+	assert.Nil(t, err)
+
 	ui60 := types.AddressFromPubKey(pk)
 	addr := common.ToHexString(ui60[:])
-	fmt.Println(addr)
-	fmt.Println(ui60.ToBase58())
+	assert.Ccntmains(t,addr,0)
 }
 func TestMultiPubKeysAddress(t *testing.T) {
 	pubkey, _ := common.HexToBytes("120203a4e50edc1e59979442b83f327030a56bffd08c2de3e0a404cefb4ed2cc04ca3e")
 	pk, err := keypair.DeserializePublicKey(pubkey)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(0)
-	}
+	assert.Nil(t, err)
+
 	pubkey2, _ := common.HexToBytes("12020225c98cc5f82506fb9d01bad15a7be3da29c97a279bb6b55da1a3177483ab149b")
 	pk2, err := keypair.DeserializePublicKey(pubkey2)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(0)
-	}
+	assert.Nil(t, err)
+
 	ui60, _ := types.AddressFromMultiPubKeys([]keypair.PublicKey{pk, pk2}, 1)
 	addr := common.ToHexString(ui60[:])
-	fmt.Println(addr)
-	fmt.Println(ui60.ToBase58())
+	assert.Ccntmains(t,addr,0)
 }
 
 func TestInvokefunction(t *testing.T) {
 	var funcName string
 	builder := neovm.NewParamsBuilder(new(bytes.Buffer))
 	err := BuildSmartCcntmractParamInter(builder, []interface{}{funcName, "", ""})
-	if err != nil {
-	}
+	assert.Nil(t, err)
+
 	codeParams := builder.ToArray()
 	tx := utils.NewInvokeTransaction(vmtypes.VmCode{
 		VmType: vmtypes.Native,
@@ -101,10 +135,7 @@ func TestInvokefunction(t *testing.T) {
 
 	acct := account.Open(account.WALLET_FILENAME, []byte("passwordtest"))
 	acc, err := acct.GetDefaultAccount()
-	if err != nil {
-		fmt.Println("GetDefaultAccount error:", err)
-		os.Exit(1)
-	}
+	assert.Nil(t, err)
 	hash := tx.Hash()
 	sign, _ := signature.Sign(acc.PrivateKey, hash[:])
 	tx.Sigs = append(tx.Sigs, &ctypes.Sig{
@@ -114,10 +145,8 @@ func TestInvokefunction(t *testing.T) {
 	})
 
 	txbf := new(bytes.Buffer)
-	if err := tx.Serialize(txbf); err != nil {
-		fmt.Println("Serialize transaction error.")
-		os.Exit(1)
-	}
+	err = tx.Serialize(txbf);
+	assert.Nil(t, err)
 	common.ToHexString(txbf.Bytes())
 }
 func BuildSmartCcntmractParamInter(builder *neovm.ParamsBuilder, smartCcntmractParams []interface{}) error {

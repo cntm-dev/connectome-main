@@ -22,13 +22,13 @@ import (
 	"errors"
 	"time"
 
+	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
 	lactor "github.com/cntmio/cntmology/core/ledger/actor"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract/event"
-	"github.com/cntmio/cntmology-eventbus/actor"
 )
 
 const (
@@ -42,6 +42,32 @@ func SetLedgerPid(actr *actor.PID) {
 	defLedgerPid = actr
 }
 
+func GetHeaderByHeight(height uint32) (*types.Header, error) {
+	future := defLedgerPid.RequestFuture(&lactor.GetHeaderByHeightReq{height}, REQ_TIMEOUT*time.Second)
+	result, err := future.Result()
+	if err != nil {
+		log.Errorf(ERR_ACTOR_COMM, err)
+		return nil, err
+	}
+	if rsp, ok := result.(*lactor.GetHeaderByHeightRsp); !ok {
+		return nil, errors.New("fail")
+	} else {
+		return rsp.Header, rsp.Error
+	}
+}
+func GetBlockByHeight(height uint32) (*types.Block, error) {
+	future := defLedgerPid.RequestFuture(&lactor.GetBlockByHeightReq{height}, REQ_TIMEOUT*time.Second)
+	result, err := future.Result()
+	if err != nil {
+		log.Errorf(ERR_ACTOR_COMM, err)
+		return nil, err
+	}
+	if rsp, ok := result.(*lactor.GetBlockByHeightRsp); !ok {
+		return nil, errors.New("fail")
+	} else {
+		return rsp.Block, rsp.Error
+	}
+}
 func GetBlockHashFromStore(height uint32) (common.Uint256, error) {
 	future := defLedgerPid.RequestFuture(&lactor.GetBlockHashReq{height}, REQ_TIMEOUT*time.Second)
 	result, err := future.Result()
@@ -169,7 +195,7 @@ func AddBlock(block *types.Block) error {
 	}
 }
 
-func PreExecuteCcntmract(tx *types.Transaction) ([]interface{}, error) {
+func PreExecuteCcntmract(tx *types.Transaction) (interface{}, error) {
 	future := defLedgerPid.RequestFuture(&lactor.PreExecuteCcntmractReq{tx}, REQ_TIMEOUT*time.Second)
 	result, err := future.Result()
 	if err != nil {
@@ -208,5 +234,19 @@ func GetEventNotifyByHeight(height uint32) ([]common.Uint256, error) {
 		return nil, errors.New("fail")
 	} else {
 		return rsp.TxHashes, rsp.Error
+	}
+}
+
+func GetMerkleProof(proofHeight uint32, rootHeight uint32) ([]common.Uint256, error) {
+	future := defLedgerPid.RequestFuture(&lactor.GetMerkleProofReq{proofHeight, rootHeight}, REQ_TIMEOUT*time.Second)
+	result, err := future.Result()
+	if err != nil {
+		log.Errorf(ERR_ACTOR_COMM, err)
+		return nil, err
+	}
+	if rsp, ok := result.(*lactor.GetMerkleProofRsp); !ok {
+		return nil, errors.New("fail")
+	} else {
+		return rsp.Proof, rsp.Error
 	}
 }

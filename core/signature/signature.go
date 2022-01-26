@@ -24,11 +24,11 @@ import (
 	"errors"
 	"io"
 
+	"github.com/cntmio/cntmology-crypto/keypair"
+	s "github.com/cntmio/cntmology-crypto/signature"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/ccntmract/program"
 	"github.com/cntmio/cntmology/vm/neovm/interfaces"
-	"github.com/cntmio/cntmology-crypto/keypair"
-	s "github.com/cntmio/cntmology-crypto/signature"
 )
 
 //SignableData describe the data need be signed.
@@ -46,21 +46,8 @@ type SignableData interface {
 	SerializeUnsigned(io.Writer) error
 }
 
-// Default signature scheme
-var defaultScheme = s.SHA256withECDSA
-
-func SetDefaultScheme(scheme string) error {
-	res, err := s.GetScheme(scheme)
-	if err != nil {
-		return errors.New(err.Error() + ", use SHA256withECDSA as default")
-	}
-	defaultScheme = res
-
-	return nil
-}
-
 func SignBySigner(data SignableData, signer Signer) ([]byte, error) {
-	return Sign(signer.PrivKey(), getHashData(data))
+	return Sign(signer, getHashData(data))
 }
 
 func getHashData(data SignableData) []byte {
@@ -71,8 +58,8 @@ func getHashData(data SignableData) []byte {
 	return hash[:]
 }
 
-func Sign(privKey keypair.PrivateKey, data []byte) ([]byte, error) {
-	signature, err := s.Sign(defaultScheme, privKey, data, nil)
+func Sign(signer Signer, data []byte) ([]byte, error) {
+	signature, err := s.Sign(signer.Scheme(), signer.PrivKey(), data, nil)
 	if err != nil {
 		return nil, err
 	}

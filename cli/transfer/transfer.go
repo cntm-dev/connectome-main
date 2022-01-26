@@ -29,6 +29,7 @@ import (
 
 	"github.com/urfave/cli"
 
+	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/account"
 	clicommon "github.com/cntmio/cntmology/cli/common"
 	"github.com/cntmio/cntmology/common"
@@ -38,7 +39,6 @@ import (
 	"github.com/cntmio/cntmology/http/base/rpc"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/states"
 	vmtypes "github.com/cntmio/cntmology/vm/types"
-	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
 func transferAction(c *cli.Ccntmext) error {
@@ -154,7 +154,7 @@ func transferAction(c *cli.Ccntmext) error {
 
 func signTransaction(signer *account.Account, tx *ctypes.Transaction) error {
 	hash := tx.Hash()
-	sign, _ := signature.Sign(signer.PrivateKey, hash[:])
+	sign, _ := signature.Sign(signer, hash[:])
 	tx.Sigs = append(tx.Sigs, &ctypes.Sig{
 		PubKeys: []keypair.PublicKey{signer.PublicKey},
 		M:       1,

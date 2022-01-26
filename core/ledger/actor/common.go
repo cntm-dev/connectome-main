@@ -220,7 +220,7 @@ type PreExecuteCcntmractReq struct {
 }
 
 type PreExecuteCcntmractRsp struct {
-	Result []interface{}
+	Result interface{}
 	Error  error
 }
 
