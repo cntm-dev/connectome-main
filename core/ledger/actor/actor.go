@@ -39,74 +39,76 @@ func NewLedgerActor() *LedgerActor {
 	return &LedgerActor{}
 }
 
-func (this *LedgerActor) Start() *actor.PID {
-	this.props = actor.FromProducer(func() actor.Actor { return this })
+func (self *LedgerActor) Start() *actor.PID {
+	self.props = actor.FromProducer(func() actor.Actor { return self })
 	var err error
-	DefLedgerPid, err = actor.SpawnNamed(this.props, "LedgerActor")
+	DefLedgerPid, err = actor.SpawnNamed(self.props, "LedgerActor")
 	if err != nil {
 		panic(fmt.Errorf("LedgerActor SpawnNamed error:%s", err))
 	}
 	return DefLedgerPid
 }
 
-func (this *LedgerActor) Receive(ctx actor.Ccntmext) {
+func (self *LedgerActor) Receive(ctx actor.Ccntmext) {
 	switch msg := ctx.Message().(type) {
 	case *actor.Started:
 	case *actor.Stop:
 	case *AddHeaderReq:
-		this.handleAddHeaderReq(ctx, msg)
+		self.handleAddHeaderReq(ctx, msg)
 	case *AddHeadersReq:
-		this.handleAddHeadersReq(ctx, msg)
+		self.handleAddHeadersReq(ctx, msg)
 	case *AddBlockReq:
-		this.handleAddBlockReq(ctx, msg)
+		self.handleAddBlockReq(ctx, msg)
 	case *GetTransactionReq:
-		this.handleGetTransactionReq(ctx, msg)
+		self.handleGetTransactionReq(ctx, msg)
 	case *GetBlockByHashReq:
-		this.handleGetBlockByHashReq(ctx, msg)
+		self.handleGetBlockByHashReq(ctx, msg)
 	case *GetBlockByHeightReq:
-		this.handleGetBlockByHeightReq(ctx, msg)
+		self.handleGetBlockByHeightReq(ctx, msg)
 	case *GetHeaderByHashReq:
-		this.handleGetHeaderByHashReq(ctx, msg)
+		self.handleGetHeaderByHashReq(ctx, msg)
 	case *GetHeaderByHeightReq:
-		this.handleGetHeaderByHeightReq(ctx, msg)
+		self.handleGetHeaderByHeightReq(ctx, msg)
 	case *GetCurrentBlockHashReq:
-		this.handleGetCurrentBlockHashReq(ctx, msg)
+		self.handleGetCurrentBlockHashReq(ctx, msg)
 	case *GetCurrentBlockHeightReq:
-		this.handleGetCurrentBlockHeightReq(ctx, msg)
+		self.handleGetCurrentBlockHeightReq(ctx, msg)
 	case *GetCurrentHeaderHeightReq:
-		this.handleGetCurrentHeaderHeightReq(ctx, msg)
+		self.handleGetCurrentHeaderHeightReq(ctx, msg)
 	case *GetCurrentHeaderHashReq:
-		this.handleGetCurrentHeaderHashReq(ctx, msg)
+		self.handleGetCurrentHeaderHashReq(ctx, msg)
 	case *GetBlockHashReq:
-		this.handleGetBlockHashReq(ctx, msg)
+		self.handleGetBlockHashReq(ctx, msg)
 	case *IsCcntmainBlockReq:
-		this.handleIsCcntmainBlockReq(ctx, msg)
+		self.handleIsCcntmainBlockReq(ctx, msg)
 	case *GetCcntmractStateReq:
-		this.handleGetCcntmractStateReq(ctx, msg)
+		self.handleGetCcntmractStateReq(ctx, msg)
+	case *GetMerkleProofReq:
+		self.handleGetMerkleProofReq(ctx, msg)
 	case *GetStorageItemReq:
-		this.handleGetStorageItemReq(ctx, msg)
+		self.handleGetStorageItemReq(ctx, msg)
 	case *GetBookkeeperStateReq:
-		this.handleGetBookkeeperStateReq(ctx, msg)
+		self.handleGetBookkeeperStateReq(ctx, msg)
 	case *GetCurrentStateRootReq:
-		this.handleGetCurrentStateRootReq(ctx, msg)
+		self.handleGetCurrentStateRootReq(ctx, msg)
 	case *IsCcntmainTransactionReq:
-		this.handleIsCcntmainTransactionReq(ctx, msg)
+		self.handleIsCcntmainTransactionReq(ctx, msg)
 	case *GetTransactionWithHeightReq:
-		this.handleGetTransactionWithHeightReq(ctx, msg)
+		self.handleGetTransactionWithHeightReq(ctx, msg)
 	case *GetBlockRootWithNewTxRootReq:
-		this.handleGetBlockRootWithNewTxRootReq(ctx, msg)
+		self.handleGetBlockRootWithNewTxRootReq(ctx, msg)
 	case *PreExecuteCcntmractReq:
-		this.handlePreExecuteCcntmractReq(ctx, msg)
+		self.handlePreExecuteCcntmractReq(ctx, msg)
 	case *GetEventNotifyByTxReq:
-		this.handleGetEventNotifyByTx(ctx, msg)
+		self.handleGetEventNotifyByTx(ctx, msg)
 	case *GetEventNotifyByBlockReq:
-		this.handleGetEventNotifyByBlock(ctx, msg)
+		self.handleGetEventNotifyByBlock(ctx, msg)
 	default:
 		log.Warnf("LedgerActor cannot deal with type: %v %v", msg, reflect.TypeOf(msg))
 	}
 }
 
-func (this *LedgerActor) handleAddHeaderReq(ctx actor.Ccntmext, req *AddHeaderReq) {
+func (self *LedgerActor) handleAddHeaderReq(ctx actor.Ccntmext, req *AddHeaderReq) {
 	err := ledger.DefLedger.AddHeaders([]*types.Header{req.Header})
 	if ctx.Sender() != nil {
 		hash := req.Header.Hash()
@@ -118,7 +120,7 @@ func (this *LedgerActor) handleAddHeaderReq(ctx actor.Ccntmext, req *AddHeaderRe
 	}
 }
 
-func (this *LedgerActor) handleAddHeadersReq(ctx actor.Ccntmext, req *AddHeadersReq) {
+func (self *LedgerActor) handleAddHeadersReq(ctx actor.Ccntmext, req *AddHeadersReq) {
 	err := ledger.DefLedger.AddHeaders(req.Headers)
 	if ctx.Sender() != nil {
 		hashes := make([]common.Uint256, 0, len(req.Headers))
@@ -134,7 +136,7 @@ func (this *LedgerActor) handleAddHeadersReq(ctx actor.Ccntmext, req *AddHeaders
 	}
 }
 
-func (this *LedgerActor) handleAddBlockReq(ctx actor.Ccntmext, req *AddBlockReq) {
+func (self *LedgerActor) handleAddBlockReq(ctx actor.Ccntmext, req *AddBlockReq) {
 	err := ledger.DefLedger.AddBlock(req.Block)
 	if ctx.Sender() != nil {
 		hash := req.Block.Hash()
@@ -146,7 +148,7 @@ func (this *LedgerActor) handleAddBlockReq(ctx actor.Ccntmext, req *AddBlockReq)
 	}
 }
 
-func (this *LedgerActor) handleGetTransactionReq(ctx actor.Ccntmext, req *GetTransactionReq) {
+func (self *LedgerActor) handleGetTransactionReq(ctx actor.Ccntmext, req *GetTransactionReq) {
 	tx, err := ledger.DefLedger.GetTransaction(req.TxHash)
 	resp := &GetTransactionRsp{
 		Error: err,
@@ -155,7 +157,7 @@ func (this *LedgerActor) handleGetTransactionReq(ctx actor.Ccntmext, req *GetTra
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleGetBlockByHashReq(ctx actor.Ccntmext, req *GetBlockByHashReq) {
+func (self *LedgerActor) handleGetBlockByHashReq(ctx actor.Ccntmext, req *GetBlockByHashReq) {
 	block, err := ledger.DefLedger.GetBlockByHash(req.BlockHash)
 	resp := &GetBlockByHashRsp{
 		Error: err,
@@ -164,7 +166,7 @@ func (this *LedgerActor) handleGetBlockByHashReq(ctx actor.Ccntmext, req *GetBlo
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleGetBlockByHeightReq(ctx actor.Ccntmext, req *GetBlockByHeightReq) {
+func (self *LedgerActor) handleGetBlockByHeightReq(ctx actor.Ccntmext, req *GetBlockByHeightReq) {
 	block, err := ledger.DefLedger.GetBlockByHeight(req.Height)
 	resp := &GetBlockByHeightRsp{
 		Error: err,
@@ -173,7 +175,7 @@ func (this *LedgerActor) handleGetBlockByHeightReq(ctx actor.Ccntmext, req *GetB
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleGetHeaderByHashReq(ctx actor.Ccntmext, req *GetHeaderByHashReq) {
+func (self *LedgerActor) handleGetHeaderByHashReq(ctx actor.Ccntmext, req *GetHeaderByHashReq) {
 	header, err := ledger.DefLedger.GetHeaderByHash(req.BlockHash)
 	resp := &GetHeaderByHashRsp{
 		Error:  err,
@@ -182,7 +184,7 @@ func (this *LedgerActor) handleGetHeaderByHashReq(ctx actor.Ccntmext, req *GetHe
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleGetHeaderByHeightReq(ctx actor.Ccntmext, req *GetHeaderByHeightReq) {
+func (self *LedgerActor) handleGetHeaderByHeightReq(ctx actor.Ccntmext, req *GetHeaderByHeightReq) {
 	header, err := ledger.DefLedger.GetHeaderByHeight(req.Height)
 	resp := &GetHeaderByHeightRsp{
 		Error:  err,
@@ -191,7 +193,7 @@ func (this *LedgerActor) handleGetHeaderByHeightReq(ctx actor.Ccntmext, req *Get
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleGetCurrentBlockHashReq(ctx actor.Ccntmext, req *GetCurrentBlockHashReq) {
+func (self *LedgerActor) handleGetCurrentBlockHashReq(ctx actor.Ccntmext, req *GetCurrentBlockHashReq) {
 	curBlockHash := ledger.DefLedger.GetCurrentBlockHash()
 	resp := &GetCurrentBlockHashRsp{
 		BlockHash: curBlockHash,
@@ -200,7 +202,7 @@ func (this *LedgerActor) handleGetCurrentBlockHashReq(ctx actor.Ccntmext, req *G
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleGetCurrentBlockHeightReq(ctx actor.Ccntmext, req *GetCurrentBlockHeightReq) {
+func (self *LedgerActor) handleGetCurrentBlockHeightReq(ctx actor.Ccntmext, req *GetCurrentBlockHeightReq) {
 	curBlockHeight := ledger.DefLedger.GetCurrentBlockHeight()
 	resp := &GetCurrentBlockHeightRsp{
 		Height: curBlockHeight,
@@ -209,7 +211,7 @@ func (this *LedgerActor) handleGetCurrentBlockHeightReq(ctx actor.Ccntmext, req 
 	ctx.Sender().Request(resp, ctx.Sender())
 }
 
-func (this *LedgerActor) handleGetCurrentHeaderHeightReq(ctx actor.Ccntmext, req *GetCurrentHeaderHeightReq) {
+func (self *LedgerActor) handleGetCurrentHeaderHeightReq(ctx actor.Ccntmext, req *GetCurrentHeaderHeightReq) {
 	curHeaderHeight := ledger.DefLedger.GetCurrentHeaderHeight()
 	resp := &GetCurrentHeaderHeightRsp{
 		Height: curHeaderHeight,
@@ -218,7 +220,7 @@ func (this *LedgerActor) handleGetCurrentHeaderHeightReq(ctx actor.Ccntmext, req
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleGetCurrentHeaderHashReq(ctx actor.Ccntmext, req *GetCurrentHeaderHashReq) {
+func (self *LedgerActor) handleGetCurrentHeaderHashReq(ctx actor.Ccntmext, req *GetCurrentHeaderHashReq) {
 	curHeaderHash := ledger.DefLedger.GetCurrentHeaderHash()
 	resp := &GetCurrentHeaderHashRsp{
 		BlockHash: curHeaderHash,
@@ -227,7 +229,7 @@ func (this *LedgerActor) handleGetCurrentHeaderHashReq(ctx actor.Ccntmext, req *
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleGetBlockHashReq(ctx actor.Ccntmext, req *GetBlockHashReq) {
+func (self *LedgerActor) handleGetBlockHashReq(ctx actor.Ccntmext, req *GetBlockHashReq) {
 	hash := ledger.DefLedger.GetBlockHash(req.Height)
 	resp := &GetBlockHashRsp{
 		BlockHash: hash,
@@ -236,7 +238,7 @@ func (this *LedgerActor) handleGetBlockHashReq(ctx actor.Ccntmext, req *GetBlock
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleIsCcntmainBlockReq(ctx actor.Ccntmext, req *IsCcntmainBlockReq) {
+func (self *LedgerActor) handleIsCcntmainBlockReq(ctx actor.Ccntmext, req *IsCcntmainBlockReq) {
 	con, err := ledger.DefLedger.IsCcntmainBlock(req.BlockHash)
 	resp := &IsCcntmainBlockRsp{
 		IsCcntmain: con,
@@ -245,7 +247,7 @@ func (this *LedgerActor) handleIsCcntmainBlockReq(ctx actor.Ccntmext, req *IsCcn
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleGetCcntmractStateReq(ctx actor.Ccntmext, req *GetCcntmractStateReq) {
+func (self *LedgerActor) handleGetCcntmractStateReq(ctx actor.Ccntmext, req *GetCcntmractStateReq) {
 	state, err := ledger.DefLedger.GetCcntmractState(req.CcntmractHash)
 	resp := &GetCcntmractStateRsp{
 		CcntmractState: state,
@@ -254,7 +256,16 @@ func (this *LedgerActor) handleGetCcntmractStateReq(ctx actor.Ccntmext, req *Get
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleGetBlockRootWithNewTxRootReq(ctx actor.Ccntmext, req *GetBlockRootWithNewTxRootReq) {
+func (self *LedgerActor) handleGetMerkleProofReq(ctx actor.Ccntmext, req *GetMerkleProofReq) {
+	state, err := ledger.DefLedger.GetMerkleProof(req.ProofHeight, req.RootHeight)
+	resp := &GetMerkleProofRsp{
+		Proof: state,
+		Error: err,
+	}
+	ctx.Sender().Request(resp, ctx.Self())
+}
+
+func (self *LedgerActor) handleGetBlockRootWithNewTxRootReq(ctx actor.Ccntmext, req *GetBlockRootWithNewTxRootReq) {
 	newRoot := ledger.DefLedger.GetBlockRootWithNewTxRoot(req.TxRoot)
 	resp := &GetBlockRootWithNewTxRootRsp{
 		NewTxRoot: newRoot,
@@ -263,7 +274,7 @@ func (this *LedgerActor) handleGetBlockRootWithNewTxRootReq(ctx actor.Ccntmext, 
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleGetTransactionWithHeightReq(ctx actor.Ccntmext, req *GetTransactionWithHeightReq) {
+func (self *LedgerActor) handleGetTransactionWithHeightReq(ctx actor.Ccntmext, req *GetTransactionWithHeightReq) {
 	tx, height, err := ledger.DefLedger.GetTransactionWithHeight(req.TxHash)
 	resp := &GetTransactionWithHeightRsp{
 		Tx:     tx,
@@ -273,7 +284,7 @@ func (this *LedgerActor) handleGetTransactionWithHeightReq(ctx actor.Ccntmext, r
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleGetCurrentStateRootReq(ctx actor.Ccntmext, req *GetCurrentStateRootReq) {
+func (self *LedgerActor) handleGetCurrentStateRootReq(ctx actor.Ccntmext, req *GetCurrentStateRootReq) {
 	stateRoot, err := ledger.DefLedger.GetCurrentStateRoot()
 	resp := &GetCurrentStateRootRsp{
 		StateRoot: stateRoot,
@@ -282,7 +293,7 @@ func (this *LedgerActor) handleGetCurrentStateRootReq(ctx actor.Ccntmext, req *G
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleGetBookkeeperStateReq(ctx actor.Ccntmext, req *GetBookkeeperStateReq) {
+func (self *LedgerActor) handleGetBookkeeperStateReq(ctx actor.Ccntmext, req *GetBookkeeperStateReq) {
 	bookKeep, err := ledger.DefLedger.GetBookkeeperState()
 	resp := &GetBookkeeperStateRsp{
 		BookKeepState: bookKeep,
@@ -291,7 +302,7 @@ func (this *LedgerActor) handleGetBookkeeperStateReq(ctx actor.Ccntmext, req *Ge
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleGetStorageItemReq(ctx actor.Ccntmext, req *GetStorageItemReq) {
+func (self *LedgerActor) handleGetStorageItemReq(ctx actor.Ccntmext, req *GetStorageItemReq) {
 	value, err := ledger.DefLedger.GetStorageItem(req.CodeHash, req.Key)
 	resp := &GetStorageItemRsp{
 		Value: value,
@@ -300,7 +311,7 @@ func (this *LedgerActor) handleGetStorageItemReq(ctx actor.Ccntmext, req *GetSto
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleIsCcntmainTransactionReq(ctx actor.Ccntmext, req *IsCcntmainTransactionReq) {
+func (self *LedgerActor) handleIsCcntmainTransactionReq(ctx actor.Ccntmext, req *IsCcntmainTransactionReq) {
 	isCon, err := ledger.DefLedger.IsCcntmainTransaction(req.TxHash)
 	resp := &IsCcntmainTransactionRsp{
 		IsCcntmain: isCon,
@@ -309,7 +320,7 @@ func (this *LedgerActor) handleIsCcntmainTransactionReq(ctx actor.Ccntmext, req 
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handlePreExecuteCcntmractReq(ctx actor.Ccntmext, req *PreExecuteCcntmractReq) {
+func (self *LedgerActor) handlePreExecuteCcntmractReq(ctx actor.Ccntmext, req *PreExecuteCcntmractReq) {
 	result, err := ledger.DefLedger.PreExecuteCcntmract(req.Tx)
 	resp := &PreExecuteCcntmractRsp{
 		Result: result,
@@ -318,7 +329,7 @@ func (this *LedgerActor) handlePreExecuteCcntmractReq(ctx actor.Ccntmext, req *P
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleGetEventNotifyByTx(ctx actor.Ccntmext, req *GetEventNotifyByTxReq) {
+func (self *LedgerActor) handleGetEventNotifyByTx(ctx actor.Ccntmext, req *GetEventNotifyByTxReq) {
 	result, err := ledger.DefLedger.GetEventNotifyByTx(req.Tx)
 	resp := &GetEventNotifyByTxRsp{
 		Notifies: result,
@@ -327,7 +338,7 @@ func (this *LedgerActor) handleGetEventNotifyByTx(ctx actor.Ccntmext, req *GetEv
 	ctx.Sender().Request(resp, ctx.Self())
 }
 
-func (this *LedgerActor) handleGetEventNotifyByBlock(ctx actor.Ccntmext, req *GetEventNotifyByBlockReq) {
+func (self *LedgerActor) handleGetEventNotifyByBlock(ctx actor.Ccntmext, req *GetEventNotifyByBlockReq) {
 	result, err := ledger.DefLedger.GetEventNotifyByBlock(req.Height)
 	resp := &GetEventNotifyByBlockRsp{
 		TxHashes: result,

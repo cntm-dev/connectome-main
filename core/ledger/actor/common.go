@@ -200,6 +200,16 @@ type GetCcntmractStateReq struct {
 	CcntmractHash common.Address
 }
 
+type GetMerkleProofReq struct {
+	ProofHeight uint32
+	RootHeight uint32
+}
+
+type GetMerkleProofRsp struct {
+	Proof []common.Uint256
+	Error error
+}
+
 type GetCcntmractStateRsp struct {
 	CcntmractState *payload.DeployCode
 	Error         error
