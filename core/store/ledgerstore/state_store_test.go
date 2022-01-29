@@ -25,7 +25,7 @@ import (
 	"github.com/cntmio/cntmology/core/states"
 	scommon "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/core/store/statestore"
-	vmtypes "github.com/cntmio/cntmology/vm/types"
+	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
 	"github.com/cntmio/cntmology-crypto/keypair"
 )
 

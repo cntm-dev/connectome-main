@@ -21,10 +21,10 @@ package utils
 import (
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
-	vmtypes "github.com/cntmio/cntmology/vm/types"
+	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 )
 
-func NewDeployTransaction(code *vmtypes.VmCode, name, version, author, email, desp string, needStorage bool) *types.Transaction {
+func NewDeployTransaction(code stypes.VmCode, name, version, author, email, desp string, needStorage bool) *types.Transaction {
 	//TODO: check arguments
 	DeployCodePayload := &payload.DeployCode{
 		Code:        code,
@@ -43,7 +43,7 @@ func NewDeployTransaction(code *vmtypes.VmCode, name, version, author, email, de
 	}
 }
 
-func NewInvokeTransaction(vmcode vmtypes.VmCode) *types.Transaction {
+func NewInvokeTransaction(vmcode stypes.VmCode) *types.Transaction {
 	//TODO: check arguments
 	invokeCodePayload := &payload.InvokeCode{
 		Code: vmcode,

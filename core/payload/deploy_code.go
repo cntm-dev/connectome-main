@@ -24,11 +24,11 @@ import (
 	"io"
 
 	"github.com/cntmio/cntmology/common/serialization"
-	vmtypes "github.com/cntmio/cntmology/vm/types"
+	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 )
 
 type DeployCode struct {
-	Code        *vmtypes.VmCode
+	Code        stypes.VmCode
 	NeedStorage bool
 	Name        string
 	Version     string
@@ -80,13 +80,13 @@ func (dc *DeployCode) Serialize(w io.Writer) error {
 
 func (dc *DeployCode) Deserialize(r io.Reader) error {
 	var err error
-	code := new(vmtypes.VmCode)
+	code := new(stypes.VmCode)
 
 	err = code.Deserialize(r)
 	if err != nil {
 		return fmt.Errorf("DeployCode Code Deserialize failed: %s", err)
 	}
-	dc.Code = code
+	dc.Code = *code
 
 	dc.NeedStorage, err = serialization.ReadBool(r)
 	if err != nil {

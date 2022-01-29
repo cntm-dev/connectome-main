@@ -409,8 +409,11 @@ func GetBlockHeightByTxHash(params []interface{}) map[string]interface{} {
 		if err := hash.Deserialize(bytes.NewReader(hex)); err != nil {
 			return responsePack(berr.INVALID_PARAMS, "")
 		}
-		height, err := bactor.GetBlockHeightByTxHashFromStore(hash)
+		height, tx, err := bactor.GetTxnWithHeightByTxHash(hash)
 		if err != nil {
+			return responsePack(berr.INVALID_PARAMS, "")
+		}
+		if tx == nil {
 			return responsePack(berr.INVALID_PARAMS, "")
 		}
 		return responseSuccess(height)

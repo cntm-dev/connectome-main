@@ -23,12 +23,12 @@ import (
 	"io"
 
 	"github.com/cntmio/cntmology/common"
-	vmtypes "github.com/cntmio/cntmology/vm/types"
+	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 )
 
 type InvokeCode struct {
 	GasLimit common.Fixed64
-	Code     vmtypes.VmCode
+	Code     stypes.VmCode
 }
 
 func (self *InvokeCode) Serialize(w io.Writer) error {

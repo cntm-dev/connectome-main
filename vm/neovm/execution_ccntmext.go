@@ -21,28 +21,20 @@ package neovm
 import (
 	"io"
 
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/vm/neovm/types"
 	"github.com/cntmio/cntmology/vm/neovm/utils"
-	vmtypes "github.com/cntmio/cntmology/vm/types"
 )
 
 type ExecutionCcntmext struct {
 	Code               []byte
 	OpReader           *utils.VmReader
-	PushOnly           bool
-	BreakPoints        []uint
 	InstructionPointer int
-	CodeHash           common.Address
 	engine             *ExecutionEngine
 }
 
-func NewExecutionCcntmext(engine *ExecutionEngine, code []byte, pushOnly bool, breakPoints []uint) *ExecutionCcntmext {
+func NewExecutionCcntmext(engine *ExecutionEngine, code []byte) *ExecutionCcntmext {
 	var executionCcntmext ExecutionCcntmext
 	executionCcntmext.Code = code
 	executionCcntmext.OpReader = utils.NewVmReader(code)
-	executionCcntmext.PushOnly = pushOnly
-	executionCcntmext.BreakPoints = breakPoints
 	executionCcntmext.InstructionPointer = 0
 	executionCcntmext.engine = engine
 	return &executionCcntmext
@@ -56,33 +48,14 @@ func (ec *ExecutionCcntmext) SetInstructionPointer(offset int64) {
 	ec.OpReader.Seek(offset, io.SeekStart)
 }
 
-func (ec *ExecutionCcntmext) GetCodeHash() (common.Address, error) {
-	empty := common.Address{}
-	if ec.CodeHash == empty {
-		code := &vmtypes.VmCode{
-			Code:   ec.Code,
-			VmType: vmtypes.NEOVM,
-		}
-		ec.CodeHash = code.AddressFromVmCode()
-	}
-	return ec.CodeHash, nil
-}
-
 func (ec *ExecutionCcntmext) NextInstruction() OpCode {
 	return OpCode(ec.Code[ec.OpReader.Position()])
 }
 
 func (ec *ExecutionCcntmext) Clone() *ExecutionCcntmext {
-	executionCcntmext := NewExecutionCcntmext(ec.engine, ec.Code, ec.PushOnly, ec.BreakPoints)
+	executionCcntmext := NewExecutionCcntmext(ec.engine, ec.Code)
 	executionCcntmext.InstructionPointer = ec.InstructionPointer
 	executionCcntmext.SetInstructionPointer(int64(ec.GetInstructionPointer()))
 	return executionCcntmext
 }
 
-func (ec *ExecutionCcntmext) GetStackItem() types.StackItems {
-	return nil
-}
-
-func (ec *ExecutionCcntmext) GetExecutionCcntmext() *ExecutionCcntmext {
-	return ec
-}

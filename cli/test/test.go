@@ -27,9 +27,6 @@ import (
 	"os"
 	"time"
 
-	"bufio"
-	"encoding/binary"
-	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/account"
 	clicommon "github.com/cntmio/cntmology/cli/common"
 	"github.com/cntmio/cntmology/common"
@@ -39,8 +36,12 @@ import (
 	"github.com/cntmio/cntmology/core/utils"
 	"github.com/cntmio/cntmology/http/base/rpc"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/states"
-	vmtypes "github.com/cntmio/cntmology/vm/types"
+	sstates "github.com/cntmio/cntmology/smartccntmract/states"
+	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
+	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/urfave/cli"
+	"encoding/binary"
+	"bufio"
 )
 
 func signTransaction(signer *account.Account, tx *types.Transaction) error {
@@ -97,7 +98,7 @@ func GenTransferFile(n int, acc *account.Account, fileName string) {
 		f.Close()
 	}()
 
-	for i := 0; i < n; i++ {
+	for i := 0; i < n; i ++ {
 		to := acc.Address
 		binary.BigEndian.PutUint64(to[:], uint64(i))
 		tx := NewOntTransferTransaction(acc.Address, to, 1)
@@ -112,7 +113,7 @@ func GenTransferFile(n int, acc *account.Account, fileName string) {
 
 }
 
-func transferTest(n int, acc *account.Account) {
+func transferTest(n int, acc *account.Account) {	
 	if n <= 0 {
 		n = 1
 	}
@@ -167,7 +168,7 @@ func NewOntTransferTransaction(from, to common.Address, value int64) *types.Tran
 		os.Exit(1)
 	}
 
-	ccntm := &states.Ccntmract{
+	ccntm := &sstates.Ccntmract{
 		Address: genesis.OntCcntmractAddress,
 		Method:  "transfer",
 		Args:    bf.Bytes(),
@@ -209,7 +210,8 @@ func NewCommand() *cli.Command {
 			cli.BoolFlag{
 				Name:  "gen, g",
 				Usage: "gen transaction to file",
-			},
+
+		},
 		},
 		Action: testAction,
 		OnUsageError: func(c *cli.Ccntmext, err error, isSubcommand bool) error {

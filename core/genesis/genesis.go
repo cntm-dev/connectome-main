@@ -27,17 +27,14 @@ import (
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/core/utils"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/states"
-	vmtypes "github.com/cntmio/cntmology/vm/types"
+	"github.com/cntmio/cntmology/smartccntmract/states"
+	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
 const (
 	BlockVersion uint32 = 0
 	GenesisNonce uint64 = 2083236893
-
-	OntRegisterAmount = 1000000000
-	OngRegisterAmount = 1000000000
 )
 
 var (
@@ -93,13 +90,13 @@ func GenesisBlockInit(defaultBookkeeper []keypair.PublicKey) (*types.Block, erro
 }
 
 func NewGoverningToken() *types.Transaction {
-	tx := utils.NewDeployTransaction(&vmtypes.VmCode{Code: OntCcntmractAddress[:], VmType: vmtypes.Native}, "cntm", "1.0",
+	tx := utils.NewDeployTransaction(stypes.VmCode{Code: OntCcntmractAddress[:], VmType: stypes.Native}, "cntm", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", true)
 	return tx
 }
 
 func NewUtilityToken() *types.Transaction {
-	tx := utils.NewDeployTransaction(&vmtypes.VmCode{Code: OngCcntmractAddress[:], VmType: vmtypes.Native}, "cntm", "1.0",
+	tx := utils.NewDeployTransaction(stypes.VmCode{Code: OngCcntmractAddress[:], VmType: stypes.Native}, "cntm", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", true)
 	return tx
 }
@@ -108,12 +105,11 @@ func NewGoverningInit() *types.Transaction {
 	init := states.Ccntmract{
 		Address: OntCcntmractAddress,
 		Method:  "init",
-		Args:    []byte{},
 	}
 	bf := new(bytes.Buffer)
 	init.Serialize(bf)
-	vmCode := vmtypes.VmCode{
-		VmType: vmtypes.Native,
+	vmCode := stypes.VmCode{
+		VmType: stypes.Native,
 		Code:   bf.Bytes(),
 	}
 	tx := utils.NewInvokeTransaction(vmCode)
@@ -124,12 +120,11 @@ func NewUtilityInit() *types.Transaction {
 	init := states.Ccntmract{
 		Address: OngCcntmractAddress,
 		Method:  "init",
-		Args:    []byte{},
 	}
 	bf := new(bytes.Buffer)
 	init.Serialize(bf)
-	vmCode := vmtypes.VmCode{
-		VmType: vmtypes.Native,
+	vmCode := stypes.VmCode{
+		VmType: stypes.Native,
 		Code:   bf.Bytes(),
 	}
 	tx := utils.NewInvokeTransaction(vmCode)

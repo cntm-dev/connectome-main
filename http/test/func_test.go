@@ -22,7 +22,6 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
-	"os"
 	"testing"
 	"time"
 
@@ -35,7 +34,7 @@ import (
 	"github.com/cntmio/cntmology/core/utils"
 	"github.com/cntmio/cntmology/merkle"
 	"github.com/cntmio/cntmology/vm/neovm"
-	vmtypes "github.com/cntmio/cntmology/vm/types"
+	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
 	"github.com/stretchr/testify/assert"
 )
 

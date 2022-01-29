@@ -32,7 +32,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract"
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
 	"github.com/cntmio/cntmology/smartccntmract/event"
-	vmtypes "github.com/cntmio/cntmology/vm/types"
+	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 )
 
 const (
@@ -45,7 +45,7 @@ func (self *StateStore) HandleDeployTransaction(stateBatch *statestore.StateBatc
 	originAddress := deploy.Code.AddressFromVmCode()
 
 	// mapping native ccntmract origin address to target address
-	if deploy.Code.VmType == vmtypes.Native {
+	if deploy.Code.VmType == stypes.Native {
 		targetAddress, err := common.AddressParseFromBytes(deploy.Code.Code)
 		if err != nil {
 			return fmt.Errorf("Invalid native ccntmract address:%v", err)
@@ -82,7 +82,6 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 		Time:    block.Header.Timestamp,
 		Height:  block.Header.Height,
 		Tx:      tx,
-		Table:   &CacheCodeTable{stateBatch},
 		DBCache: stateBatch,
 		Store:   store,
 	}
