@@ -21,7 +21,7 @@ package ccntmext
 import (
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/smartccntmract/event"
-	vmtypes "github.com/cntmio/cntmology/vm/types"
+	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 )
 
 type CcntmextRef interface {
@@ -32,10 +32,10 @@ type CcntmextRef interface {
 	PopCcntmext()
 	CheckWitness(address common.Address) bool
 	PushNotifications(notifications []*event.NotifyEventInfo)
-	Execute() error
+	AppCall(address common.Address, method string, codes, args []byte, isLoad bool) error
 }
 
 type Ccntmext struct {
 	CcntmractAddress common.Address
-	Code            vmtypes.VmCode
+	Code            stypes.VmCode
 }

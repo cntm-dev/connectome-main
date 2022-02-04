@@ -21,6 +21,7 @@ package common
 import (
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/vm/neovm/types"
+	"github.com/cntmio/cntmology/common/log"
 )
 
 func ConvertReturnTypes(item types.StackItems) interface{} {
@@ -51,9 +52,10 @@ func ConvertReturnTypes(item types.StackItems) interface{} {
 	case *types.Interop:
 		return common.ToHexString(v.GetInterface().ToArray())
 	case types.StackItems:
-		ConvertReturnTypes(v)
+		return ConvertReturnTypes(v)
 	default:
-		panic("[ConvertTypes] Invalid Types!")
+		log.Error("[ConvertTypes] Invalid Types!")
+		return nil
 	}
-	return nil
 }
+

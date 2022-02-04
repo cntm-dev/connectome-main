@@ -25,22 +25,19 @@ import (
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/event"
-	trigger "github.com/cntmio/cntmology/smartccntmract/types"
 	"github.com/cntmio/cntmology/vm/wasmvm/exec"
 )
 
 type WasmStateReader struct {
 	serviceMap    map[string]func(*exec.ExecutionEngine) (bool, error)
-	trigger       trigger.TriggerType
 	Notifications []*event.NotifyEventInfo
 	ldgerStore    store.LedgerStore
 }
 
-func NewWasmStateReader(ldgerStore store.LedgerStore, trigger trigger.TriggerType) *WasmStateReader {
+func NewWasmStateReader(ldgerStore store.LedgerStore) *WasmStateReader {
 	i := &WasmStateReader{
 		ldgerStore: ldgerStore,
 		serviceMap: make(map[string]func(*exec.ExecutionEngine) (bool, error)),
-		trigger:    trigger,
 	}
 
 	i.Register("GetBlockHeight", i.Getblockheight)

@@ -29,9 +29,8 @@ import (
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
 	"github.com/cntmio/cntmology/smartccntmract/event"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/states"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
-	vmtypes "github.com/cntmio/cntmology/vm/types"
+	sstates "github.com/cntmio/cntmology/smartccntmract/states"
 )
 
 type (
@@ -66,17 +65,17 @@ func NewNativeService(dbCache scommon.StateStore, height uint32, tx *types.Trans
 	return &nativeService
 }
 
-func (native *NativeService) Register(methodName string, handler Handler) {
-	native.ServiceMap[methodName] = handler
+func (this *NativeService) Register(methodName string, handler Handler) {
+	this.ServiceMap[methodName] = handler
 }
 
-func (native *NativeService) Invoke() error {
-	ctx := native.CcntmextRef.CurrentCcntmext()
+func (this *NativeService) Invoke() error {
+	ctx := this.CcntmextRef.CurrentCcntmext()
 	if ctx == nil {
 		return errors.NewErr("[Invoke] Native service current ccntmext doesn't exist!")
 	}
 	bf := bytes.NewBuffer(ctx.Code.Code)
-	ccntmract := new(states.Ccntmract)
+	ccntmract := new(sstates.Ccntmract)
 	if err := ccntmract.Deserialize(bf); err != nil {
 		return err
 	}
@@ -84,45 +83,19 @@ func (native *NativeService) Invoke() error {
 	if !ok {
 		return fmt.Errorf("Native ccntmract address %x haven't been registered.", ccntmract.Address)
 	}
-	services(native)
-	service, ok := native.ServiceMap[ccntmract.Method]
+	services(this)
+	service, ok := this.ServiceMap[ccntmract.Method]
 	if !ok {
 		return fmt.Errorf("Native ccntmract %x doesn't support this function %s.", ccntmract.Address, ccntmract.Method)
 	}
-	native.CcntmextRef.PushCcntmext(&ccntmext.Ccntmext{CcntmractAddress: ccntmract.Address})
-	native.Input = ccntmract.Args
-	if err := service(native); err != nil {
+	this.CcntmextRef.PushCcntmext(&ccntmext.Ccntmext{CcntmractAddress: ccntmract.Address})
+	this.Input = ccntmract.Args
+	if err := service(this); err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[Invoke] Native serivce function execute error!")
 	}
-	native.CcntmextRef.PopCcntmext()
-	native.CcntmextRef.PushNotifications(native.Notifications)
-	native.CloneCache.Commit()
-	return nil
-}
-
-func (native *NativeService) AppCall(address common.Address, method string, args []byte) error {
-	bf := new(bytes.Buffer)
-	ccntmract := &states.Ccntmract{
-		Address: address,
-		Method:  method,
-		Args:    args,
-	}
-
-	if err := ccntmract.Serialize(bf); err != nil {
-		return err
-	}
-	code := vmtypes.VmCode{
-		VmType: vmtypes.Native,
-		Code:   bf.Bytes(),
-	}
-	native.CcntmextRef.PushCcntmext(&ccntmext.Ccntmext{
-		Code:            code,
-		CcntmractAddress: code.AddressFromVmCode(),
-	})
-	if err := native.CcntmextRef.Execute(); err != nil {
-		return err
-	}
-	native.CcntmextRef.PopCcntmext()
+	this.CcntmextRef.PopCcntmext()
+	this.CcntmextRef.PushNotifications(this.Notifications)
+	this.CloneCache.Commit()
 	return nil
 }
 

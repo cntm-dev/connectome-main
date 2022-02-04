@@ -71,11 +71,10 @@ func newStack(depth int) *vmstack {
 }
 
 //todo add parameters
-func NewExecutionEngine(ccntmainer interfaces.CodeCcntmainer, crypto interfaces.Crypto, table interfaces.CodeTable, service InteropServiceInterface, ver string) *ExecutionEngine {
+func NewExecutionEngine(ccntmainer interfaces.CodeCcntmainer, crypto interfaces.Crypto, service InteropServiceInterface, ver string) *ExecutionEngine {
 
 	engine := &ExecutionEngine{
 		crypto:        crypto,
-		table:         table,
 		CodeCcntmainer: ccntmainer,
 		service:       NewInteropService(),
 		version:       ver,
@@ -90,7 +89,6 @@ func NewExecutionEngine(ccntmainer interfaces.CodeCcntmainer, crypto interfaces.
 
 type ExecutionEngine struct {
 	crypto        interfaces.Crypto
-	table         interfaces.CodeTable
 	service       *InteropService
 	CodeCcntmainer interfaces.CodeCcntmainer
 	vm            *VM

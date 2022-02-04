@@ -17,8 +17,8 @@
 package smartccntmract
 
 import (
+	"fmt"
 	"bytes"
-	"encoding/binary"
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/store"
@@ -28,18 +28,19 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
-	sneovm "github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	"github.com/cntmio/cntmology/smartccntmract/service/wasm"
 	stypes "github.com/cntmio/cntmology/smartccntmract/types"
-	"github.com/cntmio/cntmology/vm/neovm"
-	"github.com/cntmio/cntmology/vm/neovm/interfaces"
-	vmtypes "github.com/cntmio/cntmology/vm/types"
 	"github.com/cntmio/cntmology/vm/wasmvm/exec"
 	"github.com/cntmio/cntmology/vm/wasmvm/util"
+	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
+	"github.com/cntmio/cntmology/core/payload"
+	"github.com/cntmio/cntmology/smartccntmract/states"
+	vm "github.com/cntmio/cntmology/vm/neovm"
+	"encoding/binary"
 )
 
 type SmartCcntmract struct {
-	Ccntmext       []*ccntmext.Ccntmext
+	Ccntmexts      []*ccntmext.Ccntmext
 	Config        *Config
 	Engine        Engine
 	Notifications []*event.NotifyEventInfo
@@ -49,82 +50,74 @@ type Config struct {
 	Time    uint32
 	Height  uint32
 	Tx      *ctypes.Transaction
-	Table   interfaces.CodeTable
 	DBCache scommon.StateStore
 	Store   store.LedgerStore
 }
 
 type Engine interface {
-	StepInto()
+	Invoke()
 }
 
 //put current ccntmext to smart ccntmract
-func (sc *SmartCcntmract) PushCcntmext(ccntmext *ccntmext.Ccntmext) {
-	sc.Ccntmext = append(sc.Ccntmext, ccntmext)
+func (this *SmartCcntmract) PushCcntmext(ccntmext *ccntmext.Ccntmext) {
+	this.Ccntmexts = append(this.Ccntmexts, ccntmext)
 }
 
 //get smart ccntmract current ccntmext
-func (sc *SmartCcntmract) CurrentCcntmext() *ccntmext.Ccntmext {
-	if len(sc.Ccntmext) < 1 {
+func (this *SmartCcntmract) CurrentCcntmext() *ccntmext.Ccntmext {
+	if len(this.Ccntmexts) < 1 {
 		return nil
 	}
-	return sc.Ccntmext[len(sc.Ccntmext)-1]
+	return this.Ccntmexts[len(this.Ccntmexts) - 1]
 }
 
 //get smart ccntmract caller ccntmext
-func (sc *SmartCcntmract) CallingCcntmext() *ccntmext.Ccntmext {
-	if len(sc.Ccntmext) < 2 {
+func (this *SmartCcntmract) CallingCcntmext() *ccntmext.Ccntmext {
+	if len(this.Ccntmexts) < 2 {
 		return nil
 	}
-	return sc.Ccntmext[len(sc.Ccntmext)-2]
+	return this.Ccntmexts[len(this.Ccntmexts) - 2]
 }
 
 //get smart ccntmract entry entrance ccntmext
-func (sc *SmartCcntmract) EntryCcntmext() *ccntmext.Ccntmext {
-	if len(sc.Ccntmext) < 1 {
+func (this *SmartCcntmract) EntryCcntmext() *ccntmext.Ccntmext {
+	if len(this.Ccntmexts) < 1 {
 		return nil
 	}
-	return sc.Ccntmext[0]
+	return this.Ccntmexts[0]
 }
 
 //pop smart ccntmract current ccntmext
-func (sc *SmartCcntmract) PopCcntmext() {
-	sc.Ccntmext = sc.Ccntmext[:len(sc.Ccntmext)-1]
+func (this *SmartCcntmract) PopCcntmext() {
+	if len(this.Ccntmexts) > 0 {
+		this.Ccntmexts = this.Ccntmexts[:len(this.Ccntmexts) - 1]
+	}
 }
 
-func (sc *SmartCcntmract) PushNotifications(notifications []*event.NotifyEventInfo) {
-	sc.Notifications = append(sc.Notifications, notifications...)
+func (this *SmartCcntmract) PushNotifications(notifications []*event.NotifyEventInfo) {
+	this.Notifications = append(this.Notifications, notifications...)
 }
 
-func (sc *SmartCcntmract) Execute() error {
-	ctx := sc.CurrentCcntmext()
+func (this *SmartCcntmract) Execute() error {
+	ctx := this.CurrentCcntmext()
 	switch ctx.Code.VmType {
-	case vmtypes.Native:
-		service := native.NewNativeService(sc.Config.DBCache, sc.Config.Height, sc.Config.Tx, sc)
+	case stypes.Native:
+		service := native.NewNativeService(this.Config.DBCache, this.Config.Height, this.Config.Tx, this)
 		if err := service.Invoke(); err != nil {
 			return err
 		}
-	case vmtypes.NEOVM:
-		stateMachine := sneovm.NewStateMachine(sc.Config.Store, sc.Config.DBCache, stypes.Application, sc.Config.Time)
-		engine := neovm.NewExecutionEngine(
-			sc.Config.Tx,
-			new(neovm.ECDsaCrypto),
-			sc.Config.Table,
-			stateMachine,
-		)
-		engine.LoadCode(ctx.Code.Code, false)
-		if err := engine.Execute(); err != nil {
+	case stypes.NEOVM:
+		service := neovm.NewNeoVmService(this.Config.Store, this.Config.DBCache, this.Config.Tx, this.Config.Time, this)
+		if err := service.Invoke(); err != nil {
+			fmt.Println("execute neovm error:", err)
 			return err
 		}
-		stateMachine.CloneCache.Commit()
-		sc.Notifications = append(sc.Notifications, stateMachine.Notifications...)
-	case vmtypes.WASMVM:
+	case stypes.WASMVM:
 		//todo refactor following code to match Neovm
-		stateMachine := wasm.NewWasmStateMachine(sc.Config.Store, sc.Config.DBCache, stypes.Application, sc.Config.Time)
+		stateMachine := wasm.NewWasmStateMachine(this.Config.Store, this.Config.DBCache, this.Config.Time)
 		engine := exec.NewExecutionEngine(
-			sc.Config.Tx,
+			this.Config.Tx,
 			new(util.ECDsaCrypto),
-			sc.Config.Table,
 			stateMachine,
 			"product",
 		)
@@ -145,7 +138,7 @@ func (sc *SmartCcntmract) Execute() error {
 			return errors.NewErr("get ccntmract  error")
 		}
 
-		input := ctx.Code.Code[len(ccntmractCode)+1:]
+		input := ctx.Code.Code[len(ccntmractCode) + 1:]
 		res, err := engine.Call(ctx.CcntmractAddress, dpcode, input)
 		if err != nil {
 			return err
@@ -158,20 +151,72 @@ func (sc *SmartCcntmract) Execute() error {
 		}
 
 		stateMachine.CloneCache.Commit()
-		sc.Notifications = append(sc.Notifications, stateMachine.Notifications...)
+		this.Notifications = append(this.Notifications, stateMachine.Notifications...)
 	}
 	return nil
 }
 
-func (sc *SmartCcntmract) CheckWitness(address common.Address) bool {
-	if vmtypes.IsVmCodeAddress(address) {
-		for _, v := range sc.Ccntmext {
-			if v.CcntmractAddress == address {
-				return true
-			}
+func (this *SmartCcntmract) AppCall(address common.Address, method string, codes, args []byte, isLoad bool) error {
+	var code []byte
+	if isLoad {
+		c, err := this.getCcntmract(address[:]); if err != nil {
+			return err
+		}
+		code = c.Code.Code
+	}
+
+	vmType := stypes.VmType(address[0])
+
+	switch vmType {
+	case stypes.Native:
+		bf := new(bytes.Buffer)
+		c := states.Ccntmract{
+			Address: address,
+			Method: method,
+			Args: args,
+		}
+		if err := c.Serialize(bf); err != nil {
+			return err
+		}
+		code = bf.Bytes()
+	case stypes.NEOVM:
+		var temp []byte
+		build := vm.NewParamsBuilder(new(bytes.Buffer))
+		if method != "" {
+			build.EmitPushByteArray([]byte(method))
+		}
+		temp = append(args, build.ToArray()...)
+		if isLoad {
+			code = append(temp, code...)
+		} else {
+			code = append(temp, codes...)
+		}
+	case stypes.WASMVM:
+	}
+
+	this.PushCcntmext(&ccntmext.Ccntmext{
+		Code: stypes.VmCode{
+			Code: code,
+			VmType: vmType,
+		},
+		CcntmractAddress: address,
+	})
+
+	if err := this.Execute(); err != nil {
+		return err
+	}
+
+	this.PopCcntmext()
+	return nil
+}
+
+func (this *SmartCcntmract) CheckWitness(address common.Address) bool {
+	if stypes.IsVmCodeAddress(address) {
+		if this.CallingCcntmext() != nil && this.CallingCcntmext().CcntmractAddress == address {
+			return true
 		}
 	} else {
-		addresses := sc.Config.Tx.GetSignatureAddresses()
+		addresses := this.Config.Tx.GetSignatureAddresses()
 		for _, v := range addresses {
 			if v == address {
 				return true
@@ -180,4 +225,15 @@ func (sc *SmartCcntmract) CheckWitness(address common.Address) bool {
 	}
 
 	return false
+}
+
+func (this *SmartCcntmract) getCcntmract(address []byte) (*payload.DeployCode, error) {
+	item, err := this.Config.DBCache.TryGet(scommon.ST_CcntmRACT, address[:]);
+	if err != nil || item == nil || item.Value == nil {
+		return nil, errors.NewErr("[getCcntmract] Get ccntmext doesn't exist!")
+	}
+	ccntmract, ok := item.Value.(*payload.DeployCode); if !ok {
+		return nil, errors.NewErr("[getCcntmract] Type error!")
+	}
+	return ccntmract, nil
 }

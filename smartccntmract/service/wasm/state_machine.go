@@ -29,7 +29,6 @@ import (
 	"github.com/cntmio/cntmology/core/store"
 	scommon "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
-	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
 	"github.com/cntmio/cntmology/vm/wasmvm/exec"
 	"github.com/cntmio/cntmology/vm/wasmvm/util"
 	"github.com/cntmio/cntmology/vm/wasmvm/wasm"
@@ -40,17 +39,15 @@ type WasmStateMachine struct {
 	*WasmStateReader
 	ldgerStore store.LedgerStore
 	CloneCache *storage.CloneCache
-	trigger    vmtypes.TriggerType
 	time       uint32
 }
 
-func NewWasmStateMachine(ldgerStore store.LedgerStore, dbCache scommon.StateStore, trigger vmtypes.TriggerType, time uint32) *WasmStateMachine {
+func NewWasmStateMachine(ldgerStore store.LedgerStore, dbCache scommon.StateStore, time uint32) *WasmStateMachine {
 
 	var stateMachine WasmStateMachine
 	stateMachine.ldgerStore = ldgerStore
 	stateMachine.CloneCache = storage.NewCloneCache(dbCache)
-	stateMachine.WasmStateReader = NewWasmStateReader(ldgerStore, trigger)
-	stateMachine.trigger = trigger
+	stateMachine.WasmStateReader = NewWasmStateReader(ldgerStore)
 	stateMachine.time = time
 
 	stateMachine.Register("PutStorage", stateMachine.putstore)

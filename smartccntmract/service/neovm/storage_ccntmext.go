@@ -23,15 +23,15 @@ import (
 )
 
 type StorageCcntmext struct {
-	codeHash common.Address
+	address common.Address
 }
 
-func NewStorageCcntmext(codeHash common.Address) *StorageCcntmext {
+func NewStorageCcntmext(address common.Address) *StorageCcntmext {
 	var storageCcntmext StorageCcntmext
-	storageCcntmext.codeHash = codeHash
+	storageCcntmext.address = address
 	return &storageCcntmext
 }
 
-func (sc *StorageCcntmext) ToArray() []byte {
-	return sc.codeHash[:]
+func (this *StorageCcntmext) ToArray() []byte {
+	return this.address[:]
 }
