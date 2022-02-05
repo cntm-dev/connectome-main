@@ -40,18 +40,18 @@ import (
 )
 
 type SmartCcntmract struct {
-	Ccntmexts      []*ccntmext.Ccntmext
+	Ccntmexts      []*ccntmext.Ccntmext // all execute smart ccntmract ccntmext
 	Config        *Config
 	Engine        Engine
-	Notifications []*event.NotifyEventInfo
+	Notifications []*event.NotifyEventInfo // all execute smart ccntmract event notify info
 }
 
 type Config struct {
-	Time    uint32
-	Height  uint32
-	Tx      *ctypes.Transaction
-	DBCache scommon.StateStore
-	Store   store.LedgerStore
+	Time    uint32	// now block timestamp
+	Height  uint32  // now block height
+	Tx      *ctypes.Transaction // current transaction
+	DBCache scommon.StateStore // db states cache
+	Store   store.LedgerStore // ledger store
 }
 
 type Engine interface {
@@ -94,6 +94,7 @@ func (this *SmartCcntmract) PopCcntmext() {
 	}
 }
 
+// push smart ccntmract event info
 func (this *SmartCcntmract) PushNotifications(notifications []*event.NotifyEventInfo) {
 	this.Notifications = append(this.Notifications, notifications...)
 }
@@ -138,8 +139,16 @@ func (this *SmartCcntmract) Execute() error {
 			return errors.NewErr("get ccntmract  error")
 		}
 
-		input := ctx.Code.Code[len(ccntmractCode) + 1:]
-		res, err := engine.Call(ctx.CcntmractAddress, dpcode, input)
+
+		input := ctx.Code.Code[len(ccntmractCode)+1:]
+		var caller common.Address
+		if this.CallingCcntmext() == nil{
+			caller = common.Address{}
+		}else{
+			caller = this.CallingCcntmext().CcntmractAddress
+		}
+		res, err := engine.Call(caller, dpcode, input)
+
 		if err != nil {
 			return err
 		}
@@ -156,6 +165,13 @@ func (this *SmartCcntmract) Execute() error {
 	return nil
 }
 
+// When you want to call a ccntmract use this function, if ccntmract exist in blockchain, you should set isLoad true,
+// Otherwise, you can set execute code, and set isLoad false.
+// param address: smart ccntmract address
+// param method: invoke smart ccntmract method name
+// param codes: invoke smart ccntmract whether need to load code
+// param args: invoke smart ccntmract args
+// param idLoad: if true, you can get ccntmract code from block chain, else, you need to load code from param codes
 func (this *SmartCcntmract) AppCall(address common.Address, method string, codes, args []byte, isLoad bool) error {
 	var code []byte
 	if isLoad {
@@ -210,6 +226,10 @@ func (this *SmartCcntmract) AppCall(address common.Address, method string, codes
 	return nil
 }
 
+// check authorization correct
+// if address is wallet address, check whether in the signature addressed list
+// else check whether address is calling ccntmract address
+// param address: wallet address or ccntmract address
 func (this *SmartCcntmract) CheckWitness(address common.Address) bool {
 	if stypes.IsVmCodeAddress(address) {
 		if this.CallingCcntmext() != nil && this.CallingCcntmext().CcntmractAddress == address {

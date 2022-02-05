@@ -26,6 +26,7 @@ import (
 	"golang.org/x/crypto/ripemd160"
 )
 
+// Prefix of address
 type VmType byte
 
 const (

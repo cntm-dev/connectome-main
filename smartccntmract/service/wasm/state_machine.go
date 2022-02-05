@@ -20,19 +20,17 @@ package wasm
 
 import (
 	"bytes"
-	"errors"
-	"io/ioutil"
-	"fmt"
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/core/store"
 	scommon "github.com/cntmio/cntmology/core/store/common"
+	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
 	"github.com/cntmio/cntmology/vm/wasmvm/exec"
+	"github.com/cntmio/cntmology/vm/wasmvm/memory"
 	"github.com/cntmio/cntmology/vm/wasmvm/util"
 	"github.com/cntmio/cntmology/vm/wasmvm/wasm"
-
 )
 
 type WasmStateMachine struct {
@@ -53,7 +51,7 @@ func NewWasmStateMachine(ldgerStore store.LedgerStore, dbCache scommon.StateStor
 	stateMachine.Register("PutStorage", stateMachine.putstore)
 	stateMachine.Register("GetStorage", stateMachine.getstore)
 	stateMachine.Register("DeleteStorage", stateMachine.deletestore)
-	stateMachine.Register("callCcntmract", callCcntmract)
+	stateMachine.Register("CallCcntmract", stateMachine.callCcntmract)
 
 	return &stateMachine
 }
@@ -66,7 +64,7 @@ func (s *WasmStateMachine) putstore(engine *exec.ExecutionEngine) (bool, error) 
 	params := envCall.GetParams()
 
 	if len(params) != 2 {
-		return false, errors.New("[putstore] parameter count error")
+		return false, errors.NewErr("[putstore] parameter count error")
 	}
 
 	key, err := vm.GetPointerMemory(params[0])
@@ -75,7 +73,7 @@ func (s *WasmStateMachine) putstore(engine *exec.ExecutionEngine) (bool, error) 
 	}
 
 	if len(key) > 1024 {
-		return false, errors.New("[putstore] Get Storage key to lcntm")
+		return false, errors.NewErr("[putstore] Get Storage key to lcntm")
 	}
 
 	value, err := vm.GetPointerMemory(params[1])
@@ -102,7 +100,7 @@ func (s *WasmStateMachine) getstore(engine *exec.ExecutionEngine) (bool, error) 
 	params := envCall.GetParams()
 
 	if len(params) != 1 {
-		return false, errors.New("[getstore] parameter count error ")
+		return false, errors.NewErr("[getstore] parameter count error ")
 	}
 
 	key, err := vm.GetPointerMemory(params[0])
@@ -113,10 +111,17 @@ func (s *WasmStateMachine) getstore(engine *exec.ExecutionEngine) (bool, error) 
 	if err != nil {
 		return false, err
 	}
-
 	item, err := s.CloneCache.Get(scommon.ST_STORAGE, k)
 	if err != nil {
 		return false, err
+	}
+
+	if item == nil {
+		vm.RestoreCtx()
+		if envCall.GetReturns() {
+			vm.PushResult(uint64(memory.VM_NIL_POINTER))
+		}
+		return true, nil
 	}
 
 	idx, err := vm.SetPointerMemory(item.(*states.StorageItem).Value)
@@ -138,7 +143,7 @@ func (s *WasmStateMachine) deletestore(engine *exec.ExecutionEngine) (bool, erro
 	params := envCall.GetParams()
 
 	if len(params) != 1 {
-		return false, errors.New("[deletestore] parameter count error")
+		return false, errors.NewErr("[deletestore] parameter count error")
 	}
 
 	key, err := vm.GetPointerMemory(params[0])
@@ -169,41 +174,44 @@ func (s *WasmStateMachine) GetCcntmractCodeFromAddress(address common.Address) (
 }
 
 //call other ccntmract
-func callCcntmract(engine *exec.ExecutionEngine) (bool, error) {
+func (s *WasmStateMachine) callCcntmract(engine *exec.ExecutionEngine) (bool, error) {
 	vm := engine.GetVM()
 	envCall := vm.GetEnvCall()
 	params := envCall.GetParams()
 	if len(params) != 3 {
-		return false, errors.New("parameter count error while call readMessage")
+		return false, errors.NewErr("parameter count error while call readMessage")
 	}
 	ccntmractAddressIdx := params[0]
 	addr, err := vm.GetPointerMemory(ccntmractAddressIdx)
 	if err != nil {
-		return false, errors.New("get Ccntmract address failed")
+		return false, errors.NewErr("get Ccntmract address failed")
 	}
 	//the ccntmract codes
-	ccntmractBytes, err := getCcntmractFromAddr(addr)
+	ccntmractBytes, err := s.getCcntmractFromAddr(addr)
 	if err != nil {
 		return false, err
 	}
+	codeHash := common.ToCodeHash(ccntmractBytes)
 	bf := bytes.NewBuffer(ccntmractBytes)
+
 	module, err := wasm.ReadModule(bf, emptyImporter)
 	if err != nil {
-		return false, errors.New("load Module failed")
+		return false, errors.NewErr("load Module failed")
 	}
 
 	methodName, err := vm.GetPointerMemory(params[1])
 	if err != nil {
-		return false, errors.New("[callCcntmract]get Ccntmract methodName failed")
+		return false, errors.NewErr("[callCcntmract]get Ccntmract methodName failed")
 	}
 
 	arg, err := vm.GetPointerMemory(params[2])
 	if err != nil {
-		return false, errors.New("[callCcntmract]get Ccntmract arg failed")
+		return false, errors.NewErr("[callCcntmract]get Ccntmract arg failed")
 	}
-
-	res, err := vm.CallProductCcntmract(module, methodName, arg)
-
+	res, err := vm.CallProductCcntmract(vm.CodeHash, codeHash, module, methodName, arg)
+	if err != nil {
+		return false, errors.NewErr("[callCcntmract]CallProductCcntmract failed")
+	}
 	vm.RestoreCtx()
 	if envCall.GetReturns() {
 		vm.PushResult(uint64(res))
@@ -215,41 +223,35 @@ func serializeStorageKey(codeHash common.Address, key []byte) ([]byte, error) {
 	bf := new(bytes.Buffer)
 	storageKey := &states.StorageKey{CodeHash: codeHash, Key: key}
 	if _, err := storageKey.Serialize(bf); err != nil {
-		return []byte{}, errors.New("[serializeStorageKey] StorageKey serialize error!")
+		return []byte{}, errors.NewErr("[serializeStorageKey] StorageKey serialize error!")
 	}
 	return bf.Bytes(), nil
 }
 
-func getCcntmractFromAddr(addr []byte) ([]byte, error) {
+func (s *WasmStateMachine) getCcntmractFromAddr(addr []byte) ([]byte, error) {
 
 	//just for test
-	ccntmract := util.TrimBuffToString(addr)
-	code, err := ioutil.ReadFile(fmt.Sprintf("./testdata2/%s.wasm", ccntmract))
-	if err != nil {
-		fmt.Printf("./testdata2/%s.wasm is not exist", ccntmract)
-		return nil, err
-	}
+	/*	ccntmract := util.TrimBuffToString(addr)
+		code, err := ioutil.ReadFile(fmt.Sprintf("./testdata2/%s.wasm", ccntmract))
+		if err != nil {
+			return nil, err
+		}
 
-	return code, nil
+		return code, nil*/
 	//Fixme get the ccntmract code from ledger
-	/*
-		codeHash, err := common.Uint160ParseFromBytes(addr)
-		if err != nil {
-			return nil, errors.New("get address Code hash failed")
-		}
-
-		ccntmract, err := ledger.DefLedger.GetCcntmractState(codeHash)
-		if err != nil {
-			return nil, errors.New("get ccntmract state failed")
-		}
-
-		if ccntmract.VmType != types.WASMVM {
-			return nil, errors.New(" ccntmract is not a wasm ccntmract")
-		}
-
-		return ccntmract.Code, nil
-	*/
-
+	addrbytes, err := common.HexToBytes(util.TrimBuffToString(addr))
+	if err != nil {
+		return nil, errors.NewErr("get ccntmract address error")
+	}
+	ccntmactaddress, err := common.AddressParseFromBytes(addrbytes)
+	if err != nil {
+		return nil, errors.NewErr("get ccntmract address error")
+	}
+	dpcode, err := s.GetCcntmractCodeFromAddress(ccntmactaddress)
+	if err != nil {
+		return nil, errors.NewErr("get ccntmract  error")
+	}
+	return dpcode, nil
 }
 
 func emptyImporter(name string) (*wasm.Module, error) {
