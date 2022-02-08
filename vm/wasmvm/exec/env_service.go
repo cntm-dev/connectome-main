@@ -63,18 +63,24 @@ func NewInteropService() *InteropService {
 	service.Register("malloc", malloc)
 	service.Register("arrayLen", arrayLen)
 	service.Register("memcpy", memcpy)
+	service.Register("memset", memset)
 	service.Register("read_message", readMessage)
+
+	//todo add basic apis
+	service.Register("Atoi", strToInt)
+	service.Register("Atoi64", strToInt64)
+	service.Register("Itoa", intToString)
+	service.Register("I64toa", int64ToString)
 
 	service.Register("ReadInt32Param", readInt32Param)
 	service.Register("ReadInt64Param", readInt64Param)
 	service.Register("ReadStringParam", readStringParam)
-	service.Register("RawUnmashal", rawUnmashal)
-	service.Register("JsonUnmashal", jsonUnmashal)
-	service.Register("JsonMashal", jsonMashal)
+	service.Register("JsonUnmashalInput", jsonUnmashal)
+	service.Register("JsonMashalResult", jsonMashal)
 	service.Register("JsonMashalParams", jsonMashalParams)
 	service.Register("RawMashalParams", rawMashalParams)
-	service.Register("GetCaller", GetCaller)
-	service.Register("GetSelfAddress", GetCodeHash)
+	service.Register("GetCallerAddress", getCaller)
+	service.Register("GetSelfAddress", getCodeHash)
 
 	//===================add block apis below==================
 	return &service
@@ -224,6 +230,32 @@ func memcpy(engine *ExecutionEngine) (bool, error) {
 	}
 
 	copy(engine.vm.memory.Memory[dest:dest+length], engine.vm.memory.Memory[src:src+length])
+
+	//1. recover the vm ccntmext
+	//2. if the call returns value,push the result to the stack
+	engine.vm.ctx = envCall.envPreCtx
+	if envCall.envReturns {
+		engine.vm.pushUint64(uint64(1))
+	}
+
+	return true, nil //this return will be dropped in wasm
+}
+
+func memset(engine *ExecutionEngine) (bool, error) {
+	envCall := engine.vm.envCall
+	params := envCall.envParams
+	if len(params) != 3 {
+		return false, errors.New("parameter count error while call memcpy")
+	}
+	dest := int(params[0])
+	char := int(params[1])
+	cnt := int(params[2])
+
+	tmp := make([]byte, cnt)
+	for i := 0; i < cnt; i++ {
+		tmp[i] = byte(char)
+	}
+	copy(engine.vm.Memory()[dest:dest+cnt], tmp)
 
 	//1. recover the vm ccntmext
 	//2. if the call returns value,push the result to the stack
@@ -387,7 +419,8 @@ func readStringParam(engine *ExecutionEngine) (bool, error) {
 }
 
 //todo solve the struct{char *} case
-func rawUnmashal(engine *ExecutionEngine) (bool, error) {
+//todo remove this method
+/*func rawUnmashal(engine *ExecutionEngine) (bool, error) {
 
 	envCall := engine.vm.envCall
 	params := envCall.envParams
@@ -407,7 +440,7 @@ func rawUnmashal(engine *ExecutionEngine) (bool, error) {
 	copy(engine.vm.memory.Memory[addr:int(addr)+len(rawBytes)], rawBytes)
 
 	return true, nil
-}
+}*/
 
 func jsonUnmashal(engine *ExecutionEngine) (bool, error) {
 
@@ -511,12 +544,11 @@ func jsonUnmashal(engine *ExecutionEngine) (bool, error) {
 		//todo this case is not an error, sizeof doesn't means actual memory length,so the size parameter should be removed.
 		//fmt.Printf("length is not same! size :%d, length:%d\n", size, len(bytes))
 	}
-	//todo add more check
 
-	if int(addr)+len(bytes) > len(engine.vm.memory.Memory) {
-		return false, errors.New("out of memory")
-	}
+	//todo move to SetMemory method
+	engine.vm.Malloc(len(bytes))
 	copy(engine.vm.memory.Memory[int(addr):int(addr)+len(bytes)], bytes)
+
 	engine.vm.ctx = envCall.envPreCtx
 	return true, nil
 }
@@ -637,7 +669,7 @@ func stringcmp(engine *ExecutionEngine) (bool, error) {
 	return true, nil
 }
 
-func GetCaller(engine *ExecutionEngine) (bool, error) {
+func getCaller(engine *ExecutionEngine) (bool, error) {
 	envCall := engine.vm.envCall
 
 	caller := engine.vm.Caller
@@ -652,7 +684,7 @@ func GetCaller(engine *ExecutionEngine) (bool, error) {
 	return true, nil
 }
 
-func GetCodeHash(engine *ExecutionEngine) (bool, error) {
+func getCodeHash(engine *ExecutionEngine) (bool, error) {
 	envCall := engine.vm.envCall
 
 	codeHash := engine.vm.CodeHash

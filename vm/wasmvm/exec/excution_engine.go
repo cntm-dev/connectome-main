@@ -33,11 +33,11 @@ import (
 	"github.com/cntmio/cntmology/vm/wasmvm/util"
 	"github.com/cntmio/cntmology/vm/wasmvm/validate"
 	"github.com/cntmio/cntmology/vm/wasmvm/wasm"
+	"github.com/cntmio/cntmology/smartccntmract/types"
 )
 
 const (
 	CcntmRACT_METHOD_NAME = "invoke"
-	PARAM_SPLITER        = "|"
 	VM_STACK_DEPTH       = 10
 )
 
@@ -71,13 +71,12 @@ func newStack(depth int) *vmstack {
 }
 
 //todo add parameters
-func NewExecutionEngine(ccntmainer interfaces.CodeCcntmainer, crypto interfaces.Crypto, service InteropServiceInterface, ver string) *ExecutionEngine {
+func NewExecutionEngine(ccntmainer interfaces.CodeCcntmainer, crypto interfaces.Crypto,  service InteropServiceInterface) *ExecutionEngine {
 
 	engine := &ExecutionEngine{
 		crypto:        crypto,
 		CodeCcntmainer: ccntmainer,
 		service:       NewInteropService(),
-		version:       ver,
 	}
 	if service != nil {
 		engine.service.MergeMap(service.GetServiceMap())
@@ -92,11 +91,10 @@ type ExecutionEngine struct {
 	service       *InteropService
 	CodeCcntmainer interfaces.CodeCcntmainer
 	vm            *VM
-	//todo ,move to ccntmract info later
-	version  string //for test different ccntmracts
-	backupVM *vmstack
+	backupVM      *vmstack
 }
 
+//GetVM return vm pointer
 func (e *ExecutionEngine) GetVM() *VM {
 	return e.vm
 }
@@ -127,7 +125,10 @@ func (e *ExecutionEngine) RestoreVM() error {
 }
 
 //use this method just for test
-func (e *ExecutionEngine) CallInf(caller common.Address, code []byte, input []interface{}, message []interface{}) ([]byte, error) {
+func (e *ExecutionEngine) CallInf(caller common.Address,
+									code []byte,
+									input []interface{},
+									message []interface{}) ([]byte, error) {
 	methodName := input[0].(string)
 
 	//1. read code
@@ -162,7 +163,8 @@ func (e *ExecutionEngine) CallInf(caller common.Address, code []byte, input []in
 	vm.SetMessage(message)
 
 	vm.Caller = caller
-	vm.CodeHash = common.ToCodeHash(code)
+	//this is only for test
+	//vm.CodeHash = common.ToCodeHash(code)
 
 	entry, ok := m.Export.Entries[methodName]
 	if ok == false {
@@ -301,26 +303,28 @@ func (e *ExecutionEngine) Create(caller common.Address, code []byte) ([]byte, er
 	return code, nil
 }
 
-//the input format should be "methodname | args"
-func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (returnbytes []byte, er error) {
+//
+//Call Main interface of wasm vm excution engine
+// caller      common.Address :call address
+// code        []byte         :wasm smart ccntmract code
+// actionName  string         :action name of the ccntmract
+// input       []byte         :arguments
+// ver         byte           :ccntmract version  require > 0 for production
+func (e *ExecutionEngine) Call(caller common.Address,
+								code []byte,
+								actionName string,
+								input []byte, ver byte) (returnbytes []byte, er error) {
 
 	//catch the panic to avoid crash the whole node
-	/*
-		defer func() {
-			if err := recover(); err != nil {
-				returnbytes = nil
-				er = errors.New("[Call] error happened")
-			}
-		}()
-	*/
-
-	if e.version != "test" {
-		methodName := CcntmRACT_METHOD_NAME //fix to "invoke"
-
-		tmparr := bytes.Split(input, []byte(PARAM_SPLITER))
-		if len(tmparr) != 2 {
-			return nil, errors.New("[Call]input format is not right!")
+	defer func() {
+		if err := recover(); err != nil {
+			returnbytes = nil
+			er = errors.New("[Call] error happened while call wasmvm")
 		}
+	}()
+
+	if ver > 0 { //production ccntmract version
+		methodName := CcntmRACT_METHOD_NAME //fix to "invoke"
 
 		//1. read code
 		bf := bytes.NewBuffer(code)
@@ -352,9 +356,12 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 		// vm.SetMessage(message)
 
 		vm.Caller = caller
-		vm.CodeHash = common.ToCodeHash(code)
+
+		vmcode := types.VmCode{VmType:types.WASMVM,Code:code}
+		vm.CodeHash = vmcode.AddressFromVmCode()
 
 		entry, ok := m.Export.Entries[methodName]
+
 		if ok == false {
 			return nil, errors.New("[Call]Method:" + methodName + " does not exist!")
 		}
@@ -369,14 +376,13 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 		//method ,param bytes
 		params := make([]uint64, 2)
 
-		actionName := string(tmparr[0])
 		actIdx, err := vm.SetPointerMemory(actionName)
 		if err != nil {
 			return nil, err
 		}
 		params[0] = uint64(actIdx)
 
-		args := tmparr[1]
+		args := input
 		argIdx, err := vm.SetPointerMemory(args)
 		if err != nil {
 			return nil, err
@@ -409,7 +415,7 @@ func (e *ExecutionEngine) Call(caller common.Address, code, input []byte) (retur
 		}
 
 	} else {
-		//for test
+		//for test ccntmract version
 		methodName, err := getCallMethodName(input)
 		if err != nil {
 			return nil, err

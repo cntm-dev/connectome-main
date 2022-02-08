@@ -120,19 +120,11 @@ func (this *SmartCcntmract) Execute() error {
 			this.Config.Tx,
 			new(util.ECDsaCrypto),
 			stateMachine,
-			"product",
 		)
 
-		tmpcodes := bytes.Split(ctx.Code.Code, []byte(exec.PARAM_SPLITER))
-		if len(tmpcodes) != 3 {
-			return errors.NewErr("Wasm paramter count error")
-		}
-		ccntmractCode := tmpcodes[0]
-
-		addr, err := common.AddressParseFromBytes(ccntmractCode)
-		if err != nil {
-			return errors.NewErr("get ccntmract address error")
-		}
+		ccntmract := &states.Ccntmract{}
+		ccntmract.Deserialize(bytes.NewBuffer(ctx.Code.Code))
+		addr := ccntmract.Address
 
 		dpcode, err := stateMachine.GetCcntmractCodeFromAddress(addr)
 		if err != nil {
@@ -140,14 +132,13 @@ func (this *SmartCcntmract) Execute() error {
 		}
 
 
-		input := ctx.Code.Code[len(ccntmractCode)+1:]
 		var caller common.Address
-		if this.CallingCcntmext() == nil{
+		if this.CallingCcntmext() == nil {
 			caller = common.Address{}
-		}else{
+		} else {
 			caller = this.CallingCcntmext().CcntmractAddress
 		}
-		res, err := engine.Call(caller, dpcode, input)
+		res, err := engine.Call(caller, dpcode, ccntmract.Method, ccntmract.Args, ccntmract.Version)
 
 		if err != nil {
 			return err
