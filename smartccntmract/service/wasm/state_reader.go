@@ -210,7 +210,7 @@ func (i *WasmStateReader) RuntimeNotify(engine *exec.ExecutionEngine) (bool, err
 		return false, errors.NewErr("[RuntimeNotify] Ccntmainer not transaction!")
 	}
 
-	hash := engine.GetVM().CodeHash
+	hash := engine.GetVM().CcntmractAddress
 
 	txid := tran.Hash()
 

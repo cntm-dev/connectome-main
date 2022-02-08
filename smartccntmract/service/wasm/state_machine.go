@@ -33,7 +33,7 @@ import (
 	"github.com/cntmio/cntmology/vm/wasmvm/util"
 	"github.com/cntmio/cntmology/vm/wasmvm/wasm"
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/vm/types"
+	"github.com/cntmio/cntmology/smartccntmract/types"
 )
 
 type LogLevel byte
@@ -41,6 +41,12 @@ const(
 	Debug LogLevel = iota
 	Info
 	Error
+)
+
+type ParamType byte
+const(
+	Json ParamType = iota
+	Raw
 )
 
 type WasmStateMachine struct {
@@ -92,7 +98,7 @@ func (s *WasmStateMachine) putstore(engine *exec.ExecutionEngine) (bool, error) 
 	if err != nil {
 		return false, err
 	}
-	k, err := serializeStorageKey(vm.CodeHash, key)
+	k, err := serializeStorageKey(vm.CcntmractAddress, key)
 	if err != nil {
 		return false, err
 	}
@@ -118,7 +124,7 @@ func (s *WasmStateMachine) getstore(engine *exec.ExecutionEngine) (bool, error) 
 	if err != nil {
 		return false, err
 	}
-	k, err := serializeStorageKey(vm.CodeHash, key)
+	k, err := serializeStorageKey(vm.CcntmractAddress, key)
 	if err != nil {
 		return false, err
 	}
@@ -162,7 +168,7 @@ func (s *WasmStateMachine) deletestore(engine *exec.ExecutionEngine) (bool, erro
 		return false, err
 	}
 
-	k, err := serializeStorageKey(vm.CodeHash, key)
+	k, err := serializeStorageKey(vm.CcntmractAddress, key)
 	if err != nil {
 		return false, err
 	}
@@ -203,7 +209,7 @@ func (s *WasmStateMachine) callCcntmract(engine *exec.ExecutionEngine) (bool, er
 		return false, err
 	}
 	vmcode := types.VmCode{VmType:types.WASMVM,Code:ccntmractBytes}
-	codeHash := vmcode.AddressFromVmCode()
+	ccntmractAddress := vmcode.AddressFromVmCode()
 	bf := bytes.NewBuffer(ccntmractBytes)
 
 	module, err := wasm.ReadModule(bf, emptyImporter)
@@ -220,7 +226,7 @@ func (s *WasmStateMachine) callCcntmract(engine *exec.ExecutionEngine) (bool, er
 	if err != nil {
 		return false, errors.NewErr("[callCcntmract]get Ccntmract arg failed")
 	}
-	res, err := vm.CallCcntmract(vm.CodeHash, codeHash, module, methodName, arg)
+	res, err := vm.CallCcntmract(vm.CcntmractAddress, ccntmractAddress, module, methodName, arg)
 	if err != nil {
 		return false, errors.NewErr("[callCcntmract]CallProductCcntmract failed")
 	}
@@ -277,7 +283,7 @@ func ccntmractLog(lv LogLevel,engine *exec.ExecutionEngine ) (bool, error){
 		return false, errors.NewErr("get Ccntmract address failed")
 	}
 
-	msg := fmt.Sprintf("[WASM Ccntmract] Address:%s message:%s",vm.CodeHash.ToHexString(),util.TrimBuffToString(addr))
+	msg := fmt.Sprintf("[WASM Ccntmract] Address:%s message:%s",vm.CcntmractAddress.ToHexString(),util.TrimBuffToString(addr))
 
 	switch lv {
 	case Debug:
@@ -291,9 +297,9 @@ func ccntmractLog(lv LogLevel,engine *exec.ExecutionEngine ) (bool, error){
 
 }
 
-func serializeStorageKey(codeHash common.Address, key []byte) ([]byte, error) {
+func serializeStorageKey(ccntmractAddress common.Address, key []byte) ([]byte, error) {
 	bf := new(bytes.Buffer)
-	storageKey := &states.StorageKey{CodeHash: codeHash, Key: key}
+	storageKey := &states.StorageKey{CodeHash: ccntmractAddress, Key: key}
 	if _, err := storageKey.Serialize(bf); err != nil {
 		return []byte{}, errors.NewErr("[serializeStorageKey] StorageKey serialize error!")
 	}

@@ -82,7 +82,7 @@ type VM struct {
 	//store the env call parameters
 	envCall *EnvCall
 	//store a engine pointer
-	CodeHash common.Address
+	CcntmractAddress common.Address
 	Caller   common.Address
 	Engine   *ExecutionEngine
 }
@@ -443,7 +443,7 @@ outer:
 }
 
 //start a new vm
-func (vm *VM) CallCcntmract(caller common.Address, codeHash common.Address, module *wasm.Module, actionName []byte, arg []byte) (uint64, error) {
+func (vm *VM) CallCcntmract(caller common.Address, ccntmractAddress common.Address, module *wasm.Module, actionName []byte, arg []byte) (uint64, error) {
 
 	methodName := CcntmRACT_METHOD_NAME
 
@@ -463,7 +463,7 @@ func (vm *VM) CallCcntmract(caller common.Address, codeHash common.Address, modu
 	}
 
 	newvm.Caller = caller
-	newvm.CodeHash = codeHash
+	newvm.CcntmractAddress = ccntmractAddress
 	newvm.Services = vm.Services
 
 	engine := vm.Engine
