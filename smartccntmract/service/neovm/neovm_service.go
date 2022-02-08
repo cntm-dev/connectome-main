@@ -74,6 +74,10 @@ var (
 		"Neo.Storage.Put": {Execute: StoragePut},
 		"Neo.Storage.Delete": {Execute: StorageDelete},
 		"Neo.Storage.GetCcntmext": {Execute: StorageGetCcntmext},
+		"System.ExecutionEngine.GetScriptCcntmainer": {Execute: GetCodeCcntmainer},
+		"System.ExecutionEngine.GetExecutingScriptHash": {Execute: GetExecutingAddress},
+		"System.ExecutionEngine.GetCallingScriptHash": {Execute: GetCallingAddress},
+		"System.ExecutionEngine.GetEntryScriptHash": {Execute: GetEntryAddress},
 	}
 )
 
@@ -155,7 +159,7 @@ func (this *NeoVmService) Invoke() error {
 			if err := c.Deserialize(engine.Ccntmext.OpReader.Reader()); err != nil {
 				return errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] get ccntmract parameters error!")
 			}
-			if err := this.CcntmextRef.AppCall(c.Address, c.Method, []byte{}, c.Args, true); err != nil {
+			if err := this.CcntmextRef.AppCall(c.Address, c.Method, c.Code, c.Args); err != nil {
 				return errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] service app call error!")
 			}
 		default:

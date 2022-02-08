@@ -21,7 +21,9 @@ package ledger
 import (
 	"fmt"
 
+	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/states"
@@ -29,7 +31,6 @@ import (
 	"github.com/cntmio/cntmology/core/store/ledgerstore"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract/event"
-	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
 var DefLedger *Ledger
@@ -69,7 +70,11 @@ func (self *Ledger) AddHeaders(headers []*types.Header) error {
 }
 
 func (self *Ledger) AddBlock(block *types.Block) error {
-	return self.ldgStore.AddBlock(block)
+	err := self.ldgStore.AddBlock(block)
+	if err != nil {
+		log.Errorf("Ledger AddBlock BlockHeight:%d BlockHash:%x error:%s", block.Header.Height, block.Hash(), err)
+	}
+	return err
 }
 
 func (self *Ledger) GetBlockRootWithNewTxRoot(txRoot common.Uint256) common.Uint256 {

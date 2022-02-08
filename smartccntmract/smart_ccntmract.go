@@ -19,6 +19,7 @@ package smartccntmract
 import (
 	"fmt"
 	"bytes"
+	"encoding/binary"
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/store"
@@ -36,22 +37,27 @@ import (
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/smartccntmract/states"
 	vm "github.com/cntmio/cntmology/vm/neovm"
-	"encoding/binary"
+)
+
+var (
+	CcntmRACT_NOT_EXIST = errors.NewErr("[AppCall] Get ccntmract ccntmext nil")
+	DEPLOYCODE_TYPE_ERROR = errors.NewErr("[AppCall] DeployCode type error!")
+	INVOKE_CODE_EXIST = errors.NewErr("[AppCall] Invoke codes exist!")
 )
 
 type SmartCcntmract struct {
-	Ccntmexts      []*ccntmext.Ccntmext // all execute smart ccntmract ccntmext
+	Ccntmexts      []*ccntmext.Ccntmext       // all execute smart ccntmract ccntmext
 	Config        *Config
 	Engine        Engine
 	Notifications []*event.NotifyEventInfo // all execute smart ccntmract event notify info
 }
 
 type Config struct {
-	Time    uint32	// now block timestamp
-	Height  uint32  // now block height
+	Time    uint32              // current block timestamp
+	Height  uint32              // current block height
 	Tx      *ctypes.Transaction // current transaction
-	DBCache scommon.StateStore // db states cache
-	Store   store.LedgerStore // ledger store
+	DBCache scommon.StateStore  // db states cache
+	Store   store.LedgerStore   // ledger store
 }
 
 type Engine interface {
@@ -156,20 +162,38 @@ func (this *SmartCcntmract) Execute() error {
 	return nil
 }
 
-// When you want to call a ccntmract use this function, if ccntmract exist in blockchain, you should set isLoad true,
+// When you want to call a ccntmract use this function, if ccntmract exist in block chain, you should set isLoad true,
 // Otherwise, you can set execute code, and set isLoad false.
 // param address: smart ccntmract address
 // param method: invoke smart ccntmract method name
 // param codes: invoke smart ccntmract whether need to load code
 // param args: invoke smart ccntmract args
-// param idLoad: if true, you can get ccntmract code from block chain, else, you need to load code from param codes
-func (this *SmartCcntmract) AppCall(address common.Address, method string, codes, args []byte, isLoad bool) error {
-	var code []byte
+func (this *SmartCcntmract) AppCall(address common.Address, method string, codes, args []byte) error {
+	var (
+		code []byte
+		isLoad bool = false
+	)
+
+	if len(codes) == 0 {
+		isLoad = true
+	}
+
+	item, err := this.getCcntmract(address[:]); if err != nil {
+		return err
+	}
+
 	if isLoad {
-		c, err := this.getCcntmract(address[:]); if err != nil {
-			return err
+		if item == nil {
+			return CcntmRACT_NOT_EXIST
 		}
-		code = c.Code.Code
+		ccntmract, ok := item.Value.(*payload.DeployCode); if !ok {
+			return DEPLOYCODE_TYPE_ERROR
+		}
+		code = ccntmract.Code.Code
+	} else {
+		if item != nil {
+			return INVOKE_CODE_EXIST
+		}
 	}
 
 	vmType := stypes.VmType(address[0])
@@ -238,13 +262,10 @@ func (this *SmartCcntmract) CheckWitness(address common.Address) bool {
 	return false
 }
 
-func (this *SmartCcntmract) getCcntmract(address []byte) (*payload.DeployCode, error) {
+func (this *SmartCcntmract) getCcntmract(address []byte) (*scommon.StateItem, error) {
 	item, err := this.Config.DBCache.TryGet(scommon.ST_CcntmRACT, address[:]);
-	if err != nil || item == nil || item.Value == nil {
-		return nil, errors.NewErr("[getCcntmract] Get ccntmext doesn't exist!")
+	if err != nil {
+		return nil, errors.NewErr("[getCcntmract] Get ccntmract ccntmext error!")
 	}
-	ccntmract, ok := item.Value.(*payload.DeployCode); if !ok {
-		return nil, errors.NewErr("[getCcntmract] Type error!")
-	}
-	return ccntmract, nil
+	return item, nil
 }

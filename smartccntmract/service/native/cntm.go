@@ -155,7 +155,7 @@ func grantOng(native *NativeService, ccntmract, address common.Address, balance 
 		return err
 	}
 
-	if err := native.CcntmextRef.AppCall(genesis.OngCcntmractAddress, "approve", []byte{}, args, false); err != nil {
+	if err := native.CcntmextRef.AppCall(genesis.OngCcntmractAddress, "approve", []byte{}, args); err != nil {
 		return err
 	}
 
