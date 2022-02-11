@@ -10,6 +10,7 @@ import (
 	"github.com/cntmio/cntmology/common"
 )
 
+// put value to ccntmract storage
 func StoragePut(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	ccntmext, err := getCcntmext(engine); if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StoragePut] get pop ccntmext error!")
@@ -28,6 +29,7 @@ func StoragePut(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	return nil
 }
 
+// delete value in ccntmract storage
 func StorageDelete(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	ccntmext, err := getCcntmext(engine); if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StorageDelete] get pop ccntmext error!")
@@ -41,6 +43,7 @@ func StorageDelete(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	return nil
 }
 
+// get value from ccntmract storage
 func StorageGet(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	ccntmext, err := getCcntmext(engine); if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StorageGet] get pop ccntmext error!")
@@ -58,6 +61,7 @@ func StorageGet(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	return nil
 }
 
+// put current ccntmract ccntmext to stack
 func StorageGetCcntmext(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	vm.PushData(engine, NewStorageCcntmext(service.CcntmextRef.CurrentCcntmext().CcntmractAddress))
 	return nil

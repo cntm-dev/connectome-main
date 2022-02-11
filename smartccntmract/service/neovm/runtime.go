@@ -8,17 +8,18 @@ import (
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	scommon "github.com/cntmio/cntmology/smartccntmract/common"
+	"github.com/cntmio/cntmology/core/signature"
 )
 
+// get current time
 func RuntimeGetTime(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	vm.PushData(engine, int(service.Time))
 	return nil
 }
 
+// check permissions
+// if param address isn't exist in authorization list, check fail
 func RuntimeCheckWitness(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	if vm.EvaluationStackCount(engine) < 1 {
-		return errors.NewErr("[RuntimeCheckWitness] Too few input parameters ")
-	}
 	data := vm.PopByteArray(engine)
 	var result bool
 	if len(data) == 20 {
@@ -38,6 +39,7 @@ func RuntimeCheckWitness(service *NeoVmService, engine *vm.ExecutionEngine) erro
 	return nil
 }
 
+// smart ccntmract execute event notify
 func RuntimeNotify(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	item := vm.PopStackItem(engine)
 	ccntmext := service.CcntmextRef.CurrentCcntmext()
@@ -45,12 +47,20 @@ func RuntimeNotify(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	return nil
 }
 
+// smart ccntmract execute log
 func RuntimeLog(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	item := vm.PopByteArray(engine)
 	ccntmext := service.CcntmextRef.CurrentCcntmext()
 	txHash := service.Tx.Hash()
 	event.PushSmartCodeEvent(txHash, 0, "InvokeTransaction", &event.LogEventArgs{TxHash:txHash, CcntmractAddress: ccntmext.CcntmractAddress, Message: string(item)})
 	return nil
+}
+
+func RuntimeCheckSig(service *NeoVmService, engine *vm.ExecutionEngine) error {
+	pubKey := vm.PopByteArray(engine)
+	data := vm.PopByteArray(engine)
+	sig := vm.PopByteArray(engine)
+	return signature.Verify(pubKey, data, sig)
 }
 
 

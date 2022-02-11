@@ -24,6 +24,12 @@ import (
 	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 )
 
+// smart ccntmext execute ccntmexts
+// when need call a ccntmract, push current ccntmext to smart ccntmract ccntmexts
+// when execute smart ccntmract finish, pop current ccntmext from smart ccntmract ccntmexts
+// when need to check authorization, use CheckWitness
+// when smart ccntmract execute trigger event, use PushNotifications push it to smart ccntmract notifications
+// when need to invoke a smart ccntmract, use AppCall to invoke it
 type CcntmextRef interface {
 	PushCcntmext(ccntmext *Ccntmext)
 	CurrentCcntmext() *Ccntmext
@@ -35,6 +41,7 @@ type CcntmextRef interface {
 	AppCall(address common.Address, method string, codes, args []byte) error
 }
 
+// smart ccntmract execute ccntmext struct
 type Ccntmext struct {
 	CcntmractAddress common.Address
 	Code            stypes.VmCode

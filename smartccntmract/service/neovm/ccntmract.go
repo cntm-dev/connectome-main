@@ -12,6 +12,7 @@ import (
 	"github.com/cntmio/cntmology/common"
 )
 
+// create a new ccntmract
 func CcntmractCreate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	ccntmract, err := isCcntmractParamValid(engine); if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractCreate] ccntmract parameters invalid!")
@@ -25,6 +26,7 @@ func CcntmractCreate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	return nil
 }
 
+// migrate older ccntmract to new ccntmract
 func CcntmractMigrate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	ccntmract, err := isCcntmractParamValid(engine); if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractMigrate] ccntmract parameters invalid!")
@@ -43,6 +45,7 @@ func CcntmractMigrate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	return CcntmractDestory(service, engine)
 }
 
+// destory a ccntmract
 func CcntmractDestory(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	ccntmext := service.CcntmextRef.CurrentCcntmext(); if ccntmext == nil {
 		return errors.NewErr("[CcntmractDestory] current ccntmract ccntmext invalid!")
@@ -63,6 +66,7 @@ func CcntmractDestory(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	return nil
 }
 
+// get ccntmract storage ccntmext
 func CcntmractGetStorageCcntmext(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if vm.EvaluationStackCount(engine) < 1 {
 		return errors.NewErr("[GetStorageCcntmext] Too few input parameter!")
@@ -85,17 +89,9 @@ func CcntmractGetStorageCcntmext(service *NeoVmService, engine *vm.ExecutionEngi
 	return nil
 }
 
+// get ccntmract code
 func CcntmractGetCode(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	if vm.EvaluationStackCount(engine) < 1 {
-		return errors.NewErr("[CcntmractGetCode] Too few input parameters ")
-	}
-	d := vm.PopInteropInterface(engine); if d == nil {
-		return errors.NewErr("[CcntmractGetCode] Pop ccntmractState nil!")
-	}
-	ccntmractState, ok := d.(*payload.DeployCode); if ok == false {
-		return errors.NewErr("[CcntmractGetCode] Wrcntm type!")
-	}
-	vm.PushData(engine, ccntmractState.Code)
+	vm.PushData(engine, vm.PopInteropInterface(engine).(*payload.DeployCode).Code)
 	return nil
 }
 

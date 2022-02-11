@@ -4,6 +4,7 @@ import (
 	vm "github.com/cntmio/cntmology/vm/neovm"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/core/payload"
 )
 
 func validatorAttribute(engine *vm.ExecutionEngine) error {
@@ -41,6 +42,98 @@ func validatorBlockTransaction(engine *vm.ExecutionEngine) error {
 	}
 	if index >= len(block.Transactions) {
 		return errors.NewErr("[validatorBlockTransaction] index invalid!")
+	}
+	return nil
+}
+
+func validatorBlockChainHeader(engine *vm.ExecutionEngine) error {
+	if vm.EvaluationStackCount(engine) < 1 {
+		return errors.NewErr("[validatorBlockChainHeader] Too few input parameters ")
+	}
+	return nil
+}
+
+func validatorBlockChainBlock(engine *vm.ExecutionEngine) error {
+	if vm.EvaluationStackCount(engine) < 1 {
+		return errors.NewErr("[validatorBlockChainBlock] Too few input parameters ")
+	}
+	return nil
+}
+
+func validatorBlockChainTransaction(engine *vm.ExecutionEngine) error {
+	if vm.EvaluationStackCount(engine) < 1 {
+		return errors.NewErr("[validatorBlockChainTransaction] Too few input parameters ")
+	}
+	return nil
+}
+
+func validatorBlockChainCcntmract(engine *vm.ExecutionEngine) error {
+	if vm.EvaluationStackCount(engine) < 1 {
+		return errors.NewErr("[validatorBlockChainCcntmract] Too few input parameters ")
+	}
+	return nil
+}
+
+func validatorHeader(engine *vm.ExecutionEngine) error {
+	if vm.EvaluationStackCount(engine) < 1 {
+		return errors.NewErr("[validatorHeader] Too few input parameters ")
+	}
+	item := vm.PopInteropInterface(engine); if item == nil {
+		return errors.NewErr("[validatorHeader] Blockdata is nil!")
+	}
+	return nil
+}
+
+func validatorTransaction(engine *vm.ExecutionEngine) error {
+	if vm.EvaluationStackCount(engine) < 1 {
+		return errors.NewErr("[validatorTransaction] Too few input parameters ")
+	}
+	item := vm.PopInteropInterface(engine); if item == nil {
+		return errors.NewErr("[validatorTransaction] Blockdata is nil!")
+	}
+	_, ok := item.(*types.Transaction); if !ok {
+		return errors.NewErr("[validatorTransaction] Transaction wrcntm type!")
+	}
+	return nil
+}
+
+func validatorGetCode(engine *vm.ExecutionEngine) error {
+	if vm.EvaluationStackCount(engine) < 1 {
+		return errors.NewErr("[validatorGetCode] Too few input parameters ")
+	}
+	item := vm.PeekInteropInterface(engine); if item == nil {
+		return errors.NewErr("[validatorGetCode] Ccntmract is nil!")
+	}
+	_, ok := item.(*payload.DeployCode); if !ok {
+		return errors.NewErr("[validatorGetCode] DeployCode wrcntm type!")
+	}
+	return nil
+}
+
+func validatorCheckWitness(engine *vm.ExecutionEngine) error {
+	if vm.EvaluationStackCount(engine) < 1 {
+		return errors.NewErr("[validatorCheckWitness] Too few input parameters ")
+	}
+	return nil
+}
+
+func validatorNotify(engine *vm.ExecutionEngine) error {
+	if vm.EvaluationStackCount(engine) < 1 {
+		return errors.NewErr("[validatorNotify] Too few input parameters ")
+	}
+	return nil
+}
+
+func validatorLog(engine *vm.ExecutionEngine) error {
+	if vm.EvaluationStackCount(engine) < 1 {
+		return errors.NewErr("[validatorLog] Too few input parameters ")
+	}
+	return nil
+}
+
+func validatorCheckSig(engine *vm.ExecutionEngine) error {
+	if vm.EvaluationStackCount(engine) < 3 {
+		return errors.NewErr("[validatorCheckSig] Too few input parameters ")
 	}
 	return nil
 }
