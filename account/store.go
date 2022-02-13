@@ -20,7 +20,6 @@ package account
 
 import (
 	"github.com/cntmio/cntmology/common"
-	ct "github.com/cntmio/cntmology/core/ccntmract"
 )
 
 type ClientStore interface {
@@ -31,6 +30,4 @@ type ClientStore interface {
 	LoadStoredData(name string) []byte
 
 	LoadAccount() map[common.Address]*Account
-
-	LoadCcntmracts() map[common.Address]*ct.Ccntmract
 }

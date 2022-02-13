@@ -23,12 +23,12 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/account"
 	cliCommon "github.com/cntmio/cntmology/cli/common"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/password"
 	"github.com/cntmio/cntmology/http/base/rpc"
-	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/urfave/cli"
 )
 
@@ -88,7 +88,11 @@ func walletAction(c *cli.Ccntmext) error {
 		fmt.Println("password changed")
 		return nil
 	}
-	account, _ := wallet.GetDefaultAccount()
+	account := wallet.GetDefaultAccount()
+	if account == nil {
+		fmt.Println(" can not get default account")
+		os.Exit(1)
+	}
 	pubKey := account.PubKey()
 	address := account.Address
 

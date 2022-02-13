@@ -26,7 +26,7 @@ import (
 	"github.com/cntmio/cntmology/common/serialization"
 	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 )
-
+// DeployCode is an implementation of transaction payload for deploy smartccntmract
 type DeployCode struct {
 	Code        stypes.VmCode
 	NeedStorage bool

@@ -23,13 +23,13 @@ import (
 	"errors"
 	"time"
 
+	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/core/utils"
 	"github.com/cntmio/cntmology/smartccntmract/states"
 	stypes "github.com/cntmio/cntmology/smartccntmract/types"
-	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
 const (
@@ -41,8 +41,8 @@ var (
 	OntCcntmractAddress, _ = common.AddressParseFromBytes([]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01})
 	OngCcntmractAddress, _ = common.AddressParseFromBytes([]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02})
 
-	cntmToken   = NewGoverningToken()
-	cntmToken   = NewUtilityToken()
+	cntmToken   = newGoverningToken()
+	cntmToken   = newUtilityToken()
 	cntmTokenID = cntmToken.Hash()
 	cntmTokenID = cntmToken.Hash()
 )
@@ -51,6 +51,7 @@ var GenBlockTime = (config.DEFAULT_GEN_BLOCK_TIME * time.Second)
 
 var GenesisBookkeepers []keypair.PublicKey
 
+// GenesisBlockInit returns the genesis block with default consensus bookkeeper list
 func GenesisBlockInit(defaultBookkeeper []keypair.PublicKey) (*types.Block, error) {
 	//getBookkeeper
 	GenesisBookkeepers = defaultBookkeeper
@@ -73,35 +74,35 @@ func GenesisBlockInit(defaultBookkeeper []keypair.PublicKey) (*types.Block, erro
 	}
 
 	//block
-	cntm := NewGoverningToken()
-	cntm := NewUtilityToken()
+	cntm := newGoverningToken()
+	cntm := newUtilityToken()
 
 	genesisBlock := &types.Block{
 		Header: genesisHeader,
 		Transactions: []*types.Transaction{
 			cntm,
 			cntm,
-			NewGoverningInit(),
-			NewUtilityInit(),
+			newGoverningInit(),
+			newUtilityInit(),
 		},
 	}
 	genesisBlock.RebuildMerkleRoot()
 	return genesisBlock, nil
 }
 
-func NewGoverningToken() *types.Transaction {
+func newGoverningToken() *types.Transaction {
 	tx := utils.NewDeployTransaction(stypes.VmCode{Code: OntCcntmractAddress[:], VmType: stypes.Native}, "cntm", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", true)
 	return tx
 }
 
-func NewUtilityToken() *types.Transaction {
+func newUtilityToken() *types.Transaction {
 	tx := utils.NewDeployTransaction(stypes.VmCode{Code: OngCcntmractAddress[:], VmType: stypes.Native}, "cntm", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", true)
 	return tx
 }
 
-func NewGoverningInit() *types.Transaction {
+func newGoverningInit() *types.Transaction {
 	init := states.Ccntmract{
 		Address: OntCcntmractAddress,
 		Method:  "init",
@@ -116,7 +117,7 @@ func NewGoverningInit() *types.Transaction {
 	return tx
 }
 
-func NewUtilityInit() *types.Transaction {
+func newUtilityInit() *types.Transaction {
 	init := states.Ccntmract{
 		Address: OngCcntmractAddress,
 		Method:  "init",

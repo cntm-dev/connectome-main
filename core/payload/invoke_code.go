@@ -26,6 +26,7 @@ import (
 	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 )
 
+// InvokeCode is an implementation of transaction payload for invoke smartccntmract
 type InvokeCode struct {
 	GasLimit common.Fixed64
 	Code     stypes.VmCode
