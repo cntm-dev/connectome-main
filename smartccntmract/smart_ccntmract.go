@@ -120,7 +120,7 @@ func (this *SmartCcntmract) Execute() error {
 			return err
 		}
 	case stypes.WASMVM:
-		stateMachine := wasm.NewWasmStateMachine(this.Config.Store, this.Config.DBCache,  this.Config.Time)
+		stateMachine := wasm.NewWasmStateMachine(this.Config.Store, this.Config.DBCache, this.Config.Time)
 
 		engine := exec.NewExecutionEngine(
 			this.Config.Tx,
@@ -136,7 +136,6 @@ func (this *SmartCcntmract) Execute() error {
 		if err != nil {
 			return errors.NewErr("get ccntmract  error")
 		}
-
 
 		var caller common.Address
 		if this.CallingCcntmext() == nil {
@@ -169,32 +168,7 @@ func (this *SmartCcntmract) Execute() error {
 // param codes: invoke smart ccntmract whether need to load code
 // param args: invoke smart ccntmract args
 func (this *SmartCcntmract) AppCall(address common.Address, method string, codes, args []byte) error {
-	var (
-		code []byte
-		isLoad bool = false
-	)
-
-	if len(codes) == 0 {
-		isLoad = true
-	}
-
-	item, err := this.getCcntmract(address[:]); if err != nil {
-		return err
-	}
-
-	if isLoad {
-		if item == nil {
-			return CcntmRACT_NOT_EXIST
-		}
-		ccntmract, ok := item.Value.(*payload.DeployCode); if !ok {
-			return DEPLOYCODE_TYPE_ERROR
-		}
-		code = ccntmract.Code.Code
-	} else {
-		if item != nil {
-			return INVOKE_CODE_EXIST
-		}
-	}
+	var code []byte
 
 	vmType := stypes.VmType(address[0])
 
@@ -211,17 +185,17 @@ func (this *SmartCcntmract) AppCall(address common.Address, method string, codes
 		}
 		code = bf.Bytes()
 	case stypes.NEOVM:
+		code, err := this.loadCode(address, codes);
+		if err != nil {
+			return nil
+		}
 		var temp []byte
 		build := vm.NewParamsBuilder(new(bytes.Buffer))
 		if method != "" {
 			build.EmitPushByteArray([]byte(method))
 		}
 		temp = append(args, build.ToArray()...)
-		if isLoad {
-			code = append(temp, code...)
-		} else {
-			code = append(temp, codes...)
-		}
+		code = append(temp, code...)
 	case stypes.WASMVM:
 	}
 
@@ -260,6 +234,35 @@ func (this *SmartCcntmract) CheckWitness(address common.Address) bool {
 	}
 
 	return false
+}
+
+// load smart ccntmract execute code
+// param address, invoke cntm smart ccntmract address
+// param codes, invoke offchain smart ccntmract code
+// if you invoke offchain smart ccntmract, you can set address is codes address
+// but this address cann't find in blockchain
+func (this *SmartCcntmract) loadCode(address common.Address, codes []byte) ([]byte, error) {
+	isLoad := false
+	if len(codes) == 0 {
+		isLoad = true
+	}
+	item, err := this.getCcntmract(address[:]); if err != nil {
+		return nil, err
+	}
+	if isLoad {
+		if item == nil {
+			return nil, CcntmRACT_NOT_EXIST
+		}
+		ccntmract, ok := item.Value.(*payload.DeployCode); if !ok {
+			return nil, DEPLOYCODE_TYPE_ERROR
+		}
+		return ccntmract.Code.Code, nil
+	} else {
+		if item != nil {
+			return nil, INVOKE_CODE_EXIST
+		}
+		return codes, nil
+	}
 }
 
 func (this *SmartCcntmract) getCcntmract(address []byte) (*scommon.StateItem, error) {

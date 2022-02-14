@@ -21,20 +21,24 @@ package util
 import (
 	"crypto/sha256"
 	"errors"
+	"io"
 
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/log"
-	cntmErrors "github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	s "github.com/cntmio/cntmology-crypto/signature"
+	"github.com/cntmio/cntmology/common/log"
+	cntmErrors "github.com/cntmio/cntmology/errors"
+	"golang.org/x/crypto/ripemd160"
 )
 
 type ECDsaCrypto struct {
 }
 
 func (c *ECDsaCrypto) Hash160(message []byte) []byte {
-	temp := common.ToCodeHash(message)
-	return temp[:]
+	temp := sha256.Sum256(message)
+	md := ripemd160.New()
+	io.WriteString(md, string(temp[:]))
+	hash := md.Sum(nil)
+	return hash
 }
 
 func (c *ECDsaCrypto) Hash256(message []byte) []byte {
