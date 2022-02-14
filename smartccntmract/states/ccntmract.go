@@ -26,6 +26,12 @@ import (
 	"github.com/cntmio/cntmology/errors"
 )
 
+// Invoke smart ccntmract struct
+// Param Version: invoke smart ccntmract version, default 0
+// Param Code: invoke off blockchain code
+// Param Address: invoke on blockchain smart ccntmract by address
+// Param Method: invoke smart ccntmract method, default ""
+// Param Args: invoke smart ccntmract arguments
 type Ccntmract struct {
 	Version byte
 	Code    []byte
@@ -34,6 +40,7 @@ type Ccntmract struct {
 	Args    []byte
 }
 
+// Serialize ccntmract
 func (this *Ccntmract) Serialize(w io.Writer) error {
 	if err := serialization.WriteByte(w, this.Version); err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[Ccntmract] Version serialize error!")
@@ -53,6 +60,7 @@ func (this *Ccntmract) Serialize(w io.Writer) error {
 	return nil
 }
 
+// Deserialize ccntmract
 func (this *Ccntmract) Deserialize(r io.Reader) error {
 	var err error
 	this.Version, err = serialization.ReadByte(r); if err != nil {

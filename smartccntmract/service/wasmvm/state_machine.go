@@ -16,13 +16,9 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package wasm
+package wasmvm
 
 import (
-	"bytes"
-	"fmt"
-
-	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/core/store"
 	scommon "github.com/cntmio/cntmology/core/store/common"
@@ -30,10 +26,11 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/storage"
 	"github.com/cntmio/cntmology/vm/wasmvm/exec"
 	"github.com/cntmio/cntmology/vm/wasmvm/memory"
+	"fmt"
 	"github.com/cntmio/cntmology/vm/wasmvm/util"
-	"github.com/cntmio/cntmology/vm/wasmvm/wasm"
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/smartccntmract/types"
+	"github.com/cntmio/cntmology/common"
+	"bytes"
 )
 
 type LogLevel byte
@@ -56,21 +53,22 @@ type WasmStateMachine struct {
 	time       uint32
 }
 
-func NewWasmStateMachine(ldgerStore store.LedgerStore, dbCache scommon.StateStore, time uint32) *WasmStateMachine {
+func NewWasmStateMachine(ldgerStore store.LedgerStore, cloneCache *storage.CloneCache, time uint32) *WasmStateMachine {
 
 	var stateMachine WasmStateMachine
 	stateMachine.ldgerStore = ldgerStore
-	stateMachine.CloneCache = storage.NewCloneCache(dbCache)
+	stateMachine.CloneCache = cloneCache
 	stateMachine.WasmStateReader = NewWasmStateReader(ldgerStore)
 	stateMachine.time = time
 
 	stateMachine.Register("PutStorage", stateMachine.putstore)
 	stateMachine.Register("GetStorage", stateMachine.getstore)
 	stateMachine.Register("DeleteStorage", stateMachine.deletestore)
-	stateMachine.Register("CallCcntmract", stateMachine.callCcntmract)
+	//stateMachine.Register("CallCcntmract", stateMachine.callCcntmract)
 	stateMachine.Register("CcntmractLogDebug", stateMachine.ccntmractLogDebug)
 	stateMachine.Register("CcntmractLogInfo", stateMachine.ccntmractLogInfo)
 	stateMachine.Register("CcntmractLogError", stateMachine.ccntmractLogError)
+
 
 	return &stateMachine
 }
@@ -179,64 +177,6 @@ func (s *WasmStateMachine) deletestore(engine *exec.ExecutionEngine) (bool, erro
 	return true, nil
 }
 
-func (s *WasmStateMachine) GetCcntmractCodeFromAddress(address common.Address) ([]byte, error) {
-
-	dcode, err := s.ldgerStore.GetCcntmractState(address)
-	if err != nil {
-		return nil, err
-	}
-
-	return dcode.Code.Code, nil
-
-}
-
-//call other ccntmract
-func (s *WasmStateMachine) callCcntmract(engine *exec.ExecutionEngine) (bool, error) {
-	vm := engine.GetVM()
-	envCall := vm.GetEnvCall()
-	params := envCall.GetParams()
-	if len(params) != 3 {
-		return false, errors.NewErr("parameter count error while call readMessage")
-	}
-	ccntmractAddressIdx := params[0]
-	addr, err := vm.GetPointerMemory(ccntmractAddressIdx)
-	if err != nil {
-		return false, errors.NewErr("get Ccntmract address failed")
-	}
-	//the ccntmract codes
-	ccntmractBytes, err := s.getCcntmractFromAddr(addr)
-	if err != nil {
-		return false, err
-	}
-	vmcode := types.VmCode{VmType:types.WASMVM,Code:ccntmractBytes}
-	ccntmractAddress := vmcode.AddressFromVmCode()
-	bf := bytes.NewBuffer(ccntmractBytes)
-
-	module, err := wasm.ReadModule(bf, emptyImporter)
-	if err != nil {
-		return false, errors.NewErr("load Module failed")
-	}
-
-	methodName, err := vm.GetPointerMemory(params[1])
-	if err != nil {
-		return false, errors.NewErr("[callCcntmract]get Ccntmract methodName failed")
-	}
-
-	arg, err := vm.GetPointerMemory(params[2])
-	if err != nil {
-		return false, errors.NewErr("[callCcntmract]get Ccntmract arg failed")
-	}
-	res, err := vm.CallCcntmract(vm.CcntmractAddress, ccntmractAddress, module, methodName, arg)
-	if err != nil {
-		return false, errors.NewErr("[callCcntmract]CallProductCcntmract failed")
-	}
-	vm.RestoreCtx()
-	if envCall.GetReturns() {
-		vm.PushResult(uint64(res))
-	}
-	return true, nil
-}
-
 func (s *WasmStateMachine) ccntmractLogDebug(engine *exec.ExecutionEngine) (bool, error) {
 	 _ ,err := ccntmractLog(Debug,engine)
 	 if err!= nil{
@@ -248,11 +188,11 @@ func (s *WasmStateMachine) ccntmractLogDebug(engine *exec.ExecutionEngine) (bool
 }
 
 func (s *WasmStateMachine) ccntmractLogInfo(engine *exec.ExecutionEngine) (bool, error) {
-	_ ,err := ccntmractLog(Info,engine)
-	if err!= nil{
-		return false,err
-	}
+	_, err := ccntmractLog(Info, engine)
+	if err != nil {
+		return false, err
 
+	}
 	engine.GetVM().RestoreCtx()
 	return true, nil
 }
@@ -306,32 +246,3 @@ func serializeStorageKey(ccntmractAddress common.Address, key []byte) ([]byte, e
 	return bf.Bytes(), nil
 }
 
-func (s *WasmStateMachine) getCcntmractFromAddr(addr []byte) ([]byte, error) {
-
-	//just for test
-	/*	ccntmract := util.TrimBuffToString(addr)
-		code, err := ioutil.ReadFile(fmt.Sprintf("./testdata2/%s.wasm", ccntmract))
-		if err != nil {
-			return nil, err
-		}
-
-		return code, nil*/
-	//Fixme get the ccntmract code from ledger
-	addrbytes, err := common.HexToBytes(util.TrimBuffToString(addr))
-	if err != nil {
-		return nil, errors.NewErr("get ccntmract address error")
-	}
-	ccntmactaddress, err := common.AddressParseFromBytes(addrbytes)
-	if err != nil {
-		return nil, errors.NewErr("get ccntmract address error")
-	}
-	dpcode, err := s.GetCcntmractCodeFromAddress(ccntmactaddress)
-	if err != nil {
-		return nil, errors.NewErr("get ccntmract  error")
-	}
-	return dpcode, nil
-}
-
-func emptyImporter(name string) (*wasm.Module, error) {
-	return nil, nil
-}

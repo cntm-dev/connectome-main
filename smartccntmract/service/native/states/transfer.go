@@ -27,6 +27,7 @@ import (
 	"github.com/cntmio/cntmology/errors"
 )
 
+// Transfers
 type Transfers struct {
 	Version byte
 	States  []*State

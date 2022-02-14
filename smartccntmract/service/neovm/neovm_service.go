@@ -40,7 +40,7 @@ const (
 )
 
 var (
-	// register all service for smart ccntmract execute
+	// Register all service for smart ccntmract execute
 	ServiceMap = map[string]Service{
 		"Neo.Attribute.GetUsage": {Execute: AttributeGetUsage, Validator: validatorAttribute},
 		"Neo.Attribute.GetData": {Execute: AttributeGetData, Validator: validatorAttribute},
@@ -102,6 +102,7 @@ type Service struct {
 	Validator Validator
 }
 
+// NeoVmService is a struct for smart ccntmract provide interop service
 type NeoVmService struct {
 	Store         store.LedgerStore
 	CloneCache    *storage.CloneCache
@@ -111,6 +112,7 @@ type NeoVmService struct {
 	Time          uint32
 }
 
+// NewNeoVmService return a new neovm service
 func NewNeoVmService(store store.LedgerStore, dbCache scommon.StateStore, tx *types.Transaction, time uint32, ctxRef ccntmext.CcntmextRef) *NeoVmService {
 	var service NeoVmService
 	service.Store = store
@@ -121,6 +123,7 @@ func NewNeoVmService(store store.LedgerStore, dbCache scommon.StateStore, tx *ty
 	return &service
 }
 
+// Invoke a smart ccntmract
 func (this *NeoVmService) Invoke() error {
 	engine := vm.NewExecutionEngine()
 	ctx := this.CcntmextRef.CurrentCcntmext()
@@ -162,7 +165,7 @@ func (this *NeoVmService) Invoke() error {
 			if err := c.Deserialize(engine.Ccntmext.OpReader.Reader()); err != nil {
 				return errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] get ccntmract parameters error!")
 			}
-			if err := this.CcntmextRef.AppCall(c.Address, c.Method, c.Code, c.Args); err != nil {
+			if _,err := this.CcntmextRef.AppCall(c.Address, c.Method, c.Code, c.Args); err != nil {
 				return errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] service app call error!")
 			}
 		default:
@@ -176,6 +179,7 @@ func (this *NeoVmService) Invoke() error {
 	return nil
 }
 
+// SystemCall provide register service for smart ccntmract to interaction with blockchian
 func (this *NeoVmService) SystemCall(engine *vm.ExecutionEngine) error {
 	serviceName := engine.Ccntmext.OpReader.ReadVarString()
 	service, ok := ServiceMap[serviceName]

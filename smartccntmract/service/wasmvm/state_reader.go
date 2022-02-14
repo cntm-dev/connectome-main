@@ -16,7 +16,7 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package wasm
+package wasmvm
 
 import (
 	"github.com/cntmio/cntmology/common"

@@ -49,17 +49,9 @@ func (self *StateStore) HandleDeployTransaction(stateBatch *statestore.StateBatc
 		targetAddress, err := common.AddressParseFromBytes(deploy.Code.Code)
 		if err != nil {
 			return fmt.Errorf("Invalid native ccntmract address:%v", err)
+
 		}
-		if err := stateBatch.TryGetOrAdd(
-			scommon.ST_CcntmRACT,
-			targetAddress[:],
-			&states.CcntmractMapping{
-				OriginAddress: originAddress,
-				TargetAddress: targetAddress,
-			},
-			false); err != nil {
-			return fmt.Errorf("TryGetOrAdd ccntmract error %s", err)
-		}
+		originAddress = targetAddress
 	}
 
 	// store ccntmract message
@@ -101,7 +93,7 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 	sc.PushCcntmext(ctx)
 
 	//start the smart ccntmract executive function
-	if err := sc.Execute(); err != nil {
+	if _,err := sc.Execute(); err != nil {
 		return err
 	}
 
@@ -109,7 +101,7 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 		if err := eventStore.SaveEventNotifyByTx(txHash, sc.Notifications); err != nil {
 			return fmt.Errorf("SaveEventNotifyByTx error %s", err)
 		}
-		event.PushSmartCodeEvent(txHash, 0, INVOKE_TRANSACTION, sc.Notifications)
+		event.PushSmartCodeEvent(txHash, 0, "Notify", sc.Notifications)
 	}
 	return nil
 }

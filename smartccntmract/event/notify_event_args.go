@@ -23,12 +23,14 @@ import (
 	"github.com/cntmio/cntmology/vm/neovm/types"
 )
 
+// NotifyEventArgs describe smart ccntmract event notify arguments struct
 type NotifyEventArgs struct {
 	TxHash          common.Uint256
 	CcntmractAddress common.Address
 	States          types.StackItems
 }
 
+// NotifyEventInfo describe smart ccntmract event notify info struct
 type NotifyEventInfo struct {
 	TxHash          common.Uint256
 	CcntmractAddress common.Address

@@ -22,6 +22,7 @@ import (
 	"github.com/cntmio/cntmology/common"
 )
 
+// LogEventArgs describe smart ccntmract event log struct
 type LogEventArgs struct {
 	TxHash          common.Uint256
 	CcntmractAddress common.Address

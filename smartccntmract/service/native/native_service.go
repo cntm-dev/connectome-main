@@ -45,6 +45,8 @@ var (
 	}
 )
 
+// Native service struct
+// Invoke a native smart ccntmract, new a native service
 type NativeService struct {
 	CloneCache    *storage.CloneCache
 	ServiceMap    map[string]Handler
@@ -55,6 +57,7 @@ type NativeService struct {
 	CcntmextRef    ccntmext.CcntmextRef
 }
 
+// New native service
 func NewNativeService(dbCache scommon.StateStore, height uint32, tx *types.Transaction, ctxRef ccntmext.CcntmextRef) *NativeService {
 	var nativeService NativeService
 	nativeService.CloneCache = storage.NewCloneCache(dbCache)

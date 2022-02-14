@@ -22,16 +22,19 @@ import (
 	"github.com/cntmio/cntmology/common"
 )
 
+// StorageCcntmext store smart ccntmract address
 type StorageCcntmext struct {
 	address common.Address
 }
 
+// NewStorageCcntmext return a new smart ccntmract storage ccntmext
 func NewStorageCcntmext(address common.Address) *StorageCcntmext {
 	var storageCcntmext StorageCcntmext
 	storageCcntmext.address = address
 	return &storageCcntmext
 }
 
+// ToArray return address byte array
 func (this *StorageCcntmext) ToArray() []byte {
 	return this.address[:]
 }

@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2018 The cntmology Authors
+ * This file is part of The cntmology library.
+ *
+ * The cntmology is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The cntmology is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package neovm
 
 import (
@@ -10,7 +28,7 @@ import (
 	"github.com/cntmio/cntmology/common"
 )
 
-// put value to ccntmract storage
+// StoragePut put smart ccntmract storage item to cache
 func StoragePut(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	ccntmext, err := getCcntmext(engine); if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StoragePut] get pop ccntmext error!")
@@ -29,7 +47,7 @@ func StoragePut(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	return nil
 }
 
-// delete value in ccntmract storage
+// StorageDelete delete smart ccntmract storage item from cache
 func StorageDelete(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	ccntmext, err := getCcntmext(engine); if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StorageDelete] get pop ccntmext error!")
@@ -43,7 +61,7 @@ func StorageDelete(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	return nil
 }
 
-// get value from ccntmract storage
+// StorageGet push smart ccntmract storage item from cache to vm stack
 func StorageGet(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	ccntmext, err := getCcntmext(engine); if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StorageGet] get pop ccntmext error!")
@@ -61,7 +79,7 @@ func StorageGet(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	return nil
 }
 
-// put current ccntmract ccntmext to stack
+// StorageGetCcntmext push smart ccntmract storage ccntmext to vm stack
 func StorageGetCcntmext(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	vm.PushData(engine, NewStorageCcntmext(service.CcntmextRef.CurrentCcntmext().CcntmractAddress))
 	return nil

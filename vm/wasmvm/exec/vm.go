@@ -13,11 +13,11 @@ import (
 	"math"
 
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/vm/wasmvm/disasm"
 	"github.com/cntmio/cntmology/vm/wasmvm/exec/internal/compile"
 	"github.com/cntmio/cntmology/vm/wasmvm/memory"
 	"github.com/cntmio/cntmology/vm/wasmvm/wasm"
 	ops "github.com/cntmio/cntmology/vm/wasmvm/wasm/operators"
+	"github.com/cntmio/cntmology/vm/wasmvm/disasm"
 )
 
 var (
@@ -464,6 +464,7 @@ func (vm *VM) CallCcntmract(caller common.Address, ccntmractAddress common.Addre
 
 	newvm.Caller = caller
 	newvm.CcntmractAddress = ccntmractAddress
+
 	newvm.Services = vm.Services
 
 	engine := vm.Engine

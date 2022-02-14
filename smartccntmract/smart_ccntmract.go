@@ -17,10 +17,7 @@
 package smartccntmract
 
 import (
-	"fmt"
 	"bytes"
-	"encoding/binary"
-
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/store"
 	scommon "github.com/cntmio/cntmology/core/store/common"
@@ -29,14 +26,12 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
-	"github.com/cntmio/cntmology/smartccntmract/service/wasm"
 	stypes "github.com/cntmio/cntmology/smartccntmract/types"
-	"github.com/cntmio/cntmology/vm/wasmvm/exec"
-	"github.com/cntmio/cntmology/vm/wasmvm/util"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/smartccntmract/states"
 	vm "github.com/cntmio/cntmology/vm/neovm"
+	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
 )
 
 var (
@@ -105,60 +100,29 @@ func (this *SmartCcntmract) PushNotifications(notifications []*event.NotifyEvent
 	this.Notifications = append(this.Notifications, notifications...)
 }
 
-func (this *SmartCcntmract) Execute() error {
+func (this *SmartCcntmract) Execute() ([]byte,error) {
 	ctx := this.CurrentCcntmext()
 	switch ctx.Code.VmType {
 	case stypes.Native:
 		service := native.NewNativeService(this.Config.DBCache, this.Config.Height, this.Config.Tx, this)
 		if err := service.Invoke(); err != nil {
-			return err
+			return nil,err
 		}
 	case stypes.NEOVM:
 		service := neovm.NewNeoVmService(this.Config.Store, this.Config.DBCache, this.Config.Tx, this.Config.Time, this)
 		if err := service.Invoke(); err != nil {
-			fmt.Println("execute neovm error:", err)
-			return err
+			//fmt.Println("execute neovm error:", err)
+			return nil,err
 		}
 	case stypes.WASMVM:
-		stateMachine := wasm.NewWasmStateMachine(this.Config.Store, this.Config.DBCache, this.Config.Time)
-
-		engine := exec.NewExecutionEngine(
-			this.Config.Tx,
-			new(util.ECDsaCrypto),
-			stateMachine,
-		)
-
-		ccntmract := &states.Ccntmract{}
-		ccntmract.Deserialize(bytes.NewBuffer(ctx.Code.Code))
-		addr := ccntmract.Address
-
-		dpcode, err := stateMachine.GetCcntmractCodeFromAddress(addr)
+		service := wasmvm.NewWasmVmService(this.Config.Store,this.Config.DBCache,this.Config.Tx,this.Config.Time,this)
+		result,err := service.Invoke()
 		if err != nil {
-			return errors.NewErr("get ccntmract  error")
+			return nil,err
 		}
-
-		var caller common.Address
-		if this.CallingCcntmext() == nil {
-			caller = common.Address{}
-		} else {
-			caller = this.CallingCcntmext().CcntmractAddress
-		}
-		res, err := engine.Call(caller, dpcode, ccntmract.Method, ccntmract.Args, ccntmract.Version)
-
-		if err != nil {
-			return err
-		}
-
-		//get the return message
-		_, err = engine.GetVM().GetPointerMemory(uint64(binary.LittleEndian.Uint32(res)))
-		if err != nil {
-			return err
-		}
-
-		stateMachine.CloneCache.Commit()
-		this.Notifications = append(this.Notifications, stateMachine.Notifications...)
+		return result,nil
 	}
-	return nil
+	return nil,nil
 }
 
 // When you want to call a ccntmract use this function, if ccntmract exist in block chain, you should set isLoad true,
@@ -167,7 +131,7 @@ func (this *SmartCcntmract) Execute() error {
 // param method: invoke smart ccntmract method name
 // param codes: invoke smart ccntmract whether need to load code
 // param args: invoke smart ccntmract args
-func (this *SmartCcntmract) AppCall(address common.Address, method string, codes, args []byte) error {
+func (this *SmartCcntmract) AppCall(address common.Address, method string, codes, args []byte) ([]byte, error) {
 	var code []byte
 
 	vmType := stypes.VmType(address[0])
@@ -181,13 +145,13 @@ func (this *SmartCcntmract) AppCall(address common.Address, method string, codes
 			Args: args,
 		}
 		if err := c.Serialize(bf); err != nil {
-			return err
+			return nil,err
 		}
 		code = bf.Bytes()
 	case stypes.NEOVM:
-		code, err := this.loadCode(address, codes);
+		code, err := this.loadCode(address, codes)
 		if err != nil {
-			return nil
+			return nil,nil
 		}
 		var temp []byte
 		build := vm.NewParamsBuilder(new(bytes.Buffer))
@@ -197,6 +161,18 @@ func (this *SmartCcntmract) AppCall(address common.Address, method string, codes
 		temp = append(args, build.ToArray()...)
 		code = append(temp, code...)
 	case stypes.WASMVM:
+		bf := new(bytes.Buffer)
+		c := states.Ccntmract{
+			Version:1, //fix to > 0
+			Address: address,
+			Method: method,
+			Args: args,
+			Code:codes,
+		}
+		if err := c.Serialize(bf); err != nil {
+			return nil,err
+		}
+		code = bf.Bytes()
 	}
 
 	this.PushCcntmext(&ccntmext.Ccntmext{
@@ -206,13 +182,12 @@ func (this *SmartCcntmract) AppCall(address common.Address, method string, codes
 		},
 		CcntmractAddress: address,
 	})
-
-	if err := this.Execute(); err != nil {
-		return err
+	res,err := this.Execute()
+	if err != nil {
+		return nil,err
 	}
-
 	this.PopCcntmext()
-	return nil
+	return res,nil
 }
 
 // check authorization correct

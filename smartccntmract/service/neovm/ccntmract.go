@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2018 The cntmology Authors
+ * This file is part of The cntmology library.
+ *
+ * The cntmology is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The cntmology is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package neovm
 
 import (
@@ -12,7 +30,7 @@ import (
 	"github.com/cntmio/cntmology/common"
 )
 
-// create a new ccntmract
+// CcntmractCreate create a new smart ccntmract on blockchain, and put it to vm stack
 func CcntmractCreate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	ccntmract, err := isCcntmractParamValid(engine); if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractCreate] ccntmract parameters invalid!")
@@ -26,7 +44,7 @@ func CcntmractCreate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	return nil
 }
 
-// migrate older ccntmract to new ccntmract
+// CcntmractMigrate migrate old smart ccntmract to a new ccntmract, and destory old ccntmract
 func CcntmractMigrate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	ccntmract, err := isCcntmractParamValid(engine); if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractMigrate] ccntmract parameters invalid!")
@@ -45,7 +63,7 @@ func CcntmractMigrate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	return CcntmractDestory(service, engine)
 }
 
-// destory a ccntmract
+// CcntmractDestory destory a ccntmract
 func CcntmractDestory(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	ccntmext := service.CcntmextRef.CurrentCcntmext(); if ccntmext == nil {
 		return errors.NewErr("[CcntmractDestory] current ccntmract ccntmext invalid!")
@@ -66,7 +84,7 @@ func CcntmractDestory(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	return nil
 }
 
-// get ccntmract storage ccntmext
+// CcntmractGetStorageCcntmext put ccntmract storage ccntmext to vm stack
 func CcntmractGetStorageCcntmext(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if vm.EvaluationStackCount(engine) < 1 {
 		return errors.NewErr("[GetStorageCcntmext] Too few input parameter!")
@@ -89,7 +107,7 @@ func CcntmractGetStorageCcntmext(service *NeoVmService, engine *vm.ExecutionEngi
 	return nil
 }
 
-// get ccntmract code
+// CcntmractGetCode put ccntmract to vm stack
 func CcntmractGetCode(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	vm.PushData(engine, vm.PopInteropInterface(engine).(*payload.DeployCode).Code)
 	return nil

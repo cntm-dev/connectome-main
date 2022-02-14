@@ -24,7 +24,7 @@ import (
 	"github.com/cntmio/cntmology/common/log"
 )
 
-// When you execute finish neovm, you can get stack element
+// ConvertReturnTypes return neovm stack element value
 // According item types convert to hex string value
 // Now neovm support type ccntmain: ByteArray/Integer/Boolean/Array/Struct/Interop/StackItems
 func ConvertReturnTypes(item types.StackItems) interface{} {
