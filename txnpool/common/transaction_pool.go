@@ -16,6 +16,7 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// Package common privides constants, common types for other packages
 package common
 
 import (

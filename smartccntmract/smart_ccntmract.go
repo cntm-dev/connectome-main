@@ -40,6 +40,7 @@ var (
 	INVOKE_CODE_EXIST = errors.NewErr("[AppCall] Invoke codes exist!")
 )
 
+// SmartCcntmract describe smart ccntmract execute engine
 type SmartCcntmract struct {
 	Ccntmexts      []*ccntmext.Ccntmext       // all execute smart ccntmract ccntmext
 	Config        *Config
@@ -47,6 +48,7 @@ type SmartCcntmract struct {
 	Notifications []*event.NotifyEventInfo // all execute smart ccntmract event notify info
 }
 
+// Config describe smart ccntmract need parameters configuration
 type Config struct {
 	Time    uint32              // current block timestamp
 	Height  uint32              // current block height
@@ -59,12 +61,12 @@ type Engine interface {
 	Invoke()
 }
 
-//put current ccntmext to smart ccntmract
+// PushCcntmext push current ccntmext to smart ccntmract
 func (this *SmartCcntmract) PushCcntmext(ccntmext *ccntmext.Ccntmext) {
 	this.Ccntmexts = append(this.Ccntmexts, ccntmext)
 }
 
-//get smart ccntmract current ccntmext
+// CurrentCcntmext return smart ccntmract current ccntmext
 func (this *SmartCcntmract) CurrentCcntmext() *ccntmext.Ccntmext {
 	if len(this.Ccntmexts) < 1 {
 		return nil
@@ -72,7 +74,7 @@ func (this *SmartCcntmract) CurrentCcntmext() *ccntmext.Ccntmext {
 	return this.Ccntmexts[len(this.Ccntmexts) - 1]
 }
 
-//get smart ccntmract caller ccntmext
+// CallingCcntmext return smart ccntmract caller ccntmext
 func (this *SmartCcntmract) CallingCcntmext() *ccntmext.Ccntmext {
 	if len(this.Ccntmexts) < 2 {
 		return nil
@@ -80,7 +82,7 @@ func (this *SmartCcntmract) CallingCcntmext() *ccntmext.Ccntmext {
 	return this.Ccntmexts[len(this.Ccntmexts) - 2]
 }
 
-//get smart ccntmract entry entrance ccntmext
+// EntryCcntmext return smart ccntmract entry entrance ccntmext
 func (this *SmartCcntmract) EntryCcntmext() *ccntmext.Ccntmext {
 	if len(this.Ccntmexts) < 1 {
 		return nil
@@ -88,49 +90,50 @@ func (this *SmartCcntmract) EntryCcntmext() *ccntmext.Ccntmext {
 	return this.Ccntmexts[0]
 }
 
-//pop smart ccntmract current ccntmext
+// PopCcntmext pop smart ccntmract current ccntmext
 func (this *SmartCcntmract) PopCcntmext() {
 	if len(this.Ccntmexts) > 0 {
 		this.Ccntmexts = this.Ccntmexts[:len(this.Ccntmexts) - 1]
 	}
 }
 
-// push smart ccntmract event info
+// PushNotifications push smart ccntmract event info
 func (this *SmartCcntmract) PushNotifications(notifications []*event.NotifyEventInfo) {
 	this.Notifications = append(this.Notifications, notifications...)
 }
 
-func (this *SmartCcntmract) Execute() ([]byte,error) {
+// Execute is smart ccntmract execute manager
+// According different vm type to launch different service
+func (this *SmartCcntmract) Execute() ([]byte, error) {
 	ctx := this.CurrentCcntmext()
 	switch ctx.Code.VmType {
 	case stypes.Native:
 		service := native.NewNativeService(this.Config.DBCache, this.Config.Height, this.Config.Tx, this)
 		if err := service.Invoke(); err != nil {
-			return nil,err
+			return nil, err
 		}
 	case stypes.NEOVM:
 		service := neovm.NewNeoVmService(this.Config.Store, this.Config.DBCache, this.Config.Tx, this.Config.Time, this)
 		if err := service.Invoke(); err != nil {
 			//fmt.Println("execute neovm error:", err)
-			return nil,err
+			return nil, err
 		}
 	case stypes.WASMVM:
-		service := wasmvm.NewWasmVmService(this.Config.Store,this.Config.DBCache,this.Config.Tx,this.Config.Time,this)
-		result,err := service.Invoke()
+		service := wasmvm.NewWasmVmService(this.Config.Store, this.Config.DBCache, this.Config.Tx, this.Config.Time, this)
+		result, err := service.Invoke()
 		if err != nil {
-			return nil,err
+			return nil, err
 		}
-		return result,nil
+		return result, nil
 	}
-	return nil,nil
+	return nil, nil
 }
 
-// When you want to call a ccntmract use this function, if ccntmract exist in block chain, you should set isLoad true,
-// Otherwise, you can set execute code, and set isLoad false.
-// param address: smart ccntmract address
-// param method: invoke smart ccntmract method name
-// param codes: invoke smart ccntmract whether need to load code
-// param args: invoke smart ccntmract args
+// AppCall a smart ccntmract, if ccntmract exist on blockchain, you should set the address
+// Param address: invoke smart ccntmract on blockchain according ccntmract address
+// Param method: invoke smart ccntmract method name
+// Param codes: invoke smart ccntmract off blockchain
+// Param args: invoke smart ccntmract args
 func (this *SmartCcntmract) AppCall(address common.Address, method string, codes, args []byte) ([]byte, error) {
 	var code []byte
 
@@ -145,13 +148,13 @@ func (this *SmartCcntmract) AppCall(address common.Address, method string, codes
 			Args: args,
 		}
 		if err := c.Serialize(bf); err != nil {
-			return nil,err
+			return nil, err
 		}
 		code = bf.Bytes()
 	case stypes.NEOVM:
-		code, err := this.loadCode(address, codes)
+		c, err := this.loadCode(address, codes)
 		if err != nil {
-			return nil,nil
+			return nil, err
 		}
 		var temp []byte
 		build := vm.NewParamsBuilder(new(bytes.Buffer))
@@ -159,7 +162,7 @@ func (this *SmartCcntmract) AppCall(address common.Address, method string, codes
 			build.EmitPushByteArray([]byte(method))
 		}
 		temp = append(args, build.ToArray()...)
-		code = append(temp, code...)
+		code = append(temp, c...)
 	case stypes.WASMVM:
 		bf := new(bytes.Buffer)
 		c := states.Ccntmract{
@@ -170,7 +173,7 @@ func (this *SmartCcntmract) AppCall(address common.Address, method string, codes
 			Code:codes,
 		}
 		if err := c.Serialize(bf); err != nil {
-			return nil,err
+			return nil, err
 		}
 		code = bf.Bytes()
 	}
@@ -182,18 +185,18 @@ func (this *SmartCcntmract) AppCall(address common.Address, method string, codes
 		},
 		CcntmractAddress: address,
 	})
-	res,err := this.Execute()
+	res, err := this.Execute()
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	this.PopCcntmext()
-	return res,nil
+	return res, nil
 }
 
-// check authorization correct
-// if address is wallet address, check whether in the signature addressed list
-// else check whether address is calling ccntmract address
-// param address: wallet address or ccntmract address
+// CheckWitness check whether authorization correct
+// If address is wallet address, check whether in the signature addressed list
+// Else check whether address is calling ccntmract address
+// Param address: wallet address or ccntmract address
 func (this *SmartCcntmract) CheckWitness(address common.Address) bool {
 	if stypes.IsVmCodeAddress(address) {
 		if this.CallingCcntmext() != nil && this.CallingCcntmext().CcntmractAddress == address {
@@ -211,11 +214,11 @@ func (this *SmartCcntmract) CheckWitness(address common.Address) bool {
 	return false
 }
 
-// load smart ccntmract execute code
-// param address, invoke cntm smart ccntmract address
-// param codes, invoke offchain smart ccntmract code
-// if you invoke offchain smart ccntmract, you can set address is codes address
-// but this address cann't find in blockchain
+// loadCode load smart ccntmract execute code
+// Param address, invoke on blockchain smart ccntmract address
+// Param codes, invoke off blockchain smart ccntmract code
+// If you invoke off blockchain smart ccntmract, you can set address is codes address
+// But this address doesn't deployed on blockchain
 func (this *SmartCcntmract) loadCode(address common.Address, codes []byte) ([]byte, error) {
 	isLoad := false
 	if len(codes) == 0 {

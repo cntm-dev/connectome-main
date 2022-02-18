@@ -25,6 +25,11 @@ import (
 	"github.com/cntmio/cntmology/events/message"
 )
 
+const (
+	EVENT_LOG = "Log"
+	EVENT_NOTIFY = "Notify"
+)
+
 // PushSmartCodeEvent push event ccntment to socket.io
 func PushSmartCodeEvent(txHash common.Uint256, errcode int64, action string, result interface{}) {
 	smartCodeEvt := &types.SmartCodeEvent{
