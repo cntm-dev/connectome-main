@@ -21,15 +21,16 @@ package statefull
 import (
 	"reflect"
 
+	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/validator/db"
 	vatypes "github.com/cntmio/cntmology/validator/types"
-	"github.com/cntmio/cntmology-eventbus/actor"
 )
 
+// Validator is an interface for tx validation actor
 type Validator interface {
 	Register(poolId *actor.PID)
 	UnRegister(poolId *actor.PID)
@@ -42,6 +43,7 @@ type validator struct {
 	bestBlock db.BestBlock
 }
 
+// NewValidator returns Validator for stateful check of tx
 func NewValidator(id string) (Validator, error) {
 
 	validator := &validator{id: id}

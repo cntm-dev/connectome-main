@@ -109,7 +109,7 @@ func CcntmractGetStorageCcntmext(service *NeoVmService, engine *vm.ExecutionEngi
 
 // CcntmractGetCode put ccntmract to vm stack
 func CcntmractGetCode(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	vm.PushData(engine, vm.PopInteropInterface(engine).(*payload.DeployCode).Code)
+	vm.PushData(engine, vm.PopInteropInterface(engine).(*payload.DeployCode).Code.Code)
 	return nil
 }
 
