@@ -9,12 +9,13 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/core/types"
-	scommon "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/vm/wasmvm/exec"
 	"github.com/cntmio/cntmology/vm/wasmvm/util"
+	vmtype "github.com/cntmio/cntmology/smartccntmract/types"
+	sccommon "github.com/cntmio/cntmology/smartccntmract/common"
 )
 
 type WasmVmService struct {
@@ -26,24 +27,21 @@ type WasmVmService struct {
 	Time          uint32
 }
 
-func NewWasmVmService(store store.LedgerStore,
-						dbCache scommon.StateStore,
-						tx *types.Transaction,
-						time uint32,
-						ctxRef ccntmext.CcntmextRef) *WasmVmService {
+func NewWasmVmService(store store.LedgerStore, cache *storage.CloneCache, tx *types.Transaction,
+time uint32, ctxRef ccntmext.CcntmextRef) *WasmVmService {
 	var service WasmVmService
 	service.Store = store
-	service.CloneCache = storage.NewCloneCache(dbCache)
+	service.CloneCache = cache
 	service.Time = time
 	service.Tx = tx
 	service.CcntmextRef = ctxRef
 	return &service
 }
 
-func (this *WasmVmService)Invoke() ([]byte,error){
-	stateMachine := NewWasmStateMachine(this.Store, this.CloneCache,  this.Time)
+func (this *WasmVmService) Invoke() (interface{}, error) {
+	stateMachine := NewWasmStateMachine(this.Store, this.CloneCache, this.Time)
 	//register the "CallCcntmract" function
-	stateMachine.Register("CallCcntmract",this.callCcntmract)
+	stateMachine.Register("CallCcntmract", this.callCcntmract)
 
 	ctx := this.CcntmextRef.CurrentCcntmext()
 	engine := exec.NewExecutionEngine(
@@ -56,10 +54,10 @@ func (this *WasmVmService)Invoke() ([]byte,error){
 	ccntmract.Deserialize(bytes.NewBuffer(ctx.Code.Code))
 	addr := ccntmract.Address
 
-	if ccntmract.Code == nil{
+	if ccntmract.Code == nil {
 		dpcode, err := this.GetCcntmractCodeFromAddress(addr)
 		if err != nil {
-			return nil,errors.NewErr("get ccntmract  error")
+			return nil, errors.NewErr("get ccntmract  error")
 		}
 		ccntmract.Code = dpcode
 	}
@@ -73,21 +71,20 @@ func (this *WasmVmService)Invoke() ([]byte,error){
 	res, err := engine.Call(caller, ccntmract.Code, ccntmract.Method, ccntmract.Args, ccntmract.Version)
 
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
 	//get the return message
 	result, err := engine.GetVM().GetPointerMemory(uint64(binary.LittleEndian.Uint32(res)))
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
-	this.CloneCache.Commit()
 	this.CcntmextRef.PushNotifications(stateMachine.Notifications)
-	return result,nil
+	return result, nil
 }
 
-func(this *WasmVmService)callCcntmract(engine *exec.ExecutionEngine)(bool,error){
+func (this *WasmVmService) callCcntmract(engine *exec.ExecutionEngine) (bool, error) {
 
 	vm := engine.GetVM()
 	envCall := vm.GetEnvCall()
@@ -100,11 +97,6 @@ func(this *WasmVmService)callCcntmract(engine *exec.ExecutionEngine)(bool,error)
 	if err != nil {
 		return false, errors.NewErr("[callCcntmract]get Ccntmract address failed:" + err.Error())
 	}
-	//the ccntmract codes
-	//ccntmractBytes, err := this.getCcntmractFromAddr(addr)
-	//if err != nil {
-	//	return false, err
-	//}
 
 	addrbytes, err := common.HexToBytes(util.TrimBuffToString(addr))
 	if err != nil {
@@ -114,9 +106,6 @@ func(this *WasmVmService)callCcntmract(engine *exec.ExecutionEngine)(bool,error)
 	if err != nil {
 		return false, errors.NewErr("[callCcntmract]get ccntmract address error:" + err.Error())
 	}
-
-	//vmcode := stype.VmCode{VmType:stype.WASMVM,Code:ccntmractBytes}
-	//ccntmractAddress := vmcode.AddressFromVmCode()
 
 	methodName, err := vm.GetPointerMemory(params[1])
 	if err != nil {
@@ -128,22 +117,24 @@ func(this *WasmVmService)callCcntmract(engine *exec.ExecutionEngine)(bool,error)
 		return false, errors.NewErr("[callCcntmract]get Ccntmract arg failed:" + err.Error())
 	}
 	//todo get result from AppCall
-	//res := 0
-	result ,err := this.CcntmextRef.AppCall(ccntmractAddress,util.TrimBuffToString(methodName),nil,arg)
+	result, err := this.CcntmextRef.AppCall(ccntmractAddress, util.TrimBuffToString(methodName), nil, arg)
 	if err != nil {
 		return false, errors.NewErr("[callCcntmract]AppCall failed:" + err.Error())
 	}
 
 	vm.RestoreCtx()
 	if envCall.GetReturns() {
-		idx,err := vm.SetPointerMemory(result)
+		if ccntmractAddress[0] == byte(vmtype.NEOVM) {
+			result = sccommon.ConvertNeoVmReturnTypes(result)
+		}
+		idx, err := vm.SetPointerMemory(result)
 		if err != nil {
 			return false, errors.NewErr("[callCcntmract]SetPointerMemory failed:" + err.Error())
 		}
 		vm.PushResult(uint64(idx))
 	}
 
-	return true ,nil
+	return true, nil
 }
 
 func (this *WasmVmService) GetCcntmractCodeFromAddress(address common.Address) ([]byte, error) {

@@ -18,6 +18,7 @@ package smartccntmract
 
 import (
 	"bytes"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/store"
 	scommon "github.com/cntmio/cntmology/core/store/common"
@@ -32,17 +33,21 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/states"
 	vm "github.com/cntmio/cntmology/vm/neovm"
 	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
+	"github.com/cntmio/cntmology/smartccntmract/storage"
 )
 
 var (
 	CcntmRACT_NOT_EXIST = errors.NewErr("[AppCall] Get ccntmract ccntmext nil")
 	DEPLOYCODE_TYPE_ERROR = errors.NewErr("[AppCall] DeployCode type error!")
 	INVOKE_CODE_EXIST = errors.NewErr("[AppCall] Invoke codes exist!")
+	ENGINE_NOT_SUPPORT = errors.NewErr("[Execute] Engine doesn't support!")
 )
 
 // SmartCcntmract describe smart ccntmract execute engine
 type SmartCcntmract struct {
 	Ccntmexts      []*ccntmext.Ccntmext       // all execute smart ccntmract ccntmext
+	CloneCache    *storage.CloneCache      // state cache
+	Store         store.LedgerStore        // ledger store
 	Config        *Config
 	Engine        Engine
 	Notifications []*event.NotifyEventInfo // all execute smart ccntmract event notify info
@@ -50,15 +55,13 @@ type SmartCcntmract struct {
 
 // Config describe smart ccntmract need parameters configuration
 type Config struct {
-	Time    uint32              // current block timestamp
-	Height  uint32              // current block height
-	Tx      *ctypes.Transaction // current transaction
-	DBCache scommon.StateStore  // db states cache
-	Store   store.LedgerStore   // ledger store
+	Time   uint32              // current block timestamp
+	Height uint32              // current block height
+	Tx     *ctypes.Transaction // current transaction
 }
 
 type Engine interface {
-	Invoke()
+	Invoke() (interface{}, error)
 }
 
 // PushCcntmext push current ccntmext to smart ccntmract
@@ -104,29 +107,20 @@ func (this *SmartCcntmract) PushNotifications(notifications []*event.NotifyEvent
 
 // Execute is smart ccntmract execute manager
 // According different vm type to launch different service
-func (this *SmartCcntmract) Execute() ([]byte, error) {
+func (this *SmartCcntmract) Execute() (interface{}, error) {
 	ctx := this.CurrentCcntmext()
+	var engine Engine
 	switch ctx.Code.VmType {
 	case stypes.Native:
-		service := native.NewNativeService(this.Config.DBCache, this.Config.Height, this.Config.Tx, this)
-		if err := service.Invoke(); err != nil {
-			return nil, err
-		}
+		engine = native.NewNativeService(this.CloneCache, this.Config.Height, this.Config.Tx, this)
 	case stypes.NEOVM:
-		service := neovm.NewNeoVmService(this.Config.Store, this.Config.DBCache, this.Config.Tx, this.Config.Time, this)
-		if err := service.Invoke(); err != nil {
-			//fmt.Println("execute neovm error:", err)
-			return nil, err
-		}
+		engine = neovm.NewNeoVmService(this.Store, this.CloneCache, this.Config.Tx, this.Config.Time, this)
 	case stypes.WASMVM:
-		service := wasmvm.NewWasmVmService(this.Config.Store, this.Config.DBCache, this.Config.Tx, this.Config.Time, this)
-		result, err := service.Invoke()
-		if err != nil {
-			return nil, err
-		}
-		return result, nil
+		engine = wasmvm.NewWasmVmService(this.Store, this.CloneCache, this.Config.Tx, this.Config.Time, this)
+	default:
+		return nil, ENGINE_NOT_SUPPORT
 	}
-	return nil, nil
+	return engine.Invoke()
 }
 
 // AppCall a smart ccntmract, if ccntmract exist on blockchain, you should set the address
@@ -134,7 +128,7 @@ func (this *SmartCcntmract) Execute() ([]byte, error) {
 // Param method: invoke smart ccntmract method name
 // Param codes: invoke smart ccntmract off blockchain
 // Param args: invoke smart ccntmract args
-func (this *SmartCcntmract) AppCall(address common.Address, method string, codes, args []byte) ([]byte, error) {
+func (this *SmartCcntmract) AppCall(address common.Address, method string, codes, args []byte) (interface{}, error) {
 	var code []byte
 
 	vmType := stypes.VmType(address[0])
@@ -164,15 +158,19 @@ func (this *SmartCcntmract) AppCall(address common.Address, method string, codes
 		temp = append(args, build.ToArray()...)
 		code = append(temp, c...)
 	case stypes.WASMVM:
+		c, err := this.loadCode(address, codes)
+		if err != nil {
+			return nil, err
+		}
 		bf := new(bytes.Buffer)
-		c := states.Ccntmract{
-			Version:1, //fix to > 0
+		ccntmract := states.Ccntmract{
+			Version: 1, //fix to > 0
 			Address: address,
 			Method: method,
 			Args: args,
-			Code:codes,
+			Code: c,
 		}
-		if err := c.Serialize(bf); err != nil {
+		if err := ccntmract.Serialize(bf); err != nil {
 			return nil, err
 		}
 		code = bf.Bytes()
@@ -244,7 +242,7 @@ func (this *SmartCcntmract) loadCode(address common.Address, codes []byte) ([]by
 }
 
 func (this *SmartCcntmract) getCcntmract(address []byte) (*scommon.StateItem, error) {
-	item, err := this.Config.DBCache.TryGet(scommon.ST_CcntmRACT, address[:]);
+	item, err := this.CloneCache.Store.TryGet(scommon.ST_CcntmRACT, address[:]);
 	if err != nil {
 		return nil, errors.NewErr("[getCcntmract] Get ccntmract ccntmext error!")
 	}

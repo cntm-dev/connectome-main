@@ -24,7 +24,6 @@ import (
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/genesis"
-	scommon "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
@@ -58,9 +57,9 @@ type NativeService struct {
 }
 
 // New native service
-func NewNativeService(dbCache scommon.StateStore, height uint32, tx *types.Transaction, ctxRef ccntmext.CcntmextRef) *NativeService {
+func NewNativeService(cache *storage.CloneCache, height uint32, tx *types.Transaction, ctxRef ccntmext.CcntmextRef) *NativeService {
 	var nativeService NativeService
-	nativeService.CloneCache = storage.NewCloneCache(dbCache)
+	nativeService.CloneCache = cache
 	nativeService.Tx = tx
 	nativeService.Height = height
 	nativeService.CcntmextRef = ctxRef
@@ -72,34 +71,33 @@ func (this *NativeService) Register(methodName string, handler Handler) {
 	this.ServiceMap[methodName] = handler
 }
 
-func (this *NativeService) Invoke() error {
+func (this *NativeService) Invoke() (interface{}, error) {
 	ctx := this.CcntmextRef.CurrentCcntmext()
 	if ctx == nil {
-		return errors.NewErr("[Invoke] Native service current ccntmext doesn't exist!")
+		return false, errors.NewErr("[Invoke] Native service current ccntmext doesn't exist!")
 	}
 	bf := bytes.NewBuffer(ctx.Code.Code)
 	ccntmract := new(sstates.Ccntmract)
 	if err := ccntmract.Deserialize(bf); err != nil {
-		return err
+		return false, err
 	}
 	services, ok := Ccntmracts[ccntmract.Address]
 	if !ok {
-		return fmt.Errorf("Native ccntmract address %x haven't been registered.", ccntmract.Address)
+		return false, fmt.Errorf("Native ccntmract address %x haven't been registered.", ccntmract.Address)
 	}
 	services(this)
 	service, ok := this.ServiceMap[ccntmract.Method]
 	if !ok {
-		return fmt.Errorf("Native ccntmract %x doesn't support this function %s.", ccntmract.Address, ccntmract.Method)
+		return false, fmt.Errorf("Native ccntmract %x doesn't support this function %s.", ccntmract.Address, ccntmract.Method)
 	}
 	this.CcntmextRef.PushCcntmext(&ccntmext.Ccntmext{CcntmractAddress: ccntmract.Address})
 	this.Input = ccntmract.Args
 	if err := service(this); err != nil {
-		return errors.NewDetailErr(err, errors.ErrNoCode, "[Invoke] Native serivce function execute error!")
+		return false, errors.NewDetailErr(err, errors.ErrNoCode, "[Invoke] Native serivce function execute error!")
 	}
 	this.CcntmextRef.PopCcntmext()
 	this.CcntmextRef.PushNotifications(this.Notifications)
-	this.CloneCache.Commit()
-	return nil
+	return true, nil
 }
 
 func RegisterOntCcntmract(native *NativeService) {

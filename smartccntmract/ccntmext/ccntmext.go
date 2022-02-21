@@ -38,7 +38,7 @@ type CcntmextRef interface {
 	PopCcntmext()
 	CheckWitness(address common.Address) bool
 	PushNotifications(notifications []*event.NotifyEventInfo)
-	AppCall(address common.Address, method string, codes, args []byte) ([]byte,error)
+	AppCall(address common.Address, method string, codes, args []byte) (interface{}, error)
 }
 
 // Ccntmext describe smart ccntmract execute ccntmext struct

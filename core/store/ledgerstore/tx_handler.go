@@ -32,6 +32,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract"
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
 	"github.com/cntmio/cntmology/smartccntmract/event"
+	"github.com/cntmio/cntmology/smartccntmract/storage"
 	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 )
 
@@ -68,11 +69,9 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 
 	// init smart ccntmract configuration info
 	config := &smartccntmract.Config{
-		Time:    block.Header.Timestamp,
-		Height:  block.Header.Height,
-		Tx:      tx,
-		DBCache: stateBatch,
-		Store:   store,
+		Time:   block.Header.Timestamp,
+		Height: block.Header.Height,
+		Tx:     tx,
 	}
 
 	//init smart ccntmract ccntmext info
@@ -83,7 +82,9 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 
 	//init smart ccntmract info
 	sc := smartccntmract.SmartCcntmract{
-		Config: config,
+		Config:     config,
+		CloneCache: storage.NewCloneCache(stateBatch),
+		Store:      store,
 	}
 
 	//load current ccntmext to smart ccntmract
@@ -93,6 +94,8 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 	if _, err := sc.Execute(); err != nil {
 		return err
 	}
+
+	sc.CloneCache.Commit()
 
 	if len(sc.Notifications) > 0 {
 		if err := eventStore.SaveEventNotifyByTx(txHash, sc.Notifications); err != nil {

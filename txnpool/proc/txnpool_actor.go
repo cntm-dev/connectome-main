@@ -137,8 +137,13 @@ func (ta *TxActor) Receive(ccntmext actor.Ccntmext) {
 
 		res := ta.server.getTxStatusReq(msg.Hash)
 		if sender != nil {
-			sender.Request(&tc.GetTxnStatusRsp{Hash: res.Hash,
-				TxStatus: res.Attrs}, ccntmext.Self())
+			if res == nil {
+				sender.Request(&tc.GetTxnStatusRsp{Hash: msg.Hash,
+					TxStatus: nil}, ccntmext.Self())
+			} else {
+				sender.Request(&tc.GetTxnStatusRsp{Hash: res.Hash,
+					TxStatus: res.Attrs}, ccntmext.Self())
+			}
 		}
 
 	default:

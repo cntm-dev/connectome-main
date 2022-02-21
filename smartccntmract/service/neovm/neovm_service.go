@@ -21,7 +21,6 @@ package neovm
 import (
 	"math/big"
 
-	scommon "github.com/cntmio/cntmology/core/store/common"
 	vmtype "github.com/cntmio/cntmology/vm/neovm/types"
 	"github.com/cntmio/cntmology/core/store"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
@@ -113,10 +112,10 @@ type NeoVmService struct {
 }
 
 // NewNeoVmService return a new neovm service
-func NewNeoVmService(store store.LedgerStore, dbCache scommon.StateStore, tx *types.Transaction, time uint32, ctxRef ccntmext.CcntmextRef) *NeoVmService {
+func NewNeoVmService(store store.LedgerStore, cache *storage.CloneCache, tx *types.Transaction, time uint32, ctxRef ccntmext.CcntmextRef) *NeoVmService {
 	var service NeoVmService
 	service.Store = store
-	service.CloneCache = storage.NewCloneCache(dbCache)
+	service.CloneCache = cache
 	service.Time = time
 	service.Tx = tx
 	service.CcntmextRef = ctxRef
@@ -124,14 +123,14 @@ func NewNeoVmService(store store.LedgerStore, dbCache scommon.StateStore, tx *ty
 }
 
 // Invoke a smart ccntmract
-func (this *NeoVmService) Invoke() error {
+func (this *NeoVmService) Invoke() (interface{}, error) {
 	engine := vm.NewExecutionEngine()
 	ctx := this.CcntmextRef.CurrentCcntmext()
 	if ctx == nil {
-		return ERR_CURRENT_CcntmEXT_NIL
+		return nil, ERR_CURRENT_CcntmEXT_NIL
 	}
 	if len(ctx.Code.Code) == 0 {
-		return ERR_EXECUTE_CODE
+		return nil, ERR_EXECUTE_CODE
 	}
 	engine.PushCcntmext(vm.NewExecutionCcntmext(engine, ctx.Code.Code))
 	for {
@@ -142,41 +141,47 @@ func (this *NeoVmService) Invoke() error {
 			break
 		}
 		if err := engine.ExecuteCode(); err != nil {
-			return err
+			return nil, err
 		}
 		if engine.Ccntmext.GetInstructionPointer() < len(engine.Ccntmext.Code) {
 			if ok := checkStackSize(engine); !ok {
-				return ERR_CHECK_STACK_SIZE
+				return nil, ERR_CHECK_STACK_SIZE
 			}
 			if ok := checkArraySize(engine); !ok {
-				return ERR_CHECK_ARRAY_SIZE
+				return nil, ERR_CHECK_ARRAY_SIZE
 			}
 			if ok := checkBigIntegers(engine); !ok {
-				return ERR_CHECK_BIGINTEGER
+				return nil, ERR_CHECK_BIGINTEGER
 			}
 		}
 		switch engine.OpCode {
 		case vm.SYSCALL:
 			if err := this.SystemCall(engine); err != nil {
-				return errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] service system call error!")
+				return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] service system call error!")
 			}
 		case vm.APPCALL:
 			c := new(states.Ccntmract)
 			if err := c.Deserialize(engine.Ccntmext.OpReader.Reader()); err != nil {
-				return errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] get ccntmract parameters error!")
+				return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] get ccntmract parameters error!")
 			}
-			if _,err := this.CcntmextRef.AppCall(c.Address, c.Method, c.Code, c.Args); err != nil {
-				return errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] service app call error!")
+			result, err := this.CcntmextRef.AppCall(c.Address, c.Method, c.Code, c.Args)
+			if err != nil {
+				return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] service app call error!")
+			}
+			if result != nil {
+				vm.PushData(engine, result)
 			}
 		default:
 			if err := engine.StepInto(); err != nil {
-				return errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] vm execute error!")
+				return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] vm execute error!")
 			}
 		}
 	}
 	this.CcntmextRef.PushNotifications(this.Notifications)
-	this.CloneCache.Commit()
-	return nil
+	if engine.EvaluationStack.Count() != 0 {
+		return engine.EvaluationStack.Peek(0), nil
+	}
+	return nil, nil
 }
 
 // SystemCall provide register service for smart ccntmract to interaction with blockchian
