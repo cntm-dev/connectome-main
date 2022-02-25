@@ -3,15 +3,19 @@ package wasmvm
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
+	"math/big"
 
+	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/store"
-	"github.com/cntmio/cntmology/smartccntmract/storage"
+	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
 	"github.com/cntmio/cntmology/smartccntmract/event"
-	"github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology/common"
+	nstates "github.com/cntmio/cntmology/smartccntmract/service/native/states"
 	"github.com/cntmio/cntmology/smartccntmract/states"
-	"github.com/cntmio/cntmology/errors"
+	"github.com/cntmio/cntmology/smartccntmract/storage"
+	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
 	"github.com/cntmio/cntmology/vm/wasmvm/exec"
 	"github.com/cntmio/cntmology/vm/wasmvm/util"
 	vmtype "github.com/cntmio/cntmology/smartccntmract/types"
@@ -36,12 +40,14 @@ time uint32, ctxRef ccntmext.CcntmextRef) *WasmVmService {
 	service.Tx = tx
 	service.CcntmextRef = ctxRef
 	return &service
+
 }
 
 func (this *WasmVmService) Invoke() (interface{}, error) {
 	stateMachine := NewWasmStateMachine(this.Store, this.CloneCache, this.Time)
 	//register the "CallCcntmract" function
 	stateMachine.Register("CallCcntmract", this.callCcntmract)
+	stateMachine.Register("MarshalNativeParams", this.marshalNativeParams)
 
 	ctx := this.CcntmextRef.CurrentCcntmext()
 	engine := exec.NewExecutionEngine(
@@ -80,44 +86,159 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 		return nil, err
 	}
 
+	this.CloneCache.Commit()
+
 	this.CcntmextRef.PushNotifications(stateMachine.Notifications)
 	return result, nil
 }
 
+// marshalNativeParams
+// make paramter bytes for call native ccntmract
+func (this *WasmVmService) marshalNativeParams(engine *exec.ExecutionEngine) (bool, error) {
+	vm := engine.GetVM()
+	envCall := vm.GetEnvCall()
+	params := envCall.GetParams()
+	if len(params) != 1 {
+		return false, errors.NewErr("[callCcntmract]parameter count error while call marshalNativeParams")
+	}
+
+	transferbytes, err := vm.GetPointerMemory(params[0])
+	if err != nil {
+		return false, err
+	}
+	//transferbytes is a nested struct with states.Transfer
+	//type Transfers struct {
+	//	Version byte               -------->i32  4 bytes
+	//	States  []*State		   -------->i32 pointer 4 bytes
+	//}
+	if len(transferbytes) != 8 {
+		return false, errors.NewErr("[callCcntmract]parameter format error while call marshalNativeParams")
+	}
+	transfer := &nstates.Transfers{}
+	tver := binary.LittleEndian.Uint32(transferbytes[:4])
+	transfer.Version = byte(tver)
+
+	statesAddr := binary.LittleEndian.Uint32(transferbytes[4:])
+	statesbytes, err := vm.GetPointerMemory(uint64(statesAddr))
+	if err != nil {
+		return false, err
+	}
+	//statesbytes is slice of struct with states.
+	//type State struct {
+	//	Version byte            -------->i32 4 bytes
+	//	From    common.Address  -------->i32 pointer 4 bytes
+	//	To      common.Address  -------->i32 pointer 4 bytes extra padding 4 bytes
+	//	Value   *big.Int        -------->i64 8 bytes
+	//}
+	//total is 4 + 4 + 4 + 4(dummy) + 8 = 24 bytes
+	statecnt := len(statesbytes) / 24
+	states := make([]*nstates.State, statecnt)
+
+	for i := 0; i < statecnt; i++ {
+		tmpbytes := statesbytes[i*24 : (i+1)*24]
+		state := &nstates.State{}
+		state.Version = byte(binary.LittleEndian.Uint32(tmpbytes[:4]))
+		fromAddessBytes, err := vm.GetPointerMemory(uint64(binary.LittleEndian.Uint32(tmpbytes[4:8])))
+		if err != nil {
+			return false, err
+		}
+		fromAddress, err := common.AddressFromBase58(util.TrimBuffToString(fromAddessBytes))
+		if err != nil {
+			return false, err
+		}
+		state.From = fromAddress
+
+		toAddressBytes, err := vm.GetPointerMemory(uint64(binary.LittleEndian.Uint32(tmpbytes[8:12])))
+		if err != nil {
+			return false, err
+		}
+		toAddress, err := common.AddressFromBase58(util.TrimBuffToString(toAddressBytes))
+		state.To = toAddress
+		//tmpbytes[12:16] is padding
+		amount := binary.LittleEndian.Uint64(tmpbytes[16:])
+		state.Value = big.NewInt(int64(amount))
+
+		states[i] = state
+	}
+
+	transfer.States = states
+	tbytes := new(bytes.Buffer)
+	transfer.Serialize(tbytes)
+
+	result, err := vm.SetPointerMemory(tbytes.Bytes())
+	if err != nil {
+		return false, err
+	}
+	vm.RestoreCtx()
+	vm.PushResult(uint64(result))
+	return true, nil
+}
+
+// callCcntmract will need 4 paramters
+//0: ccntmract address
+//1: ccntmract code
+//2: method name
+//3: args
 func (this *WasmVmService) callCcntmract(engine *exec.ExecutionEngine) (bool, error) {
 
 	vm := engine.GetVM()
 	envCall := vm.GetEnvCall()
 	params := envCall.GetParams()
-	if len(params) != 3 {
+	if len(params) != 4 {
 		return false, errors.NewErr("[callCcntmract]parameter count error while call readMessage")
 	}
+
+	var ccntmractAddress common.Address
+	var ccntmractBytes []byte
+	//get ccntmract address
 	ccntmractAddressIdx := params[0]
 	addr, err := vm.GetPointerMemory(ccntmractAddressIdx)
 	if err != nil {
 		return false, errors.NewErr("[callCcntmract]get Ccntmract address failed:" + err.Error())
 	}
 
-	addrbytes, err := common.HexToBytes(util.TrimBuffToString(addr))
-	if err != nil {
-		return false, errors.NewErr("[callCcntmract]get ccntmract address error:" + err.Error())
-	}
-	ccntmractAddress, err := common.AddressParseFromBytes(addrbytes)
-	if err != nil {
-		return false, errors.NewErr("[callCcntmract]get ccntmract address error:" + err.Error())
+	if addr != nil {
+		addrbytes, err := common.HexToBytes(util.TrimBuffToString(addr))
+		if err != nil {
+			return false, errors.NewErr("[callCcntmract]get ccntmract address error:" + err.Error())
+		}
+		ccntmractAddress, err = common.AddressParseFromBytes(addrbytes)
+		if err != nil {
+			return false, errors.NewErr("[callCcntmract]get ccntmract address error:" + err.Error())
+		}
+
 	}
 
-	methodName, err := vm.GetPointerMemory(params[1])
+	//get ccntmract code
+	codeIdx := params[1]
+	offchainCcntmractCode, err := vm.GetPointerMemory(codeIdx)
+	if err != nil {
+		return false, errors.NewErr("[callCcntmract]get Ccntmract address failed:" + err.Error())
+	}
+
+	if offchainCcntmractCode != nil {
+		ccntmractBytes, err = common.HexToBytes(util.TrimBuffToString(offchainCcntmractCode))
+		if err != nil {
+			return false, err
+		}
+		//compute the offchain code address
+		codestring := util.TrimBuffToString(offchainCcntmractCode)
+		ccntmractAddress = GetCcntmractAddress(codestring, vmtypes.WASMVM)
+	}
+
+	//get method
+	methodName, err := vm.GetPointerMemory(params[2])
 	if err != nil {
 		return false, errors.NewErr("[callCcntmract]get Ccntmract methodName failed:" + err.Error())
 	}
 
-	arg, err := vm.GetPointerMemory(params[2])
+	//get args
+	arg, err := vm.GetPointerMemory(params[3])
 	if err != nil {
 		return false, errors.NewErr("[callCcntmract]get Ccntmract arg failed:" + err.Error())
 	}
-	//todo get result from AppCall
-	result, err := this.CcntmextRef.AppCall(ccntmractAddress, util.TrimBuffToString(methodName), nil, arg)
+
+	result, err := this.CcntmextRef.AppCall(ccntmractAddress, util.TrimBuffToString(methodName), ccntmractBytes, arg)
 	if err != nil {
 		return false, errors.NewErr("[callCcntmract]AppCall failed:" + err.Error())
 	}
@@ -144,6 +265,10 @@ func (this *WasmVmService) GetCcntmractCodeFromAddress(address common.Address) (
 		return nil, err
 	}
 
+	if dcode == nil {
+		return nil, errors.NewErr("[GetCcntmractCodeFromAddress] deployed code is nil")
+	}
+
 	return dcode.Code.Code, nil
 
 }
@@ -162,4 +287,14 @@ func (this *WasmVmService) getCcntmractFromAddr(addr []byte) ([]byte, error) {
 		return nil, errors.NewErr("get ccntmract  error")
 	}
 	return dpcode, nil
+}
+
+//GetCcntmractAddress return ccntmract address
+func GetCcntmractAddress(code string, vmType vmtypes.VmType) common.Address {
+	data, _ := hex.DecodeString(code)
+	vmCode := &vmtypes.VmCode{
+		VmType: vmType,
+		Code:   data,
+	}
+	return vmCode.AddressFromVmCode()
 }

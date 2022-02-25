@@ -64,12 +64,16 @@ func NewInteropService() *InteropService {
 	service.Register("arrayLen", arrayLen)
 	service.Register("memcpy", memcpy)
 	service.Register("memset", memset)
+	service.Register("getTempRet0", getTempRet0)
 
 	//todo add basic apis
 	service.Register("Atoi", strToInt)
 	service.Register("Atoi64", strToInt64)
 	service.Register("Itoa", intToString)
 	service.Register("I64toa", int64ToString)
+	service.Register("i64add", int64Add)
+	service.Register("i64Subtract", int64Subtract)
+
 
 	service.Register("ReadInt32Param", readInt32Param)
 	service.Register("ReadInt64Param", readInt64Param)
@@ -141,7 +145,7 @@ func calloc(engine *ExecutionEngine) (bool, error) {
 
 	//1. recover the vm ccntmext
 	//2. if the call returns value,push the result to the stack
-	engine.vm.ctx = envCall.envPreCtx
+	engine.vm.RestoreCtx()
 	if envCall.envReturns {
 		engine.vm.pushUint64(uint64(index))
 	}
@@ -163,7 +167,7 @@ func malloc(engine *ExecutionEngine) (bool, error) {
 	}
 	//1. recover the vm ccntmext
 	//2. if the call returns value,push the result to the stack
-	engine.vm.ctx = envCall.envPreCtx
+	engine.vm.RestoreCtx()
 	if envCall.envReturns {
 		engine.vm.pushUint64(uint64(index))
 	}
@@ -206,7 +210,7 @@ func arrayLen(engine *ExecutionEngine) (bool, error) {
 	}
 	//1. recover the vm ccntmext
 	//2. if the call returns value,push the result to the stack
-	engine.vm.ctx = envCall.envPreCtx
+	engine.vm.RestoreCtx()
 	if envCall.envReturns {
 		engine.vm.pushUint64(uint64(result))
 	}
@@ -232,7 +236,7 @@ func memcpy(engine *ExecutionEngine) (bool, error) {
 
 	//1. recover the vm ccntmext
 	//2. if the call returns value,push the result to the stack
-	engine.vm.ctx = envCall.envPreCtx
+	engine.vm.RestoreCtx()
 	if envCall.envReturns {
 		engine.vm.pushUint64(uint64(1))
 	}
@@ -258,7 +262,7 @@ func memset(engine *ExecutionEngine) (bool, error) {
 
 	//1. recover the vm ccntmext
 	//2. if the call returns value,push the result to the stack
-	engine.vm.ctx = envCall.envPreCtx
+	engine.vm.RestoreCtx()
 	if envCall.envReturns {
 		engine.vm.pushUint64(uint64(1))
 	}
@@ -266,34 +270,14 @@ func memset(engine *ExecutionEngine) (bool, error) {
 	return true, nil //this return will be dropped in wasm
 }
 
-func readMessage(engine *ExecutionEngine) (bool, error) {
+func getTempRet0(engine *ExecutionEngine) (bool, error) {
 	envCall := engine.vm.envCall
-	params := envCall.envParams
-	if len(params) != 2 {
-		return false, errors.New("parameter count error while call readMessage")
-	}
 
-	addr := int(params[0])
-	length := int(params[1])
-
-	msgBytes, err := engine.vm.GetMessageBytes()
-	if err != nil {
-		return false, err
-	}
-	if length != len(msgBytes) {
-		return false, errors.New("readMessage length error")
-	}
-	copy(engine.vm.memory.Memory[addr:addr+length], msgBytes[:length])
-	engine.vm.memory.MemPoints[uint64(addr)] = &memory.TypeLength{Ptype: memory.PUnkown, Length: length}
-
-	//1. recover the vm ccntmext
-	//2. if the call returns value,push the result to the stack
-	engine.vm.ctx = envCall.envPreCtx
+	engine.vm.RestoreCtx()
 	if envCall.envReturns {
-		engine.vm.pushUint64(uint64(length))
+		engine.vm.pushUint64(uint64(0))
 	}
-
-	return true, nil
+	return true, nil //this return will be dropped in wasm
 }
 
 //read int value from args bytes
@@ -320,7 +304,7 @@ func readInt32Param(engine *ExecutionEngine) (bool, error) {
 	retInt := binary.LittleEndian.Uint32(paramBytes[pidx : pidx+4])
 	engine.vm.memory.ParamIndex += 4
 
-	engine.vm.ctx = envCall.envPreCtx
+	engine.vm.RestoreCtx()
 	if envCall.envReturns {
 		engine.vm.pushUint64(uint64(retInt))
 	}
@@ -335,15 +319,12 @@ func readInt64Param(engine *ExecutionEngine) (bool, error) {
 	if len(params) != 1 {
 		return false, errors.New("parameter count error while call readInt64Param")
 	}
-
 	addr := params[0]
 	paramBytes, err := engine.vm.GetPointerMemory(addr)
 	if err != nil {
 		return false, err
 	}
-
 	pidx := engine.vm.memory.ParamIndex
-
 	if pidx+8 > len(paramBytes) {
 		return false, errors.New("read params error")
 	}
@@ -351,7 +332,7 @@ func readInt64Param(engine *ExecutionEngine) (bool, error) {
 	retInt := binary.LittleEndian.Uint64(paramBytes[pidx : pidx+8])
 	engine.vm.memory.ParamIndex += 8
 
-	engine.vm.ctx = envCall.envPreCtx
+	engine.vm.RestoreCtx()
 	if envCall.envReturns {
 		engine.vm.pushUint64(retInt)
 	}
@@ -372,7 +353,6 @@ func readStringParam(engine *ExecutionEngine) (bool, error) {
 		return false, err
 	}
 	var length int
-
 	pidx := engine.vm.memory.ParamIndex
 	switch paramBytes[pidx] {
 	case 0xfd: //uint16
@@ -410,36 +390,12 @@ func readStringParam(engine *ExecutionEngine) (bool, error) {
 	}
 
 	engine.vm.memory.ParamIndex = pidx
-	engine.vm.ctx = envCall.envPreCtx
+	engine.vm.RestoreCtx()
 	if envCall.envReturns {
 		engine.vm.pushUint64(uint64(retidx))
 	}
 	return true, nil
 }
-
-//todo solve the struct{char *} case
-//todo remove this method
-/*func rawUnmashal(engine *ExecutionEngine) (bool, error) {
-
-	envCall := engine.vm.envCall
-	params := envCall.envParams
-	if len(params) != 3 {
-		return false, errors.New("parameter count error while call jsonUnmashal")
-	}
-
-	addr := params[0]
-	//size := int(params[1])
-
-	rawAddr := params[2]
-	rawBytes, err := engine.vm.GetPointerMemory(rawAddr)
-	if err != nil {
-		return false, err
-	}
-
-	copy(engine.vm.memory.Memory[addr:int(addr)+len(rawBytes)], rawBytes)
-
-	return true, nil
-}*/
 
 func jsonUnmashal(engine *ExecutionEngine) (bool, error) {
 
@@ -548,7 +504,7 @@ func jsonUnmashal(engine *ExecutionEngine) (bool, error) {
 	engine.vm.Malloc(len(bytes))
 	copy(engine.vm.memory.Memory[int(addr):int(addr)+len(bytes)], bytes)
 
-	engine.vm.ctx = envCall.envPreCtx
+	engine.vm.RestoreCtx()
 	return true, nil
 }
 
@@ -622,7 +578,7 @@ func jsonMashal(engine *ExecutionEngine) (bool, error) {
 		return false, err
 	}
 
-	engine.vm.ctx = envCall.envPreCtx
+	engine.vm.RestoreCtx()
 	if envCall.envReturns {
 		engine.vm.pushUint64(uint64(offset))
 	}
@@ -661,7 +617,7 @@ func stringcmp(engine *ExecutionEngine) (bool, error) {
 			ret = 1
 		}
 	}
-	engine.vm.ctx = envCall.envPreCtx
+	engine.vm.RestoreCtx()
 	if envCall.envReturns {
 		engine.vm.pushUint64(uint64(ret))
 	}
@@ -676,7 +632,7 @@ func getCaller(engine *ExecutionEngine) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	engine.vm.ctx = envCall.envPreCtx
+	engine.vm.RestoreCtx()
 	if envCall.envReturns {
 		engine.vm.pushUint64(uint64(idx))
 	}
@@ -691,7 +647,7 @@ func getCcntmractAddress(engine *ExecutionEngine) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	engine.vm.ctx = envCall.envPreCtx
+	engine.vm.RestoreCtx()
 	if envCall.envReturns {
 		engine.vm.pushUint64(uint64(idx))
 	}
@@ -760,7 +716,7 @@ func jsonMashalParams(engine *ExecutionEngine) (bool, error) {
 	if err != nil {
 		return false, errors.New("[jsonMashalParams] SetPointerMemory err:" + err.Error())
 	}
-	engine.vm.ctx = envCall.envPreCtx
+	engine.vm.RestoreCtx()
 	if envCall.envReturns {
 		engine.vm.pushUint64(uint64(argIdx))
 	}
@@ -828,7 +784,7 @@ func rawMashalParams(engine *ExecutionEngine) (bool, error) {
 	if err != nil {
 		return false, errors.New("[jsonMashalParams] SetPointerMemory err:" + err.Error())
 	}
-	engine.vm.ctx = envCall.envPreCtx
+	engine.vm.RestoreCtx()
 	if envCall.envReturns {
 		engine.vm.pushUint64(uint64(argIdx))
 	}
