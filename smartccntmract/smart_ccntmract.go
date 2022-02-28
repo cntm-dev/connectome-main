@@ -20,6 +20,7 @@ import (
 	"bytes"
 
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/store"
 	scommon "github.com/cntmio/cntmology/core/store/common"
 	ctypes "github.com/cntmio/cntmology/core/types"
@@ -27,27 +28,26 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
-	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
-	"github.com/cntmio/cntmology/core/payload"
-	"github.com/cntmio/cntmology/smartccntmract/states"
-	vm "github.com/cntmio/cntmology/vm/neovm"
 	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
+	"github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
+	stypes "github.com/cntmio/cntmology/smartccntmract/types"
+	vm "github.com/cntmio/cntmology/vm/neovm"
 )
 
 var (
-	CcntmRACT_NOT_EXIST = errors.NewErr("[AppCall] Get ccntmract ccntmext nil")
+	CcntmRACT_NOT_EXIST    = errors.NewErr("[AppCall] Get ccntmract ccntmext nil")
 	DEPLOYCODE_TYPE_ERROR = errors.NewErr("[AppCall] DeployCode type error!")
-	INVOKE_CODE_EXIST = errors.NewErr("[AppCall] Invoke codes exist!")
-	ENGINE_NOT_SUPPORT = errors.NewErr("[Execute] Engine doesn't support!")
+	INVOKE_CODE_EXIST     = errors.NewErr("[AppCall] Invoke codes exist!")
+	ENGINE_NOT_SUPPORT    = errors.NewErr("[Execute] Engine doesn't support!")
 )
 
 // SmartCcntmract describe smart ccntmract execute engine
 type SmartCcntmract struct {
-	Ccntmexts      []*ccntmext.Ccntmext       // all execute smart ccntmract ccntmext
-	CloneCache    *storage.CloneCache      // state cache
-	Store         store.LedgerStore        // ledger store
+	Ccntmexts      []*ccntmext.Ccntmext  // all execute smart ccntmract ccntmext
+	CloneCache    *storage.CloneCache // state cache
+	Store         store.LedgerStore   // ledger store
 	Config        *Config
 	Engine        Engine
 	Notifications []*event.NotifyEventInfo // all execute smart ccntmract event notify info
@@ -74,7 +74,7 @@ func (this *SmartCcntmract) CurrentCcntmext() *ccntmext.Ccntmext {
 	if len(this.Ccntmexts) < 1 {
 		return nil
 	}
-	return this.Ccntmexts[len(this.Ccntmexts) - 1]
+	return this.Ccntmexts[len(this.Ccntmexts)-1]
 }
 
 // CallingCcntmext return smart ccntmract caller ccntmext
@@ -82,7 +82,7 @@ func (this *SmartCcntmract) CallingCcntmext() *ccntmext.Ccntmext {
 	if len(this.Ccntmexts) < 2 {
 		return nil
 	}
-	return this.Ccntmexts[len(this.Ccntmexts) - 2]
+	return this.Ccntmexts[len(this.Ccntmexts)-2]
 }
 
 // EntryCcntmext return smart ccntmract entry entrance ccntmext
@@ -96,7 +96,7 @@ func (this *SmartCcntmract) EntryCcntmext() *ccntmext.Ccntmext {
 // PopCcntmext pop smart ccntmract current ccntmext
 func (this *SmartCcntmract) PopCcntmext() {
 	if len(this.Ccntmexts) > 0 {
-		this.Ccntmexts = this.Ccntmexts[:len(this.Ccntmexts) - 1]
+		this.Ccntmexts = this.Ccntmexts[:len(this.Ccntmexts)-1]
 	}
 }
 
@@ -131,14 +131,13 @@ func (this *SmartCcntmract) Execute() (interface{}, error) {
 func (this *SmartCcntmract) AppCall(address common.Address, method string, codes, args []byte) (interface{}, error) {
 	var code []byte
 	vmType := stypes.VmType(address[0])
-
 	switch vmType {
 	case stypes.Native:
 		bf := new(bytes.Buffer)
 		c := states.Ccntmract{
 			Address: address,
-			Method: method,
-			Args: args,
+			Method:  method,
+			Args:    args,
 		}
 		if err := c.Serialize(bf); err != nil {
 			return nil, err
@@ -165,9 +164,9 @@ func (this *SmartCcntmract) AppCall(address common.Address, method string, codes
 		ccntmract := states.Ccntmract{
 			Version: 1, //fix to > 0
 			Address: address,
-			Method: method,
-			Args: args,
-			Code: c,
+			Method:  method,
+			Args:    args,
+			Code:    c,
 		}
 		if err := ccntmract.Serialize(bf); err != nil {
 			return nil, err
@@ -177,7 +176,7 @@ func (this *SmartCcntmract) AppCall(address common.Address, method string, codes
 
 	this.PushCcntmext(&ccntmext.Ccntmext{
 		Code: stypes.VmCode{
-			Code: code,
+			Code:   code,
 			VmType: vmType,
 		},
 		CcntmractAddress: address,
@@ -221,14 +220,16 @@ func (this *SmartCcntmract) loadCode(address common.Address, codes []byte) ([]by
 	if len(codes) == 0 {
 		isLoad = true
 	}
-	item, err := this.getCcntmract(address[:]); if err != nil {
+	item, err := this.getCcntmract(address[:])
+	if err != nil {
 		return nil, err
 	}
 	if isLoad {
 		if item == nil {
 			return nil, CcntmRACT_NOT_EXIST
 		}
-		ccntmract, ok := item.Value.(*payload.DeployCode); if !ok {
+		ccntmract, ok := item.Value.(*payload.DeployCode)
+		if !ok {
 			return nil, DEPLOYCODE_TYPE_ERROR
 		}
 		return ccntmract.Code.Code, nil
@@ -241,7 +242,7 @@ func (this *SmartCcntmract) loadCode(address common.Address, codes []byte) ([]by
 }
 
 func (this *SmartCcntmract) getCcntmract(address []byte) (*scommon.StateItem, error) {
-	item, err := this.CloneCache.Store.TryGet(scommon.ST_CcntmRACT, address[:]);
+	item, err := this.CloneCache.Store.TryGet(scommon.ST_CcntmRACT, address[:])
 	if err != nil {
 		return nil, errors.NewErr("[getCcntmract] Get ccntmract ccntmext error!")
 	}
