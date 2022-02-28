@@ -130,7 +130,6 @@ func (this *SmartCcntmract) Execute() (interface{}, error) {
 // Param args: invoke smart ccntmract args
 func (this *SmartCcntmract) AppCall(address common.Address, method string, codes, args []byte) (interface{}, error) {
 	var code []byte
-
 	vmType := stypes.VmType(address[0])
 
 	switch vmType {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/store"
+
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
@@ -18,8 +19,8 @@ import (
 	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
 	"github.com/cntmio/cntmology/vm/wasmvm/exec"
 	"github.com/cntmio/cntmology/vm/wasmvm/util"
-	vmtype "github.com/cntmio/cntmology/smartccntmract/types"
 	sccommon "github.com/cntmio/cntmology/smartccntmract/common"
+
 )
 
 type WasmVmService struct {
@@ -31,6 +32,7 @@ type WasmVmService struct {
 	Time          uint32
 }
 
+
 func NewWasmVmService(store store.LedgerStore, cache *storage.CloneCache, tx *types.Transaction,
 time uint32, ctxRef ccntmext.CcntmextRef) *WasmVmService {
 	var service WasmVmService
@@ -40,8 +42,8 @@ time uint32, ctxRef ccntmext.CcntmextRef) *WasmVmService {
 	service.Tx = tx
 	service.CcntmextRef = ctxRef
 	return &service
-
 }
+
 
 func (this *WasmVmService) Invoke() (interface{}, error) {
 	stateMachine := NewWasmStateMachine(this.Store, this.CloneCache, this.Time)
@@ -152,12 +154,12 @@ func (this *WasmVmService) marshalNativeParams(engine *exec.ExecutionEngine) (bo
 		if err != nil {
 			return false, err
 		}
+
 		toAddress, err := common.AddressFromBase58(util.TrimBuffToString(toAddressBytes))
 		state.To = toAddress
 		//tmpbytes[12:16] is padding
 		amount := binary.LittleEndian.Uint64(tmpbytes[16:])
 		state.Value = big.NewInt(int64(amount))
-
 		states[i] = state
 	}
 
@@ -210,16 +212,20 @@ func (this *WasmVmService) callCcntmract(engine *exec.ExecutionEngine) (bool, er
 	}
 
 	//get ccntmract code
+
 	codeIdx := params[1]
+
 	offchainCcntmractCode, err := vm.GetPointerMemory(codeIdx)
 	if err != nil {
 		return false, errors.NewErr("[callCcntmract]get Ccntmract address failed:" + err.Error())
 	}
 
-	if offchainCcntmractCode != nil {
-		ccntmractBytes, err = common.HexToBytes(util.TrimBuffToString(offchainCcntmractCode))
+
+	if offchainCcntmractCode != nil{
+		ccntmractBytes,err = common.HexToBytes(util.TrimBuffToString(offchainCcntmractCode))
 		if err != nil {
-			return false, err
+			return false ,err
+
 		}
 		//compute the offchain code address
 		codestring := util.TrimBuffToString(offchainCcntmractCode)
@@ -245,7 +251,7 @@ func (this *WasmVmService) callCcntmract(engine *exec.ExecutionEngine) (bool, er
 
 	vm.RestoreCtx()
 	if envCall.GetReturns() {
-		if ccntmractAddress[0] == byte(vmtype.NEOVM) {
+		if ccntmractAddress[0] == byte(vmtypes.NEOVM) {
 			result = sccommon.ConvertNeoVmReturnTypes(result)
 		}
 		idx, err := vm.SetPointerMemory(result)
