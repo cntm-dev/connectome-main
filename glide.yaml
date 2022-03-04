@@ -42,5 +42,6 @@ import:
 - package: github.com/cntmio/cntmology-go-sdk
 - package: google.golang.org/genproto
   repo: https://github.com/google/go-genproto.git
+- package: github.com/cntmio/cntmology-crypto
 ignore:
   - golang.org/x/sys/unix

@@ -33,6 +33,7 @@ import (
 	cmdCom "github.com/cntmio/cntmology/cmd/common"
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/password"
 	"github.com/cntmio/cntmology/core/signature"
 	ctypes "github.com/cntmio/cntmology/core/types"
 	cutils "github.com/cntmio/cntmology/core/utils"
@@ -101,7 +102,7 @@ func signTransaction(signer *account.Account, tx *ctypes.Transaction) error {
 }
 
 func transferAsset(ctx *cli.Ccntmext) error {
-	if !ctx.IsSet(utils.CcntmractAddrFlag.Name) || !ctx.IsSet(utils.TransactionFromFlag.Name) || !ctx.IsSet(utils.TransactionToFlag.Name) || !ctx.IsSet(utils.TransactionValueFlag.Name) || !ctx.IsSet(utils.UserPasswordFlag.Name) {
+	if !ctx.IsSet(utils.CcntmractAddrFlag.Name) || !ctx.IsSet(utils.TransactionFromFlag.Name) || !ctx.IsSet(utils.TransactionToFlag.Name) || !ctx.IsSet(utils.TransactionValueFlag.Name) {
 		showAssetTransferHelp()
 		return nil
 	}
@@ -174,9 +175,18 @@ func transferAsset(ctx *cli.Ccntmext) error {
 
 	tx.Nonce = uint32(time.Now().Unix())
 
-	passwd := ctx.GlobalString(utils.UserPasswordFlag.Name)
+	var passwd []byte
+	if ctx.IsSet(utils.UserPasswordFlag.Name) {
+		passwd = []byte(ctx.GlobalString(utils.UserPasswordFlag.Name))
+	} else {
+		passwd, err = password.GetAccountPassword()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return errors.New("input password error")
+		}
+	}
 
-	acct := account.Open(account.WALLET_FILENAME, []byte(passwd))
+	acct := account.Open(account.WALLET_FILENAME, passwd)
 	acc := acct.GetDefaultAccount()
 
 	if err := signTransaction(acc, tx); err != nil {
