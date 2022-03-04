@@ -70,6 +70,9 @@ func OntTransfer(native *NativeService) error {
 	}
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
 	for _, v := range transfers.States {
+		if v.Value.Sign() == 0 {
+			ccntminue
+		}
 		fromBalance, toBalance, err := transfer(native, ccntmract, v)
 		if err != nil {
 			return err
@@ -103,6 +106,9 @@ func OntTransferFrom(native *NativeService) error {
 	if err := state.Deserialize(bytes.NewBuffer(native.Input)); err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[OntTransferFrom] State deserialize error!")
 	}
+	if state.Value.Sign() == 0 {
+		return nil
+	}
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
 	if err := transferFrom(native, ccntmract, state); err != nil {
 		return err
@@ -115,6 +121,9 @@ func OntApprove(native *NativeService) error {
 	state := new(states.State)
 	if err := state.Deserialize(bytes.NewBuffer(native.Input)); err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[OngApprove] state deserialize error!")
+	}
+	if state.Value.Sign() == 0 {
+		return nil
 	}
 	if err := isApproveValid(native, state); err != nil {
 		return err

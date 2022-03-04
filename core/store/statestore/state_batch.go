@@ -42,7 +42,7 @@ func NewStateStoreBatch(memoryStore common.MemoryCacheStore, store common.Persis
 }
 
 func (self *StateBatch) Find(prefix common.DataEntryPrefix, key []byte) ([]*common.StateItem, error) {
-	var states []*common.StateItem
+	var sts []*common.StateItem
 	bp := []byte{byte(prefix)}
 	iter := self.store.NewIterator(append(bp, key...))
 	defer iter.Release()
@@ -55,16 +55,16 @@ func (self *StateBatch) Find(prefix common.DataEntryPrefix, key []byte) ([]*comm
 			if err != nil {
 				return nil, err
 			}
-			states = append(states, &common.StateItem{Key: string(keyV), Value: state})
+			sts = append(sts, &common.StateItem{Key: string(keyV), Value: state})
 		}
 	}
 	keyP := string(append(bp, key...))
 	for _, v := range self.memoryStore.Find() {
 		if v.State != common.Deleted && strings.HasPrefix(v.Key, keyP) {
-			states = append(states, v.Copy())
+			sts = append(sts, v.Copy())
 		}
 	}
-	return states, nil
+	return sts, nil
 }
 
 func (self *StateBatch) TryAdd(prefix common.DataEntryPrefix, key []byte, value states.StateValue) {

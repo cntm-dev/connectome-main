@@ -36,27 +36,24 @@ var (
 	CcntmractCommand = cli.Command{
 		Name:         "ccntmract",
 		Action:       utils.MigrateFlags(ccntmractCommand),
-		Usage:        "cntmology ccntmract [invoke|deploy] [OPTION]",
-		Category:     "CcntmRACT COMMANDS",
+		Usage:        "Deploy or invoke smart ccntmract",
 		OnUsageError: ccntmractUsageError,
-		Description:  `account command`,
+		Description:  `Deploy or invoke smart ccntmract`,
 		Subcommands: []cli.Command{
 			{
 				Action:       utils.MigrateFlags(invokeCcntmract),
 				Name:         "invoke",
 				OnUsageError: invokeUsageError,
-				Usage:        "cntmology invoke [OPTION]\n",
+				Usage:        "Invoke a deployed smart ccntmract",
 				Flags:        append(NodeFlags, CcntmractFlags...),
-				Category:     "CcntmRACT COMMANDS",
 				Description:  ``,
 			},
 			{
 				Action:       utils.MigrateFlags(deployCcntmract),
 				OnUsageError: deployUsageError,
 				Name:         "deploy",
-				Usage:        "cntmology deploy [OPTION]\n",
+				Usage:        "Deploy a smart ccntmract to the chain",
 				Flags:        append(NodeFlags, CcntmractFlags...),
-				Category:     "CcntmRACT COMMANDS",
 				Description:  ``,
 			},
 		},
@@ -86,7 +83,8 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 		return nil
 	}
 
-	client := account.GetClient(ctx)
+	wallet := ctx.GlobalString(utils.WalletNameFlag.Name)
+	client := account.Open(wallet, nil)
 	if client == nil {
 		fmt.Println("Can't get local account")
 		return errors.New("Get client is nil")
@@ -148,7 +146,8 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 		return errors.New("Parameter is err")
 	}
 
-	client := account.GetClient(ctx)
+	wallet := ctx.GlobalString(utils.WalletNameFlag.Name)
+	client := account.Open(wallet, nil)
 	if nil == client {
 		fmt.Println("Can't get local account.")
 		return errors.New("Get client return nil")
