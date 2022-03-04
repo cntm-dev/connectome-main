@@ -29,6 +29,7 @@ import (
 
 	"github.com/urfave/cli"
 
+	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/account"
 	clicommon "github.com/cntmio/cntmology/cli/common"
 	"github.com/cntmio/cntmology/common"
@@ -36,10 +37,9 @@ import (
 	ctypes "github.com/cntmio/cntmology/core/types"
 	cutils "github.com/cntmio/cntmology/core/utils"
 	"github.com/cntmio/cntmology/http/base/rpc"
-	"github.com/cntmio/cntmology/smartccntmract/states"
 	nstates "github.com/cntmio/cntmology/smartccntmract/service/native/states"
+	"github.com/cntmio/cntmology/smartccntmract/states"
 	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
-	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
 func transferAction(c *cli.Ccntmext) error {

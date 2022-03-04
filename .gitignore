@@ -17,6 +17,8 @@ vendor/*
 Chain/*
 /config/*
 nodectl
+cntmology
+wallet.dat
 cscope*
 *.exe
 **/*.log

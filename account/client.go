@@ -33,6 +33,7 @@ import (
 	"github.com/cntmio/cntmology-crypto/aes"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	s "github.com/cntmio/cntmology-crypto/signature"
+	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
@@ -40,6 +41,7 @@ import (
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/net/protocol"
+	"github.com/urfave/cli"
 )
 
 const (
@@ -416,8 +418,14 @@ func nodeType(typeName string) int {
 	}
 }
 
-func GetClient() Client {
-	if !common.FileExisted(WALLET_FILENAME) {
+func GetClient(ctx *cli.Ccntmext) Client {
+	wallet := ctx.GlobalString(utils.WalletNameFlag.Name)
+	if "" != wallet && !common.FileExisted(wallet) {
+		log.Fatal(fmt.Sprintf("No %s detected, please use a wallet existed.", wallet))
+		os.Exit(1)
+	}
+
+	if "" == wallet && !common.FileExisted(WALLET_FILENAME) {
 		log.Fatal(fmt.Sprintf("No %s detected, please create a wallet by using command line.", WALLET_FILENAME))
 		os.Exit(1)
 	}
@@ -426,11 +434,15 @@ func GetClient() Client {
 		log.Fatal("Get password error.")
 		os.Exit(1)
 	}
-	c := Open(WALLET_FILENAME, passwd)
-	if c == nil {
-		return nil
+
+	var client Client
+	if "" != wallet {
+		client = Open(wallet, passwd)
+	} else {
+		client = Open(WALLET_FILENAME, passwd)
 	}
-	return c
+
+	return client
 }
 
 func GetBookkeepers() []keypair.PublicKey {
@@ -455,8 +467,6 @@ func doubleHash(pwd []byte) []byte {
 	pwdhash := sha256.Sum256(pwd)
 	pwdhash2 := sha256.Sum256(pwdhash[:])
 
-	// Fixme clean the password buffer
-	// clearBytes(pwd,len(pwd))
 	clearBytes(pwdhash[:], 32)
 
 	return pwdhash2[:]
