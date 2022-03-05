@@ -50,6 +50,7 @@ type SmartCcntmract struct {
 	Store         store.LedgerStore   // ledger store
 	Config        *Config
 	Engine        Engine
+	Code          stypes.VmCode
 	Notifications []*event.NotifyEventInfo // all execute smart ccntmract event notify info
 }
 
@@ -108,15 +109,36 @@ func (this *SmartCcntmract) PushNotifications(notifications []*event.NotifyEvent
 // Execute is smart ccntmract execute manager
 // According different vm type to launch different service
 func (this *SmartCcntmract) Execute() (interface{}, error) {
-	ctx := this.CurrentCcntmext()
 	var engine Engine
-	switch ctx.Code.VmType {
+	switch this.Code.VmType {
 	case stypes.Native:
-		engine = native.NewNativeService(this.CloneCache, this.Config.Height, this.Config.Tx, this)
+		service := &native.NativeService{
+			CloneCache: this.CloneCache,
+			Code:       this.Code.Code,
+			Tx:         this.Config.Tx,
+			Height:     this.Config.Height,
+			CcntmextRef: this,
+		}
+		service.InitService()
+		engine = service
 	case stypes.NEOVM:
-		engine = neovm.NewNeoVmService(this.Store, this.CloneCache, this.Config.Tx, this.Config.Time, this)
+		engine = &neovm.NeoVmService{
+			Store:      this.Store,
+			CloneCache: this.CloneCache,
+			CcntmextRef: this,
+			Code:       this.Code.Code,
+			Tx:         this.Config.Tx,
+			Time:       this.Config.Time,
+		}
 	case stypes.WASMVM:
-		engine = wasmvm.NewWasmVmService(this.Store, this.CloneCache, this.Config.Tx, this.Config.Time, this)
+		engine = &wasmvm.WasmVmService{
+			Store:      this.Store,
+			CloneCache: this.CloneCache,
+			CcntmextRef: this,
+			Code:       this.Code.Code,
+			Tx:         this.Config.Tx,
+			Time:       this.Config.Time,
+		}
 	default:
 		return nil, ENGINE_NOT_SUPPORT
 	}
@@ -155,6 +177,8 @@ func (this *SmartCcntmract) AppCall(address common.Address, method string, codes
 		}
 		temp = append(args, build.ToArray()...)
 		code = append(temp, c...)
+		vmCode := stypes.VmCode{Code: c, VmType: stypes.NEOVM}
+		this.PushCcntmext(&ccntmext.Ccntmext{CcntmractAddress: vmCode.AddressFromVmCode()})
 	case stypes.WASMVM:
 		c, err := this.loadCode(address, codes)
 		if err != nil {
@@ -174,18 +198,12 @@ func (this *SmartCcntmract) AppCall(address common.Address, method string, codes
 		code = bf.Bytes()
 	}
 
-	this.PushCcntmext(&ccntmext.Ccntmext{
-		Code: stypes.VmCode{
-			Code:   code,
-			VmType: vmType,
-		},
-		CcntmractAddress: address,
-	})
+	this.Code = stypes.VmCode{Code: code, VmType: vmType}
 	res, err := this.Execute()
 	if err != nil {
 		return nil, err
 	}
-	this.PopCcntmext()
+
 	return res, nil
 }
 

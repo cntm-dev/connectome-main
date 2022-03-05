@@ -164,7 +164,7 @@ func (msg version) Handle(node protocol.Noder) error {
 	}
 
 	// Obsolete node
-	n, ret := localNode.DelNbrNode(msg.P.Nonce)
+	n, ret := localNode.OnDelNode(msg.P.Nonce)
 	if ret == true {
 		log.Info(fmt.Sprintf("Node reconnect 0x%x", msg.P.Nonce))
 		// Close the connection and release the node soure

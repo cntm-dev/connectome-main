@@ -30,7 +30,6 @@ import (
 	"github.com/cntmio/cntmology/core/store/statestore"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract"
-	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
 	stypes "github.com/cntmio/cntmology/smartccntmract/types"
@@ -74,21 +73,13 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 		Tx:     tx,
 	}
 
-	//init smart ccntmract ccntmext info
-	ctx := &ccntmext.Ccntmext{
-		Code:            invoke.Code,
-		CcntmractAddress: invoke.Code.AddressFromVmCode(),
-	}
-
 	//init smart ccntmract info
 	sc := smartccntmract.SmartCcntmract{
 		Config:     config,
 		CloneCache: storage.NewCloneCache(stateBatch),
 		Store:      store,
+		Code:       invoke.Code,
 	}
-
-	//load current ccntmext to smart ccntmract
-	sc.PushCcntmext(ctx)
 
 	//start the smart ccntmract executive function
 	if _, err := sc.Execute(); err != nil {

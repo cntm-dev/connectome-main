@@ -9,15 +9,41 @@
 
 English | [中文](testnet_CN.md) 
 
-# Server deployment
-
+## Server deployment
+### Select network
 To run Ontology successfully,  nodes can be deployed by two ways:
 
+- Public test network(Polaris) sync node deployment
 - Single-host deployment
 - Multi-hosts deployment
-  - Deploy nodes on the public test network
 
-### Single-host deployment configuration
+#### Public test network(Polaris) sync node deployment
+1.Create account
+- Through command line program, create wallet wallet.dat needed for node implementation.
+    ```
+    $ .\cntmology account add -d
+    use default value for all options
+    Enter a password for encrypting the private key:
+    Re-enter password:
+    
+    Create account successfully.
+    Address:  TA9TVuR4Ynn4VotfpExY5SaEy8a99obFPr
+    Public key: 120202a1cfbe3a0a04183d6c25ceff1e34957ace6e4899e4361c2e1a2bc3c817f90936
+    Signature scheme: SHA256withECDSA
+    ```
+    Here's a example of host configuration:
+   
+    Directory structure
+    ```shell
+    $ tree
+    └── cntmology
+        ├── cntmology
+        └── wallet.dat
+    ```        
+2.Start cntmology  
+  PS: There is no need of config.json file, will use the default setting.
+
+#### Single-host deployment configuration
 
 Create a directory on the host and store the following files in the directory:
 
@@ -29,20 +55,20 @@ Create a directory on the host and store the following files in the directory:
 Here's a example of single-host configuration:
 
 - Directory structure
-```shell
-$ tree
-└── cntmology
-    ├── config.json
-    ├── cntmology
-    └── wallet.dat
-```
+    ```shell
+    $ tree
+    └── cntmology
+        ├── config.json
+        ├── cntmology
+        └── wallet.dat
+    ```
 
-Bookkeepers in the config.json file:
-```
-"Bookkeepers": [ "1202021c6750d2c5d99813997438cee0740b04a73e42664c444e778e001196eed96c9d" ],
-```
+- Set bookkeepers in the config.json file:
+    ```
+    "Bookkeepers": [ "(public key of your account)1202021c6750d2c5d99813997438cee0740b04a73e42664c444e778e001196eed96c9d" ],
+    ```
 
-### Multi-hosts deployment configuration
+#### Multi-hosts deployment configuration
 
 We can perform a quick deployment by modifying the default configuration file `config.json`.
 
@@ -63,10 +89,17 @@ We can perform a quick deployment by modifying the default configuration file `c
 4. Create wallet file
 
    - Through command line program, on each host create wallet wallet.dat needed for node implementation.
-
-     `$ ./cntmology wallet create --name=wallet.dat`
-
-     Note: Set wallet password by parameter -p.
+        ```
+        $ .\cntmology account add -d
+        use default value for all options
+        Enter a password for encrypting the private key:
+        Re-enter password:
+        
+        Create account successfully.
+        Address:  TA9TVuR4Ynn4VotfpExY5SaEy8a99obFPr
+        Public key: 120202a1cfbe3a0a04183d6c25ceff1e34957ace6e4899e4361c2e1a2bc3c817f90936
+        Signature scheme: SHA256withECDSA
+        ```
 
 5. Bookkeepers configuration
 
@@ -74,57 +107,27 @@ We can perform a quick deployment by modifying the default configuration file `c
 
      Note: The public key information for each node's wallet can also be viewed via the command line program:
 
-     `$ ./cntmology wallet show --name=wallet.dat`
+        ```
+        $ .\cntmology account list -v
+        * 1     TA9TVuR4Ynn4VotfpExY5SaEy8a99obFPr
+                Signature algorithm: ECDSA
+                Curve: P-256
+                Key length: 256 bit
+                Public key: 120202a1cfbe3a0a04183d6c25ceff1e34957ace6e4899e4361c2e1a2bc3c817f90936 bit
+                Signature scheme: SHA256withECDSA
+        ```
 
-Now multi-host configuration is completed, directory structure of each node is as follows:
+        Now multi-host configuration is completed, directory structure of each node is as follows:
+        ```
+        $ ls
+        config.json cntmology wallet.dat
+        ```
 
-```
-$ ls
-config.json cntmology wallet.dat
-```
-
-A configuration file fragment is as follows, you refer to the config.json file in the root directory.
-
-### Deploy nodes on public test network (default config)
-
-Start with the following configuration file to connect to the current cntm test network.
-
-```
-$ cat config.json
-{
-  "Configuration": {
-    "Magic": 7630401,
-    "Version": 23,
-    "SeedList": [
-	   "139.219.108.204:20338",
-	   "139.219.111.50:20338",
-	   "139.219.69.70:20338",
-	   "40.125.165.118:20338"
-    ],
-    "Bookkeepers": [
-"1202021c6750d2c5d99813997438cee0740b04a73e42664c444e778e001196eed96c9d",
-"12020339541a43af2206358714cf6bd385fc9ac8b5df554fec5497d9e947d583f985fc",
-"120203bdf0d966f98ff4af5c563c4a3e2fe499d98542115e1ffd75fbca44b12c56a591",
-"1202021401156f187ec23ce631a489c3fa17f292171009c6c3162ef642406d3d09c74d"
-    ],
-    "HttpRestPort": 20334,
-    "HttpWsPort":20335,
-    "HttpJsonPort": 20336,
-    "HttpLocalPort": 20337,
-    "NodePort": 20338,
-    "NodeConsensusPort": 20339,
-    "PrintLevel": 1,
-    "IsTLS": false,
-    "MaxTransactionInBlock": 60000,
-    "MultiCoreNum": 4
-  }
-}
-```
+A configuration file fragment can refer to the config-dbft.json file in the root directory.
 
 ### Implement
 
 Run each node program in any order and enter the node's wallet password after the `Password:` prompt appears.
-
 ```
 $ ./cntmology
 $ - Input your wallet password
@@ -132,12 +135,23 @@ $ - Input your wallet password
 
 Run `./cntmology --help` for details.
 
-# Examples
-## Ccntmract
-[Smart ccntmract guide](https://github.com/cntmio/documentation/tree/master/smart-ccntmract-tutorial)
-
-## cntm transfer sample
-  ccntmract:ccntmract address； - from: transfer from； - to: transfer to； - value: amount；
+### cntm transfer sample
+ccntmract:ccntmract address； - from: transfer from； - to: transfer to； - value: amount；
 ```shell
   .\cntmology asset transfer --caddr=ff00000000000000000000000000000000000001 --value=500 --from  TA6nAAdX77wcsAnuBQxG61zXg3vJUAPpgk  --to TA6Hsjww86b9KBbXFyKEayMcVVafoTGH4K  --password=xxx
+```
+If transfer asset successd, the result will show as follow:
+```
+[
+	{
+		"CcntmractAddress": "ff00000000000000000000000000000000000001",
+		"TxHash": "e0ba3d5807289eac243faceb1a2ac63e8dee4eba208ceac193b0bd606861b729",
+		"States": [
+			"transfer",
+			"TA6nAAdX77wcsAnuBQxG61zXg3vJUAPpgk",
+			"TA6Hsjww86b9KBbXFyKEayMcVVafoTGH4K",
+			500
+		]
+	}
+]
 ```

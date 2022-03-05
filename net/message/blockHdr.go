@@ -30,6 +30,7 @@ import (
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/net/actor"
 	"github.com/cntmio/cntmology/net/protocol"
+	"fmt"
 )
 
 type hdrHashReq struct {
@@ -197,7 +198,7 @@ func (msg blkHeader) Handle(node protocol.Noder) error {
 	for i = 0; i < msg.cnt; i++ {
 		blkHdr = append(blkHdr, &msg.blkHdr[i])
 	}
-	actor.AddHeaders(blkHdr)
+	node.LocalNode().OnHeaderReceive(blkHdr)
 	return nil
 }
 
@@ -207,7 +208,10 @@ func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]ty
 	headers := []types.Header{}
 	var startHeight uint32
 	var stopHeight uint32
-	curHeight, _ := actor.GetCurrentHeaderHeight()
+	curHeight, err := actor.GetCurrentHeaderHeight()
+	if err != nil {
+		return nil, 0, fmt.Errorf("GetCurrentHeaderHeight error:%s", err)
+	}
 	if startHash == empty {
 		if stopHash == empty {
 			if curHeight > protocol.MAX_BLK_HDR_CNT {
@@ -265,6 +269,9 @@ func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]ty
 		if err != nil {
 			log.Errorf("GetBlockHashByHeight failed with err=%s, hash=%x,height=%d\n", err.Error(), hash, stopHeight+i)
 			return nil, 0, err
+		}
+		if hash == common.UINT256_EMPTY{
+			break
 		}
 		hd, err := actor.GetHeaderByHash(hash)
 		if err != nil || hd == nil {

@@ -9,7 +9,7 @@
 
 [English](install.md) | 中文
 
-# 构建开发环境
+## 构建开发环境
 成功编译cntmology需要以下准备：
 
 * Golang版本在1.9及以上
@@ -17,8 +17,7 @@
 * 正确的Go语言开发环境
 * Golang所支持的操作系统
 
-# 部署
-## 获取cntmology
+## 部署|获取cntmology
 ### 从源码获取
 克隆cntmology仓库到 **$GOPATH/src/github.com/cntmio** 目录
 

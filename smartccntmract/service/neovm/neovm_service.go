@@ -20,6 +20,7 @@ package neovm
 
 import (
 	"math/big"
+	"fmt"
 
 	vmtype "github.com/cntmio/cntmology/vm/neovm/types"
 	"github.com/cntmio/cntmology/core/store"
@@ -107,32 +108,18 @@ type NeoVmService struct {
 	CloneCache    *storage.CloneCache
 	CcntmextRef    ccntmext.CcntmextRef
 	Notifications []*event.NotifyEventInfo
+	Code          []byte
 	Tx            *types.Transaction
 	Time          uint32
-}
-
-// NewNeoVmService return a new neovm service
-func NewNeoVmService(store store.LedgerStore, cache *storage.CloneCache, tx *types.Transaction, time uint32, ctxRef ccntmext.CcntmextRef) *NeoVmService {
-	var service NeoVmService
-	service.Store = store
-	service.CloneCache = cache
-	service.Time = time
-	service.Tx = tx
-	service.CcntmextRef = ctxRef
-	return &service
 }
 
 // Invoke a smart ccntmract
 func (this *NeoVmService) Invoke() (interface{}, error) {
 	engine := vm.NewExecutionEngine()
-	ctx := this.CcntmextRef.CurrentCcntmext()
-	if ctx == nil {
-		return nil, ERR_CURRENT_CcntmEXT_NIL
-	}
-	if len(ctx.Code.Code) == 0 {
+	if len(this.Code) == 0 {
 		return nil, ERR_EXECUTE_CODE
 	}
-	engine.PushCcntmext(vm.NewExecutionCcntmext(engine, ctx.Code.Code))
+	engine.PushCcntmext(vm.NewExecutionCcntmext(engine, this.Code))
 	for {
 		if len(engine.Ccntmexts) == 0 || engine.Ccntmext == nil {
 			break
@@ -159,7 +146,7 @@ func (this *NeoVmService) Invoke() (interface{}, error) {
 			if err := this.SystemCall(engine); err != nil {
 				return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] service system call error!")
 			}
-		case vm.APPCALL:
+		case vm.APPCALL, vm.TAILCALL:
 			c := new(states.Ccntmract)
 			if err := c.Deserialize(engine.Ccntmext.OpReader.Reader()); err != nil {
 				return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] get ccntmract parameters error!")
@@ -189,7 +176,7 @@ func (this *NeoVmService) SystemCall(engine *vm.ExecutionEngine) error {
 	serviceName := engine.Ccntmext.OpReader.ReadVarString()
 	service, ok := ServiceMap[serviceName]
 	if !ok {
-		return errors.NewErr("[SystemCall] service not support!")
+		return errors.NewErr(fmt.Sprintf("[SystemCall] service not support: %s", serviceName))
 	}
 	if service.Validator != nil {
 		if err := service.Validator(engine); err != nil {

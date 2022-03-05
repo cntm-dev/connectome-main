@@ -26,19 +26,9 @@ type WasmVmService struct {
 	CloneCache    *storage.CloneCache
 	CcntmextRef    ccntmext.CcntmextRef
 	Notifications []*event.NotifyEventInfo
+	Code          []byte
 	Tx            *types.Transaction
 	Time          uint32
-}
-
-func NewWasmVmService(store store.LedgerStore, cache *storage.CloneCache, tx *types.Transaction,
-	time uint32, ctxRef ccntmext.CcntmextRef) *WasmVmService {
-	var service WasmVmService
-	service.Store = store
-	service.CloneCache = cache
-	service.Time = time
-	service.Tx = tx
-	service.CcntmextRef = ctxRef
-	return &service
 }
 
 func (this *WasmVmService) Invoke() (interface{}, error) {
@@ -47,7 +37,6 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	stateMachine.Register("CallCcntmract", this.callCcntmract)
 	stateMachine.Register("MarshalNativeParams", this.marshalNativeParams)
 
-	ctx := this.CcntmextRef.CurrentCcntmext()
 	engine := exec.NewExecutionEngine(
 		this.Tx,
 		new(util.ECDsaCrypto),
@@ -55,7 +44,7 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	)
 
 	ccntmract := &states.Ccntmract{}
-	ccntmract.Deserialize(bytes.NewBuffer(ctx.Code.Code))
+	ccntmract.Deserialize(bytes.NewBuffer(this.Code))
 	addr := ccntmract.Address
 
 	if ccntmract.Code == nil {
@@ -72,6 +61,7 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	} else {
 		caller = this.CcntmextRef.CallingCcntmext().CcntmractAddress
 	}
+	this.CcntmextRef.PushCcntmext(&ccntmext.Ccntmext{CcntmractAddress: ccntmract.Address})
 	res, err := engine.Call(caller, ccntmract.Code, ccntmract.Method, ccntmract.Args, ccntmract.Version)
 
 	if err != nil {
@@ -83,8 +73,7 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	//commit outside
-	//this.CloneCache.Commit()
+	this.CcntmextRef.PopCcntmext()
 	this.CcntmextRef.PushNotifications(stateMachine.Notifications)
 	return result, nil
 }
@@ -132,7 +121,7 @@ func (this *WasmVmService) marshalNativeParams(engine *exec.ExecutionEngine) (bo
 	states := make([]*nstates.State, statecnt)
 
 	for i := 0; i < statecnt; i++ {
-		tmpbytes := statesbytes[i*24 : (i+1)*24]
+		tmpbytes := statesbytes[i * 24 : (i + 1) * 24]
 		state := &nstates.State{}
 		state.Version = byte(binary.LittleEndian.Uint32(tmpbytes[:4]))
 		fromAddessBytes, err := vm.GetPointerMemory(uint64(binary.LittleEndian.Uint32(tmpbytes[4:8])))
