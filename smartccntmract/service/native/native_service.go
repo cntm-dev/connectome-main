@@ -57,10 +57,6 @@ type NativeService struct {
 	CcntmextRef    ccntmext.CcntmextRef
 }
 
-func (this *NativeService) InitService() {
-	this.ServiceMap = make(map[string]Handler)
-}
-
 func (this *NativeService) Register(methodName string, handler Handler) {
 	this.ServiceMap[methodName] = handler
 }

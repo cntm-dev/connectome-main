@@ -37,7 +37,6 @@ import (
 	"github.com/cntmio/cntmology/events/message"
 	"github.com/cntmio/cntmology/smartccntmract"
 	scommon "github.com/cntmio/cntmology/smartccntmract/common"
-	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
 	vmtype "github.com/cntmio/cntmology/smartccntmract/types"
@@ -936,21 +935,13 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (interfac
 		Tx:     tx,
 	}
 
-	//init smart ccntmract ccntmext info
-	ctx := &ccntmext.Ccntmext{
-		Code:            invoke.Code,
-		CcntmractAddress: invoke.Code.AddressFromVmCode(),
-	}
-
 	//init smart ccntmract info
 	sc := smartccntmract.SmartCcntmract{
 		Config:     config,
 		Store:      this,
 		CloneCache: storage.NewCloneCache(this.stateStore.NewStateBatch()),
+		Code:       invoke.Code,
 	}
-
-	//load current ccntmext to smart ccntmract
-	sc.PushCcntmext(ctx)
 
 	//start the smart ccntmract executive function
 	result, err := sc.Execute()
@@ -958,10 +949,10 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (interfac
 		return nil, err
 	}
 
-	prefix := ctx.CcntmractAddress[0]
-	if prefix == byte(vmtype.NEOVM) {
+	prefix := invoke.Code.VmType
+	if prefix == vmtype.NEOVM {
 		result = scommon.ConvertNeoVmTypeHexString(result)
-	} else if prefix == byte(vmtype.WASMVM) {
+	} else if prefix == vmtype.WASMVM {
 		if v, ok := result.([]byte); ok {
 			result = common.ToHexString(v)
 		}
