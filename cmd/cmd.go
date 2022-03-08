@@ -66,7 +66,7 @@ func restfulAddr() string {
 func init() {
 	cntmSdk = sdk.NewOntologySdk()
 	cntmSdk.Rpc.SetAddress(rpcAddress())
-	cli.AppHelpTemplate = AppHelpTemplate
+	//cli.AppHelpTemplate = AppHelpTemplate
 }
 
 // flagGroup is a collection of flags belcntming to a single topic.
@@ -77,27 +77,6 @@ type flagGroup struct {
 
 // AppHelpFlagGroups is the application flags, grouped by functionality.
 var AppHelpFlagGroups = []flagGroup{
-	{
-		Name: "cntmOLOGY WALLET CREATE",
-		Flags: []cli.Flag{
-			utils.WalletNameFlag,
-		},
-	},
-
-	{
-		Name: "cntmOLOGY WALLET SHOW",
-		Flags: []cli.Flag{
-			utils.NonOptionFlag,
-		},
-	},
-
-	{
-		Name: "cntmOLOGY WALLET BALANCE",
-		Flags: []cli.Flag{
-			utils.WalletAddrFlag,
-		},
-	},
-
 	{
 		Name: "cntmOLOGY INFO BLOCK",
 		Flags: []cli.Flag{
@@ -134,7 +113,7 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.TransactionToFlag,
 			utils.TransactionValueFlag,
 			utils.CcntmractAddrFlag,
-			utils.UserPasswordFlag,
+			utils.AccountPassFlag,
 		},
 	},
 

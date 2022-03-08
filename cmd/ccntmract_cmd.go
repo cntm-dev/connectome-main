@@ -23,11 +23,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"os"
 	"time"
 
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/password"
 	"github.com/cntmio/cntmology/smartccntmract/types"
 	"github.com/urfave/cli"
 )
@@ -37,6 +39,7 @@ var (
 		Name:         "ccntmract",
 		Action:       utils.MigrateFlags(ccntmractCommand),
 		Usage:        "Deploy or invoke smart ccntmract",
+		ArgsUsage:    " ",
 		OnUsageError: ccntmractUsageError,
 		Description:  `Deploy or invoke smart ccntmract`,
 		Subcommands: []cli.Command{
@@ -45,52 +48,92 @@ var (
 				Name:         "invoke",
 				OnUsageError: invokeUsageError,
 				Usage:        "Invoke a deployed smart ccntmract",
-				Flags:        append(NodeFlags, CcntmractFlags...),
-				Description:  ``,
+				ArgsUsage:    " ",
+				Flags: []cli.Flag{
+					utils.CcntmractAddrFlag,
+					utils.CcntmractParamsFlag,
+					utils.AccountFileFlag,
+					utils.AccountPassFlag,
+				},
+				Description: ``,
 			},
 			{
 				Action:       utils.MigrateFlags(deployCcntmract),
 				OnUsageError: deployUsageError,
 				Name:         "deploy",
 				Usage:        "Deploy a smart ccntmract to the chain",
-				Flags:        append(NodeFlags, CcntmractFlags...),
-				Description:  ``,
+				ArgsUsage:    " ",
+				Flags: []cli.Flag{
+					utils.CcntmractVmTypeFlag,
+					utils.CcntmractStorageFlag,
+					utils.CcntmractCodeFlag,
+					utils.CcntmractNameFlag,
+					utils.CcntmractVersionFlag,
+					utils.CcntmractAuthorFlag,
+					utils.CcntmractEmailFlag,
+					utils.CcntmractDescFlag,
+					utils.AccountFileFlag,
+					utils.AccountPassFlag,
+				},
+				Description: ``,
 			},
 		},
 	}
 )
 
 func ccntmractCommand(ctx *cli.Ccntmext) error {
-	showCcntmractHelp()
+	cli.ShowSubcommandHelp(ctx)
 	return nil
 }
 
 func ccntmractUsageError(ccntmext *cli.Ccntmext, err error, isSubcommand bool) error {
-	fmt.Println(err.Error())
-	showCcntmractHelp()
+	fmt.Println(err.Error(), "\n")
+	cli.ShowSubcommandHelp(ccntmext)
 	return nil
 }
 
 func invokeUsageError(ccntmext *cli.Ccntmext, err error, isSubcommand bool) error {
-	fmt.Println(err.Error())
-	showInvokeHelp()
+	fmt.Println(err.Error(), "\n")
+	cli.ShowSubcommandHelp(ccntmext)
 	return nil
 }
 
 func invokeCcntmract(ctx *cli.Ccntmext) error {
 	if !ctx.IsSet(utils.CcntmractAddrFlag.Name) || !ctx.IsSet(utils.CcntmractParamsFlag.Name) {
-		showInvokeHelp()
+		fmt.Println("Missing argument.\n")
+		cli.ShowSubcommandHelp(ctx)
 		return nil
 	}
 
-	wallet := ctx.GlobalString(utils.WalletNameFlag.Name)
-	client := account.Open(wallet, nil)
+	var wallet = account.WALLET_FILENAME
+	if ctx.IsSet("file") {
+		wallet = ctx.String("file")
+	}
+	var passwd []byte
+	var err error
+	if ctx.IsSet("password") {
+		passwd = []byte(ctx.String("password"))
+	} else {
+		passwd, err = password.GetAccountPassword()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return errors.New("input password error")
+		}
+	}
+	client := account.Open(wallet, passwd)
+	for i, _ := range passwd {
+		passwd[i] = 0
+	}
 	if client == nil {
 		fmt.Println("Can't get local account")
 		return errors.New("Get client is nil")
 	}
 
 	acct := client.GetDefaultAccount()
+	if acct == nil {
+		fmt.Println("Can't get default account.")
+		return errors.New("Deploy ccntmract failed.")
+	}
 
 	ccntmractAddr := ctx.String(utils.CcntmractAddrFlag.Name)
 	params := ctx.String(utils.CcntmractParamsFlag.Name)
@@ -120,11 +163,11 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 	return err
 }
 
-func getVmType(vmType uint) types.VmType {
+func getVmType(vmType string) types.VmType {
 	switch vmType {
-	case 1:
+	case "neovm":
 		return types.NEOVM
-	case 2:
+	case "wasm":
 		return types.WASMVM
 	default:
 		return types.NEOVM
@@ -132,8 +175,8 @@ func getVmType(vmType uint) types.VmType {
 }
 
 func deployUsageError(ccntmext *cli.Ccntmext, err error, isSubcommand bool) error {
-	fmt.Println(err.Error())
-	showDeployHelp()
+	fmt.Println(err.Error(), "\n")
+	cli.ShowSubcommandHelp(ccntmext)
 	return nil
 }
 
@@ -142,21 +185,43 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 		!ctx.IsSet(utils.CcntmractCodeFlag.Name) || !ctx.IsSet(utils.CcntmractNameFlag.Name) ||
 		!ctx.IsSet(utils.CcntmractVersionFlag.Name) || !ctx.IsSet(utils.CcntmractAuthorFlag.Name) ||
 		!ctx.IsSet(utils.CcntmractEmailFlag.Name) || !ctx.IsSet(utils.CcntmractDescFlag.Name) {
-		showDeployHelp()
+		fmt.Println("Missing argument.\n")
+		cli.ShowSubcommandHelp(ctx)
 		return errors.New("Parameter is err")
 	}
 
-	wallet := ctx.GlobalString(utils.WalletNameFlag.Name)
-	client := account.Open(wallet, nil)
+	var wallet = account.WALLET_FILENAME
+	if ctx.IsSet("file") {
+		wallet = ctx.String("file")
+	}
+	var passwd []byte
+	var err error
+	if ctx.IsSet("password") {
+		passwd = []byte(ctx.String("password"))
+	} else {
+		passwd, err = password.GetAccountPassword()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return errors.New("input password error")
+		}
+	}
+	client := account.Open(wallet, passwd)
+	for i, _ := range passwd {
+		passwd[i] = 0
+	}
 	if nil == client {
-		fmt.Println("Can't get local account.")
+		fmt.Println("Error load wallet file", wallet)
 		return errors.New("Get client return nil")
 	}
 
 	acct := client.GetDefaultAccount()
+	if acct == nil {
+		fmt.Println("Can't get default account.")
+		return errors.New("Deploy ccntmract failed.")
+	}
 
 	store := ctx.Bool(utils.CcntmractStorageFlag.Name)
-	vmType := getVmType(ctx.Uint(utils.CcntmractVmTypeFlag.Name))
+	vmType := getVmType(ctx.String(utils.CcntmractVmTypeFlag.Name))
 
 	codeDir := ctx.String(utils.CcntmractCodeFlag.Name)
 	if "" == codeDir {

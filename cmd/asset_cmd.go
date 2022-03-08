@@ -34,6 +34,7 @@ import (
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/password"
+	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/signature"
 	ctypes "github.com/cntmio/cntmology/core/types"
 	cutils "github.com/cntmio/cntmology/core/utils"
@@ -49,34 +50,47 @@ var (
 		Name:         "asset",
 		Action:       utils.MigrateFlags(assetCommand),
 		Usage:        "Handle assets",
-		ArgsUsage:    "",
 		OnUsageError: assetUsageError,
 		Description:  `asset ccntmrol`,
 		Subcommands: []cli.Command{
 			{
-				Action:       utils.MigrateFlags(transferAsset),
+				Action:       transferAsset,
 				OnUsageError: transferAssetUsageError,
 				Name:         "transfer",
 				Usage:        "Transfer asset to another account",
-				Flags:        append(NodeFlags, CcntmractFlags...),
-				Description:  ``,
+				ArgsUsage:    " ",
+				Description:  `Transfer some asset to another account. Asset type is specified by its ccntmract address. Default is the cntm ccntmract.`,
+				Flags: []cli.Flag{
+					utils.CcntmractAddrFlag,
+					utils.TransactionFromFlag,
+					utils.TransactionToFlag,
+					utils.TransactionValueFlag,
+					utils.AccountPassFlag,
+					utils.AccountFileFlag,
+				},
 			},
 			{
-				Action:       utils.MigrateFlags(queryTransferStatus),
+				Action:       queryTransferStatus,
 				OnUsageError: transferAssetUsageError,
 				Name:         "status",
 				Usage:        "Display asset status",
-				Flags:        append(append(NodeFlags, CcntmractFlags...), InfoFlags...),
-				Description:  ``,
+				ArgsUsage:    "[address]",
+				Description:  `Display asset transfer status of [address] or the default account if not specified.`,
+				Flags: []cli.Flag{
+					cli.StringFlag{
+						Name:  "hash",
+						Usage: "Specifies transaction hash `<hash>`",
+					},
+				},
 			},
 			{
 				Action:       cntmBalance,
 				OnUsageError: balanceUsageError,
-				Name:         "cntm-balance",
+				Name:         "balance",
 				Usage:        "Show balance of cntm and cntm of specified account",
 				ArgsUsage:    "[address]",
 				Flags: []cli.Flag{
-					utils.UserPasswordFlag,
+					utils.AccountPassFlag,
 					utils.AccountFileFlag,
 				},
 			},
@@ -86,24 +100,28 @@ var (
 
 func assetUsageError(ccntmext *cli.Ccntmext, err error, isSubcommand bool) error {
 	fmt.Println(err.Error())
+	fmt.Println("")
 	cli.ShowSubcommandHelp(ccntmext)
 	return nil
 }
 
 func assetCommand(ctx *cli.Ccntmext) error {
-	showAssetHelp()
+	fmt.Println("Error usage.\n")
+	cli.ShowSubcommandHelp(ctx)
 	return nil
 }
 
 func transferAssetUsageError(ccntmext *cli.Ccntmext, err error, isSubcommand bool) error {
 	fmt.Println(err.Error())
-	showAssetTransferHelp()
+	fmt.Println("")
+	cli.ShowSubcommandHelp(ccntmext)
 	return nil
 }
 
 func balanceUsageError(ccntmext *cli.Ccntmext, err error, isSubcommand bool) error {
 	fmt.Println(err)
-	showAssetTransferHelp()
+	fmt.Println("")
+	cli.ShowSubcommandHelp(ccntmext)
 	return nil
 }
 
@@ -119,41 +137,78 @@ func signTransaction(signer *account.Account, tx *ctypes.Transaction) error {
 }
 
 func transferAsset(ctx *cli.Ccntmext) error {
-	if !ctx.IsSet(utils.CcntmractAddrFlag.Name) || !ctx.IsSet(utils.TransactionFromFlag.Name) || !ctx.IsSet(utils.TransactionToFlag.Name) || !ctx.IsSet(utils.TransactionValueFlag.Name) {
-		showAssetTransferHelp()
+	if !ctx.IsSet(utils.TransactionFromFlag.Name) || !ctx.IsSet(utils.TransactionToFlag.Name) || !ctx.IsSet(utils.TransactionValueFlag.Name) {
+		fmt.Println("Missing argument.\n")
+		cli.ShowSubcommandHelp(ctx)
 		return nil
 	}
-	ccntmract := ctx.GlobalString(utils.CcntmractAddrFlag.Name)
-	ct, err := common.HexToBytes(ccntmract)
-	if err != nil {
-		fmt.Println("Parase ccntmract address error, from hex to bytes")
-		return err
+	ctu := genesis.OntCcntmractAddress
+	if ctx.IsSet(utils.CcntmractAddrFlag.Name) {
+		ccntmract := ctx.String(utils.CcntmractAddrFlag.Name)
+		ct, err := common.HexToBytes(ccntmract)
+		if err != nil {
+			fmt.Println("Parase ccntmract address error, from hex to bytes")
+			return err
+		}
+
+		ctu, err = common.AddressParseFromBytes(ct)
+		if err != nil {
+			fmt.Println("Parase ccntmract address error, please use correct smart ccntmract address")
+			return err
+		}
 	}
 
-	ctu, err := common.AddressParseFromBytes(ct)
-	if err != nil {
-		fmt.Println("Parase ccntmract address error, please use correct smart ccntmract address")
-		return err
-	}
-
-	from := ctx.GlobalString(utils.TransactionFromFlag.Name)
+	from := ctx.String(utils.TransactionFromFlag.Name)
 	fu, err := common.AddressFromBase58(from)
 	if err != nil {
 		fmt.Println("Parase transfer-from address error, make sure you are using base58 address")
 		return err
 	}
 
-	to := ctx.GlobalString(utils.TransactionToFlag.Name)
+	to := ctx.String(utils.TransactionToFlag.Name)
 	tu, err := common.AddressFromBase58(to)
 	if err != nil {
 		fmt.Println("Parase transfer-to address error, make sure you are using base58 address")
 		return err
 	}
 
-	value := ctx.Int64(utils.TransactionValueFlag.Name)
+	value := ctx.Int64("value")
 	if value <= 0 {
 		fmt.Println("Value must be int type and bigger than zero. Invalid cntm amount: ", value)
 		return errors.New("Value is invalid")
+	}
+
+	var passwd []byte
+	var filename string = account.WALLET_FILENAME
+	if ctx.IsSet("file") {
+		filename = ctx.String("file")
+	}
+	if !common.FileExisted(filename) {
+		fmt.Println(filename, "not found.")
+		return errors.New("Asset transfer failed.")
+	}
+	if ctx.IsSet("password") {
+		passwd = []byte(ctx.String("password"))
+	} else {
+		passwd, err = password.GetAccountPassword()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return errors.New("input password error")
+		}
+	}
+	acct := account.Open(filename, passwd)
+	for i, _ := range passwd {
+		passwd[i] = 0
+	}
+	if nil == acct {
+		fmt.Println("Open account failed, please check your input password and make sure your wallet.dat exist")
+		return errors.New("Get Account Error")
+	}
+
+	acc := acct.GetAccountByAddress(fu)
+	if nil == acc {
+		fmt.Println("Get account by address error")
+		return errors.New("Get Account Error")
 	}
 
 	var sts []*nstates.State
@@ -191,34 +246,6 @@ func transferAsset(ctx *cli.Ccntmext) error {
 	})
 
 	tx.Nonce = uint32(time.Now().Unix())
-
-	var passwd []byte
-	if ctx.IsSet(utils.UserPasswordFlag.Name) {
-		passwd = []byte(ctx.GlobalString(utils.UserPasswordFlag.Name))
-	} else {
-		passwd, err = password.GetAccountPassword()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return errors.New("input password error")
-		}
-	}
-
-	acct := account.Open(account.WALLET_FILENAME, passwd)
-	if nil == acct {
-		fmt.Println("Open account failed, please check your input password and make sure your wallet.dat exist")
-		return errors.New("Get Account Error")
-	}
-
-	addr, err := common.AddressFromBase58(from)
-	if nil != err {
-		fmt.Println("Parse address from base58 error")
-		return err
-	}
-	acc := acct.GetAccountByAddress(addr)
-	if nil == acc {
-		fmt.Println("Get account by address error")
-		return errors.New("Get Account Error")
-	}
 
 	if err := signTransaction(acc, tx); err != nil {
 		fmt.Println("signTransaction error:", err)
@@ -265,11 +292,12 @@ func transferAsset(ctx *cli.Ccntmext) error {
 }
 
 func queryTransferStatus(ctx *cli.Ccntmext) error {
-	if !ctx.IsSet(utils.HashInfoFlag.Name) {
-		showQueryAssetTransferHelp()
+	if !ctx.IsSet("hash") {
+		fmt.Println("Missing transaction hash.")
+		cli.ShowSubcommandHelp(ctx)
 	}
 
-	trHash := ctx.GlobalString(utils.HashInfoFlag.Name)
+	trHash := ctx.String("hash")
 	resp, err := cntmSdk.Rpc.GetSmartCcntmractEventWithHexString(trHash)
 	if err != nil {
 		fmt.Println("Parase ccntmract address error, from hex to bytes")
@@ -281,16 +309,16 @@ func queryTransferStatus(ctx *cli.Ccntmext) error {
 
 func cntmBalance(ctx *cli.Ccntmext) error {
 	var filename string = account.WALLET_FILENAME
-	if ctx.IsSet(utils.AccountFileFlag.Name) {
-		filename = ctx.String(utils.AccountFileFlag.Name)
+	if ctx.IsSet("file") {
+		filename = ctx.String("file")
 	}
 
 	var base58Addr string
 	if ctx.NArg() == 0 {
 		var passwd []byte
 		var err error
-		if ctx.IsSet(utils.UserPasswordFlag.Name) {
-			passwd = []byte(ctx.GlobalString(utils.UserPasswordFlag.Name))
+		if ctx.IsSet("password") {
+			passwd = []byte(ctx.String("password"))
 		} else {
 			passwd, err = password.GetAccountPassword()
 			if err != nil {
@@ -299,6 +327,9 @@ func cntmBalance(ctx *cli.Ccntmext) error {
 			}
 		}
 		acct := account.Open(filename, passwd)
+		for i, _ := range passwd {
+			passwd[i] = 0
+		}
 		if acct == nil {
 			return errors.New("open wallet error")
 		}
