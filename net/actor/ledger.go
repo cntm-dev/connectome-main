@@ -24,6 +24,7 @@ import (
 	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
+	ldg "github.com/cntmio/cntmology/core/ledger"
 	ledger "github.com/cntmio/cntmology/core/ledger/actor"
 	"github.com/cntmio/cntmology/core/types"
 )
@@ -36,31 +37,12 @@ func SetLedgerPid(ledgerPid *actor.PID) {
 	defLedgerPid = ledgerPid
 }
 
-func AddHeader(header *types.Header) error {
-	future := defLedgerPid.RequestFuture(&ledger.AddHeaderReq{Header: header}, ledgerReqTimeout)
-	result, err := future.Result()
-	if err != nil {
-		return err
-	}
-	return result.(*ledger.AddHeadersRsp).Error
-}
-
 func AddHeaders(headers []*types.Header) error {
-	future := defLedgerPid.RequestFuture(&ledger.AddHeadersReq{Headers: headers}, ledgerReqTimeout)
-	result, err := future.Result()
-	if err != nil {
-		return err
-	}
-	return result.(*ledger.AddHeadersRsp).Error
+	return ldg.DefLedger.AddHeaders(headers)
 }
 
 func AddBlock(block *types.Block) error {
-	future := defLedgerPid.RequestFuture(&ledger.AddBlockReq{Block: block}, ledgerReqTimeout)
-	result, err := future.Result()
-	if err != nil {
-		return err
-	}
-	return result.(*ledger.AddBlockRsp).Error
+	return ldg.DefLedger.AddBlock(block)
 }
 
 func GetTxnFromLedger(hash common.Uint256) (*types.Transaction, error) {

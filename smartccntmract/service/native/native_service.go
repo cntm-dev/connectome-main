@@ -54,6 +54,7 @@ type NativeService struct {
 	Input         []byte
 	Tx            *types.Transaction
 	Height        uint32
+	Time          uint32
 	CcntmextRef    ccntmext.CcntmextRef
 }
 

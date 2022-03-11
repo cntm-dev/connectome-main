@@ -22,9 +22,11 @@ import (
 	"errors"
 	"time"
 
-	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/crypto"
 	cntmErrors "github.com/cntmio/cntmology/errors"
+	"github.com/cntmio/cntmology/eventbus/actor"
+	netActor "github.com/cntmio/cntmology/net/actor"
 	txpool "github.com/cntmio/cntmology/txnpool/common"
 )
 
@@ -66,8 +68,15 @@ type P2PActor struct {
 	P2P *actor.PID
 }
 
-func (self *P2PActor) Xmit(msg interface{}) {
+func (self *P2PActor) Broadcast(msg interface{}) {
 	self.P2P.Tell(msg)
+}
+
+func (self *P2PActor) Transmit(target *crypto.PubKey, msg []byte) {
+	self.P2P.Tell(&netActor.TransmitConsensusMsgReq{
+		Target: target,
+		Msg:    msg,
+	})
 }
 
 type LedgerActor struct {

@@ -24,13 +24,13 @@ import (
 	"encoding/binary"
 	"errors"
 
+	"fmt"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/net/actor"
 	"github.com/cntmio/cntmology/net/protocol"
-	"fmt"
 )
 
 type hdrHashReq struct {
@@ -202,7 +202,7 @@ func (msg blkHeader) Handle(node protocol.Noder) error {
 	return nil
 }
 
-func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]types.Header, uint32, error) {
+func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]types.Header, error) {
 	var count uint32 = 0
 	var empty [protocol.HASH_LEN]byte
 	headers := []types.Header{}
@@ -210,7 +210,7 @@ func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]ty
 	var stopHeight uint32
 	curHeight, err := actor.GetCurrentHeaderHeight()
 	if err != nil {
-		return nil, 0, fmt.Errorf("GetCurrentHeaderHeight error:%s", err)
+		return nil, fmt.Errorf("GetCurrentHeaderHeight error:%s", err)
 	}
 	if startHash == empty {
 		if stopHash == empty {
@@ -222,7 +222,7 @@ func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]ty
 		} else {
 			bkStop, err := actor.GetHeaderByHash(stopHash)
 			if err != nil || bkStop == nil {
-				return nil, 0, err
+				return nil, err
 			}
 			stopHeight = bkStop.Height
 			count = curHeight - stopHeight
@@ -233,19 +233,19 @@ func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]ty
 	} else {
 		bkStart, err := actor.GetHeaderByHash(startHash)
 		if err != nil || bkStart == nil {
-			return nil, 0, err
+			return nil, err
 		}
 		startHeight = bkStart.Height
 		if stopHash != empty {
 			bkStop, err := actor.GetHeaderByHash(stopHash)
 			if err != nil || bkStop == nil {
-				return nil, 0, err
+				return nil, err
 			}
 			stopHeight = bkStop.Height
 
 			// avoid unsigned integer underflow
 			if startHeight < stopHeight {
-				return nil, 0, errors.New("do not have header to send")
+				return nil, errors.New("do not have header to send")
 			}
 			count = startHeight - stopHeight
 
@@ -268,25 +268,25 @@ func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]ty
 		hash, err := actor.GetBlockHashByHeight(stopHeight + i)
 		if err != nil {
 			log.Errorf("GetBlockHashByHeight failed with err=%s, hash=%x,height=%d\n", err.Error(), hash, stopHeight+i)
-			return nil, 0, err
+			return nil, err
 		}
-		if hash == common.UINT256_EMPTY{
+		if hash == common.UINT256_EMPTY {
 			break
 		}
 		hd, err := actor.GetHeaderByHash(hash)
 		if err != nil || hd == nil {
 			log.Errorf("GetHeaderByHash failed with err=%s, hash=%x,height=%d\n", err.Error(), hash, stopHeight+i)
-			return nil, 0, err
+			return nil, err
 		}
 		headers = append(headers, *hd)
 	}
 
-	return headers, count, nil
+	return headers, nil
 }
 
-func NewHeaders(headers []types.Header, count uint32) ([]byte, error) {
+func NewHeaders(headers []types.Header) ([]byte, error) {
 	var msg blkHeader
-	msg.cnt = count
+	msg.cnt = uint32(len(headers))
 	msg.blkHdr = headers
 	msg.hdr.Magic = protocol.NET_MAGIC
 	cmd := "headers"

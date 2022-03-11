@@ -117,6 +117,7 @@ func (this *SmartCcntmract) Execute() (interface{}, error) {
 			Code:       this.Code.Code,
 			Tx:         this.Config.Tx,
 			Height:     this.Config.Height,
+			Time:       this.Config.Time,
 			CcntmextRef: this,
 			ServiceMap: make(map[string]native.Handler),
 		}
