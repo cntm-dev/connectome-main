@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2018 The cntmology Authors
+ * This file is part of The cntmology library.
+ *
+ * The cntmology is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The cntmology is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package vbft
 
 import (
@@ -5,6 +23,7 @@ import (
 	"fmt"
 
 	. "github.com/Ontology/common"
+	vconfig "github.com/Ontology/consensus/vbft/config"
 	"github.com/Ontology/core/types"
 )
 
@@ -104,10 +123,6 @@ func SerializeVbftMsg(msg ConsensusMsg) ([]byte, error) {
 	})
 }
 
-func DeserializeBlock(data []byte, blk *Block) error {
-	return json.Unmarshal(data, blk)
-}
-
 func (self *Server) constructHandshakeMsg() (*peerHandshakeMsg, error) {
 
 	blkNum := self.GetCurrentBlockNo() - 1
@@ -163,7 +178,7 @@ func (self *Server) constructProposalMsg(blkNum uint64, txs []*types.Transaction
 	if prevBlk.Info.NewChainConfig != nil {
 		lastConfigBlkNum = prevBlk.getBlockNum()
 	}
-	vbftBlkInfo := &VbftBlockInfo{
+	vbftBlkInfo := &vconfig.VbftBlockInfo{
 		Proposer:           self.Index,
 		LastConfigBlockNum: lastConfigBlkNum,
 		NewChainConfig:     nil,

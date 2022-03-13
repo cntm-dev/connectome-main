@@ -21,11 +21,13 @@ package genesis
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
+	vconfig "github.com/Ontology/consensus/vbft/config"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/core/utils"
 	"github.com/cntmio/cntmology/smartccntmract/states"
@@ -59,6 +61,12 @@ func GenesisBlockInit(defaultBookkeeper []keypair.PublicKey) (*types.Block, erro
 	if err != nil {
 		return nil, errors.New("[Block],GenesisBlockInit err with GetBookkeeperAddress")
 	}
+
+	consensusPayload, err := vconfig.GenesisConsensusPayload()
+	if err != nil {
+		return nil, fmt.Errorf("consensus genesus init failed: %s", err)
+	}
+
 	//blockdata
 	genesisHeader := &types.Header{
 		Version:          BlockVersion,
@@ -68,6 +76,7 @@ func GenesisBlockInit(defaultBookkeeper []keypair.PublicKey) (*types.Block, erro
 		Height:           uint32(0),
 		ConsensusData:    GenesisNonce,
 		NextBookkeeper:   nextBookkeeper,
+		ConsensusPayload: consensusPayload,
 
 		Bookkeepers: nil,
 		SigData:     nil,

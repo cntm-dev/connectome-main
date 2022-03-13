@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2018 The cntmology Authors
+ * This file is part of The cntmology library.
+ *
+ * The cntmology is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The cntmology is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package vbft
 
 import (
@@ -20,13 +38,26 @@ type ChainStore struct {
 	db   *actor.LedgerActor
 }
 
-func OpenBlockStore(ledger *actor.LedgerActor) (*ChainStore, error) {
-	info := &ChainInfo{
-		Num: math.MaxUint64, // as invalid blockNum
+func OpenBlockStore(lgr *actor.LedgerActor) (*ChainStore, error) {
+	var blk *Block
+	blkNum := ledger.DefLedger.GetCurrentBlockHeight()
+	if b, err := ledger.DefLedger.GetBlockByHeight(blkNum); err != nil {
+		return nil, fmt.Errorf("open block store %d failed: %s", blkNum, err)
+	} else {
+		blk, err = initVbftBlock(b)
+		if err != nil {
+			return nil, fmt.Errorf("open block store, failed to init vbft block %d: %s", blkNum, err)
+		}
 	}
+
+	info := &ChainInfo{
+		Num:      blk.getBlockNum(),
+		Proposer: blk.getProposer(),
+	}
+
 	return &ChainStore{
 		Info: info,
-		db:   ledger,
+		db:   lgr,
 	}, nil
 }
 

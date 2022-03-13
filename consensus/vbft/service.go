@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2018 The cntmology Authors
+ * This file is part of The cntmology library.
+ *
+ * The cntmology is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The cntmology is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package vbft
 
 import (
@@ -11,6 +29,7 @@ import (
 	"github.com/Ontology/account"
 	"github.com/Ontology/common/log"
 	actorTypes "github.com/Ontology/consensus/actor"
+	vconfig "github.com/Ontology/consensus/vbft/config"
 	"github.com/Ontology/core/types"
 	"github.com/Ontology/crypto"
 	"github.com/Ontology/eventbus/actor"
@@ -36,6 +55,16 @@ type BftAction struct {
 	forEmpty bool
 }
 
+type BlockParticipantConfig struct {
+	BlockNum    uint64
+	L           uint32
+	Vrf         vconfig.VRFValue
+	ChainConfig *vconfig.ChainConfig
+	Proposers   []uint32
+	Endorsers   []uint32
+	Committers  []uint32
+}
+
 type Server struct {
 	Index     uint32
 	account   *account.Account
@@ -52,7 +81,7 @@ type Server struct {
 
 	metaLock                 sync.RWMutex
 	currentBlockNum          uint64
-	config                   *ChainConfig
+	config                   *vconfig.ChainConfig
 	currentParticipantConfig *BlockParticipantConfig
 
 	chainStore *ChainStore // block store
@@ -98,17 +127,19 @@ func NewVbftServer(account *account.Account, txpool, ledger, p2p *actor.PID) (*S
 func (self *Server) Receive(ccntmext actor.Ccntmext) {
 	switch msg := ccntmext.Message().(type) {
 	case *actor.Restarting:
-		log.Warn("vbft actor restarting")
+		log.Info("vbft actor restarting")
 	case *actor.Stopping:
-		log.Warn("vbft actor stopping")
+		log.Info("vbft actor stopping")
 	case *actor.Stopped:
-		log.Warn("vbft actor stopped")
+		log.Info("vbft actor stopped")
 	case *actor.Started:
-		log.Warn("vbft actor started")
+		log.Info("vbft actor started")
 	case *actor.Restart:
-		log.Warn("vbft actor restart")
+		log.Info("vbft actor restart")
 	case *actorTypes.StartConsensus:
-		self.start()
+		if err := self.start(); err != nil {
+			self.log.Errorf("vbft start failed: %s", err)
+		}
 	case *actorTypes.StopConsensus:
 		self.stop()
 	case *message.SaveBlockCompleteMsg:
@@ -119,7 +150,7 @@ func (self *Server) Receive(ccntmext actor.Ccntmext) {
 		self.NewConsensusPayload(msg)
 
 	default:
-		log.Info("dbft actor: Unknown msg ", msg, "type", reflect.TypeOf(msg))
+		log.Info("vbft actor: Unknown msg ", msg, "type", reflect.TypeOf(msg))
 	}
 }
 
@@ -143,7 +174,7 @@ func (self *Server) handlePeerStateUpdate(peer *p2pmsg.PeerStateUpdate) {
 		return
 	}
 	if peer.Connected {
-		peerID, err := PubkeyID(peer.PeerPubKey)
+		peerID, err := vconfig.PubkeyID(peer.PeerPubKey)
 		if err != nil {
 			self.log.Errorf("failed to get peer ID for pubKey: %v", peer.PeerPubKey)
 		}
@@ -173,7 +204,7 @@ func (self *Server) handleBlockPersistCompleted(block *types.Block) {
 }
 
 func (self *Server) NewConsensusPayload(payload *p2pmsg.ConsensusPayload) {
-	peerID, err := PubkeyID(payload.Owner)
+	peerID, err := vconfig.PubkeyID(payload.Owner)
 	if err != nil {
 		self.log.Errorf("failed to get peer ID for pubKey: %v", payload.Owner)
 	}
@@ -196,7 +227,7 @@ func (self *Server) LoadChainConfig(chainStore *ChainStore) error {
 		return err
 	}
 
-	var cfg ChainConfig
+	var cfg vconfig.ChainConfig
 	if block.getNewChainConfig() != nil {
 		cfg = *block.getNewChainConfig()
 	} else {
@@ -294,7 +325,7 @@ func (self *Server) start() error {
 		self.log.Infof("added peer: %s", p.ID.String())
 	}
 
-	id, _ := PubkeyID(self.account.PublicKey)
+	id, _ := vconfig.PubkeyID(self.account.PublicKey)
 	self.Index, _ = self.peerPool.GetPeerIndex(id)
 
 	go self.syncer.run()
@@ -330,7 +361,7 @@ func (self *Server) stop() error {
 }
 
 func (self *Server) run(peerPubKey *crypto.PubKey) error {
-	peerID, err := PubkeyID(peerPubKey)
+	peerID, err := vconfig.PubkeyID(peerPubKey)
 	if err != nil {
 		return fmt.Errorf("failed to get peer ID for pubKey: %v", peerPubKey)
 	}

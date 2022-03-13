@@ -1,9 +1,28 @@
+/*
+ * Copyright (C) 2018 The cntmology Authors
+ * This file is part of The cntmology library.
+ *
+ * The cntmology is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The cntmology is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package vbft
 
 import (
 	"sync"
 	"time"
 
+	"github.com/Ontology/consensus/vbft/config"
 	"github.com/Ontology/crypto"
 )
 
@@ -21,8 +40,8 @@ type PeerPool struct {
 	maxSize int
 
 	server  *Server
-	configs map[uint32]*PeerConfig // peer index to peer
-	IDMap   map[NodeID]uint32
+	configs map[uint32]*vconfig.PeerConfig // peer index to peer
+	IDMap   map[vconfig.NodeID]uint32
 
 	peers map[uint32]*Peer
 }
@@ -31,8 +50,8 @@ func NewPeerPool(maxSize int, server *Server) *PeerPool {
 	return &PeerPool{
 		maxSize: maxSize,
 		server:  server,
-		configs: make(map[uint32]*PeerConfig),
-		IDMap:   make(map[NodeID]uint32),
+		configs: make(map[uint32]*vconfig.PeerConfig),
+		IDMap:   make(map[vconfig.NodeID]uint32),
 		peers:   make(map[uint32]*Peer),
 	}
 }
@@ -48,7 +67,7 @@ func (pool *PeerPool) isNewPeer(peerIdx uint32) bool {
 	return true
 }
 
-func (pool *PeerPool) addPeer(config *PeerConfig) error {
+func (pool *PeerPool) addPeer(config *vconfig.PeerConfig) error {
 	pool.lock.Lock()
 	defer pool.lock.Unlock()
 
@@ -147,7 +166,7 @@ func (pool *PeerPool) getNeighbours() []*Peer {
 	return peers
 }
 
-func (pool *PeerPool) GetPeerIndex(nodeId NodeID) (uint32, bool) {
+func (pool *PeerPool) GetPeerIndex(nodeId vconfig.NodeID) (uint32, bool) {
 	pool.lock.RLock()
 	defer pool.lock.RUnlock()
 

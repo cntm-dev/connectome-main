@@ -1,10 +1,31 @@
+/*
+ * Copyright (C) 2018 The cntmology Authors
+ * This file is part of The cntmology library.
+ *
+ * The cntmology is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The cntmology is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package vbft
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 
 	. "github.com/Ontology/common"
+	vconfig "github.com/Ontology/consensus/vbft/config"
+	"github.com/Ontology/core/types"
 	"github.com/Ontology/crypto"
 )
 
@@ -52,7 +73,27 @@ func (msg *blockProposalMsg) GetBlockNum() uint64 {
 }
 
 func (msg *blockProposalMsg) Serialize() ([]byte, error) {
-	return json.Marshal(msg)
+	return msg.Block.Serialize()
+}
+
+func (msg *blockProposalMsg) UnmarshalJSON(data []byte) error {
+	buf := bytes.NewBuffer(data)
+
+	blk := &types.Block{}
+	if err := blk.Deserialize(buf); err != nil {
+		return err
+	}
+
+	block, err := initVbftBlock(blk)
+	if err != nil {
+		return err
+	}
+	msg.Block = block
+	return nil
+}
+
+func (msg *blockProposalMsg) MarshalJSON() ([]byte, error) {
+	return msg.Block.Serialize()
 }
 
 type FaultyReport struct {
@@ -139,11 +180,11 @@ func (msg *blockCommitMsg) Serialize() ([]byte, error) {
 }
 
 type peerHandshakeMsg struct {
-	CommittedBlockNumber uint64       `json:"committed_block_number"`
-	CommittedBlockHash   Uint256      `json:"committed_block_hash"`
-	CommittedBlockLeader uint32       `json:"committed_block_leader"`
-	ChainConfig          *ChainConfig `json:"chain_config"`
-	Sig                  []byte       `json:"sig"`
+	CommittedBlockNumber uint64               `json:"committed_block_number"`
+	CommittedBlockHash   Uint256              `json:"committed_block_hash"`
+	CommittedBlockLeader uint32               `json:"committed_block_leader"`
+	ChainConfig          *vconfig.ChainConfig `json:"chain_config"`
+	Sig                  []byte               `json:"sig"`
 }
 
 func (msg *peerHandshakeMsg) Type() MsgType {
@@ -179,7 +220,7 @@ type peerHeartbeatMsg struct {
 	CommittedBlockNumber uint64  `json:"committed_block_number"`
 	CommittedBlockHash   Uint256 `json:"committed_block_hash"`
 	CommittedBlockLeader uint32  `json:"committed_block_leader"`
-	ChainConfigView      uint32 `json:"chain_config_view"`
+	ChainConfigView      uint32  `json:"chain_config_view"`
 	Sig                  []byte  `json:"sig"`
 }
 
@@ -391,4 +432,3 @@ func (msg *proposalFetchMsg) GetBlockNum() uint64 {
 func (msg *proposalFetchMsg) Serialize() ([]byte, error) {
 	return json.Marshal(msg)
 }
-

@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2018 The cntmology Authors
+ * This file is part of The cntmology library.
+ *
+ * The cntmology is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The cntmology is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package vbft
 
 import (
@@ -7,6 +25,7 @@ import (
 	"fmt"
 
 	. "github.com/Ontology/common"
+	"github.com/Ontology/consensus/vbft/config"
 	"github.com/Ontology/crypto"
 )
 
@@ -24,7 +43,7 @@ func HashBlock(blk *Block) (Uint256, error) {
 
 	// FIXME: has to do marshal on each call
 
-	data, err := json.Marshal(blk)
+	data, err := blk.Serialize()
 	if err != nil {
 		return Uint256{}, fmt.Errorf("failed to marshal block: %s", err)
 	}
@@ -55,11 +74,13 @@ type vrfData struct {
 	PrevBlockSig      []byte  `json:"prev_block_sig"`
 }
 
-func vrf(block *Block, hash Uint256) VRFValue {
+func vrf(block *Block, hash Uint256) vconfig.VRFValue {
 
 	// XXX: all-zero vrf value is taken as invalid
-
-	sig := block.Block.Header.SigData[0]
+	sig := []byte{}
+	if len(block.Block.Header.SigData) > 0 {
+		sig = block.Block.Header.SigData[0]
+	}
 	if block.isEmpty() {
 		sig = block.Block.Header.SigData[1]
 	}
@@ -71,10 +92,10 @@ func vrf(block *Block, hash Uint256) VRFValue {
 		PrevBlockSig:      sig,
 	})
 	if err != nil {
-		return VRFValue{}
+		return vconfig.VRFValue{}
 	}
 
 	t := sha512.Sum512(data)
 	f := sha512.Sum512(t[:])
-	return VRFValue(f)
+	return vconfig.VRFValue(f)
 }

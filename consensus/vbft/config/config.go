@@ -1,4 +1,22 @@
-package vbft
+/*
+ * Copyright (C) 2018 The cntmology Authors
+ * This file is part of The cntmology library.
+ *
+ * The cntmology is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The cntmology is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package vconfig
 
 import (
 	"bytes"
@@ -11,12 +29,6 @@ import (
 )
 
 var (
-	makeProposalTimeout    = 300 * time.Millisecond
-	make2ndProposalTimeout = 300 * time.Millisecond
-	endorseBlockTimeout    = 100 * time.Millisecond
-	commitBlockTimeout     = 200 * time.Millisecond
-	peerHandshakeTimeout   = 10 * time.Second
-
 	Version uint32 = 1
 )
 
@@ -32,16 +44,21 @@ type ChainConfig struct {
 	F             uint32        `json:"f"`       // tolerated fault peers
 	BlockMsgDelay time.Duration `json:"block_msg_delay"`
 	HashMsgDelay  time.Duration `json:"hash_msg_delay"`
-	SyncDelay     time.Duration `json:"sync_delay"`
 	Peers         []*PeerConfig `json:"peers"`
-	DposTable     []uint32      `json:"dpos_table"`
+	PosTable      []uint32      `json:"pos_table"`
+}
+
+type VbftBlockInfo struct {
+	Proposer           uint32               `json:"leader"`
+	LastConfigBlockNum uint64               `json:"last_config_block_num"`
+	NewChainConfig     *ChainConfig `json:"new_chain_config"`
 }
 
 const (
 	VrfSize           = 64 // bytes
-	maxProposerCount  = 32
-	maxEndorserCount  = 240
-	maxCommitterCount = 240
+	MaxProposerCount  = 32
+	MaxEndorserCount  = 240
+	MaxCommitterCount = 240
 )
 
 type VRFValue [VrfSize]byte
@@ -54,16 +71,6 @@ func (v VRFValue) Bytes() []byte {
 
 func (v VRFValue) IsNil() bool {
 	return bytes.Compare(v.Bytes(), NilVRF.Bytes()) == 0
-}
-
-type BlockParticipantConfig struct {
-	BlockNum    uint64
-	L           uint32
-	Vrf         VRFValue
-	ChainConfig *ChainConfig
-	Proposers   []uint32
-	Endorsers   []uint32
-	Committers  []uint32
 }
 
 func VerifyChainConfig(cfg *ChainConfig) error {
