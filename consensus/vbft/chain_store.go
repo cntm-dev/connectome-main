@@ -20,68 +20,33 @@ package vbft
 
 import (
 	"fmt"
-	"math"
 
 	. "github.com/Ontology/common"
+	"github.com/Ontology/common/log"
 	"github.com/Ontology/consensus/actor"
 	"github.com/Ontology/core/ledger"
 )
 
-type ChainInfo struct {
-	Num      uint64  `json:"num"`
-	Hash     Uint256 `json:"hash"`
-	Proposer uint32  `json:"proposer"`
-}
-
 type ChainStore struct {
-	Info *ChainInfo
-	db   *actor.LedgerActor
+	db              *actor.LedgerActor
+	chainedBlockNum uint64
+	pendingBlocks   map[uint64]*Block
 }
 
 func OpenBlockStore(lgr *actor.LedgerActor) (*ChainStore, error) {
-	var blk *Block
-	blkNum := ledger.DefLedger.GetCurrentBlockHeight()
-	if b, err := ledger.DefLedger.GetBlockByHeight(blkNum); err != nil {
-		return nil, fmt.Errorf("open block store %d failed: %s", blkNum, err)
-	} else {
-		blk, err = initVbftBlock(b)
-		if err != nil {
-			return nil, fmt.Errorf("open block store, failed to init vbft block %d: %s", blkNum, err)
-		}
-	}
-
-	info := &ChainInfo{
-		Num:      blk.getBlockNum(),
-		Proposer: blk.getProposer(),
-	}
-
 	return &ChainStore{
-		Info: info,
-		db:   lgr,
+		db:              lgr,
+		chainedBlockNum: uint64(ledger.DefLedger.GetCurrentBlockHeight()),
+		pendingBlocks:   make(map[uint64]*Block),
 	}, nil
 }
 
 func (self *ChainStore) Close() {
 	// TODO: any action on ledger actor??
-	self.Info = nil
 }
 
 func (self *ChainStore) GetChainedBlockNum() uint64 {
-	return self.Info.Num
-}
-
-func (self *ChainStore) setChainInfo(blockNum uint64, blockHash Uint256, proposer uint32) error {
-	info := &ChainInfo{
-		Num:      blockNum,
-		Hash:     blockHash,
-		Proposer: proposer,
-	}
-
-	if blockNum > self.GetChainedBlockNum() {
-		self.Info = info
-	}
-
-	return nil
+	return self.chainedBlockNum
 }
 
 func (self *ChainStore) AddBlock(block *Block, blockHash Uint256) error {
@@ -89,12 +54,30 @@ func (self *ChainStore) AddBlock(block *Block, blockHash Uint256) error {
 		return fmt.Errorf("try add nil block")
 	}
 
-	if err := ledger.DefLedger.AddBlock(block.Block); err != nil {
-		return fmt.Errorf("ledger add blk failed: %s", err)
+	if block.getBlockNum() <= self.GetChainedBlockNum() {
+		log.Warnf("chain store adding chained block(%d)", block.getBlockNum())
+		return nil
 	}
 
-	// update chain Info
-	return self.setChainInfo(block.getBlockNum(), blockHash, block.getProposer())
+	self.pendingBlocks[block.getBlockNum()] = block
+
+	blkNum := self.GetChainedBlockNum() + 1
+	for {
+		if blk, present := self.pendingBlocks[blkNum]; blk != nil && present {
+			err := ledger.DefLedger.AddBlock(blk.Block)
+			self.chainedBlockNum = uint64(ledger.DefLedger.GetCurrentBlockHeight())
+			if err != nil && blkNum > self.GetChainedBlockNum() {
+				return fmt.Errorf("ledger add blk (%d, %d) failed: %s", blkNum, self.GetChainedBlockNum(), err)
+			}
+
+			delete(self.pendingBlocks, blkNum)
+			blkNum++
+		} else {
+			break
+		}
+	}
+
+	return nil
 }
 
 //
@@ -102,12 +85,10 @@ func (self *ChainStore) AddBlock(block *Block, blockHash Uint256) error {
 //
 func (self *ChainStore) SetBlock(block *Block, blockHash Uint256) error {
 
-	if err := ledger.DefLedger.AddBlock(block.Block); err != nil {
+	err := ledger.DefLedger.AddBlock(block.Block)
+	self.chainedBlockNum = uint64(ledger.DefLedger.GetCurrentBlockHeight())
+	if err != nil {
 		return fmt.Errorf("ledger failed to add block: %s", err)
-	}
-
-	if uint64(block.getBlockNum()) == self.Info.Num || self.Info.Num == math.MaxUint64 {
-		return self.setChainInfo(block.getBlockNum(), blockHash, block.getProposer())
 	}
 
 	return nil

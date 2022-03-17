@@ -37,6 +37,7 @@ import (
 	"github.com/Ontology/events/message"
 	p2pmsg "github.com/Ontology/net/message"
 	"reflect"
+	"github.com/Ontology/events"
 )
 
 type BftActionType uint8
@@ -98,6 +99,7 @@ type Server struct {
 	bftActionC chan *BftAction
 	msgSendC   chan *SendMsgEvent
 
+	sub *events.ActorSubscriber
 	quitC chan interface{}
 	quit  bool
 }
@@ -121,7 +123,7 @@ func NewVbftServer(account *account.Account, txpool, ledger, p2p *actor.PID) (*S
 		return nil, err
 	}
 	server.pid = pid
-
+	server.sub = events.NewActorSubscriber(pid)
 	return server, nil
 }
 
@@ -144,6 +146,8 @@ func (self *Server) Receive(ccntmext actor.Ccntmext) {
 	case *actorTypes.StopConsensus:
 		self.stop()
 	case *message.SaveBlockCompleteMsg:
+		log.Infof("vbft actor receives block complete event. block height=%d, numtx=%d",
+			msg.Block.Header.Height, len(msg.Block.Transactions))
 		self.handleBlockPersistCompleted(msg.Block)
 	case *p2pmsg.PeerStateUpdate:
 		self.handlePeerStateUpdate(msg)
@@ -203,6 +207,8 @@ func (self *Server) handleBlockPersistCompleted(block *types.Block) {
 
 	// TODO: why this?
 	self.p2p.Broadcast(block.Hash())
+
+	self.startNewRound()
 }
 
 func (self *Server) NewConsensusPayload(payload *p2pmsg.ConsensusPayload) {
@@ -214,7 +220,6 @@ func (self *Server) NewConsensusPayload(payload *p2pmsg.ConsensusPayload) {
 	if !present {
 		self.log.Errorf("invalid consensus node: %s", peerID.String())
 	}
-
 	if C, present := self.msgRecvC[peerIdx]; present {
 		C <- payload
 	}
@@ -329,7 +334,7 @@ func (self *Server) start() error {
 
 	id, _ := vconfig.PubkeyID(self.account.PublicKey)
 	self.Index, _ = self.peerPool.GetPeerIndex(id)
-
+	self.sub.Subscribe(message.TopicSaveBlockComplete)
 	go self.syncer.run()
 	go self.stateMgr.run()
 	go self.msgSendLoop()
@@ -358,7 +363,7 @@ func (self *Server) start() error {
 func (self *Server) stop() error {
 
 	// TODO
-
+	self.sub.Unsubscribe(message.TopicSaveBlockComplete)
 	return nil
 }
 
@@ -722,28 +727,6 @@ func (self *Server) onConsensusMsg(peerIdx uint32, msg ConsensusMsg) {
 			}
 			self.processConsensusMsg(msg)
 		}
-
-	case peerHandshakeMessage:
-		_, ok := msg.(*peerHandshakeMsg)
-		if !ok {
-			self.log.Errorf("invalid msg with handshake msg type")
-			return
-		}
-		msg, err := self.constructHandshakeMsg()
-		if err != nil {
-			self.log.Errorf("failed to construct handshake resp msg: %s", err)
-			return
-		}
-		msgPayload, err := SerializeVbftMsg(msg)
-		if err != nil {
-			self.log.Errorf("failed to marshal handshake msg: %s", err)
-			return
-		}
-		if err := self.sendToPeer(peerIdx, msgPayload); err != nil {
-			self.log.Errorf("failed to response handshake msg: %s", err)
-			return
-		}
-
 	case peerHeartbeatMessage:
 		pMsg, ok := msg.(*peerHeartbeatMsg)
 		if !ok {
@@ -1590,7 +1573,8 @@ func (self *Server) sealProposal(proposal *blockProposalMsg, empty bool) error {
 	if self.hasBlockConsensused() {
 		return self.makeFastForward()
 	} else {
-		return self.startNewRound()
+		return nil
+		//return self.startNewRound()
 	}
 
 	return nil
@@ -1880,7 +1864,6 @@ func (self *Server) initHandshake(peerIdx uint32, peerPubKey *crypto.PubKey) err
 			msgC <- shakeMsg
 		}
 	}()
-
 	if err := self.sendToPeer(peerIdx, msgPayload); err != nil {
 		return fmt.Errorf("send initHandshake msg: %s", err)
 	}
