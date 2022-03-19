@@ -99,7 +99,7 @@ type Server struct {
 	bftActionC chan *BftAction
 	msgSendC   chan *SendMsgEvent
 
-	sub *events.ActorSubscriber
+	sub   *events.ActorSubscriber
 	quitC chan interface{}
 	quit  bool
 }
@@ -206,9 +206,7 @@ func (self *Server) handleBlockPersistCompleted(block *types.Block) {
 	log.Infof("persist block: %x", block.Hash())
 
 	// TODO: why this?
-	self.p2p.Broadcast(block.Hash())
-
-	self.startNewRound()
+	//self.p2p.Broadcast(block.Hash())
 }
 
 func (self *Server) NewConsensusPayload(payload *p2pmsg.ConsensusPayload) {
@@ -260,7 +258,8 @@ func (self *Server) LoadChainConfig(chainStore *ChainStore) error {
 	make2ndProposalTimeout = time.Duration(cfg.BlockMsgDelay)
 	endorseBlockTimeout = time.Duration(cfg.HashMsgDelay * 2)
 	commitBlockTimeout = time.Duration(cfg.HashMsgDelay * 3)
-
+	peerHandshakeTimeout = time.Duration(cfg.PeerHandshakeTimeout)
+	zeroTxBlockTimeout = time.Duration(cfg.BlockMsgDelay *3)
 	// TODO: load sealed blocks from chainStore
 
 	// protected by server.metaLock
@@ -301,6 +300,7 @@ func (self *Server) start() error {
 
 	store, err := OpenBlockStore(self.ledger)
 	if err != nil {
+		self.log.Errorf("failed to open block store: %s", err)
 		return fmt.Errorf("failed to open block store: %s", err)
 	}
 	self.chainStore = store
@@ -308,6 +308,7 @@ func (self *Server) start() error {
 
 	self.blockPool, err = newBlockPool(self.msgHistoryDuration, store)
 	if err != nil {
+		self.log.Errorf("init blockpool: %s", err)
 		return fmt.Errorf("init blockpool: %s", err)
 	}
 	self.msgPool = newMsgPool(self, self.msgHistoryDuration)
@@ -320,8 +321,8 @@ func (self *Server) start() error {
 	self.bftActionC = make(chan *BftAction, 8)
 	self.msgSendC = make(chan *SendMsgEvent, 16)
 	self.quitC = make(chan interface{})
-
 	if err := self.LoadChainConfig(store); err != nil {
+		self.log.Errorf("failed to load config: %s", err)
 		return fmt.Errorf("failed to load config: %s", err)
 	}
 	self.log.Infof("chain config loaded from local, current blockNum: %d", self.GetCurrentBlockNo())
@@ -537,6 +538,16 @@ func (self *Server) startNewRound() error {
 		return nil
 	}
 
+	txpool := self.poolActor.GetTxnPool(true, uint32(blkNum-1))
+	if len(txpool) != 0 {
+		self.packProposal(blkNum)
+	} else {
+		self.timer.startTxTicker(blkNum)
+	}
+	return nil
+}
+
+func (self *Server) packProposal(blkNum uint64) error {
 	// make proposal
 	if self.isProposer(blkNum, self.Index) {
 		self.log.Infof("server %d, proposer for block %d", self.Index, blkNum)
@@ -1420,8 +1431,22 @@ func (self *Server) processTimerEvent(evt *TimerEvent) error {
 			ToPeer: uint32(evt.blockNum),
 			Msg:    msg,
 		}
+	case EventTxPool:
+		blockNum := self.GetCurrentBlockNo()
+		txpool := self.poolActor.GetTxnPool(true, uint32(blockNum-1))
+		if len(txpool) != 0 {
+			self.packProposal(blockNum)
+			self.timer.stopTxTicker()
+		} else {
+			self.timer.stopTxTicker()
+			self.timer.StartTxBlockTimeout(blockNum)
+		}
+	case EventTxBlockTimeout:
+		self.packProposal(evt.blockNum)
+		if err := self.timer.CancelTxBlockTimeout(evt.blockNum); err != nil {
+			self.log.Errorf("failed to cancel txBlockTimeout timer, blockNum %d, err: %s", evt.blockNum, err)
+		}
 	}
-
 	return nil
 }
 
@@ -1573,8 +1598,7 @@ func (self *Server) sealProposal(proposal *blockProposalMsg, empty bool) error {
 	if self.hasBlockConsensused() {
 		return self.makeFastForward()
 	} else {
-		return nil
-		//return self.startNewRound()
+		return self.startNewRound()
 	}
 
 	return nil
