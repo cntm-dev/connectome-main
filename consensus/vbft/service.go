@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/Ontology/account"
+	"github.com/Ontology/common"
 	"github.com/Ontology/common/log"
 	actorTypes "github.com/Ontology/consensus/actor"
 	vconfig "github.com/Ontology/consensus/vbft/config"
@@ -180,16 +181,17 @@ func (self *Server) handlePeerStateUpdate(peer *p2pmsg.PeerStateUpdate) {
 		log.Errorf("server %d, invalid peer state update (no pk)", self.Index)
 		return
 	}
-	if peer.Connected {
-		peerID, err := vconfig.PubkeyID(peer.PeerPubKey)
-		if err != nil {
-			log.Errorf("failed to get peer ID for pubKey: %v", peer.PeerPubKey)
-		}
-		peerIdx, present := self.peerPool.GetPeerIndex(peerID)
-		if !present {
-			log.Errorf("invalid consensus node: %s", peerID.String())
-		}
+	peerID, err := vconfig.PubkeyID(peer.PeerPubKey)
+	if err != nil {
+		log.Errorf("failed to get peer ID for pubKey: %v", peer.PeerPubKey)
+	}
+	peerIdx, present := self.peerPool.GetPeerIndex(peerID)
+	if !present {
+		log.Errorf("invalid consensus node: %s", peerID.String())
+	}
 
+	log.Infof("peer state update: %d, connect: %t", peerIdx, peer.Connected)
+	if peer.Connected {
 		if _, present := self.msgRecvC[peerIdx]; !present {
 			self.msgRecvC[peerIdx] = make(chan *p2pmsg.ConsensusPayload, 1024)
 		}
@@ -201,6 +203,10 @@ func (self *Server) handlePeerStateUpdate(peer *p2pmsg.PeerStateUpdate) {
 					self.Index, peerIdx, err)
 			}
 		}()
+	} else {
+		if C, present := self.msgRecvC[peerIdx]; present {
+			C <- nil
+		}
 	}
 }
 
@@ -224,6 +230,8 @@ func (self *Server) NewConsensusPayload(payload *p2pmsg.ConsensusPayload) {
 	}
 	if C, present := self.msgRecvC[peerIdx]; present {
 		C <- payload
+	} else {
+		log.Errorf("consensus msg without receiver: %d node: %s", peerIdx, peerID.String())
 	}
 }
 
@@ -385,7 +393,6 @@ func (self *Server) run(peerPubKey *crypto.PubKey) error {
 	if !present {
 		return fmt.Errorf("invalid consensus node: %s", peerID.String())
 	}
-
 	if self.peerPool.isNewPeer(peerIdx) {
 		if err := self.peerPool.peerConnected(peerIdx); err != nil {
 			return err
@@ -426,6 +433,7 @@ func (self *Server) run(peerPubKey *crypto.PubKey) error {
 				connected: false,
 			},
 		}
+		delete(self.msgRecvC, peerIdx)
 	}()
 
 	errC := make(chan error)
@@ -972,7 +980,7 @@ func (self *Server) processMsgEvent() error {
 
 						if proposal == nil {
 							self.fetchProposal(msgBlkNum, proposer)
-							log.Errorf("server %d endorse %d done without proposal", self.Index, msgBlkNum)
+							log.Infof("server %d endorse %d done without proposal, fetching proposal", self.Index, msgBlkNum)
 						} else if self.isCommitter(msgBlkNum, self.Index) {
 							// make endorsement
 							if err := self.makeCommitment(proposal, msgBlkNum); err != nil {
@@ -1049,9 +1057,20 @@ func (self *Server) actionLoop() {
 			case MakeProposal:
 				// this may triggered when block sealed or random backoff of 2nd proposer
 				blkNum := self.GetCurrentBlockNo()
-				if err := self.makeProposal(blkNum, action.forEmpty); err != nil {
-					log.Errorf("server %d failed to making proposal (%d): %s",
-						self.Index, blkNum, err)
+
+				var proposal *blockProposalMsg
+				msgs := self.msgPool.GetProposalMsgs(blkNum)
+				for _, m := range msgs {
+					if p, ok := m.(*blockProposalMsg); ok && p.Block.getProposer() == self.Index {
+						proposal = p
+						break
+					}
+				}
+				if proposal == nil {
+					if err := self.makeProposal(blkNum, action.forEmpty); err != nil {
+						log.Errorf("server %d failed to making proposal (%d): %s",
+							self.Index, blkNum, err)
+					}
 				}
 
 			case EndorseBlock:
@@ -1208,7 +1227,16 @@ func (self *Server) actionLoop() {
 								log.Errorf("server %d rebroadcasting failed to endorse (%d): %s",
 									self.Index, blkNum, err)
 							}
+						} else {
+							log.Errorf("server %d rebroadcasting failed to endorse(%d), no proposal found(%d)",
+								self.Index, blkNum, len(proposals))
 						}
+					}
+				} else if proposal, forEmpty := self.blockPool.getEndorsedProposal(blkNum); proposal != nil {
+					// construct endorse msg
+					blkHash, _ := HashBlock(proposal.Block)
+					if endorseMsg, _ := self.constructEndorseMsg(proposal, blkHash, forEmpty); endorseMsg != nil {
+						self.broadcast(endorseMsg)
 					}
 				}
 				if self.isCommitter(blkNum, self.Index) {
@@ -1651,6 +1679,10 @@ func (self *Server) sealBlock(block *Block, empty bool) error {
 	self.msgPool.onBlockSealed(sealedBlkNum)
 
 	_, h := self.blockPool.getSealedBlock(sealedBlkNum)
+	if h.CompareTo(common.Uint256{}) == 0 {
+		return fmt.Errorf("failed to seal proposal: nil hash")
+	}
+
 	prevBlkHash := block.getPrevBlockHash()
 	log.Infof("server %d, sealed block %d, proposer %d, prevhash: %s, hash: %s", self.Index,
 		sealedBlkNum, block.getProposer(),
@@ -1889,23 +1921,29 @@ func (self *Server) initHandshake(peerIdx uint32, peerPubKey *crypto.PubKey) err
 	errC := make(chan error)
 	msgC := make(chan *peerHandshakeMsg)
 	go func() {
-		// FIXME: peer receive with timeout
-		msgData, err := self.receiveFromPeer(peerIdx)
-		if err != nil {
-			errC <- fmt.Errorf("read initHandshake msg from peer: %s", err)
-		}
-		msg, err := DeserializeVbftMsg(msgData)
-		if err != nil {
-			errC <- fmt.Errorf("unmarshal msg failed: %s", err)
-		}
-
-		if err := msg.Verify(peerPubKey); err != nil {
-			errC <- fmt.Errorf("msg verify failed in initHandshake: %s", err)
-		}
-
-		if shakeMsg, ok := msg.(*peerHandshakeMsg); ok {
-			self.sendToPeer(peerIdx, msgPayload)
-			msgC <- shakeMsg
+		for {
+			// FIXME: peer receive with timeout
+			msgData, err := self.receiveFromPeer(peerIdx)
+			if err != nil {
+				log.Errorf("read initHandshake msg from peer: %s", err)
+				errC <- fmt.Errorf("read initHandshake msg from peer: %s", err)
+			}
+			msg, err := DeserializeVbftMsg(msgData)
+			if err != nil {
+				log.Errorf("unmarshal msg failed: %s", err)
+				errC <- fmt.Errorf("unmarshal msg failed: %s", err)
+			}
+			if err := msg.Verify(peerPubKey); err != nil {
+				log.Errorf("msg verify failed in initHandshake: %s", err)
+				errC <- fmt.Errorf("msg verify failed in initHandshake: %s", err)
+			}
+			if msg.Type() == PeerHandshakeMessage {
+				if shakeMsg, ok := msg.(*peerHandshakeMsg); ok {
+					self.sendToPeer(peerIdx, msgPayload)
+					msgC <- shakeMsg
+				}
+				break
+			}
 		}
 	}()
 	if err := self.sendToPeer(peerIdx, msgPayload); err != nil {
