@@ -26,6 +26,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cntmio/cntmology-crypto/keypair"
+	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
@@ -37,8 +39,6 @@ import (
 	"github.com/cntmio/cntmology/events/message"
 	p2pmsg "github.com/cntmio/cntmology/net/message"
 	"github.com/cntmio/cntmology/validator/increment"
-	"github.com/cntmio/cntmology-crypto/keypair"
-	"github.com/cntmio/cntmology-eventbus/actor"
 )
 
 type BftActionType uint8
@@ -774,7 +774,7 @@ func (self *Server) onConsensusMsg(peerIdx uint32, msg ConsensusMsg) {
 			return
 		}
 		var pmsg *blockProposalMsg
-		pMsgs := self.msgPool.GetProposalMsgs(self.GetCurrentBlockNo())
+		pMsgs := self.msgPool.GetProposalMsgs(pMsg.BlockNum)
 		for _, msg := range pMsgs {
 			p := msg.(*blockProposalMsg)
 			if p != nil && p.Block.getProposer() == self.Index {
@@ -793,12 +793,14 @@ func (self *Server) onConsensusMsg(peerIdx uint32, msg ConsensusMsg) {
 			}
 		}
 		if pmsg != nil {
+			log.Infof("server %d, handle proposal fetch %d from %d",
+				self.Index, pMsg.BlockNum, peerIdx)
 			self.msgSendC <- &SendMsgEvent{
 				ToPeer: peerIdx,
 				Msg:    pmsg,
 			}
 		} else {
-			log.Errorf("server %d, failed to handle proposal fetch %d from %d: %s",
+			log.Errorf("server %d, failed to handle proposal fetch %d from %d",
 				self.Index, pMsg.BlockNum, peerIdx)
 		}
 
@@ -815,6 +817,8 @@ func (self *Server) onConsensusMsg(peerIdx uint32, msg ConsensusMsg) {
 			log.Errorf("server %d, failed to handle blockfetch %d from %d: %s",
 				self.Index, pMsg.BlockNum, peerIdx, err)
 		} else {
+			log.Infof("server %d, handle blockfetch %d from %d",
+				self.Index, pMsg.BlockNum, peerIdx)
 			self.msgSendC <- &SendMsgEvent{
 				ToPeer: peerIdx,
 				Msg:    msg,
@@ -1474,9 +1478,7 @@ func (self *Server) processTimerEvent(evt *TimerEvent) error {
 	case EventTxBlockTimeout:
 		self.timer.stopTxTicker()
 		self.timer.CancelTxBlockTimeout(evt.blockNum)
-		if err := self.startNewProposal(evt.blockNum); err != nil {
-			log.Errorf("failed to cancel txBlockTimeout timer, blockNum %d, err: %s", evt.blockNum, err)
-		}
+		self.startNewProposal(evt.blockNum)
 	}
 	return nil
 }
@@ -1672,6 +1674,7 @@ func (self *Server) sealBlock(block *Block, empty bool) error {
 	// notify other modules that block sealed
 	self.timer.onBlockSealed(sealedBlkNum)
 	self.msgPool.onBlockSealed(sealedBlkNum)
+	self.blockPool.onBlockSealed(sealedBlkNum)
 
 	_, h := self.blockPool.getSealedBlock(sealedBlkNum)
 	if h.CompareTo(common.Uint256{}) == 0 {
