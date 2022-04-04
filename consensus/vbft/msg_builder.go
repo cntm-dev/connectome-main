@@ -23,11 +23,11 @@ import (
 	"fmt"
 	"time"
 
-	common "github.com/Ontology/common"
-	vconfig "github.com/Ontology/consensus/vbft/config"
-	"github.com/Ontology/core/ledger"
-	"github.com/Ontology/core/types"
-	"github.com/Ontology/crypto"
+	"github.com/cntmio/cntmology/common"
+	vconfig "github.com/cntmio/cntmology/consensus/vbft/config"
+	"github.com/cntmio/cntmology/core/ledger"
+	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/crypto"
 )
 
 type ConsensusMsgPayload struct {

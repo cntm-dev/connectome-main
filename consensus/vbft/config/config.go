@@ -25,7 +25,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/Ontology/common/serialization"
+	"github.com/cntmio/cntmology/common/serialization"
 )
 
 var (
@@ -41,7 +41,7 @@ type ChainConfig struct {
 	Version              uint32        `json:"version"` // software version
 	View                 uint32        `json:"view"`    // config-updated version
 	N                    uint32        `json:"n"`       // network size
-	F                    uint32        `json:"f"`       // tolerated fault peers
+	C                    uint32        `json:"c"`       // consensus quorum
 	BlockMsgDelay        time.Duration `json:"block_msg_delay"`
 	HashMsgDelay         time.Duration `json:"hash_msg_delay"`
 	PeerHandshakeTimeout time.Duration `json:"peer_handshake_timeout"`
@@ -96,7 +96,7 @@ func (cc *ChainConfig) Serialize(w io.Writer) error {
 	return nil
 }
 
-func (cc *ChainConfig) Deserialize(r io.Reader,length int) error {
+func (cc *ChainConfig) Deserialize(r io.Reader, length int) error {
 	buf := make([]byte, length)
 	if _, err := r.Read(buf[:]); err != nil {
 		return err

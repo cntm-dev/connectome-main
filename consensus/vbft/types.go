@@ -23,9 +23,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Ontology/common"
-	vconfig "github.com/Ontology/consensus/vbft/config"
-	"github.com/Ontology/core/types"
+	"github.com/cntmio/cntmology/common"
+	vconfig "github.com/cntmio/cntmology/consensus/vbft/config"
+	"github.com/cntmio/cntmology/core/types"
 )
 
 type Block struct {

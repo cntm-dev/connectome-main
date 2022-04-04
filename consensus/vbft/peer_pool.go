@@ -22,9 +22,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Ontology/consensus/vbft/config"
+	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/consensus/vbft/config"
 	"github.com/cntmio/cntmology-crypto/keypair"
-	"github.com/Ontology/common/log"
 )
 
 type Peer struct {

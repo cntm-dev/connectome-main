@@ -25,8 +25,8 @@ import (
 	"math"
 	"sync"
 
-	common "github.com/Ontology/common"
-	"github.com/Ontology/common/log"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/log"
 )
 
 type BlockList []*Block
@@ -48,8 +48,8 @@ type CandidateInfo struct {
 
 	// server sealed block for this round
 	SealedBlock     *Block
-	SealedBlockHash common.Uint256  // updated when block sealed
-	Participants    []uint32 // updated when block sealed
+	SealedBlockHash common.Uint256 // updated when block sealed
+	Participants    []uint32       // updated when block sealed
 
 	// candidate msgs for this round
 	Proposals   []*blockProposalMsg
@@ -273,7 +273,7 @@ func (pool *BlockPool) newBlockEndorsement(msg *blockEndorseMsg) error {
 //
 // check if has reached consensus for endorse-msg
 //
-func (pool *BlockPool) endorseDone(blkNum uint64, F uint32) (*blockProposalMsg, uint32, bool) {
+func (pool *BlockPool) endorseDone(blkNum uint64, C uint32) (*blockProposalMsg, uint32, bool) {
 	pool.lock.RLock()
 	defer pool.lock.RUnlock()
 
@@ -288,14 +288,14 @@ func (pool *BlockPool) endorseDone(blkNum uint64, F uint32) (*blockProposalMsg, 
 	for _, e := range candidate.EndorseMsgs {
 		if e.EndorseForEmpty {
 			emptyEndorseCount++
-			if emptyEndorseCount > int(F) {
+			if emptyEndorseCount > int(C) {
 				return nil, e.EndorsedProposer, true
 			}
 		} else {
 			endorseCount[e.EndorsedProposer] += 1
 
 			// check if endorse-consensus reached
-			if endorseCount[e.EndorsedProposer] > F {
+			if endorseCount[e.EndorsedProposer] > C {
 				// find proposal
 				for _, p := range candidate.Proposals {
 					if p.Block.getProposer() == e.EndorsedProposer {
@@ -394,7 +394,7 @@ func (pool *BlockPool) newBlockCommitment(msg *blockCommitMsg) error {
 //		@ for empty commit
 //		@ consensused
 //
-func (pool *BlockPool) commitDone(blkNum uint64, F uint32) (*blockProposalMsg, bool, bool) {
+func (pool *BlockPool) commitDone(blkNum uint64, C uint32) (*blockProposalMsg, bool, bool) {
 	pool.lock.Lock()
 	defer pool.lock.Unlock()
 
@@ -403,7 +403,7 @@ func (pool *BlockPool) commitDone(blkNum uint64, F uint32) (*blockProposalMsg, b
 		return nil, false, false
 	}
 
-	proposer, forEmpty := getCommitConsensus(candidate.CommitMsgs, int(F))
+	proposer, forEmpty := getCommitConsensus(candidate.CommitMsgs, int(C))
 	if proposer != math.MaxUint32 {
 		for _, p := range candidate.Proposals {
 			if p.Block.getProposer() == proposer {
@@ -474,7 +474,7 @@ func (pool *BlockPool) getSealedBlock(blockNum uint64) (*Block, common.Uint256) 
 	// get from chainstore
 	blk, err := pool.chainStore.GetBlock(blockNum)
 	if err != nil {
-		log.Errorf("getSealedBlock err:",err)
+		log.Errorf("getSealedBlock err:", err)
 		return nil, common.Uint256{}
 	}
 	hash, _ := HashBlock(blk)

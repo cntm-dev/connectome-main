@@ -29,8 +29,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Ontology/common/config"
-	"github.com/Ontology/common/log"
+	"github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/log"
 )
 
 type PeerStakeInfo struct {
@@ -42,7 +42,7 @@ type PeerStakeInfo struct {
 type Configuration struct {
 	View                 uint32           `json:"view"`
 	N                    uint32           `json:"n"`
-	F                    uint32           `json:"f"`
+	C                    uint32           `json:"c"`
 	K                    uint32           `json:"k"`
 	L                    uint32           `json:"l"`
 	InitTxid             uint64           `json:"init_txid"`
@@ -50,7 +50,7 @@ type Configuration struct {
 	BlockMsgDelay        uint32           `json:"block_msg_delay"`
 	HashMsgDelay         uint32           `json:"hash_msg_delay"`
 	PeerHandshakeTimeout uint32           `json:"peer_handshake_timeout"`
-	Peers            []*PeerStakeInfo     `json:"peers"`
+	Peers                []*PeerStakeInfo `json:"peers"`
 }
 
 func shuffle_hash(txid uint64, ts uint64, id string, idx int) (uint64, error) {
@@ -85,14 +85,13 @@ func genConsensusPayload(configFilename string) ([]byte, error) {
 		log.Errorf("Failed to unmarshal json file: %s", err)
 		os.Exit(1)
 	}
-
 	// pos config sanity checks
 	if int(config.K) > len(config.Peers) {
 		log.Error("peer count is less than K")
 		os.Exit(1)
 	}
-	if config.K < 2*config.F+1 {
-		log.Errorf("invalid config, K: %d, F: %d", config.K, config.F)
+	if config.K < 2*config.C+1 {
+		log.Errorf("invalid config, K: %d, C: %d", config.K, config.C)
 		os.Exit(1)
 	}
 	if config.L%config.K != 0 || config.L < config.K*2 {
@@ -170,15 +169,15 @@ func genConsensusPayload(configFilename string) ([]byte, error) {
 	log.Debugf("shuffled pos table: %v", posTable)
 	// generate chain config, and save to ChainConfigFile
 	chainConfig := &ChainConfig{
-		Version:             Version,
-		View:                config.View,
-		N:                   config.N,
-		F:                   config.F,
-		BlockMsgDelay:       time.Duration(config.BlockMsgDelay) * time.Millisecond,
-		HashMsgDelay:        time.Duration(config.HashMsgDelay) * time.Millisecond,
-		PeerHandshakeTimeout:time.Duration(config.PeerHandshakeTimeout) * time.Second,
-		Peers:         chainPeers,
-		PosTable:      posTable,
+		Version:              Version,
+		View:                 config.View,
+		N:                    config.N,
+		C:                    config.C,
+		BlockMsgDelay:        time.Duration(config.BlockMsgDelay) * time.Millisecond,
+		HashMsgDelay:         time.Duration(config.HashMsgDelay) * time.Millisecond,
+		PeerHandshakeTimeout: time.Duration(config.PeerHandshakeTimeout) * time.Second,
+		Peers:                chainPeers,
+		PosTable:             posTable,
 	}
 
 	vbftBlockInfo := &VbftBlockInfo{
