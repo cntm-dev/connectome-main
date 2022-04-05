@@ -313,6 +313,40 @@ func (pool *BlockPool) endorseDone(blkNum uint64, C uint32) (*blockProposalMsg, 
 	return nil, math.MaxUint32, false
 }
 
+func (pool *BlockPool) endorseFailed(blkNum uint64, C uint32) bool {
+	pool.lock.RLock()
+	defer pool.lock.RUnlock()
+
+	endorseCount := make(map[uint32]uint32)
+	candidate := pool.candidateBlocks[blkNum]
+	if candidate == nil {
+		return false
+	}
+
+	if len(candidate.EndorseMsgs) < int(C+1) {
+		return false
+	}
+
+	for _, e := range candidate.EndorseMsgs {
+		if !e.EndorseForEmpty {
+			endorseCount[e.EndorsedProposer] += 1
+		}
+	}
+
+	if uint32(len(endorseCount)) > 2*C {
+		return false
+	}
+
+	l := 2*C + 1 - uint32(len(endorseCount))
+	for _, v := range endorseCount {
+		if v+l > C {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (pool *BlockPool) committedForBlock(blockNum uint64) bool {
 	pool.lock.RLock()
 	defer pool.lock.RUnlock()
@@ -374,7 +408,7 @@ func (pool *BlockPool) newBlockCommitment(msg *blockCommitMsg) error {
 	// check dup-commit
 	for _, c := range candidate.CommitMsgs {
 		if c.Committer == msg.Committer {
-			if c.CommitBlockHash.CompareTo(msg.CommitBlockHash) == 0 {
+			if bytes.Compare(c.CommitBlockHash[:], msg.CommitBlockHash[:]) == 0 {
 				return nil
 			}
 			// one committer, one commit
@@ -468,7 +502,7 @@ func (pool *BlockPool) getSealedBlock(blockNum uint64) (*Block, common.Uint256) 
 	// get from cached candidate blocks
 	c := pool.candidateBlocks[blockNum]
 	if c != nil {
-		if c.SealedBlockHash.CompareTo(common.Uint256{}) != 0 {
+		if bytes.Compare(c.SealedBlockHash[:], common.UINT256_EMPTY[:]) != 0 {
 			return c.SealedBlock, c.SealedBlockHash
 		}
 		log.Errorf("nil hash founded in block pool sealed cache, blk: %d", blockNum)

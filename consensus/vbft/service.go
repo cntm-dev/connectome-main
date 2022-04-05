@@ -77,8 +77,6 @@ type Server struct {
 	incrValidator *increment.IncrementValidator
 	pid           *actor.PID
 
-	privateKey keypair.PrivateKey
-
 	// some config
 	msgHistoryDuration uint64
 
@@ -303,10 +301,12 @@ func (self *Server) updateChainConfig() error {
 func (self *Server) start() error {
 	// TODO: load config from chain
 
-	// load private key from node config
-	self.privateKey = self.account.PrivateKey
-
 	// TODO: configurable log
+	selfNodeId, err := vconfig.PubkeyID(&self.account.PublicKey)
+	if err != nil {
+		return fmt.Errorf("faied to get account pubkey: %s", err)
+	}
+	log.Infof("server: %s starting", selfNodeId.String())
 
 	store, err := OpenBlockStore(self.ledger)
 	if err != nil {
@@ -932,7 +932,17 @@ func (self *Server) processMsgEvent() error {
 						}
 					}
 				} else {
-					// nothing to do.
+					if self.isProposer(msgBlkNum, self.Index) {
+						for _, msg := range self.msgPool.GetProposalMsgs(msgBlkNum) {
+							p := msg.(*blockProposalMsg)
+							if p != nil && p.Block.getProposer() == self.Index {
+								log.Infof("server %d rebroadcast proposal to %d, blk %d",
+									self.Index, pMsg.Block.getProposer(), msgBlkNum)
+								self.broadcast(msg)
+								break
+							}
+						}
+					}
 					// makeProposalTimeout handles non-leader proposals
 				}
 			} else {
@@ -988,6 +998,13 @@ func (self *Server) processMsgEvent() error {
 							}
 						}
 					} else {
+						if self.blockPool.endorseFailed(msgBlkNum, self.config.C) {
+							// endorse failed, start empty endorsing
+							self.timer.C <- &TimerEvent{
+								evtType:  EventEndorseBlockTimeout,
+								blockNum: msgBlkNum,
+							}
+						}
 						// wait until endorse timeout
 					}
 
@@ -1262,6 +1279,12 @@ func (self *Server) actionLoop() {
 							} else if err := self.makeCommitment(proposal, blkNum); err != nil {
 								log.Errorf("server %d failed to commit block %d on rebroadcasting: %s",
 									self.Index, blkNum, err)
+							}
+						} else if self.blockPool.endorseFailed(blkNum, self.config.C) {
+							// endorse failed, start empty endorsing
+							self.timer.C <- &TimerEvent{
+								evtType:  EventEndorseBlockTimeout,
+								blockNum: blkNum,
 							}
 						}
 					}
@@ -1677,7 +1700,7 @@ func (self *Server) sealBlock(block *Block, empty bool) error {
 	self.blockPool.onBlockSealed(sealedBlkNum)
 
 	_, h := self.blockPool.getSealedBlock(sealedBlkNum)
-	if h.CompareTo(common.Uint256{}) == 0 {
+	if bytes.Compare(h[:], common.UINT256_EMPTY[:]) == 0 {
 		return fmt.Errorf("failed to seal proposal: nil hash")
 	}
 
@@ -1948,8 +1971,10 @@ func (self *Server) initHandshake(peerIdx uint32, peerPubKey *crypto.PubKey) err
 		return fmt.Errorf("send initHandshake msg: %s", err)
 	}
 
-	timeout := time.NewTimer(peerHandshakeTimeout)
-	defer timeout.Stop()
+	// removed handshake time
+	// when peer reconnected, remote peer may be busy with ledger syncing,
+	// so init handshake timeout is hard to predicate.  If remote peer failed
+	// when initHandshake, receiving error will handle it.
 
 	select {
 	case msg := <-msgC:
@@ -1958,8 +1983,6 @@ func (self *Server) initHandshake(peerIdx uint32, peerPubKey *crypto.PubKey) err
 		}
 	case err := <-errC:
 		return fmt.Errorf("peer initHandshake failed: %s", err)
-	case <-timeout.C:
-		return fmt.Errorf("peer initHandshake timeout")
 	}
 
 	return nil

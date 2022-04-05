@@ -24,20 +24,20 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/consensus/vbft/config"
 	"github.com/cntmio/cntmology/core/signature"
-	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
-func SignMsg(sk []byte, msg ConsensusMsg) ([]byte, error) {
+func SignMsg(account *account.Account, msg ConsensusMsg) ([]byte, error) {
 
 	data, err := msg.Serialize()
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal msg when signing: %s", err)
 	}
 
-	return crypto.Sign(sk, data)
+	return signature.Sign(account, data)
 }
 
 func HashBlock(blk *Block) (common.Uint256, error) {
