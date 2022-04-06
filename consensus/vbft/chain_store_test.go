@@ -26,21 +26,15 @@ import (
 
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/account"
-	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	actorTypes "github.com/cntmio/cntmology/consensus/actor"
 	"github.com/cntmio/cntmology/core/ledger"
 	ldgactor "github.com/cntmio/cntmology/core/ledger/actor"
-	"github.com/cntmio/cntmology/core/signature"
 )
 
 func newChainStore() *ChainStore {
 	log.Init(log.PATH, log.Stdout)
 	var err error
-	err = signature.SetDefaultScheme(config.Parameters.SignatureScheme)
-	if err != nil {
-		log.Warn("Config error: ", err)
-	}
 	passwd := string("passwordtest")
 	acct := account.Open(account.WALLET_FILENAME, []byte(passwd))
 

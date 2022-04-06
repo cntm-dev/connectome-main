@@ -81,6 +81,7 @@ type Server struct {
 	msgHistoryDuration uint64
 
 	metaLock                 sync.RWMutex
+	completedBlockNum        uint64 // ledger SaveBlockCompleted block num
 	currentBlockNum          uint64
 	config                   *vconfig.ChainConfig
 	currentParticipantConfig *BlockParticipantConfig
@@ -208,12 +209,16 @@ func (self *Server) handlePeerStateUpdate(peer *p2pmsg.PeerStateUpdate) {
 }
 
 func (self *Server) handleBlockPersistCompleted(block *types.Block) {
-	log.Infof("persist block: %x", block.Hash())
+	log.Infof("persist block: %d, %x", block.Header.Height, block.Hash())
 
 	self.incrValidator.AddBlock(block)
 
-	// TODO: why this?
-	//self.p2p.Broadcast(block.Hash())
+	if uint64(block.Header.Height) > self.completedBlockNum {
+		self.completedBlockNum = uint64(block.Header.Height)
+	} else {
+		log.Errorf("server %d, persist block %d, vs completed %d",
+			self.Index, block.Header.Height, self.completedBlockNum)
+	}
 }
 
 func (self *Server) NewConsensusPayload(payload *p2pmsg.ConsensusPayload) {
@@ -272,6 +277,7 @@ func (self *Server) LoadChainConfig(chainStore *ChainStore) error {
 	// TODO: load sealed blocks from chainStore
 
 	// protected by server.metaLock
+	self.completedBlockNum = self.GetCommittedBlockNo()
 	self.currentBlockNum = self.GetCommittedBlockNo() + 1
 
 	log.Infof("committed: %d, current block no: %d", self.GetCommittedBlockNo(), self.GetCurrentBlockNo())
@@ -551,7 +557,13 @@ func (self *Server) startNewRound() error {
 
 	txpool := self.poolActor.GetTxnPool(true, uint32(blkNum-1))
 	if len(txpool) != 0 {
-		self.startNewProposal(blkNum)
+		if self.completedBlockNum+1 == self.currentBlockNum {
+			self.startNewProposal(blkNum)
+		} else {
+			// FIXME: cleanup all history msgs, update current block num, and restart new round
+			log.Infof("server %d, round %d, block %d has persisted",
+				self.Index, self.currentBlockNum, self.completedBlockNum)
+		}
 	} else {
 		self.timer.startTxTicker(blkNum)
 		self.timer.StartTxBlockTimeout(blkNum)
@@ -998,19 +1010,17 @@ func (self *Server) processMsgEvent() error {
 							}
 						}
 					} else {
-						if self.blockPool.endorseFailed(msgBlkNum, self.config.C) {
-							// endorse failed, start empty endorsing
-							self.timer.C <- &TimerEvent{
-								evtType:  EventEndorseBlockTimeout,
-								blockNum: msgBlkNum,
-							}
-						}
 						// wait until endorse timeout
 					}
-
 				} else {
-					// nothing to do
 					// makeEndorsementTimeout handles non-endorser endorsements
+				}
+				if self.blockPool.endorseFailed(msgBlkNum, self.config.C) {
+					// endorse failed, start empty endorsing
+					self.timer.C <- &TimerEvent{
+						evtType:  EventEndorseBlockTimeout,
+						blockNum: msgBlkNum,
+					}
 				}
 			} else {
 				// process new endorsement when
@@ -1226,18 +1236,19 @@ func (self *Server) actionLoop() {
 					}
 				}
 				if self.isEndorser(blkNum, self.Index) {
-					endorsed := false
+					rebroadcasted := false
+					endorseFailed := self.blockPool.endorseFailed(blkNum, self.config.C)
 					eMsgs := self.msgPool.GetEndorsementsMsgs(blkNum)
 					for _, msg := range eMsgs {
 						e := msg.(*blockEndorseMsg)
-						if e != nil && e.Endorser == self.Index {
+						if e != nil && e.Endorser == self.Index && e.EndorseForEmpty == endorseFailed {
 							log.Infof("server %d rebroadcast endorse, blk %d for %d, %t",
 								self.Index, e.GetBlockNum(), e.EndorsedProposer, e.EndorseForEmpty)
 							self.broadcast(e)
-							endorsed = true
+							rebroadcasted = true
 						}
 					}
-					if !endorsed {
+					if !rebroadcasted {
 						proposal := self.getHighestRankProposal(blkNum, proposals)
 						if proposal != nil {
 							if err := self.endorseBlock(proposal, false); err != nil {
@@ -1496,7 +1507,13 @@ func (self *Server) processTimerEvent(evt *TimerEvent) error {
 		if len(txpool) != 0 {
 			self.timer.stopTxTicker()
 			self.timer.CancelTxBlockTimeout(blockNum)
-			self.startNewProposal(blockNum)
+			if self.completedBlockNum+1 == self.currentBlockNum {
+				self.startNewProposal(blockNum)
+			} else {
+				// FIXME: clean up history msgs, reset currentBlockNum, then restart from forwarding?
+				log.Errorf("server %d, skipped proposing, round %d, persisted %d",
+					self.Index, self.currentBlockNum, self.completedBlockNum)
+			}
 		}
 	case EventTxBlockTimeout:
 		self.timer.stopTxTicker()
@@ -1558,6 +1575,13 @@ func (self *Server) endorseBlock(proposal *blockProposalMsg, forEmpty bool) erro
 	blkHash, err := HashBlock(proposal.Block)
 	if err != nil {
 		return fmt.Errorf("failed to hash proposal block: %s", err)
+	}
+
+	if !forEmpty {
+		if self.blockPool.endorseFailed(blkNum, self.config.C) {
+			forEmpty = true
+			log.Errorf("server %d, endorsing %d, changed from true to false", self.Index, blkNum)
+		}
 	}
 
 	// build endorsement msg
