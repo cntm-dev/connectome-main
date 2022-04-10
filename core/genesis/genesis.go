@@ -27,7 +27,7 @@ import (
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
-	vconfig "github.com/Ontology/consensus/vbft/config"
+	vconfig "github.com/cntmio/cntmology/consensus/vbft/config"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/core/utils"
 	"github.com/cntmio/cntmology/smartccntmract/states"

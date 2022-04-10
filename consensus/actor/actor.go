@@ -22,10 +22,10 @@ import (
 	"errors"
 	"time"
 
+	"github.com/cntmio/cntmology-crypto/keypair"
+	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology/crypto"
 	cntmErrors "github.com/cntmio/cntmology/errors"
-	"github.com/cntmio/cntmology/eventbus/actor"
 	netActor "github.com/cntmio/cntmology/net/actor"
 	txpool "github.com/cntmio/cntmology/txnpool/common"
 )
@@ -72,7 +72,7 @@ func (self *P2PActor) Broadcast(msg interface{}) {
 	self.P2P.Tell(msg)
 }
 
-func (self *P2PActor) Transmit(target *crypto.PubKey, msg []byte) {
+func (self *P2PActor) Transmit(target *keypair.PublicKey, msg []byte) {
 	self.P2P.Tell(&netActor.TransmitConsensusMsgReq{
 		Target: target,
 		Msg:    msg,

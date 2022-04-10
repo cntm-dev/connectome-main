@@ -23,6 +23,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math"
+	"reflect"
 	"sync"
 	"time"
 
@@ -68,6 +69,11 @@ type BlockParticipantConfig struct {
 	Committers  []uint32
 }
 
+type p2pMsgPayload struct {
+	fromPeer uint32
+	payload  *p2pmsg.ConsensusPayload
+}
+
 type Server struct {
 	Index         uint32
 	account       *account.Account
@@ -94,14 +100,14 @@ type Server struct {
 	stateMgr   *StateMgr
 	timer      *EventTimer
 
-	msgRecvC   map[uint32]chan *p2pmsg.ConsensusPayload
+	msgRecvC   map[uint32]chan *p2pMsgPayload
 	msgC       chan ConsensusMsg
 	bftActionC chan *BftAction
 	msgSendC   chan *SendMsgEvent
-
-	sub   *events.ActorSubscriber
-	quitC chan interface{}
-	quit  bool
+	sub        *events.ActorSubscriber
+	quitC      chan struct{}
+	quit       bool
+	quitWg     sync.WaitGroup
 }
 
 func NewVbftServer(account *account.Account, txpool, ledger, p2p *actor.PID) (*Server, error) {
@@ -191,7 +197,7 @@ func (self *Server) handlePeerStateUpdate(peer *p2pmsg.PeerStateUpdate) {
 	log.Infof("peer state update: %d, connect: %t", peerIdx, peer.Connected)
 	if peer.Connected {
 		if _, present := self.msgRecvC[peerIdx]; !present {
-			self.msgRecvC[peerIdx] = make(chan *p2pmsg.ConsensusPayload, 1024)
+			self.msgRecvC[peerIdx] = make(chan *p2pMsgPayload, 1024)
 		}
 
 		go func() {
@@ -222,7 +228,7 @@ func (self *Server) handleBlockPersistCompleted(block *types.Block) {
 }
 
 func (self *Server) NewConsensusPayload(payload *p2pmsg.ConsensusPayload) {
-	peerID, err := vconfig.PubkeyID(payload.Owner)
+	peerID, err := vconfig.PubkeyID(&payload.Owner)
 	if err != nil {
 		log.Errorf("failed to get peer ID for pubKey: %v", payload.Owner)
 	}
@@ -231,7 +237,10 @@ func (self *Server) NewConsensusPayload(payload *p2pmsg.ConsensusPayload) {
 		log.Errorf("invalid consensus node: %s", peerID.String())
 	}
 	if C, present := self.msgRecvC[peerIdx]; present {
-		C <- payload
+		C <- &p2pMsgPayload{
+			fromPeer: peerIdx,
+			payload:  payload,
+		}
 	} else {
 		log.Errorf("consensus msg without receiver: %d node: %s", peerIdx, peerID.String())
 	}
@@ -332,11 +341,11 @@ func (self *Server) start() error {
 	self.timer = NewEventTimer(self)
 	self.syncer = newSyncer(self)
 
-	self.msgRecvC = make(map[uint32]chan *p2pmsg.ConsensusPayload)
+	self.msgRecvC = make(map[uint32]chan *p2pMsgPayload)
 	self.msgC = make(chan ConsensusMsg, 64)
 	self.bftActionC = make(chan *BftAction, 8)
 	self.msgSendC = make(chan *SendMsgEvent, 16)
-	self.quitC = make(chan interface{})
+	self.quitC = make(chan struct{})
 	if err := self.LoadChainConfig(store); err != nil {
 		log.Errorf("failed to load config: %s", err)
 		return fmt.Errorf("failed to load config: %s", err)
@@ -345,19 +354,24 @@ func (self *Server) start() error {
 
 	// add all consensus peers to peer_pool
 	for _, p := range self.config.Peers {
-		self.peerPool.addPeer(p)
+		if err := self.peerPool.addPeer(p); err != nil {
+			return fmt.Errorf("failed to add peer %d: %s", p.Index, err)
+		}
 		log.Infof("added peer: %s", p.ID.String())
 	}
 
-	id, _ := vconfig.PubkeyID(self.account.PublicKey)
+	id, _ := vconfig.PubkeyID(&self.account.PublicKey)
 	self.Index, _ = self.peerPool.GetPeerIndex(id)
-	self.sub.Subscribe(message.TopicSaveBlockComplete)
+	self.sub.Subscribe(message.TOPIC_SAVE_BLOCK_COMPLETE)
 	go self.syncer.run()
 	go self.stateMgr.run()
 	go self.msgSendLoop()
 	go self.timerLoop()
 	go self.actionLoop()
 	go func() {
+		self.quitWg.Add(1)
+		defer self.quitWg.Done()
+
 		for {
 			if err := self.processMsgEvent(); err != nil {
 				log.Errorf("server %d: %s", self.Index, err)
@@ -374,18 +388,35 @@ func (self *Server) start() error {
 
 	log.Infof("peer %d started", self.Index)
 
+	// TODO: start peer-conn-handlers
+
 	return nil
 }
 
 func (self *Server) stop() error {
 
-	// TODO
 	self.incrValidator.Clean()
 	self.sub.Unsubscribe(message.TOPIC_SAVE_BLOCK_COMPLETE)
+
+	// stop syncer, statemgr, msgSendLoop, timer, actionLoop, msgProcessingLoop
+	self.quit = true
+	close(self.quitC)
+	self.quitWg.Wait()
+
+	self.syncer.stop()
+	self.timer.stop()
+	self.msgPool.clean()
+	self.blockPool.clean()
+	self.chainStore.close()
+	self.peerPool.clean()
+
 	return nil
 }
 
-func (self *Server) run(peerPubKey *crypto.PubKey) error {
+//
+// go routine per net connection
+//
+func (self *Server) run(peerPubKey *keypair.PublicKey) error {
 	peerID, err := vconfig.PubkeyID(peerPubKey)
 	if err != nil {
 		return fmt.Errorf("failed to get peer ID for pubKey: %v", peerPubKey)
@@ -440,7 +471,7 @@ func (self *Server) run(peerPubKey *crypto.PubKey) error {
 	errC := make(chan error)
 	go func() {
 		for {
-			msgData, err := self.receiveFromPeer(peerIdx)
+			fromPeer, msgData, err := self.receiveFromPeer(peerIdx)
 			if err != nil {
 				errC <- err
 				return
@@ -450,7 +481,12 @@ func (self *Server) run(peerPubKey *crypto.PubKey) error {
 			if err != nil {
 				log.Errorf("server %d failed to deserialize vbft msg (len %d): %s", self.Index, len(msgData), err)
 			} else {
-				if err := msg.Verify(peerPubKey); err != nil {
+				pk := self.peerPool.GetPeerPubKey(fromPeer)
+				if pk == nil {
+					log.Errorf("server %d failed to get peer %d pubkey", self.Index, fromPeer)
+					ccntminue
+				}
+				if err := msg.Verify(pk); err != nil {
 					log.Errorf("server %d failed to verify msg, type %d, err: %s",
 						self.Index, msg.Type(), err)
 					return
@@ -459,7 +495,7 @@ func (self *Server) run(peerPubKey *crypto.PubKey) error {
 				if msg.Type() < 4 {
 					log.Debugf("server %d received consensus msg, type: %d", self.Index, msg.Type())
 				}
-				self.onConsensusMsg(peerIdx, msg)
+				self.onConsensusMsg(fromPeer, msg)
 			}
 		}
 	}()
@@ -1070,13 +1106,17 @@ func (self *Server) processMsgEvent() error {
 				// FIXME: add msg from msg-pool to block-pool when starting new block-round
 			}
 		}
+
 	case <-self.quitC:
-		self.quit = true
+		return fmt.Errorf("server %d, processMsgEvent loop quit", self.Index)
 	}
 	return nil
 }
 
 func (self *Server) actionLoop() {
+	self.quitWg.Add(1)
+	defer self.quitWg.Done()
+
 	for {
 		select {
 		case action := <-self.bftActionC:
@@ -1301,11 +1341,17 @@ func (self *Server) actionLoop() {
 					}
 				}
 			}
+
+		case <-self.quitC:
+			break
 		}
 	}
 }
 
 func (self *Server) timerLoop() {
+	self.quitWg.Add(1)
+	defer self.quitWg.Done()
+
 	for {
 		select {
 		case evt := <-self.timer.C:
@@ -1747,6 +1793,9 @@ func (self *Server) sealBlock(block *Block, empty bool) error {
 }
 
 func (self *Server) msgSendLoop() {
+	self.quitWg.Add(1)
+	defer self.quitWg.Done()
+
 	for {
 		select {
 		case evt := <-self.msgSendC:
@@ -1768,6 +1817,7 @@ func (self *Server) msgSendLoop() {
 			}
 
 		case <-self.quitC:
+			log.Infof("server %d msg send loop quit", self.Index)
 			break
 		}
 	}
@@ -1778,7 +1828,7 @@ func (self *Server) msgSendLoop() {
 func (self *Server) createBookkeepingTransaction(nonce uint64, fee uint64) *types.Transaction {
 	log.Debug()
 	//TODO: sysfee
-	bookKeepingPayload := &payload.BookKeeping{
+	bookKeepingPayload := &payload.Bookkeeping{
 		Nonce: uint64(time.Now().UnixNano()),
 	}
 	return &types.Transaction{
@@ -1952,7 +2002,7 @@ func (self *Server) handleProposalTimeout(evt *TimerEvent) error {
 	return nil
 }
 
-func (self *Server) initHandshake(peerIdx uint32, peerPubKey *crypto.PubKey) error {
+func (self *Server) initHandshake(peerIdx uint32, peerPubKey *keypair.PublicKey) error {
 	msg, err := self.constructHandshakeMsg()
 	if err != nil {
 		return fmt.Errorf("build handshake msg: %s", err)
@@ -1968,10 +2018,14 @@ func (self *Server) initHandshake(peerIdx uint32, peerPubKey *crypto.PubKey) err
 	go func() {
 		for {
 			// FIXME: peer receive with timeout
-			msgData, err := self.receiveFromPeer(peerIdx)
+			fromPeer, msgData, err := self.receiveFromPeer(peerIdx)
 			if err != nil {
-				log.Errorf("read initHandshake msg from peer: %s", err)
 				errC <- fmt.Errorf("read initHandshake msg from peer: %s", err)
+				break
+			}
+			if fromPeer != peerIdx {
+				// skip msg not from peeIdx
+				ccntminue
 			}
 			msg, err := DeserializeVbftMsg(msgData)
 			if err != nil {

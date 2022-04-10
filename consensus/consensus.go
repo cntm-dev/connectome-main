@@ -21,12 +21,12 @@ package consensus
 import (
 	"strings"
 
+	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/consensus/dbft"
 	"github.com/cntmio/cntmology/consensus/solo"
-	"github.com/cntmio/cntmology/eventbus/actor"
 	"github.com/cntmio/cntmology/consensus/vbft"
 )
 

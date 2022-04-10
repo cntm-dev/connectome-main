@@ -22,9 +22,9 @@ import (
 	"reflect"
 
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/crypto"
-	"github.com/cntmio/cntmology/eventbus/actor"
 	"github.com/cntmio/cntmology/net/protocol"
+	"github.com/cntmio/cntmology-eventbus/actor"
+	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
 var netServerPid *actor.PID
@@ -95,7 +95,7 @@ type GetNeighborAddrsRsp struct {
 }
 
 type TransmitConsensusMsgReq struct {
-	Target *crypto.PubKey
+	Target *keypair.PublicKey
 	Msg    []byte
 }
 
@@ -144,8 +144,8 @@ func (state *NetServer) Receive(ccntmext actor.Ccntmext) {
 	case *TransmitConsensusMsgReq:
 		req := ccntmext.Message().(*TransmitConsensusMsgReq)
 		for _, peer := range node.GetNeighborNoder() {
-			if crypto.Equal(req.Target, peer.GetPubKey()) {
-				peer.ConsensusTx(req.Msg)
+			if keypair.ComparePublicKey(*req.Target, peer.GetPubKey()) {
+				peer.Tx(req.Msg)
 			}
 		}
 	default:
