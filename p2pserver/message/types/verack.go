@@ -16,33 +16,42 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package nodeinfo
+package types
 
-import "strings"
+import (
+	"bytes"
+	"encoding/binary"
 
-type NgbNodeInfo struct {
-	NgbId         string //neighbor node id
-	NgbType       string
-	NgbAddr       string
-	HttpInfoAddr  string
-	HttpInfoPort  uint16
-	HttpInfoStart bool
+	"github.com/cntmio/cntmology/common/serialization"
+)
+
+type VerACK struct {
+	MsgHdr
+	IsConsensus bool
 }
 
-type NgbNodeInfoSlice []NgbNodeInfo
-
-func (n NgbNodeInfoSlice) Len() int {
-	return len(n)
-}
-
-func (n NgbNodeInfoSlice) Swap(i, j int) {
-	n[i], n[j] = n[j], n[i]
-}
-
-func (n NgbNodeInfoSlice) Less(i, j int) bool {
-	if 0 <= strings.Compare(n[i].HttpInfoAddr, n[j].HttpInfoAddr) {
-		return false
-	} else {
-		return true
+//Serialize message payload
+func (msg VerACK) Serialization() ([]byte, error) {
+	hdrBuf, err := msg.MsgHdr.Serialization()
+	if err != nil {
+		return nil, err
 	}
+	buf := bytes.NewBuffer(hdrBuf)
+	err = serialization.WriteBool(buf, msg.IsConsensus)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), err
+}
+
+//Deserialize message payload
+func (msg *VerACK) Deserialization(p []byte) error {
+	buf := bytes.NewBuffer(p)
+	err := binary.Read(buf, binary.LittleEndian, &(msg.MsgHdr))
+	if err != nil {
+		return err
+	}
+
+	msg.IsConsensus, err = serialization.ReadBool(buf)
+	return err
 }

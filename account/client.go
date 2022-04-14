@@ -38,7 +38,7 @@ import (
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
-	"github.com/cntmio/cntmology/net/protocol"
+	"github.com/cntmio/cntmology/p2pserver/protocol"
 )
 
 const (

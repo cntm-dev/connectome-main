@@ -21,6 +21,7 @@ package dbft
 import (
 	"fmt"
 
+	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
@@ -28,8 +29,7 @@ import (
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/core/vote"
-	msg "github.com/cntmio/cntmology/net/message"
-	"github.com/cntmio/cntmology-crypto/keypair"
+	msg "github.com/cntmio/cntmology/p2pserver/message/types"
 )
 
 const CcntmextVersion uint32 = 0

@@ -25,13 +25,13 @@ import (
 	"errors"
 	"io"
 
+	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/core/signature"
-	"github.com/cntmio/cntmology/net/actor"
-	"github.com/cntmio/cntmology/net/protocol"
-	"github.com/cntmio/cntmology-crypto/keypair"
+	actor "github.com/cntmio/cntmology/p2pserver/actor/req"
+	"github.com/cntmio/cntmology/p2pserver/protocol"
 )
 
 type PeerStateUpdate struct {

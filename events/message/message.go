@@ -21,7 +21,7 @@ package message
 import (
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology/net/protocol"
+	"github.com/cntmio/cntmology/p2pserver/protocol"
 )
 
 const (

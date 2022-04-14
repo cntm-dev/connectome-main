@@ -16,7 +16,7 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package actor
+package req
 
 import (
 	"github.com/cntmio/cntmology-eventbus/actor"

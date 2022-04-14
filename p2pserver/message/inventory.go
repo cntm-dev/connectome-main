@@ -29,8 +29,8 @@ import (
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/common/serialization"
-	"github.com/cntmio/cntmology/net/actor"
-	"github.com/cntmio/cntmology/net/protocol"
+	actor "github.com/cntmio/cntmology/p2pserver/actor/req"
+	"github.com/cntmio/cntmology/p2pserver/protocol"
 )
 
 var LastInvHash common.Uint256
