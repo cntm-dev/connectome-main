@@ -21,7 +21,6 @@ package message
 import (
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology/p2pserver/protocol"
 )
 
 const (
@@ -38,14 +37,6 @@ type SaveBlockCompleteMsg struct {
 
 type NewInventoryMsg struct {
 	Inventory *common.Inventory
-}
-
-type NodeDisconnectMsg struct {
-	Node protocol.Noder
-}
-
-type NodeConsensusDisconnectMsg struct {
-	Node protocol.Noder
 }
 
 type SmartCodeEventMsg struct {
