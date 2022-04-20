@@ -58,8 +58,12 @@ func GetTxnFromLedger(hash common.Uint256) (*types.Transaction, error) {
 	future := DefLedgerPid.RequestFuture(&ledger.GetTransactionReq{TxHash: hash}, msgCommon.ACTOR_TIMEOUT*time.Second)
 	result, err := future.Result()
 	if err != nil {
-		log.Error(errors.NewErr("p2p GetTxnFromLedger ERROR: "), err)
+		log.Error(errors.NewErr("net_server GetTxnFromLedger ERROR: "), err)
 		return nil, err
+	}
+	if result.(*ledger.GetTransactionRsp).Tx == nil {
+		log.Errorf("net_server Get Transaction error: txn is nil for hash: %x", hash)
+		return nil, errors.NewErr("net_server GetTxnFromLedger error: txn is nil")
 	}
 	return result.(*ledger.GetTransactionRsp).Tx, result.(*ledger.GetTransactionRsp).Error
 }
@@ -69,7 +73,7 @@ func GetCurrentBlockHash() (common.Uint256, error) {
 	future := DefLedgerPid.RequestFuture(&ledger.GetCurrentBlockHashReq{}, msgCommon.ACTOR_TIMEOUT*time.Second)
 	result, err := future.Result()
 	if err != nil {
-		log.Error(errors.NewErr("p2p GetCurrentBlockHash ERROR: "), err)
+		log.Error(errors.NewErr("net_server GetCurrentBlockHash ERROR: "), err)
 		return common.Uint256{}, err
 	}
 	return result.(*ledger.GetCurrentBlockHashRsp).BlockHash, result.(*ledger.GetCurrentBlockHashRsp).Error
@@ -80,7 +84,7 @@ func GetCurrentHeaderHash() (common.Uint256, error) {
 	future := DefLedgerPid.RequestFuture(&ledger.GetCurrentHeaderHashReq{}, msgCommon.ACTOR_TIMEOUT*time.Second)
 	result, err := future.Result()
 	if err != nil {
-		log.Error(errors.NewErr("p2p GetCurrentHeaderHash ERROR: "), err)
+		log.Error(errors.NewErr("net_server GetCurrentHeaderHash ERROR: "), err)
 		return common.Uint256{}, err
 	}
 	return result.(*ledger.GetCurrentHeaderHashRsp).BlockHash, result.(*ledger.GetCurrentHeaderHashRsp).Error
@@ -91,7 +95,7 @@ func GetBlockHashByHeight(height uint32) (common.Uint256, error) {
 	future := DefLedgerPid.RequestFuture(&ledger.GetBlockHashReq{Height: height}, msgCommon.ACTOR_TIMEOUT*time.Second)
 	result, err := future.Result()
 	if err != nil {
-		log.Error(errors.NewErr("p2p GetBlockHashByHeight ERROR: "), err)
+		log.Error(errors.NewErr("net_server GetBlockHashByHeight ERROR: "), err)
 		return common.Uint256{}, err
 	}
 	return result.(*ledger.GetBlockHashRsp).BlockHash, result.(*ledger.GetBlockHashRsp).Error
@@ -102,9 +106,14 @@ func GetHeaderByHeight(height uint32) (*types.Header, error) {
 	future := DefLedgerPid.RequestFuture(&ledger.GetHeaderByHeightReq{Height: height}, msgCommon.ACTOR_TIMEOUT*time.Second)
 	result, err := future.Result()
 	if err != nil {
-		log.Error(errors.NewErr("p2p GetHeaderByHeight ERROR: "), err)
+		log.Error(errors.NewErr("net_server GetHeaderByHeight ERROR: "), err)
 		return nil, err
 	}
+	if result.(*ledger.GetHeaderByHeightRsp).Header == nil {
+		log.Errorf("net_server Get Header error: header is nil for height: %d", height)
+		return nil, errors.NewErr("net_server GetHeaderByHeight error: header is nil")
+	}
+
 	return result.(*ledger.GetHeaderByHeightRsp).Header, result.(*ledger.GetHeaderByHeightRsp).Error
 }
 
@@ -113,9 +122,14 @@ func GetBlockByHeight(height uint32) (*types.Block, error) {
 	future := DefLedgerPid.RequestFuture(&ledger.GetBlockByHeightReq{Height: height}, msgCommon.ACTOR_TIMEOUT*time.Second)
 	result, err := future.Result()
 	if err != nil {
-		log.Error(errors.NewErr("p2p GetBlockByHeight ERROR: "), err)
+		log.Error(errors.NewErr("net_server GetBlockByHeight ERROR: "), err)
 		return nil, err
 	}
+	if result.(*ledger.GetBlockByHeightRsp).Block == nil {
+		log.Errorf("net_server Get Block error: block is nil for height: %d", height)
+		return nil, errors.NewErr("net_server GetBlockByHeight error: block is nil")
+	}
+
 	return result.(*ledger.GetBlockByHeightRsp).Block, result.(*ledger.GetBlockByHeightRsp).Error
 }
 
@@ -124,9 +138,14 @@ func GetHeaderByHash(hash common.Uint256) (*types.Header, error) {
 	future := DefLedgerPid.RequestFuture(&ledger.GetHeaderByHashReq{BlockHash: hash}, msgCommon.ACTOR_TIMEOUT*time.Second)
 	result, err := future.Result()
 	if err != nil {
-		log.Error(errors.NewErr("p2p GetHeaderByHash ERROR: "), err)
+		log.Error(errors.NewErr("net_server GetHeaderByHash ERROR: "), err)
 		return nil, err
 	}
+	if result.(*ledger.GetHeaderByHashRsp).Header == nil {
+		log.Errorf("net_server Get Header error: header is nil for hash: %d", hash)
+		return nil, errors.NewErr("net_server GetHeaderByHash error: header is nil")
+	}
+
 	return result.(*ledger.GetHeaderByHashRsp).Header, result.(*ledger.GetHeaderByHashRsp).Error
 }
 
@@ -135,9 +154,14 @@ func GetBlockByHash(hash common.Uint256) (*types.Block, error) {
 	future := DefLedgerPid.RequestFuture(&ledger.GetBlockByHashReq{BlockHash: hash}, msgCommon.ACTOR_TIMEOUT*time.Second)
 	result, err := future.Result()
 	if err != nil {
-		log.Error(errors.NewErr("p2p GetBlockByHash ERROR: "), err)
+		log.Error(errors.NewErr("net_server GetBlockByHash ERROR: "), err)
 		return nil, err
 	}
+	if result.(*ledger.GetBlockByHashRsp).Block == nil {
+		log.Errorf("net_server Get Block error: block is nil for hash: %d", hash)
+		return nil, errors.NewErr("net_server GetBlockByHash error: block is nil")
+	}
+
 	return result.(*ledger.GetBlockByHashRsp).Block, result.(*ledger.GetBlockByHashRsp).Error
 }
 
@@ -146,7 +170,7 @@ func GetCurrentHeaderHeight() (uint32, error) {
 	future := DefLedgerPid.RequestFuture(&ledger.GetCurrentHeaderHeightReq{}, msgCommon.ACTOR_TIMEOUT*time.Second)
 	result, err := future.Result()
 	if err != nil {
-		log.Error(errors.NewErr("p2p GetCurrentHeaderHeight ERROR: "), err)
+		log.Error(errors.NewErr("net_server GetCurrentHeaderHeight ERROR: "), err)
 		return 0, err
 	}
 	return result.(*ledger.GetCurrentHeaderHeightRsp).Height, result.(*ledger.GetCurrentHeaderHeightRsp).Error
@@ -157,7 +181,7 @@ func GetCurrentBlockHeight() (uint32, error) {
 	future := DefLedgerPid.RequestFuture(&ledger.GetCurrentBlockHeightReq{}, msgCommon.ACTOR_TIMEOUT*time.Second)
 	result, err := future.Result()
 	if err != nil {
-		log.Error(errors.NewErr("p2p GetCurrentBlockHeight ERROR: "), err)
+		log.Error(errors.NewErr("net_server GetCurrentBlockHeight ERROR: "), err)
 		return 0, err
 	}
 	return result.(*ledger.GetCurrentBlockHeightRsp).Height, result.(*ledger.GetCurrentBlockHeightRsp).Error
@@ -168,7 +192,7 @@ func IsCcntmainBlock(hash common.Uint256) (bool, error) {
 	future := DefLedgerPid.RequestFuture(&ledger.IsCcntmainBlockReq{BlockHash: hash}, msgCommon.ACTOR_TIMEOUT*time.Second)
 	result, err := future.Result()
 	if err != nil {
-		log.Error(errors.NewErr("p2p IsCcntmainBlock ERROR: "), err)
+		log.Error(errors.NewErr("net_server IsCcntmainBlock ERROR: "), err)
 		return false, err
 	}
 	return result.(*ledger.IsCcntmainBlockRsp).IsCcntmain, result.(*ledger.IsCcntmainBlockRsp).Error
@@ -238,7 +262,7 @@ func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]ty
 		hash, err := GetBlockHashByHeight(stopHeight + i)
 		hd, err := GetHeaderByHash(hash)
 		if err != nil {
-			log.Errorf("GetBlockWithHeight failed with err=%s, hash=%x,height=%d\n", err.Error(), hash, stopHeight+i)
+			log.Errorf("net_server GetBlockWithHeight failed with err=%s, hash=%x,height=%d\n", err.Error(), hash, stopHeight+i)
 			return nil, 0, err
 		}
 		headers = append(headers, *hd)
@@ -303,10 +327,10 @@ func GetInvFromBlockHash(startHash common.Uint256, stopHash common.Uint256) (*ms
 	for i = 1; i <= count; i++ {
 		//FIXME need add error handle for GetBlockWithHash
 		hash, _ := GetBlockHashByHeight(stopHeight + i)
-		log.Debug("GetInvFromBlockHash i is ", i, " , hash is ", hash)
+		log.Debug("net_server GetInvFromBlockHash i is ", i, " , hash is ", hash)
 		hash.Serialize(tmpBuffer)
 	}
-	log.Debug("GetInvFromBlockHash hash is ", tmpBuffer.Bytes())
+	log.Debug("net_server GetInvFromBlockHash hash is ", tmpBuffer.Bytes())
 
 	return &msg.InvPayload{
 		InvType: common.BLOCK,
