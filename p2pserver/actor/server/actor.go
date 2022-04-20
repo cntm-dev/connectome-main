@@ -24,6 +24,7 @@ import (
 	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/p2pserver"
+	"github.com/cntmio/cntmology/p2pserver/common"
 )
 
 type P2PActor struct {
@@ -87,6 +88,8 @@ func (this *P2PActor) Receive(ctx actor.Ccntmext) {
 		this.handleGetRelayStateReq(ctx, msg)
 	case *GetNodeTypeReq:
 		this.handleGetNodeTypeReq(ctx, msg)
+	case *common.RemoveFlightHeight:
+		this.server.RemoveFlightHeight(msg.Id, msg.Height)
 	default:
 		err := this.server.Xmit(ctx.Message())
 		if nil != err {
