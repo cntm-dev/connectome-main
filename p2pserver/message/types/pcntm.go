@@ -31,20 +31,20 @@ type Pcntm struct {
 }
 
 //Check whether header is correct
-func (msg Pcntm) Verify(buf []byte) error {
-	err := msg.MsgHdr.Verify(buf)
+func (this Pcntm) Verify(buf []byte) error {
+	err := this.MsgHdr.Verify(buf)
 	return err
 }
 
 //Serialize message payload
-func (msg Pcntm) Serialization() ([]byte, error) {
+func (this Pcntm) Serialization() ([]byte, error) {
 	tmpBuffer := bytes.NewBuffer([]byte{})
-	serialization.WriteUint64(tmpBuffer, msg.Height)
+	serialization.WriteUint64(tmpBuffer, this.Height)
 
 	checkSumBuf := CheckSum(tmpBuffer.Bytes())
-	msg.MsgHdr.Init("pcntm", checkSumBuf, uint32(len(tmpBuffer.Bytes())))
+	this.MsgHdr.Init("pcntm", checkSumBuf, uint32(len(tmpBuffer.Bytes())))
 
-	hdrBuf, err := msg.MsgHdr.Serialization()
+	hdrBuf, err := this.MsgHdr.Serialization()
 	if err != nil {
 		return nil, err
 	}
@@ -58,13 +58,13 @@ func (msg Pcntm) Serialization() ([]byte, error) {
 }
 
 //Deserialize message payload
-func (msg *Pcntm) Deserialization(p []byte) error {
+func (this *Pcntm) Deserialization(p []byte) error {
 	buf := bytes.NewBuffer(p)
-	err := binary.Read(buf, binary.LittleEndian, &(msg.MsgHdr))
+	err := binary.Read(buf, binary.LittleEndian, &(this.MsgHdr))
 	if err != nil {
 		return err
 	}
 
-	msg.Height, err = serialization.ReadUint64(buf)
+	this.Height, err = serialization.ReadUint64(buf)
 	return err
 }
