@@ -21,6 +21,7 @@ package server
 import (
 	"reflect"
 
+	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/p2pserver"
@@ -64,8 +65,6 @@ func (this *P2PActor) Receive(ctx actor.Ccntmext) {
 		this.handleStartServerReq(ctx, msg)
 	case *StopServerReq:
 		this.handleStopServerReq(ctx, msg)
-	case *IsSyncingReq:
-		this.handleIsSyncingReq(ctx, msg)
 	case *GetPortReq:
 		this.handleGetPortReq(ctx, msg)
 	case *GetVersionReq:
@@ -88,8 +87,18 @@ func (this *P2PActor) Receive(ctx actor.Ccntmext) {
 		this.handleGetRelayStateReq(ctx, msg)
 	case *GetNodeTypeReq:
 		this.handleGetNodeTypeReq(ctx, msg)
-	case *common.RemoveFlightHeight:
-		this.server.RemoveFlightHeight(msg.Id, msg.Height)
+	case *TransmitConsensusMsgReq:
+		this.handleTransmitConsensusMsgReq(ctx, msg)
+	case *common.AppendPeerID:
+		this.server.OnAddNode(msg.ID)
+	case *common.RemovePeerID:
+		this.server.OnDelNode(msg.ID)
+	case *common.AppendHeaders:
+		this.server.OnHeaderReceive(msg.Headers)
+	case *common.AppendBlock:
+		this.server.OnBlockReceive(msg.Block)
+	//case *common.RemoveFlightHeight:
+	//	this.server.RemoveFlightHeight(msg.Id, msg.Height)
 	default:
 		err := this.server.Xmit(ctx.Message())
 		if nil != err {
@@ -116,17 +125,6 @@ func (this *P2PActor) handleStopServerReq(ctx actor.Ccntmext, req *StopServerReq
 	if ctx.Sender() != nil {
 		resp := &StopServerRsp{
 			Error: err,
-		}
-		ctx.Sender().Request(resp, ctx.Self())
-	}
-}
-
-//sync handler
-func (this *P2PActor) handleIsSyncingReq(ctx actor.Ccntmext, req *IsSyncingReq) {
-	isSyncing := this.server.IsSyncing()
-	if ctx.Sender() != nil {
-		resp := &IsSyncingRsp{
-			IsSyncing: isSyncing,
 		}
 		ctx.Sender().Request(resp, ctx.Self())
 	}
@@ -254,5 +252,14 @@ func (this *P2PActor) handleGetNodeTypeReq(ctx actor.Ccntmext, req *GetNodeTypeR
 			NodeType: ret,
 		}
 		ctx.Sender().Request(resp, ctx.Self())
+	}
+}
+
+//handle vbft msg request
+func (this *P2PActor) handleTransmitConsensusMsgReq(ctx actor.Ccntmext, req *TransmitConsensusMsgReq) {
+	for _, peer := range this.server.GetNetWork().GetNeighbors() {
+		if keypair.ComparePublicKey(*req.Target, peer.GetPubKey()) {
+			this.server.Send(peer, req.Msg, true)
+		}
 	}
 }

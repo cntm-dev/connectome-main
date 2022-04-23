@@ -38,7 +38,7 @@ import (
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/events"
 	"github.com/cntmio/cntmology/events/message"
-	p2pmsg "github.com/cntmio/cntmology/net/message"
+	p2pmsg "github.com/cntmio/cntmology/p2pserver/message/types"
 	"github.com/cntmio/cntmology/validator/increment"
 )
 

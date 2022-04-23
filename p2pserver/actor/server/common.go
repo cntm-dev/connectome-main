@@ -19,6 +19,7 @@
 package server
 
 import (
+	"github.com/cntmio/cntmology-crypto/keypair"
 	types "github.com/cntmio/cntmology/p2pserver/common"
 )
 
@@ -139,11 +140,7 @@ type GetNeighborAddrsRsp struct {
 	Count uint64
 }
 
-//whether net is syncing requet
-type IsSyncingReq struct {
-}
-
-//response of whether net is syncing
-type IsSyncingRsp struct {
-	IsSyncing bool
+type TransmitConsensusMsgReq struct {
+	Target *keypair.PublicKey
+	Msg    []byte
 }

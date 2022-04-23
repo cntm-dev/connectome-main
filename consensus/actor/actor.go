@@ -26,7 +26,7 @@ import (
 	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
-	netActor "github.com/cntmio/cntmology/net/actor"
+	netActor "github.com/cntmio/cntmology/p2pserver/actor/server"
 	txpool "github.com/cntmio/cntmology/txnpool/common"
 )
 
