@@ -19,6 +19,9 @@
 package p2pserver
 
 import (
+	"sync"
+	"time"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/types"
@@ -26,8 +29,6 @@ import (
 	p2pComm "github.com/cntmio/cntmology/p2pserver/common"
 	"github.com/cntmio/cntmology/p2pserver/message/msg_pack"
 	"github.com/cntmio/cntmology/p2pserver/peer"
-	"sync"
-	"time"
 )
 
 const (

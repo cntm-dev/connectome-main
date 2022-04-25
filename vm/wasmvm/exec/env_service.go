@@ -29,6 +29,7 @@ import (
 	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/vm/wasmvm/memory"
 	"github.com/cntmio/cntmology/vm/wasmvm/util"
+	"fmt"
 )
 
 type Args struct {
@@ -43,6 +44,7 @@ type Param struct {
 type Result struct {
 	Ptype string `json:"type"`
 	Pval  string `json:"value"`
+	Psucceed int `json:"succeed"`
 }
 
 type InteropServiceInterface interface {
@@ -398,15 +400,17 @@ func readStringParam(engine *ExecutionEngine) (bool, error) {
 }
 
 func jsonUnmashal(engine *ExecutionEngine) (bool, error) {
-
+	fmt.Println("====jsonUnmashal start ========")
 	envCall := engine.vm.envCall
 	params := envCall.envParams
+	fmt.Printf("params is %v\n",params)
 	if len(params) != 3 {
 		return false, errors.New("parameter count error while call jsonUnmashal")
 	}
 
 	addr := params[0]
 	size := int(params[1])
+	fmt.Printf("size is %d\n",size)
 	jsonaddr := params[2]
 	jsonbytes, err := engine.vm.GetPointerMemory(jsonaddr)
 	if err != nil {
@@ -417,7 +421,7 @@ func jsonUnmashal(engine *ExecutionEngine) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-
+	fmt.Printf("arg is %v\n",arg)
 	buff := bytes.NewBuffer(nil)
 	count := size
 	for i, tmparg := range arg.Params {
@@ -506,10 +510,11 @@ func jsonUnmashal(engine *ExecutionEngine) (bool, error) {
 	}
 
 	bytes := buff.Bytes()
+	fmt.Printf("bytes is %v\n",bytes)
 	if len(bytes) != size {
 		return false ,errors.New("JsonUnmasal input error!")
 	}
-	engine.vm.Malloc(len(bytes))
+
 	copy(engine.vm.memory.Memory[int(addr):int(addr)+len(bytes)], bytes)
 
 	engine.vm.RestoreCtx()
@@ -520,18 +525,20 @@ func jsonMashal(engine *ExecutionEngine) (bool, error) {
 	envCall := engine.vm.envCall
 	params := envCall.envParams
 
-	if len(params) != 2 {
+	if len(params) != 3 {
 		return false, errors.New("parameter count error while call jsonUnmashal")
 	}
 
 	val := params[0]
 	ptype := params[1] //type
+	succeed := int(params[2])
 	tpstr, err := engine.vm.GetPointerMemory(ptype)
 	if err != nil {
 		return false, err
 	}
 
 	ret := &Result{}
+	ret.Psucceed = succeed
 
 	pstype := strings.ToLower(util.TrimBuffToString(tpstr))
 	ret.Ptype = pstype
@@ -636,7 +643,8 @@ func getCaller(engine *ExecutionEngine) (bool, error) {
 	envCall := engine.vm.envCall
 
 	caller := engine.vm.Caller
-	idx, err := engine.vm.SetPointerMemory(caller.ToHexString())
+
+	idx, err := engine.vm.SetPointerMemory(caller.ToBase58())
 	if err != nil {
 		return false, err
 	}
@@ -651,7 +659,7 @@ func getCcntmractAddress(engine *ExecutionEngine) (bool, error) {
 	envCall := engine.vm.envCall
 
 	ccntmractAddress := engine.vm.CcntmractAddress
-	idx, err := engine.vm.SetPointerMemory(ccntmractAddress.ToHexString())
+	idx, err := engine.vm.SetPointerMemory(ccntmractAddress.ToBase58())
 	if err != nil {
 		return false, err
 	}

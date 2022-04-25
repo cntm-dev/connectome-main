@@ -19,11 +19,23 @@
 package req
 
 import (
+	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology-eventbus/actor"
+	msgTypes "github.com/cntmio/cntmology/p2pserver/message/types"
 )
 
 var ConsensusPid *actor.PID
 
 func SetConsensusPid(conPid *actor.PID) {
 	ConsensusPid = conPid
+}
+
+func NotifyPeerState(peer keypair.PublicKey, connected bool) error {
+	if ConsensusPid != nil {
+		ConsensusPid.Tell(&msgTypes.PeerStateUpdate{
+			PeerPubKey: &peer,
+			Connected:  connected,
+		})
+	}
+	return nil
 }

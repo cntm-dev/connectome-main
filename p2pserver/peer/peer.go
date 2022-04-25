@@ -29,6 +29,7 @@ import (
 
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common/log"
+	actor "github.com/cntmio/cntmology/p2pserver/actor/req"
 	"github.com/cntmio/cntmology/p2pserver/common"
 	conn "github.com/cntmio/cntmology/p2pserver/link"
 )
@@ -258,6 +259,9 @@ func (this *Peer) GetSyncState() uint32 {
 func (this *Peer) SetSyncState(state uint32) {
 	if this != nil {
 		atomic.StoreUint32(&(this.syncState), state)
+		if state == common.ESTABLISH {
+			actor.NotifyPeerState(this.GetPubKey(), true)
+		}
 	}
 }
 
@@ -317,6 +321,7 @@ func (this *Peer) SendToCons(buf []byte) {
 //CloseSync halt sync connection
 func (this *Peer) CloseSync() {
 	this.SetSyncState(common.INACTIVITY)
+	actor.NotifyPeerState(this.GetPubKey(), false)
 	conn := this.SyncLink.GetConn()
 	if conn != nil {
 		conn.Close()
