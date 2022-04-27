@@ -19,7 +19,6 @@ import (
 	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
 	"github.com/cntmio/cntmology/vm/wasmvm/exec"
 	"github.com/cntmio/cntmology/vm/wasmvm/util"
-	"fmt"
 )
 
 type WasmVmService struct {
@@ -35,9 +34,54 @@ type WasmVmService struct {
 func (this *WasmVmService) Invoke() (interface{}, error) {
 	stateMachine := NewWasmStateMachine(this.Store, this.CloneCache, this.Time)
 	//register the "CallCcntmract" function
-	stateMachine.Register("CallCcntmract", this.callCcntmract)
-	stateMachine.Register("MarshalNativeParams", this.marshalNativeParams)
-	stateMachine.Register("CheckWitness", this.CheckWitness)
+	stateMachine.Register("cntm_CallCcntmract", this.callCcntmract)
+	stateMachine.Register("cntm_MarshalNativeParams", this.marshalNativeParams)
+	//runtime
+	stateMachine.Register("cntm_Runtime_CheckWitness", this.runtimeCheckWitness)
+	stateMachine.Register("cntm_Runtime_Notify", this.runtimeNotify)
+	stateMachine.Register("cntm_Runtime_CheckSig", this.runtimeCheckSig)
+	stateMachine.Register("cntm_Runtime_GetTime", this.runtimeGetTime)
+	stateMachine.Register("cntm_Runtime_Log", this.runtimeLog)
+	//attribute
+	stateMachine.Register("cntm_Attribute_GetUsage", this.attributeGetUsage)
+	stateMachine.Register("cntm_Attribute_GetData", this.attributeGetData)
+	//block
+	stateMachine.Register("cntm_Block_GetCurrentHeaderHash", this.blockGetCurrentHeaderHash)
+	stateMachine.Register("cntm_Block_GetCurrentHeaderHeight", this.blockGetCurrentHeaderHeight)
+	stateMachine.Register("cntm_Block_GetCurrentBlockHash", this.blockGetCurrentBlockHash)
+	stateMachine.Register("cntm_Block_GetCurrentBlockHeight", this.blockGetCurrentBlockHeight)
+	stateMachine.Register("cntm_Block_GetTransactionByHash", this.blockGetTransactionByHash)
+	stateMachine.Register("cntm_Block_GetTransactionCount", this.blockGetTransactionCount)
+	stateMachine.Register("cntm_Block_GetTransactions", this.blockGetTransactions)
+
+	//blockchain
+	stateMachine.Register("cntm_BlockChain_GetHeight", this.blockChainGetHeight)
+	stateMachine.Register("cntm_BlockChain_GetHeaderByHeight", this.blockChainGetHeaderByHeight)
+	stateMachine.Register("cntm_BlockChain_GetHeaderByHash", this.blockChainGetHeaderByHash)
+	stateMachine.Register("cntm_BlockChain_GetBlockByHeight", this.blockChainGetBlockByHeight)
+	stateMachine.Register("cntm_BlockChain_GetBlockByHash", this.blockChainGetBlockByHash)
+	stateMachine.Register("cntm_BlockChain_GetCcntmract", this.blockChainGetCcntmract)
+
+	//header
+	stateMachine.Register("cntm_Header_GetHash", this.headerGetHash)
+	stateMachine.Register("cntm_Header_GetVersion", this.headerGetVersion)
+	stateMachine.Register("cntm_Header_GetPrevHash", this.headerGetPrevHash)
+	stateMachine.Register("cntm_Header_GetMerkleRoot", this.headerGetMerkleRoot)
+	stateMachine.Register("cntm_Header_GetIndex", this.headerGetIndex)
+	stateMachine.Register("cntm_Header_GetTimestamp", this.headerGetTimestamp)
+	stateMachine.Register("cntm_Header_GetConsensusData", this.headerGetConsensusData)
+	stateMachine.Register("cntm_Header_GetNextConsensus", this.headerGetNextConsensus)
+
+	//storage
+	stateMachine.Register("cntm_Storage_Put", this.putstore)
+	stateMachine.Register("cntm_Storage_Get", this.getstore)
+	stateMachine.Register("cntm_Storage_Delete", this.deletestore)
+
+	//transaction
+	stateMachine.Register("cntm_Transaction_GetHash", this.transactionGetHash)
+	stateMachine.Register("cntm_Transaction_GetType", this.transactionGetType)
+	stateMachine.Register("cntm_Transaction_GetAttributes", this.transactionGetAttributes)
+
 	engine := exec.NewExecutionEngine(
 		this.Tx,
 		new(util.ECDsaCrypto),
@@ -47,7 +91,6 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	ccntmract := &states.Ccntmract{}
 	ccntmract.Deserialize(bytes.NewBuffer(this.Code))
 	addr := ccntmract.Address
-
 	if ccntmract.Code == nil {
 		dpcode, err := this.GetCcntmractCodeFromAddress(addr)
 		if err != nil {
@@ -74,8 +117,9 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	this.CcntmextRef.PopCcntmext()
-	this.CcntmextRef.PushNotifications(stateMachine.Notifications)
+	this.CcntmextRef.PushNotifications(this.Notifications)
 	return result, nil
 }
 
@@ -110,6 +154,7 @@ func (this *WasmVmService) marshalNativeParams(engine *exec.ExecutionEngine) (bo
 	if err != nil {
 		return false, err
 	}
+
 	//statesbytes is slice of struct with states.
 	//type State struct {
 	//	Version byte            -------->i32 4 bytes
@@ -145,6 +190,7 @@ func (this *WasmVmService) marshalNativeParams(engine *exec.ExecutionEngine) (bo
 		amount := binary.LittleEndian.Uint64(tmpbytes[16:])
 		state.Value = big.NewInt(int64(amount))
 		states[i] = state
+
 	}
 
 	transfer.States = states
@@ -160,55 +206,20 @@ func (this *WasmVmService) marshalNativeParams(engine *exec.ExecutionEngine) (bo
 	return true, nil
 }
 
-func (this *WasmVmService) CheckWitness(engine *exec.ExecutionEngine) (bool, error) {
-	fmt.Println("=====CheckWitness start======")
-	vm := engine.GetVM()
 
-	envCall := vm.GetEnvCall()
-	params := envCall.GetParams()
-	if len(params) != 1 {
-		return false ,errors.NewErr("[CheckWitness]get parameter count error!")
-	}
-
-	data,err := vm.GetPointerMemory(params[0])
-	if err != nil {
-		return false ,errors.NewErr("[CheckWitness]" + err.Error())
-	}
-	address, err := common.AddressFromBase58(util.TrimBuffToString(data))
-	if err != nil {
-		return false ,errors.NewErr("[CheckWitness]" + err.Error())
-	}
-	chkRes := this.CcntmextRef.CheckWitness(address)
-
-	res := 0
-	if chkRes == true{
-		res = 1
-	}
-	fmt.Printf("=====CheckWitness res is %d======",res)
-	vm.RestoreCtx()
-	if vm.GetEnvCall().GetReturns() {
-		vm.PushResult(uint64(res))
-	}
-	return true, nil
-}
-
-
-
-
-// callCcntmract will need 4 paramters
+// callCcntmract
+// need 4 paramters
 //0: ccntmract address
 //1: ccntmract code
 //2: method name
 //3: args
 func (this *WasmVmService) callCcntmract(engine *exec.ExecutionEngine) (bool, error) {
-
 	vm := engine.GetVM()
 	envCall := vm.GetEnvCall()
 	params := envCall.GetParams()
 	if len(params) != 4 {
 		return false, errors.NewErr("[callCcntmract]parameter count error while call readMessage")
 	}
-
 	var ccntmractAddress common.Address
 	var ccntmractBytes []byte
 	//get ccntmract address
@@ -231,14 +242,12 @@ func (this *WasmVmService) callCcntmract(engine *exec.ExecutionEngine) (bool, er
 	}
 
 	//get ccntmract code
-
 	codeIdx := params[1]
 
 	offchainCcntmractCode, err := vm.GetPointerMemory(codeIdx)
 	if err != nil {
 		return false, errors.NewErr("[callCcntmract]get Ccntmract address failed:" + err.Error())
 	}
-
 	if offchainCcntmractCode != nil {
 		ccntmractBytes, err = common.HexToBytes(util.TrimBuffToString(offchainCcntmractCode))
 		if err != nil {
@@ -249,20 +258,22 @@ func (this *WasmVmService) callCcntmract(engine *exec.ExecutionEngine) (bool, er
 		codestring := util.TrimBuffToString(offchainCcntmractCode)
 		ccntmractAddress = GetCcntmractAddress(codestring, vmtypes.WASMVM)
 	}
-
 	//get method
 	methodName, err := vm.GetPointerMemory(params[2])
 	if err != nil {
 		return false, errors.NewErr("[callCcntmract]get Ccntmract methodName failed:" + err.Error())
 	}
-
 	//get args
 	arg, err := vm.GetPointerMemory(params[3])
+
 	if err != nil {
 		return false, errors.NewErr("[callCcntmract]get Ccntmract arg failed:" + err.Error())
 	}
-
+	this.CcntmextRef.PushCcntmext(&ccntmext.Ccntmext{
+		Code: vm.VMCode,
+		CcntmractAddress: vm.CcntmractAddress})
 	result, err := this.CcntmextRef.AppCall(ccntmractAddress, util.TrimBuffToString(methodName), ccntmractBytes, arg)
+	this.CcntmextRef.PopCcntmext()
 	if err != nil {
 		return false, errors.NewErr("[callCcntmract]AppCall failed:" + err.Error())
 	}

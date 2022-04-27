@@ -96,7 +96,7 @@ func (this *SmartCcntmract) EntryCcntmext() *ccntmext.Ccntmext {
 
 // PopCcntmext pop smart ccntmract current ccntmext
 func (this *SmartCcntmract) PopCcntmext() {
-	if len(this.Ccntmexts) > 0 {
+	if len(this.Ccntmexts) > 1 {
 		this.Ccntmexts = this.Ccntmexts[:len(this.Ccntmexts)-1]
 	}
 }
@@ -225,7 +225,6 @@ func (this *SmartCcntmract) CheckWitness(address common.Address) bool {
 			}
 		}
 	}
-
 	return false
 }
 
