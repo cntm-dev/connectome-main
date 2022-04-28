@@ -30,7 +30,6 @@ import (
 	ctypes "github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/states"
-
 )
 
 var (
@@ -70,12 +69,10 @@ func OntTransfer(native *NativeService) error {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[Transfer] Transfers deserialize error!")
 	}
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-
 	for _, v := range transfers.States {
 		if v.Value.Sign() == 0 {
 			ccntminue
 		}
-
 		fromBalance, toBalance, err := transfer(native, ccntmract, v)
 		if err != nil {
 			return err
