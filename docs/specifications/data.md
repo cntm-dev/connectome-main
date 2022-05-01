@@ -112,7 +112,7 @@ Ccntmract address is the hash of ccntmract program .which be used to ccntmrol as
 
 Field               | Type              | Description
 --------------------|-------------------|----------------------------------------------------------
-Code                | []byte            | the ccntmract program code,which will be run on VM or specific envrionment
+Code                | []byte            | the ccntmract program code,which will be run on VM or specific environment.
 Parameters          | []CcntmractParameterType| describe the number of ccntmract program parameters and the parameter type
 ProgramHash         | Uint160           | The program hash as ccntmract address
 OwnerPubkeyHash     | Uint160           | owner's pubkey hash indicate the owner of ccntmract

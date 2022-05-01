@@ -50,7 +50,7 @@ Create a directory on the host and store the following files in the directory:
 - Default configuration file `config.json`
 - Node program + Node ccntmrol program  `cntmology`
 - Wallet file`wallet.dat`, copy the ccntments of the configuration file config-solo.config in the root directory to config.json and start the node.
-- Edit the config.json file and replace the bookkeeper entries with the public key of your wallet (created above). Use `$ ./cntmology wallet show --name=wallet.dat` to get your public key.
+- Edit the config.json file and replace the bookkeeper entries with the public key of your wallet (created above). Use `$ ./cntmology account list -v` to get your public key.
 
 Here's a example of single-host configuration:
 

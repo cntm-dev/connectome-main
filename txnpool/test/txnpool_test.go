@@ -33,7 +33,7 @@ import (
 	"github.com/cntmio/cntmology/core/types"
 	tc "github.com/cntmio/cntmology/txnpool/common"
 	tp "github.com/cntmio/cntmology/txnpool/proc"
-	"github.com/cntmio/cntmology/validator/statefull"
+	"github.com/cntmio/cntmology/validator/stateful"
 	"github.com/cntmio/cntmology/validator/stateless"
 )
 
@@ -131,7 +131,7 @@ func Test_RCV(t *testing.T) {
 	}
 	statelessV3.Register(rspPid)
 
-	statefulV, err := statefull.NewValidator("stateful")
+	statefulV, err := stateful.NewValidator("stateful")
 	if err != nil {
 		t.Errorf("failed to new stateful valdiator", err)
 		return
