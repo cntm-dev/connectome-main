@@ -40,8 +40,9 @@ const (
 )
 
 var (
-	OntCcntmractAddress, _ = common.AddressParseFromBytes([]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01})
-	OngCcntmractAddress, _ = common.AddressParseFromBytes([]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02})
+	OntCcntmractAddress, _   = common.AddressParseFromBytes([]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01})
+	OngCcntmractAddress, _   = common.AddressParseFromBytes([]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02})
+	ParamCcntmractAddress, _ = common.AddressParseFromBytes([]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04})
 
 	cntmToken   = newGoverningToken()
 	cntmToken   = newUtilityToken()
@@ -85,14 +86,17 @@ func GenesisBlockInit(defaultBookkeeper []keypair.PublicKey) (*types.Block, erro
 	//block
 	cntm := newGoverningToken()
 	cntm := newUtilityToken()
+	param := newParamCcntmract()
 
 	genesisBlock := &types.Block{
 		Header: genesisHeader,
 		Transactions: []*types.Transaction{
 			cntm,
 			cntm,
+			param,
 			newGoverningInit(),
 			newUtilityInit(),
+			newParamInit(),
 		},
 	}
 	genesisBlock.RebuildMerkleRoot()
@@ -108,6 +112,13 @@ func newGoverningToken() *types.Transaction {
 func newUtilityToken() *types.Transaction {
 	tx := utils.NewDeployTransaction(stypes.VmCode{Code: OngCcntmractAddress[:], VmType: stypes.Native}, "cntm", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", true)
+	return tx
+}
+
+func newParamCcntmract() *types.Transaction {
+	tx := utils.NewDeployTransaction(stypes.VmCode{Code: ParamCcntmractAddress[:], VmType: stypes.Native},
+		"ParamConfig", "1.0", "Ontology Team", "ccntmact@cntm.io",
+		"Chain Global Enviroment Variables Manager ", true)
 	return tx
 }
 
@@ -129,6 +140,21 @@ func newGoverningInit() *types.Transaction {
 func newUtilityInit() *types.Transaction {
 	init := states.Ccntmract{
 		Address: OngCcntmractAddress,
+		Method:  "init",
+	}
+	bf := new(bytes.Buffer)
+	init.Serialize(bf)
+	vmCode := stypes.VmCode{
+		VmType: stypes.Native,
+		Code:   bf.Bytes(),
+	}
+	tx := utils.NewInvokeTransaction(vmCode)
+	return tx
+}
+
+func newParamInit() *types.Transaction {
+	init := states.Ccntmract{
+		Address: ParamCcntmractAddress,
 		Method:  "init",
 	}
 	bf := new(bytes.Buffer)

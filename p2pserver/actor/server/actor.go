@@ -241,7 +241,7 @@ func (this *P2PActor) handleGetNodeTypeReq(ctx actor.Ccntmext, req *GetNodeTypeR
 //handle vbft msg request
 func (this *P2PActor) handleTransmitConsensusMsgReq(ctx actor.Ccntmext, req *TransmitConsensusMsgReq) {
 	for _, peer := range this.server.GetNetWork().GetNeighbors() {
-		if keypair.ComparePublicKey(*req.Target, peer.GetPubKey()) {
+		if keypair.ComparePublicKey(req.Target, peer.GetPubKey()) {
 			this.server.Send(peer, req.Msg, true)
 		}
 	}

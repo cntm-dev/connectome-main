@@ -25,6 +25,7 @@ import (
 	"math/big"
 	"os"
 	"time"
+	"strings"
 
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/cmd/utils"
@@ -240,7 +241,7 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 	email := ctx.String(utils.CcntmractEmailFlag.Name)
 	desc := ctx.String(utils.CcntmractDescFlag.Name)
 
-	trHash, err := cntmSdk.Rpc.DeploySmartCcntmract(acct, vmType, store, fmt.Sprintf("%s", code), name, version, author, email, desc)
+	trHash, err := cntmSdk.Rpc.DeploySmartCcntmract(acct, vmType, store, strings.TrimSpace(fmt.Sprintf("%s", code)), name, version, author, email, desc)
 	if err != nil {
 		fmt.Printf("Deploy smart error: %s", err.Error())
 		return err
