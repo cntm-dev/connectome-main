@@ -32,7 +32,6 @@ import (
 	actorTypes "github.com/cntmio/cntmology/consensus/actor"
 	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/ledger"
-	ldgractor "github.com/cntmio/cntmology/core/ledger/actor"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/signature"
 	"github.com/cntmio/cntmology/core/types"
@@ -51,6 +50,7 @@ type DbftService struct {
 	timeView          byte
 	blockReceivedTime time.Time
 	started           bool
+	ledger            *ledger.Ledger
 	incrValidator     *increment.IncrementValidator
 	poolActor         *actorTypes.TxPoolActor
 	p2p               *actorTypes.P2PActor
@@ -65,6 +65,7 @@ func NewDbftService(bkAccount *account.Account, txpool, p2p *actor.PID) (*DbftSe
 		Account:       bkAccount,
 		timer:         time.NewTimer(time.Second * 15),
 		started:       false,
+		ledger:        ledger.DefLedger,
 		incrValidator: increment.NewIncrementValidator(10),
 		poolActor:     &actorTypes.TxPoolActor{Pool: txpool},
 		p2p:           &actorTypes.P2PActor{P2P: p2p},
@@ -224,21 +225,16 @@ func (ds *DbftService) CheckSignatures() error {
 		block.Transactions = ds.ccntmext.Transactions
 
 		hash := block.Hash()
-		isExist, err := ledger.DefLedger.IsCcntmainBlock(hash)
+		isExist, err := ds.ledger.IsCcntmainBlock(hash)
 		if err != nil {
 			log.Errorf("DefLedger.IsCcntmainBlock Hash:%x error:%s", hash, err)
 			return err
 		}
 		if !isExist {
 			// save block
-			future := ldgractor.DefLedgerPid.RequestFuture(&ldgractor.AddBlockReq{Block: block}, 30*time.Second)
-			result, err := future.Result()
+			err := ds.ledger.AddBlock(block)
 			if err != nil {
 				return fmt.Errorf("CheckSignatures DefLedgerPid.RequestFuture Height:%d error:%s", block.Header.Height, err)
-			}
-			addBlockRsp := result.(*ldgractor.AddBlockRsp)
-			if addBlockRsp.Error != nil {
-				return fmt.Errorf("CheckSignatures AddBlockRsp Height:%d error:%s", block.Header.Height, addBlockRsp.Error)
 			}
 
 			ds.ccntmext.State |= BlockGenerated
@@ -421,7 +417,7 @@ func (ds *DbftService) PrepareRequestReceived(payload *p2pmsg.ConsensusPayload, 
 		return
 	}
 
-	header, err := ledger.DefLedger.GetHeaderByHash(ds.ccntmext.PrevHash)
+	header, err := ds.ledger.GetHeaderByHash(ds.ccntmext.PrevHash)
 	if err != nil {
 		log.Errorf("PrepareRequestReceived GetHeader failed with ds.ccntmext.PrevHash:%x", ds.ccntmext.PrevHash)
 		return

@@ -34,8 +34,8 @@ import (
 	comm "github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/types"
-	actor "github.com/cntmio/cntmology/p2pserver/actor/req"
 	"github.com/cntmio/cntmology/p2pserver/common"
 	"github.com/cntmio/cntmology/p2pserver/message/msg_pack"
 	msgtypes "github.com/cntmio/cntmology/p2pserver/message/types"
@@ -51,6 +51,7 @@ type P2PServer struct {
 	msgRouter *utils.MessageRouter
 	pid       *evtActor.PID
 	blockSync *BlockSyncMgr
+	ledger    *ledger.Ledger
 	ReconnectAddrs
 	quitOnline    chan bool
 	quitHeartBeat chan bool
@@ -68,6 +69,7 @@ func NewServer(acc *account.Account) (*P2PServer, error) {
 
 	p := &P2PServer{
 		network: n,
+		ledger:  ledger.DefLedger,
 	}
 
 	p.msgRouter = utils.NewMsgRouter(p.network)
@@ -245,11 +247,7 @@ func (this *P2PServer) blockSyncFinished() bool {
 		return false
 	}
 
-	blockHeight, err := actor.GetCurrentBlockHeight()
-	if err != nil {
-		log.Errorf("P2PServer GetCurrentBlockHeight error:%s", err)
-		return false
-	}
+	blockHeight := this.ledger.GetCurrentBlockHeight()
 
 	for _, v := range peers {
 		if blockHeight < uint32(v.GetHeight()) {
@@ -261,14 +259,14 @@ func (this *P2PServer) blockSyncFinished() bool {
 
 //WaitForSyncBlkFinish compare the height of self and remote peer in loop
 func (this *P2PServer) WaitForSyncBlkFinish() {
-	consensusType := strings.ToLower(config.Parameters.ConsensusType)
+	consensusType := strings.ToLower(config.DefConfig.Genesis.ConsensusType)
 	if consensusType == "solo" {
 		return
 	}
 
 	for {
-		headerHeight, _ := actor.GetCurrentHeaderHeight()
-		currentBlkHeight, _ := actor.GetCurrentBlockHeight()
+		headerHeight := this.ledger.GetCurrentHeaderHeight()
+		currentBlkHeight := this.ledger.GetCurrentBlockHeight()
 		log.Info("WaitForSyncBlkFinish... current block height is ",
 			currentBlkHeight, " ,current header height is ", headerHeight)
 
@@ -288,11 +286,8 @@ func (this *P2PServer) WaitForPeersStart() {
 		if this.reachMinConnection() {
 			break
 		}
-		if config.Parameters.GenBlockTime > config.MIN_GEN_BLOCK_TIME {
-			periodTime = config.Parameters.GenBlockTime / common.UPDATE_RATE_PER_BLOCK
-		} else {
-			periodTime = config.DEFAULT_GEN_BLOCK_TIME / common.UPDATE_RATE_PER_BLOCK
-		}
+
+		periodTime = config.DEFAULT_GEN_BLOCK_TIME / common.UPDATE_RATE_PER_BLOCK
 		<-time.After(time.Second * (time.Duration(periodTime)))
 	}
 }
@@ -302,7 +297,7 @@ func (this *P2PServer) connectSeeds() {
 	if this.reachMinConnection() {
 		return
 	}
-	seedNodes := config.Parameters.SeedList
+	seedNodes := config.DefConfig.Genesis.SeedList
 	for _, nodeAddr := range seedNodes {
 		found := false
 		var p *peer.Peer
@@ -333,7 +328,7 @@ func (this *P2PServer) connectSeeds() {
 
 //reachMinConnection return whether net layer have enough link under different config
 func (this *P2PServer) reachMinConnection() bool {
-	consensusType := strings.ToLower(config.Parameters.ConsensusType)
+	consensusType := strings.ToLower(config.DefConfig.Genesis.ConsensusType)
 	if consensusType == "" {
 		consensusType = "dbft"
 	}
@@ -432,11 +427,7 @@ func (this *P2PServer) reqNbrList(p *peer.Peer) {
 //heartBeat send ping to nbr peers and check the timeout
 func (this *P2PServer) heartBeatService() {
 	var periodTime uint
-	if config.Parameters.GenBlockTime > config.MIN_GEN_BLOCK_TIME {
-		periodTime = config.Parameters.GenBlockTime / common.UPDATE_RATE_PER_BLOCK
-	} else {
-		periodTime = config.DEFAULT_GEN_BLOCK_TIME / common.UPDATE_RATE_PER_BLOCK
-	}
+	periodTime = config.DEFAULT_GEN_BLOCK_TIME / common.UPDATE_RATE_PER_BLOCK
 	t := time.NewTicker(time.Second * (time.Duration(periodTime)))
 
 	for {
@@ -456,11 +447,7 @@ func (this *P2PServer) ping() {
 	peers := this.network.GetNeighbors()
 	for _, p := range peers {
 		if p.GetSyncState() == common.ESTABLISH {
-			height, err := actor.GetCurrentBlockHeight()
-			if err != nil {
-				log.Error("failed get current height! Ping faild!")
-				return
-			}
+			height := this.ledger.GetCurrentBlockHeight()
 			buf, err := msgpack.NewPingMsg(uint64(height))
 			if err != nil {
 				log.Error("failed build a new ping message")
@@ -475,11 +462,7 @@ func (this *P2PServer) ping() {
 func (this *P2PServer) timeout() {
 	peers := this.network.GetNeighbors()
 	var periodTime uint
-	if config.Parameters.GenBlockTime > config.MIN_GEN_BLOCK_TIME {
-		periodTime = config.Parameters.GenBlockTime / common.UPDATE_RATE_PER_BLOCK
-	} else {
-		periodTime = config.DEFAULT_GEN_BLOCK_TIME / common.UPDATE_RATE_PER_BLOCK
-	}
+	periodTime = config.DEFAULT_GEN_BLOCK_TIME / common.UPDATE_RATE_PER_BLOCK
 	for _, p := range peers {
 		if p.GetSyncState() == common.ESTABLISH {
 			t := p.GetCcntmactTime()

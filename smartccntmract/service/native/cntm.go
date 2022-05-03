@@ -22,8 +22,9 @@ import (
 	"bytes"
 	"math/big"
 
-	"github.com/cntmio/cntmology/account"
+	"fmt"
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/core/genesis"
 	cstates "github.com/cntmio/cntmology/core/states"
 	scommon "github.com/cntmio/cntmology/core/store/common"

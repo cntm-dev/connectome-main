@@ -26,7 +26,6 @@ import (
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	ct "github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology/p2pserver/actor/req"
 	msgCommon "github.com/cntmio/cntmology/p2pserver/common"
 	mt "github.com/cntmio/cntmology/p2pserver/message/types"
 	p2pnet "github.com/cntmio/cntmology/p2pserver/net/protocol"
@@ -204,7 +203,7 @@ func NewVerAck(isConsensus bool) ([]byte, error) {
 }
 
 //VersionPayload package
-func NewVersionPayload(n p2pnet.P2P, isCons bool) mt.VersionPayload {
+func NewVersionPayload(n p2pnet.P2P, isCons bool, height uint32) mt.VersionPayload {
 	vpl := mt.VersionPayload{
 		Version:      n.GetVersion(),
 		Services:     n.GetServices(),
@@ -215,14 +214,13 @@ func NewVersionPayload(n p2pnet.P2P, isCons bool) mt.VersionPayload {
 		HttpInfoPort: n.GetHttpInfoPort(),
 	}
 
-	height, _ := req.GetCurrentBlockHeight()
 	vpl.StartHeight = uint64(height)
 	if n.GetRelay() {
 		vpl.Relay = 1
 	} else {
 		vpl.Relay = 0
 	}
-	if config.Parameters.HttpInfoPort > 0 {
+	if config.DefConfig.P2PNode.HttpInfoPort > 0 {
 		vpl.Cap[msgCommon.HTTP_INFO_FLAG] = 0x01
 	} else {
 		vpl.Cap[msgCommon.HTTP_INFO_FLAG] = 0x00

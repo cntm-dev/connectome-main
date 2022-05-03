@@ -41,11 +41,7 @@ func GetGenerateBlockTime(params []interface{}) map[string]interface{} {
 }
 
 func GetBestBlockHash(params []interface{}) map[string]interface{} {
-	hash, err := bactor.CurrentBlockHash()
-	if err != nil {
-		log.Errorf("GetBestBlockHash error:%s", err)
-		return responsePack(berr.INTERNAL_ERROR, false)
-	}
+	hash:= bactor.CurrentBlockHash()
 	return responseSuccess(common.ToHexString(hash.ToArray()))
 }
 

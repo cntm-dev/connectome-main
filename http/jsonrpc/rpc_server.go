@@ -25,9 +25,10 @@ import (
 	cfg "github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/http/base/rpc"
+	"fmt"
 )
 
-func StartRPCServer() {
+func StartRPCServer() error{
 	log.Debug()
 	http.HandleFunc("/", rpc.Handle)
 
@@ -53,8 +54,9 @@ func StartRPCServer() {
 	rpc.HandleFunc("getbalance", rpc.GetBalance)
 	rpc.HandleFunc("getmerkleproof", rpc.GetMerkleProof)
 
-	err := http.ListenAndServe(":"+strconv.Itoa(cfg.Parameters.HttpJsonPort), nil)
+	err := http.ListenAndServe(":"+strconv.Itoa(int(cfg.DefConfig.Rpc.HttpJsonPort)), nil)
 	if err != nil {
-		log.Fatal("ListenAndServe: ", err.Error())
+		return fmt.Errorf("ListenAndServe error:%s", err)
 	}
+	return nil
 }

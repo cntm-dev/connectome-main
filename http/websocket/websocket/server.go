@@ -78,7 +78,8 @@ func InitWsServer() *WsServer {
 }
 
 func (self *WsServer) Start() error {
-	if cfg.Parameters.HttpWsPort == 0 {
+	wsPort := int(cfg.DefConfig.Ws.HttpWsPort)
+	if wsPort == 0 {
 		log.Error("Not configure HttpWsPort port ")
 		return nil
 	}
@@ -88,7 +89,7 @@ func (self *WsServer) Start() error {
 	}
 
 	tlsFlag := false
-	if tlsFlag || cfg.Parameters.HttpWsPort%1000 == rest.TLS_PORT {
+	if tlsFlag || wsPort%1000 == rest.TLS_PORT {
 		var err error
 		self.listener, err = self.initTlsListen()
 		if err != nil {
@@ -97,7 +98,7 @@ func (self *WsServer) Start() error {
 		}
 	} else {
 		var err error
-		self.listener, err = net.Listen("tcp", ":"+strconv.Itoa(cfg.Parameters.HttpWsPort))
+		self.listener, err = net.Listen("tcp", ":"+strconv.Itoa(wsPort))
 		if err != nil {
 			log.Fatal("net.Listen: ", err.Error())
 			return err
@@ -172,8 +173,8 @@ func (self *WsServer) registryMethod() {
 	}
 	actionMap := map[string]Handler{
 		"getblockheightbytxhash": {handler: rest.GetBlockHeightByTxHash},
-		"getsmartcodeevent":      {handler: rest.GetSmartCodeEventByTxHash},
-		"getsmartcodeeventtxs":   {handler: rest.GetSmartCodeEventTxsByHeight},
+		"getsmartcodeeventbyhash":      {handler: rest.GetSmartCodeEventByTxHash},
+		"getsmartcodeeventbyheight":   {handler: rest.GetSmartCodeEventTxsByHeight},
 		"getccntmract":            {handler: rest.GetCcntmractState},
 		"getbalance":             {handler: rest.GetBalance},
 		"getconnectioncount":     {handler: rest.GetConnectionCount},
@@ -187,6 +188,7 @@ func (self *WsServer) registryMethod() {
 		"subscribe":              {handler: subscribe},
 		"getstorage":             {handler: rest.GetStorage},
 		"getmerkleproof":        {handler: rest.GetMerkleProof},
+		"getblocktxsbyheight": {handler: rest.GetBlockTxsByHeight},
 
 		"getsessioncount": {handler: getsessioncount},
 	}
@@ -429,8 +431,8 @@ func (self *WsServer) BroadcastToSubscribers(ccntmractAddrs map[string]bool,sub 
 
 func (self *WsServer) initTlsListen() (net.Listener, error) {
 
-	certPath := cfg.Parameters.HttpCertPath
-	keyPath := cfg.Parameters.HttpKeyPath
+	certPath := cfg.DefConfig.Ws.HttpCertPath
+	keyPath := cfg.DefConfig.Ws.HttpKeyPath
 
 	// load cert
 	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
@@ -443,8 +445,9 @@ func (self *WsServer) initTlsListen() (net.Listener, error) {
 		Certificates: []tls.Certificate{cert},
 	}
 
-	log.Info("TLS listen port is ", strconv.Itoa(cfg.Parameters.HttpWsPort))
-	listener, err := tls.Listen("tcp", ":"+strconv.Itoa(cfg.Parameters.HttpWsPort), tlsConfig)
+	wsPort := strconv.Itoa(int(cfg.DefConfig.Ws.HttpWsPort))
+	log.Info("TLS listen port is ", wsPort)
+	listener, err := tls.Listen("tcp", ":"+wsPort, tlsConfig)
 	if err != nil {
 		log.Error(err)
 		return nil, err

@@ -19,20 +19,13 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
-	"io/ioutil"
-	"math/big"
-	"os"
-	"time"
-	"strings"
-
-	"github.com/cntmio/cntmology/account"
+	cmdcom "github.com/cntmio/cntmology/cmd/common"
 	"github.com/cntmio/cntmology/cmd/utils"
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/password"
 	"github.com/cntmio/cntmology/smartccntmract/types"
 	"github.com/urfave/cli"
+	"io/ioutil"
+	"strings"
 )
 
 var (
@@ -52,9 +45,9 @@ var (
 				ArgsUsage:    " ",
 				Flags: []cli.Flag{
 					utils.CcntmractAddrFlag,
+					utils.CcntmractVmTypeFlag,
 					utils.CcntmractParamsFlag,
-					utils.AccountFileFlag,
-					utils.AccountPassFlag,
+					utils.WalletFileFlag,
 				},
 				Description: ``,
 			},
@@ -67,14 +60,13 @@ var (
 				Flags: []cli.Flag{
 					utils.CcntmractVmTypeFlag,
 					utils.CcntmractStorageFlag,
-					utils.CcntmractCodeFlag,
+					utils.CcntmractCodeFileFlag,
 					utils.CcntmractNameFlag,
 					utils.CcntmractVersionFlag,
 					utils.CcntmractAuthorFlag,
 					utils.CcntmractEmailFlag,
 					utils.CcntmractDescFlag,
-					utils.AccountFileFlag,
-					utils.AccountPassFlag,
+					utils.WalletFileFlag,
 				},
 				Description: ``,
 			},
@@ -99,69 +91,48 @@ func invokeUsageError(ccntmext *cli.Ccntmext, err error, isSubcommand bool) erro
 	return nil
 }
 
+//
 func invokeCcntmract(ctx *cli.Ccntmext) error {
-	if !ctx.IsSet(utils.CcntmractAddrFlag.Name) || !ctx.IsSet(utils.CcntmractParamsFlag.Name) {
-		fmt.Println("Missing argument.\n")
-		cli.ShowSubcommandHelp(ctx)
-		return nil
-	}
-
-	var wallet = account.WALLET_FILENAME
-	if ctx.IsSet("file") {
-		wallet = ctx.String("file")
-	}
-	var passwd []byte
-	var err error
-	if ctx.IsSet("password") {
-		passwd = []byte(ctx.String("password"))
-	} else {
-		passwd, err = password.GetAccountPassword()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return errors.New("input password error")
-		}
-	}
-	client := account.Open(wallet, passwd)
-	for i, _ := range passwd {
-		passwd[i] = 0
-	}
-	if client == nil {
-		fmt.Println("Can't get local account")
-		return errors.New("Get client is nil")
-	}
-
-	acct := client.GetDefaultAccount()
-	if acct == nil {
-		fmt.Println("Can't get default account.")
-		return errors.New("Deploy ccntmract failed.")
-	}
-
-	ccntmractAddr := ctx.String(utils.CcntmractAddrFlag.Name)
-	params := ctx.String(utils.CcntmractParamsFlag.Name)
-	if "" == ccntmractAddr {
-		fmt.Println("ccntmract address does not allow empty")
-	}
-
-	addr, err := common.AddressFromBase58(ccntmractAddr)
-	if err != nil {
-		fmt.Println("Parase ccntmract address error, please use correct smart ccntmract address")
-		return err
-	}
-
-	txHash, err := cntmSdk.Rpc.InvokeNeoVMSmartCcntmract(acct, new(big.Int), addr, []interface{}{params})
-	if err != nil {
-		fmt.Printf("InvokeSmartCcntmract InvokeNeoVMSmartCcntmract error:%s", err)
-		return err
-	} else {
-		fmt.Printf("invoke transaction hash:%s", common.ToHexString(txHash[:]))
-	}
-
-	//WaitForGenerateBlock
-	_, err = cntmSdk.Rpc.WaitForGenerateBlock(30*time.Second, 1)
-	if err != nil {
-		fmt.Printf("InvokeSmartCcntmract WaitForGenerateBlock error:%s", err)
-	}
-	return err
+	//	if !ctx.IsSet(utils.CcntmractAddrFlag.Name) {
+	//		return fmt.Errorf("Missing ccntmract address argument.\n")
+	//	}
+	//
+	//	wallet, err := cmdcom.OpenWallet(ctx)
+	//	if err != nil {
+	//		return fmt.Errorf("OpenWallet error:%s", err)
+	//	}
+	//
+	//	acc := wallet.GetDefaultAccount()
+	//	if acc == nil {
+	//		return fmt.Errorf("Cannot GetDefaultAccount")
+	//	}
+	//
+	//	vmType := ctx.String(utils.CcntmractVmTypeFlag.Name)
+	//	ccntmractAddr := ctx.String(utils.CcntmractAddrFlag.Name)
+	//
+	//	addr, err := common.AddressFromBase58(ccntmractAddr)
+	//	if err != nil {
+	//		return fmt.Errorf("Invalid ccntmract address")
+	//	}
+	//
+	//	paramsStr := ctx.String(utils.CcntmractParamsFlag.Name)
+	//	ps := strings.Split(paramsStr)
+	//
+	//
+	//	txHash, err := cntmSdk.Rpc.InvokeNeoVMSmartCcntmract(acct, new(big.Int), addr, []interface{}{params})
+	//	if err != nil {
+	//		fmt.Printf("InvokeSmartCcntmract InvokeNeoVMSmartCcntmract error:%s", err)
+	//		return err
+	//	} else {
+	//		fmt.Printf("invoke transaction hash:%s", common.ToHexString(txHash[:]))
+	//	}
+	//
+	//	//WaitForGenerateBlock
+	//	_, err = cntmSdk.Rpc.WaitForGenerateBlock(30*time.Second, 1)
+	//	if err != nil {
+	//		fmt.Printf("InvokeSmartCcntmract WaitForGenerateBlock error:%s", err)
+	//	}
+	return nil
 }
 
 func getVmType(vmType string) types.VmType {
@@ -182,78 +153,44 @@ func deployUsageError(ccntmext *cli.Ccntmext, err error, isSubcommand bool) erro
 }
 
 func deployCcntmract(ctx *cli.Ccntmext) error {
-	if !ctx.IsSet(utils.CcntmractStorageFlag.Name) || !ctx.IsSet(utils.CcntmractVmTypeFlag.Name) ||
-		!ctx.IsSet(utils.CcntmractCodeFlag.Name) || !ctx.IsSet(utils.CcntmractNameFlag.Name) ||
-		!ctx.IsSet(utils.CcntmractVersionFlag.Name) || !ctx.IsSet(utils.CcntmractAuthorFlag.Name) ||
-		!ctx.IsSet(utils.CcntmractEmailFlag.Name) || !ctx.IsSet(utils.CcntmractDescFlag.Name) {
-		fmt.Println("Missing argument.\n")
-		cli.ShowSubcommandHelp(ctx)
-		return errors.New("Parameter is err")
+	if !ctx.IsSet(utils.CcntmractCodeFileFlag.Name) ||
+		!ctx.IsSet(utils.CcntmractNameFlag.Name) {
+		return fmt.Errorf("Missing code or name argument")
 	}
 
-	var wallet = account.WALLET_FILENAME
-	if ctx.IsSet("file") {
-		wallet = ctx.String("file")
-	}
-	var passwd []byte
-	var err error
-	if ctx.IsSet("password") {
-		passwd = []byte(ctx.String("password"))
-	} else {
-		passwd, err = password.GetAccountPassword()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return errors.New("input password error")
-		}
-	}
-	client := account.Open(wallet, passwd)
-	for i, _ := range passwd {
-		passwd[i] = 0
-	}
-	if nil == client {
-		fmt.Println("Error load wallet file", wallet)
-		return errors.New("Get client return nil")
+	wallet, err := cmdcom.OpenWallet(ctx)
+	if err != nil {
+		return fmt.Errorf("OpenWallet error:%s", err)
 	}
 
-	acct := client.GetDefaultAccount()
-	if acct == nil {
-		fmt.Println("Can't get default account.")
-		return errors.New("Deploy ccntmract failed.")
+	acc := wallet.GetDefaultAccount()
+	if acc == nil {
+		return fmt.Errorf("Cannot get default account")
 	}
 
 	store := ctx.Bool(utils.CcntmractStorageFlag.Name)
 	vmType := getVmType(ctx.String(utils.CcntmractVmTypeFlag.Name))
-
-	codeDir := ctx.String(utils.CcntmractCodeFlag.Name)
-	if "" == codeDir {
-		fmt.Println("Code dir is error, value does not allow null")
-		return errors.New("Smart ccntmract code dir does not allow empty")
+	codeFile := ctx.String(utils.CcntmractCodeFileFlag.Name)
+	if "" == codeFile {
+		return fmt.Errorf("Please specific code file")
 	}
-	code, err := ioutil.ReadFile(codeDir)
+	data, err := ioutil.ReadFile(codeFile)
 	if err != nil {
-		fmt.Printf("Error in read file,%s", err.Error())
-		return err
+		return fmt.Errorf("Read code:%s error:%s", codeFile, err)
 	}
-
+	code := strings.TrimSpace(string(data))
 	name := ctx.String(utils.CcntmractNameFlag.Name)
 	version := ctx.String(utils.CcntmractVersionFlag.Name)
 	author := ctx.String(utils.CcntmractAuthorFlag.Name)
 	email := ctx.String(utils.CcntmractEmailFlag.Name)
 	desc := ctx.String(utils.CcntmractDescFlag.Name)
 
-	trHash, err := cntmSdk.Rpc.DeploySmartCcntmract(acct, vmType, store, strings.TrimSpace(fmt.Sprintf("%s", code)), name, version, author, email, desc)
+	txHash, err := utils.DeployCcntmract(acc, vmType, store, code, name, version, author, email, desc)
 	if err != nil {
-		fmt.Printf("Deploy smart error: %s", err.Error())
-		return err
+		return fmt.Errorf("DeployCcntmract error:%s", err)
 	}
-	//WaitForGenerateBlock
-	_, err = cntmSdk.Rpc.WaitForGenerateBlock(30*time.Second, 1)
-	if err != nil {
-		fmt.Printf("DeploySmartCcntmract WaitForGenerateBlock error:%s", err.Error())
-		return err
-	} else {
-		fmt.Printf("Deploy smartCcntmract transaction hash: %s\n", common.ToHexString(trHash[:]))
-	}
-
+	address := utils.GetCcntmractAddress(code, vmType)
+	fmt.Printf("Deploy TxHash:%s\n", txHash)
+	fmt.Printf("Ccntmract Address:%x\n", address)
 	return nil
 }

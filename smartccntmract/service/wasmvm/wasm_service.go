@@ -36,7 +36,7 @@ type WasmVmService struct {
 }
 
 func (this *WasmVmService) Invoke() (interface{}, error) {
-	stateMachine := NewWasmStateMachine(this.Store, this.CloneCache, this.Time)
+	stateMachine := NewWasmStateMachine()
 	//register the "CallCcntmract" function
 	stateMachine.Register("cntm_CallCcntmract", this.callCcntmract)
 	stateMachine.Register("cntm_MarshalNativeParams", this.marshalNativeParams)

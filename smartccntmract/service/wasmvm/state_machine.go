@@ -22,9 +22,7 @@ import (
 	"fmt"
 
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/core/store"
 	"github.com/cntmio/cntmology/errors"
-	"github.com/cntmio/cntmology/smartccntmract/storage"
 	"github.com/cntmio/cntmology/vm/wasmvm/exec"
 	"github.com/cntmio/cntmology/vm/wasmvm/util"
 )
@@ -46,19 +44,13 @@ const (
 
 type WasmStateMachine struct {
 	*WasmStateReader
-	ldgerStore store.LedgerStore
-	CloneCache *storage.CloneCache
-	time       uint32
 }
 
-func NewWasmStateMachine(ldgerStore store.LedgerStore, cloneCache *storage.CloneCache, time uint32) *WasmStateMachine {
+func NewWasmStateMachine() *WasmStateMachine {
 
-	var stateMachine WasmStateMachine
-	stateMachine.ldgerStore = ldgerStore
-	stateMachine.CloneCache = cloneCache
-	stateMachine.WasmStateReader = NewWasmStateReader(ldgerStore)
-	stateMachine.time = time
+	stateMachine := WasmStateMachine{WasmStateReader: NewWasmStateReader()}
 
+	//only for debug test
 	stateMachine.Register("CcntmractLogDebug", stateMachine.ccntmractLogDebug)
 	stateMachine.Register("CcntmractLogInfo", stateMachine.ccntmractLogInfo)
 	stateMachine.Register("CcntmractLogError", stateMachine.ccntmractLogError)

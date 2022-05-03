@@ -1,14 +1,36 @@
-# Ontology Websocket API
+# Ontology Restful API
 
-* [Introduction](#Introduction)
-* [Websocket API list](#Websocket API list)
-* [Errorcode](#Errorcode)
+* [Introduction](#introduction)
+* [Restful Api List](#restful-api-list)
+* [Error Code](#error-code)
+
+Restful Api List
+
+| Method | url |
+| :---| :---|
+| get_gen_blk_time | GET /api/v1/node/generateblocktime |
+| get_conn_count | GET /api/v1/node/connectioncount |
+| get_blk_txs_by_height | GET /api/v1/block/transactions/height/:height |
+| get_blk_by_height | GET /api/v1/block/details/height/:height |
+| get_blk_by_hash | GET /api/v1/block/details/hash/:hash |
+| get_blk_height | GET /api/v1/block/height |
+| get_blk_hash | GET /api/v1/block/hash/:height |
+| get_tx | GET /api/v1/transaction/:hash |
+| get_storage | GET /api/v1/storage/:hash/:key|
+| get_balance | GET /api/v1/balance/:addr |
+| get_ccntmract_state | GET /api/v1/ccntmract/:hash |
+| get_smtcode_evt_txs | GET /api/v1/smartcode/event/transactions/:height |
+| get_smtcode_evts | GET /api/v1/smartcode/event/txhash/:hash |
+| get_blk_hgt_by_txhash | GET /api/v1/block/height/txhash/:hash |
+| get_merkle_proof | GET /api/v1/merkleproof/:hash|
+| post_raw_tx | post /api/v1/transaction |
+
 
 ## Introduction
 
-This document describes the Websocket api format for the ws/wss used in the Onchain Ontology.
+This document describes the restful api format for the http/https used in the Onchain Ontology.
 
-## Websocket API list
+## Restful Api List
 
 ### Response parameters descri
 
@@ -19,83 +41,20 @@ This document describes the Websocket api format for the ws/wss used in the Onch
 | Error | int64 | error code |
 | Result | object | execute result |
 | Version | string | version information |
-| Id | int | req Id|
 
-###  1. heartbeat
-if don't send heartbeat, the session expire after 5min
+### 1. get_gen_blk_time
 
+Get the generate block time
+
+##### GET
+
+```
+/api/v1/node/generateblocktime
+```
 #### Request Example:
 
 ```
-{
-    "Action": "heartbeat",
-    "Version": "1.0.0"
-}
-```
-
-#### Response example:
-
-```
-{
-    "Action": "heartbeat",
-    "Desc": "SUCCESS",
-    "Error": 0,
-    "Result": {
-        "SubscribeEvent":false,
-        "SubscribeJsonBlock":false,
-        "SubscribeRawBlock":false,
-        "SubscribeBlockTxHashs":false
-    }
-    "Version": "1.0.0"
-}
-```
-
-###  2. subscribe
-subscribe service
-
-#### Request Example:
-
-```
-{
-    "Action": "subscribe",
-    "Version": "1.0.0",
-    "ConstractsFilter":["constractAddress"], //optional
-    "SubscribeEvent":false, //optional
-    "SubscribeJsonBlock":true, //optional
-    "SubscribeRawBlock":false, //optional
-    "SubscribeBlockTxHashs":false //optional
-}
-```
-
-#### Response example:
-
-```
-{
-    "Action": "subscribe",
-    "Desc": "SUCCESS",
-    "Error": 0,
-    "Result": {
-        "ConstractsFilter":["constractAddress"],
-        "SubscribeEvent":false,
-        "SubscribeJsonBlock":true,
-        "SubscribeRawBlock":false,
-        "SubscribeBlockTxHashs":false
-    }
-    "Version": "1.0.0"
-}
-```
-
-### 3. Get the generate block time
-return the time required to create a new block
-
-
-#### Request Example:
-
-```
-{
-    "Action": "getgenerateblocktime",
-    "Version": "1.0.0"
-}
+curl -i http://server:port/api/v1/node/generateblocktime
 ```
 
 #### Response example:
@@ -103,24 +62,27 @@ return the time required to create a new block
 ```
 {
     "Action": "getgenerateblocktime",
-    "Desc": "SUCCESS",
+    "Desc": "SUCCESS"
     "Error": 0,
     "Result": 6,
     "Version": "1.0.0"
 }
 ```
-### 4 Get the number of connected node
+### 2 get_conn_count
 
-get the current number of connections for the node
+Get the number of connected node
 
+
+GET
+
+```
+/api/v1/node/connectioncount
+```
 
 #### Request Example:
 
 ```
-{
-    "Action": "getconnectioncount",
-    "Version": "1.0.0"
-}
+curl -i http://server:port/api/v1/node/connectioncount
 ```
 
 #### Response Example:
@@ -130,23 +92,25 @@ get the current number of connections for the node
     "Action": "getconnectioncount",
     "Desc": "SUCCESS",
     "Error": 0,
-    "Result": 4,
+    "Result": 0,
     "Version": "1.0.0"
 }
 ```
-### 5 Get transactions by block height
+### 3 get_blk_txs_by_height
 
+Get transactions by block height
 return all transaction hash ccntmained in the block corresponding to this height
 
+GET
+
+```
+/api/v1/block/transactions/height/:height
+```
 
 #### Request Example:
 
 ```
-{
-    "Action": "getblocktxsbyheight",
-    "Version": "1.0.0",
-    "Height": 100
-}
+curl -i http://server:port/api/v1/block/transactions/height/100
 ```
 
 #### Response Example:
@@ -166,20 +130,21 @@ return all transaction hash ccntmained in the block corresponding to this height
     "Version": "1.0.0"
 }
 ```
-### 6. Get the block by block height
+### 4 get_blk_by_height
 
+Get the block by block height
 return block details based on block height
 
+GET
+
+```
+/api/v1/block/details/height/:height
+```
 
 #### Request Example:
 
 ```
-{
-    "Action": "getblockbyheight",
-    "Version": "1.0.0",
-    "Raw": "0",
-    "Height": 100
-}
+curl -i http://server:port/api/v1/block/details/height/22
 ```
 
 #### Response Example:
@@ -237,20 +202,21 @@ return block details based on block height
     "Version": "1.0.0"
 }
 ```
-### 7. Get block by blockhash
+### 5 get_blk_by_hash
 
+Get block by blockhash
 return block details based on block hash
 
+GET
+
+```
+/api/v1/block/details/hash/:hash
+```
 
 #### Request Example:
 
 ```
-{
-    "Action": "getblockbyhash",
-    "Version": "1.0.0",
-    "Raw": "0",
-    "Hash": "7c3e38afb62db28c7360af7ef3c1baa66aeec27d7d2f60cd22c13ca85b2fd4f3"
-}
+curl -i http://server:port/api/v1/block/details/hash/ea5e5219d2f1591f4feef89885c3f38c83d3a3474a5622cf8cd3de1b93849603
 ```
 
 #### Response Example:
@@ -309,18 +275,21 @@ return block details based on block hash
 }
 ```
 
-### 8. Get the current block height
+### 6 get_blk_height
 
-return the current block height
+Get the current block height
 
+
+GET
+
+```
+/api/v1/block/height
+```
 
 #### Request Example:
 
 ```
-{
-    "Action": "getblockheight",
-    "Version": "1.0.0"
-}
+curl -i http://server:port/api/v1/block/height
 ```
 
 
@@ -336,19 +305,20 @@ return the current block height
 }
 ```
 
-### 9. Get blockhash by block height
+### 7 get_blk_hash
 
-return block hash based on block height
+Get blockhash by block height
 
+GET
+
+```
+/api/v1/block/hash/:height
+```
 
 #### Request Example:
 
 ```
-{
-    "Action": "getblockhash",
-    "Version": "1.0.0",
-    "Height": 100
-}
+curl -i http://server:port/api/v1/block/hash/100
 ```
 
 #### Response Example:
@@ -363,20 +333,20 @@ return block hash based on block height
 }
 ```
 
-### 10. get transaction by transaction hash
+### 8 get_tx
 
-get transaction details based on transaction hash
+get transaction by transaction hash
 
-
-#### Request Example:
+GET
 
 ```
-{
-    "Action": "gettransaction",
-    "Version": "1.0.0",
-    "Hash": "3b90ddc4d33c4954c3d87736120e94915f963546861987757f358c9376422255",
-    "Raw": "0"
-}
+/api/v1/transaction/:hash
+```
+
+####Request Example:
+
+```
+curl -i http://server:port/api/v1/transaction/c5e0d387c6a97aef12f1750840d24b53d9fe7f22f16c7b7703d4a93a28370baa
 ```
 #### Response Example:
 
@@ -412,12 +382,23 @@ get transaction details based on transaction hash
 }
 ```
 
-### 11. send transaction
+### 9 post_raw_tx
 
 send transaction.
 
+POST
+
+```
+/api/v1/transaction
+```
 
 #### Request Example:
+
+```
+curl  -H "Ccntment-Type: application/json"  -X POST -d '{"Action":"sendrawtransaction", "Version":"1.0.0","Data":"00d00000000080fdcf2b0138c56b6c766b00527ac46c766b51527ac46151c56c766b52527ac46c766b00c31052656749644279507..."}'  http://server:port/api/v1/transaction
+```
+
+#### Post Params:
 
 ```
 {
@@ -426,8 +407,87 @@ send transaction.
     "Data":"80000001195876cb34364dc38b730077156c6bc3a7fc570044a66fbfeeea56f71327e8ab0000029b7cffdaa674beae0f930ebe6085af9093e5fe56b34a5c220ccdcf6efc336fc500c65eaf440000000f9a23e06f74cf86b8827a9108ec2e0f89ad956c9b7cffdaa674beae0f930ebe6085af9093e5fe56b34a5c220ccdcf6efc336fc50092e14b5e00000030aab52ad93f6ce17ca07fa88fc191828c58cb71014140915467ecd359684b2dc358024ca750609591aa731a0b309c7fb3cab5cd0836ad3992aa0a24da431f43b68883ea5651d548feb6bd3c8e16376e6e426f91f84c58232103322f35c7819267e721335948d385fae5be66e7ba8c748ac15467dcca0693692dac"
 }
 ```
+Take the "AddAttribute" in the IdCcntmract ccntmract as an example
 
-#### Response Example:
+1. build parameter
+
+```
+acct := account.Open(account.WALLET_FILENAME, []byte("passwordtest"))
+acc, err := acct.GetDefaultAccount()
+pubkey := keypair.SerializePublicKey(acc.PubKey())
+funcName := "AddAttribute"
+paras := []interface{}{[]byte("did:cntm:" + acc.Address.ToBase58()),[]byte("key1"),[]byte("bytes"),[]byte("value1"),pubkey}
+builder := neovm.NewParamsBuilder(new(bytes.Buffer))
+err = BuildSmartCcntmractParamInter(builder, []interface{}{funcName, params})
+codeParams := builder.ToArray()
+op_verify,_ := common.HexToBytes("69")
+codeaddress,_ := common.HexToBytes("8055b362904715fd84536e754868f4c8d27ca3f6")
+codeParams = BytesCombine(codeParams,op_verify)
+codeParams = BytesCombine(codeParams,codeaddress)
+
+func BytesCombine(pBytes ...[]byte) []byte {
+	len := len(pBytes)
+	s := make([][]byte, len)
+	for index := 0; index < len; index++ {
+		s[index] = pBytes[index]
+	}
+	sep := []byte("")
+	return bytes.Join(s, sep)
+}
+```
+funcName:the smartccntmract function name to be called, params: ccntmract function required parameters, codeAddress: smartccntmract address
+
+2. build transaction
+```
+tx := utils.NewInvokeTransaction(vmtypes.VmCode{
+		VmType: vmtypes.NEOVM,
+		Code:   codeParams,
+	})
+	tx.Nonce = uint32(time.Now().Unix())
+```
+
+3. sign transaction
+
+```
+hash := tx.Hash()
+sign, _ := signature.Sign(acc.PrivateKey, hash[:])
+tx.Sigs = append(tx.Sigs, &ctypes.Sig{
+    PubKeys: []keypair.PublicKey{acc.PublicKey},
+    M:       1,
+    SigData: [][]byte{sign},
+})
+```
+
+4. Convert transactions to hexadecimal strings
+```
+txbf := new(bytes.Buffer)
+err = tx.Serialize(txbf);
+common.ToHexString(txbf.Bytes())
+```
+
+Related struct
+```
+type Transaction struct {
+	Version    byte
+	TxType     TransactionType
+	Nonce      uint32
+	Payload    Payload
+	Attributes []*TxAttribute
+	Fee        []*Fee
+	NetWorkFee common.Fixed64
+	Sigs       []*Sig
+
+	hash *common.Uint256
+}
+
+type Sig struct {
+	PubKeys []keypair.PublicKey
+	M       uint8
+	SigData [][]byte
+}
+```
+
+#### Response
 ```
 {
     "Action": "sendrawtransaction",
@@ -439,18 +499,17 @@ send transaction.
 ```
 > Result: txhash
 
-### 12. getStorage
+### 10 get_storage
 
 Returns the stored value according to the ccntmract script hashes and stored key.
 
+GET
+```
+/api/v1/storage/:hash/:key
+```
 Request Example
 ```
-{
-    "Action": "getstorage",
-    "Version": "1.0.0",
-    "Hash": "0144587c1094f6929ed7362d6328cffff4fb4da2",
-    "Key" : "4587c1094f6"
-}
+curl -i http://localhost:20384/api/v1/storage/ff00000000000000000000000000000000000001/0144587c1094f6929ed7362d6328cffff4fb4da2
 ```
 #### Response
 ```
@@ -464,18 +523,19 @@ Request Example
 ```
 > Result:Returns the stored value according to the ccntmract script hashes and stored key.
 
-### 13. GetBalanceByAddr
+### 11 get_balance
 
-return the balance of base58 account address.
+return balance of base58 account address.
 
+GET
+```
+/api/v1/balance/:addr
+```
+> addr: Base58 encoded account address
 
 Request Example
 ```
-{
-    "Action": "getbalance",
-    "Version": "1.0.0",
-    "Addr": "TA63xZXqdPLtDeznWQ6Ns4UsbqprLrrLJk"
-}
+curl -i http://localhost:20384/api/v1/balance/TA5uYzLU2vBvvfCMxyV2sdzc9kPqJzGZWq
 ```
 
 #### Response
@@ -491,19 +551,20 @@ Request Example
     "Version": "1.0.0"
 }
 ```
-### 14. get ccntmractstate
+### 12 get_ccntmract_state
 
 According to the ccntmract script hash, query the ccntmract information.
 
+GET
+
+```
+/api/v1/ccntmract/:hash
+```
 
 #### Request Example:
 
 ```
-{
-    "Action": "gettransaction",
-    "Version": "1.0.0",
-    "Hash": "fff49c809d302a2956e9dc0012619a452d4b846c"
-}
+curl -i http://server:port/api/v1/ccntmract/fff49c809d302a2956e9dc0012619a452d4b846c
 ```
 
 #### Response Example:
@@ -527,19 +588,21 @@ According to the ccntmract script hash, query the ccntmract information.
 }
 ```
 
-#### 15. get smart ccntmract event txhash list by height
+#### 13 get_smtcode_evt_txs
 
+get smart ccntmract event txhash list by height
 Get a list of transaction hash with smartevent based on height
 
+GET
+
+```
+/api/v1/smartcode/event/transactions/:height
+```
 
 #### Example usage:
 
 ```
-{
-    "Action": "getsmartcodeeventbyheight",
-    "Version": "1.0.0",
-    "Height": 100
-}
+curl -i http://localhost:20384/api/v1/smartcode/event/transactions/900
 ```
 
 #### response
@@ -556,16 +619,17 @@ Get a list of transaction hash with smartevent based on height
 ```
 > Note: result is the txHash list.
 
-### 16. get smart ccntmract event by txhash
+### 14 get_smtcode_evts
 
+get ccntmract event by txhash
 
+GET
+```
+/api/v1/smartcode/event/txhash/:hash
+```
 #### Request Example:
 ```
-{
-    "Action": "getsmartcodeeventbyhash",
-    "Version": "1.0.0",
-    "Hash": "3e23cf222a47739d4141255da617cd42925a12638ac19cadcc85501f907972c8"
-}
+curl -i http://localhost:20384/api/v1/smartcode/event/txhash/3e23cf222a47739d4141255da617cd42925a12638ac19cadcc85501f907972c8
 ```
 #### Response:
 ```
@@ -588,16 +652,17 @@ Get a list of transaction hash with smartevent based on height
     ]
 }
 ```
-### 17. Get block height by transaction hash
-get blockheight of txhash
+### 15 get_blk_hgt_by_txhash
 
+Get block height by transaction hash
+
+GET
+```
+/api/v1/block/height/txhash/:hash
+```
 #### Request Example:
 ```
-{
-    "Action": "getblockheightbytxhash",
-    "Version": "1.0.0",
-    "Hash": "3e23cf222a47739d4141255da617cd42925a12638ac19cadcc85501f907972c8"
-}
+curl -i http://localhost:20384/api/v1/block/height/txhash/3e23cf222a47739d4141255da617cd42925a12638ac19cadcc85501f907972c8
 ```
 #### Response
 ```
@@ -605,24 +670,22 @@ get blockheight of txhash
     "Action": "getblockheightbytxhash",
     "Desc": "SUCCESS",
     "Error": 0,
-    "Result": 100,
+    "Result": 0,
     "Version": "1.0.0"
 }
 ```
 
-
-### 18. getmerkleproof
+### 16 get_merkle_proof
 
 get merkle proof
 
+GET
+```
+/api/v1/merkleproof/:hash
+```
 #### Request Example:
 ```
-{
-    "Action": "getmerkleproof",
-    "Version": "1.0.0",
-    "Hash": "0087217323d87284d21c3539f216dd030bf9da480372456d1fa02eec74c3226d"
-}
-
+curl -i http://localhost:20384/api/v1/merkleproof/3e23cf222a47739d4141255da617cd42925a12638ac19cadcc85501f907972c8
 ```
 #### Response
 ```
@@ -656,7 +719,7 @@ get merkle proof
 }
 ```
 
-## Errorcode
+## Error Code
 
 | Field | Type | Description |
 | :--- | :--- | :--- |

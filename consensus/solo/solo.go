@@ -31,7 +31,6 @@ import (
 	"github.com/cntmio/cntmology/common/log"
 	actorTypes "github.com/cntmio/cntmology/consensus/actor"
 	"github.com/cntmio/cntmology/core/ledger"
-	ldgactor "github.com/cntmio/cntmology/core/ledger/actor"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/signature"
 	"github.com/cntmio/cntmology/core/types"
@@ -43,27 +42,24 @@ import (
 /*
 *Simple consensus for solo node in test environment.
  */
-var GenBlockTime = (config.DEFAULT_GEN_BLOCK_TIME * time.Second)
-
 const CcntmextVersion uint32 = 0
 
 type SoloService struct {
 	Account       *account.Account
 	poolActor     *actorTypes.TxPoolActor
-	ledgerActor   *actorTypes.LedgerActor
 	incrValidator *increment.IncrementValidator
 	existCh       chan interface{}
-
+	genBlockInterval time.Duration
 	pid *actor.PID
 	sub *events.ActorSubscriber
 }
 
-func NewSoloService(bkAccount *account.Account, txpool *actor.PID, ledger *actor.PID) (*SoloService, error) {
+func NewSoloService(bkAccount *account.Account, txpool *actor.PID) (*SoloService, error) {
 	service := &SoloService{
 		Account:       bkAccount,
 		poolActor:     &actorTypes.TxPoolActor{Pool: txpool},
-		ledgerActor:   &actorTypes.LedgerActor{Ledger: ledger},
 		incrValidator: increment.NewIncrementValidator(10),
+		genBlockInterval:time.Duration(config.DefConfig.Genesis.SOLO.GenBlockTime) * time.Second,
 	}
 
 	props := actor.FromProducer(func() actor.Actor {
@@ -80,24 +76,24 @@ func NewSoloService(bkAccount *account.Account, txpool *actor.PID, ledger *actor
 func (self *SoloService) Receive(ccntmext actor.Ccntmext) {
 	switch msg := ccntmext.Message().(type) {
 	case *actor.Restarting:
-		log.Warn("solo actor restarting")
+		log.Info("solo actor restarting")
 	case *actor.Stopping:
-		log.Warn("solo actor stopping")
+		log.Info("solo actor stopping")
 	case *actor.Stopped:
-		log.Warn("solo actor stopped")
+		log.Info("solo actor stopped")
 	case *actor.Started:
-		log.Warn("solo actor started")
+		log.Info("solo actor started")
 	case *actor.Restart:
-		log.Warn("solo actor restart")
+		log.Info("solo actor restart")
 	case *actorTypes.StartConsensus:
 		if self.existCh != nil {
-			log.Warn("consensus have started")
+			log.Info("consensus have started")
 			return
 		}
 
 		self.sub.Subscribe(message.TOPIC_SAVE_BLOCK_COMPLETE)
 
-		timer := time.NewTicker(GenBlockTime)
+		timer := time.NewTicker(self.genBlockInterval)
 		self.existCh = make(chan interface{})
 		go func() {
 			defer timer.Stop()
@@ -119,7 +115,7 @@ func (self *SoloService) Receive(ccntmext actor.Ccntmext) {
 			self.sub.Unsubscribe(message.TOPIC_SAVE_BLOCK_COMPLETE)
 		}
 	case *message.SaveBlockCompleteMsg:
-		log.Info("solo actor receives block complete event. block height=", msg.Block.Header.Height)
+		log.Infof("solo actor receives block complete event. block height=%d txnum=%d", msg.Block.Header.Height, len(msg.Block.Transactions))
 		self.incrValidator.AddBlock(msg.Block)
 
 	case *actorTypes.TimeOut:
@@ -152,14 +148,9 @@ func (self *SoloService) genBlock() error {
 		return fmt.Errorf("makeBlock error %s", err)
 	}
 
-	future := ldgactor.DefLedgerPid.RequestFuture(&ldgactor.AddBlockReq{Block: block}, 30*time.Second)
-	result, err := future.Result()
+	err = ledger.DefLedger.AddBlock(block)
 	if err != nil {
 		return fmt.Errorf("genBlock DefLedgerPid.RequestFuture Height:%d error:%s", block.Header.Height, err)
-	}
-	addBlockRsp := result.(*ldgactor.AddBlockRsp)
-	if addBlockRsp.Error != nil {
-		return fmt.Errorf("AddBlockRsp Height:%d error:%s", block.Header.Height, addBlockRsp.Error)
 	}
 	return nil
 }
