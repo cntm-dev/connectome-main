@@ -19,8 +19,8 @@
 package ledgerstore
 
 import (
-	"github.com/cntmio/cntmology/core/states"
 	"github.com/hashicorp/golang-lru"
+	"github.com/cntmio/cntmology/core/states"
 )
 
 const (

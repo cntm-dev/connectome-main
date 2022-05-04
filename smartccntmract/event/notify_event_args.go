@@ -36,4 +36,3 @@ type NotifyEventInfo struct {
 	CcntmractAddress common.Address
 	States          interface{}
 }
-

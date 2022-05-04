@@ -22,10 +22,10 @@ import (
 	"net/http"
 	"strconv"
 
+	"fmt"
 	cfg "github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/http/base/rpc"
-	"fmt"
 )
 
 const (
@@ -33,7 +33,7 @@ const (
 	LOCAL_DIR  string = "/local"
 )
 
-func StartLocalServer()error {
+func StartLocalServer() error {
 	log.Debug()
 	http.HandleFunc(LOCAL_DIR, rpc.Handle)
 

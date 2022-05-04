@@ -23,7 +23,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"os"
 	"time"
 
@@ -37,7 +36,7 @@ import (
 	ctypes "github.com/cntmio/cntmology/core/types"
 	cutils "github.com/cntmio/cntmology/core/utils"
 	"github.com/cntmio/cntmology/http/base/rpc"
-	nstates "github.com/cntmio/cntmology/smartccntmract/service/native/states"
+	nstates "github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/states"
 	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
 )
@@ -79,7 +78,7 @@ func transferAction(c *cli.Ccntmext) error {
 	sts = append(sts, &nstates.State{
 		From:  fu,
 		To:    tu,
-		Value: big.NewInt(value),
+		Value: uint64(value),
 	})
 	transfers := &nstates.Transfers{
 		States: sts,
@@ -109,6 +108,7 @@ func transferAction(c *cli.Ccntmext) error {
 		Code:   ff.Bytes(),
 	})
 
+	tx.Payer = fu
 	tx.Nonce = uint32(time.Now().Unix())
 
 	passwd := c.String("password")

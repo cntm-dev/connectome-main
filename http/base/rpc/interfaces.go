@@ -41,7 +41,7 @@ func GetGenerateBlockTime(params []interface{}) map[string]interface{} {
 }
 
 func GetBestBlockHash(params []interface{}) map[string]interface{} {
-	hash:= bactor.CurrentBlockHash()
+	hash := bactor.CurrentBlockHash()
 	return responseSuccess(common.ToHexString(hash.ToArray()))
 }
 

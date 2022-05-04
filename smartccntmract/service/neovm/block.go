@@ -1,8 +1,8 @@
 package neovm
 
 import (
-	vm "github.com/cntmio/cntmology/vm/neovm"
 	"github.com/cntmio/cntmology/core/types"
+	vm "github.com/cntmio/cntmology/vm/neovm"
 	vmtypes "github.com/cntmio/cntmology/vm/neovm/types"
 )
 
@@ -28,6 +28,3 @@ func BlockGetTransaction(service *NeoVmService, engine *vm.ExecutionEngine) erro
 	vm.PushData(engine, vm.PopInteropInterface(engine).(*types.Block).Transactions[vm.PopInt(engine)])
 	return nil
 }
-
-
-

@@ -24,10 +24,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
 func TestVersion(t *testing.T) {

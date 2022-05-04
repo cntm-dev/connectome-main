@@ -19,81 +19,82 @@
 package neovm
 
 import (
-	"math/big"
 	"fmt"
+	"math/big"
 
-	vmtype "github.com/cntmio/cntmology/vm/neovm/types"
 	"github.com/cntmio/cntmology/core/store"
-	"github.com/cntmio/cntmology/smartccntmract/storage"
-	vm "github.com/cntmio/cntmology/vm/neovm"
-	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
-	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
+	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
+	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/states"
+	"github.com/cntmio/cntmology/smartccntmract/storage"
+	vm "github.com/cntmio/cntmology/vm/neovm"
+	vmtype "github.com/cntmio/cntmology/vm/neovm/types"
 )
 
 const (
-	MAX_STACK_SIZE = 2 * 1024
-	MAX_ARRAY_SIZE = 1024
+	MAX_STACK_SIZE          = 2 * 1024
+	MAX_ARRAY_SIZE          = 1024
 	MAX_SIZE_FOR_BIGINTEGER = 32
 )
 
 var (
 	// Register all service for smart ccntmract execute
 	ServiceMap = map[string]Service{
-		"Neo.Attribute.GetUsage": {Execute: AttributeGetUsage, Validator: validatorAttribute},
-		"Neo.Attribute.GetData": {Execute: AttributeGetData, Validator: validatorAttribute},
-		"Neo.Block.GetTransactionCount": {Execute: BlockGetTransactionCount, Validator: validatorBlock},
-		"Neo.Block.GetTransactions": {Execute: BlockGetTransactions, Validator: validatorBlock},
-		"Neo.Block.GetTransaction": {Execute: BlockGetTransaction, Validator: validatorBlockTransaction},
-		"Neo.Blockchain.GetHeight": {Execute: BlockChainGetHeight},
-		"Neo.Blockchain.GetHeader": {Execute: BlockChainGetHeader, Validator: validatorBlockChainHeader},
-		"Neo.Blockchain.GetBlock": {Execute: BlockChainGetBlock, Validator: validatorBlockChainBlock},
-		"Neo.Blockchain.GetTransaction": {Execute: BlockChainGetTransaction, Validator: validatorBlockChainTransaction},
-		"Neo.Blockchain.GetCcntmract": {Execute: BlockChainGetCcntmract, Validator: validatorBlockChainCcntmract},
-		"Neo.Header.GetIndex": {Execute: HeaderGetIndex, Validator: validatorHeader},
-		"Neo.Header.GetHash": {Execute: HeaderGetHash, Validator: validatorHeader},
-		"Neo.Header.GetVersion": {Execute: HeaderGetVersion, Validator: validatorHeader},
-		"Neo.Header.GetPrevHash": {Execute: HeaderGetPrevHash, Validator: validatorHeader},
-		"Neo.Header.GetTimestamp": {Execute: HeaderGetTimestamp, Validator: validatorHeader},
-		"Neo.Header.GetConsensusData": {Execute: HeaderGetConsensusData, Validator: validatorHeader},
-		"Neo.Header.GetNextConsensus": {Execute: HeaderGetNextConsensus, Validator: validatorHeader},
-		"Neo.Header.GetMerkleRoot": {Execute: HeaderGetMerkleRoot, Validator: validatorHeader},
-		"Neo.Transaction.GetHash": {Execute: TransactionGetHash, Validator: validatorTransaction},
-		"Neo.Transaction.GetType": {Execute: TransactionGetType, Validator: validatorTransaction},
-		"Neo.Transaction.GetAttributes": {Execute: TransactionGetAttributes, Validator: validatorTransaction},
-		"Neo.Ccntmract.Create": {Execute: CcntmractCreate},
-		"Neo.Ccntmract.Migrate": {Execute: CcntmractMigrate},
-		"Neo.Ccntmract.GetStorageCcntmext": {Execute: CcntmractGetStorageCcntmext},
-		"Neo.Ccntmract.Destroy": {Execute: CcntmractDestory},
-		"Neo.Ccntmract.GetScript": {Execute: CcntmractGetCode, Validator: validatorGetCode},
-		"Neo.Runtime.GetTime": {Execute: RuntimeGetTime},
-		"Neo.Runtime.CheckWitness": {Execute: RuntimeCheckWitness, Validator: validatorCheckWitness},
-		"Neo.Runtime.Notify": {Execute: RuntimeNotify, Validator: validatorNotify},
-		"Neo.Runtime.Log": {Execute: RuntimeLog, Validator: validatorLog},
-		"Neo.Runtime.CheckSig": {Execute: RuntimeCheckSig, Validator: validatorCheckSig},
-		"Neo.Storage.Get": {Execute: StorageGet},
-		"Neo.Storage.Put": {Execute: StoragePut},
-		"Neo.Storage.Delete": {Execute: StorageDelete},
-		"Neo.Storage.GetCcntmext": {Execute: StorageGetCcntmext},
-		"System.ExecutionEngine.GetScriptCcntmainer": {Execute: GetCodeCcntmainer},
+		"Neo.Attribute.GetUsage":                        {Execute: AttributeGetUsage, Validator: validatorAttribute},
+		"Neo.Attribute.GetData":                         {Execute: AttributeGetData, Validator: validatorAttribute},
+		"Neo.Block.GetTransactionCount":                 {Execute: BlockGetTransactionCount, Validator: validatorBlock},
+		"Neo.Block.GetTransactions":                     {Execute: BlockGetTransactions, Validator: validatorBlock},
+		"Neo.Block.GetTransaction":                      {Execute: BlockGetTransaction, Validator: validatorBlockTransaction},
+		"Neo.Blockchain.GetHeight":                      {Execute: BlockChainGetHeight},
+		"Neo.Blockchain.GetHeader":                      {Execute: BlockChainGetHeader, Validator: validatorBlockChainHeader},
+		"Neo.Blockchain.GetBlock":                       {Execute: BlockChainGetBlock, Validator: validatorBlockChainBlock},
+		"Neo.Blockchain.GetTransaction":                 {Execute: BlockChainGetTransaction, Validator: validatorBlockChainTransaction},
+		"Neo.Blockchain.GetCcntmract":                    {Execute: BlockChainGetCcntmract, Validator: validatorBlockChainCcntmract},
+		"Neo.Header.GetIndex":                           {Execute: HeaderGetIndex, Validator: validatorHeader},
+		"Neo.Header.GetHash":                            {Execute: HeaderGetHash, Validator: validatorHeader},
+		"Neo.Header.GetVersion":                         {Execute: HeaderGetVersion, Validator: validatorHeader},
+		"Neo.Header.GetPrevHash":                        {Execute: HeaderGetPrevHash, Validator: validatorHeader},
+		"Neo.Header.GetTimestamp":                       {Execute: HeaderGetTimestamp, Validator: validatorHeader},
+		"Neo.Header.GetConsensusData":                   {Execute: HeaderGetConsensusData, Validator: validatorHeader},
+		"Neo.Header.GetNextConsensus":                   {Execute: HeaderGetNextConsensus, Validator: validatorHeader},
+		"Neo.Header.GetMerkleRoot":                      {Execute: HeaderGetMerkleRoot, Validator: validatorHeader},
+		"Neo.Transaction.GetHash":                       {Execute: TransactionGetHash, Validator: validatorTransaction},
+		"Neo.Transaction.GetType":                       {Execute: TransactionGetType, Validator: validatorTransaction},
+		"Neo.Transaction.GetAttributes":                 {Execute: TransactionGetAttributes, Validator: validatorTransaction},
+		"Neo.Ccntmract.Create":                           {Execute: CcntmractCreate},
+		"Neo.Ccntmract.Migrate":                          {Execute: CcntmractMigrate},
+		"Neo.Ccntmract.GetStorageCcntmext":                {Execute: CcntmractGetStorageCcntmext},
+		"Neo.Ccntmract.Destroy":                          {Execute: CcntmractDestory},
+		"Neo.Ccntmract.GetScript":                        {Execute: CcntmractGetCode, Validator: validatorGetCode},
+		"Neo.Runtime.GetTime":                           {Execute: RuntimeGetTime},
+		"Neo.Runtime.CheckWitness":                      {Execute: RuntimeCheckWitness, Validator: validatorCheckWitness},
+		"Neo.Runtime.Notify":                            {Execute: RuntimeNotify, Validator: validatorNotify},
+		"Neo.Runtime.Log":                               {Execute: RuntimeLog, Validator: validatorLog},
+		"Neo.Runtime.CheckSig":                          {Execute: RuntimeCheckSig, Validator: validatorCheckSig},
+		"Neo.Storage.Get":                               {Execute: StorageGet},
+		"Neo.Storage.Put":                               {Execute: StoragePut},
+		"Neo.Storage.Delete":                            {Execute: StorageDelete},
+		"Neo.Storage.GetCcntmext":                        {Execute: StorageGetCcntmext},
+		"System.ExecutionEngine.GetScriptCcntmainer":     {Execute: GetCodeCcntmainer},
 		"System.ExecutionEngine.GetExecutingScriptHash": {Execute: GetExecutingAddress},
-		"System.ExecutionEngine.GetCallingScriptHash": {Execute: GetCallingAddress},
-		"System.ExecutionEngine.GetEntryScriptHash": {Execute: GetEntryAddress},
+		"System.ExecutionEngine.GetCallingScriptHash":   {Execute: GetCallingAddress},
+		"System.ExecutionEngine.GetEntryScriptHash":     {Execute: GetEntryAddress},
 	}
 )
 
 var (
-	ERR_CHECK_STACK_SIZE = errors.NewErr("[NeoVmService] vm over max stack size!")
-	ERR_CHECK_ARRAY_SIZE = errors.NewErr("[NeoVmService] vm over max array size!")
-	ERR_CHECK_BIGINTEGER = errors.NewErr("[NeoVmService] vm over max biginteger size!")
+	ERR_CHECK_STACK_SIZE    = errors.NewErr("[NeoVmService] vm over max stack size!")
+	ERR_CHECK_ARRAY_SIZE    = errors.NewErr("[NeoVmService] vm over max array size!")
+	ERR_CHECK_BIGINTEGER    = errors.NewErr("[NeoVmService] vm over max biginteger size!")
 	ERR_CURRENT_CcntmEXT_NIL = errors.NewErr("[NeoVmService] neovm service current ccntmext doesn't exist!")
-	ERR_EXECUTE_CODE = errors.NewErr("[NeoVmService] vm execute code invalid!")
+	ERR_EXECUTE_CODE        = errors.NewErr("[NeoVmService] vm execute code invalid!")
+	ERR_GAS_INSUFFICIENT    = errors.NewErr("[NeoVmService] gas insufficient")
 )
 
 type (
-	Execute func(service *NeoVmService, engine *vm.ExecutionEngine) error
+	Execute   func(service *NeoVmService, engine *vm.ExecutionEngine) error
 	Validator func(engine *vm.ExecutionEngine) error
 )
 
@@ -140,6 +141,9 @@ func (this *NeoVmService) Invoke() (interface{}, error) {
 			if ok := checkBigIntegers(engine); !ok {
 				return nil, ERR_CHECK_BIGINTEGER
 			}
+		}
+		if !this.CcntmextRef.CheckUseGas(0) {
+			return nil, ERR_GAS_INSUFFICIENT
 		}
 		switch engine.OpCode {
 		case vm.SYSCALL:
@@ -195,7 +199,7 @@ func checkStackSize(engine *vm.ExecutionEngine) bool {
 	if engine.OpCode < vm.PUSH16 {
 		size = 1
 	} else {
-		switch engine.OpCode{
+		switch engine.OpCode {
 		case vm.DEPTH, vm.DUP, vm.OVER, vm.TUCK:
 			size = 1
 		case vm.UNPACK:
@@ -272,7 +276,7 @@ func checkBigIntegers(engine *vm.ExecutionEngine) bool {
 		x1 := vm.PeekNBigInt(1, engine)
 		lx2 := len(vmtype.ConvertBigIntegerToBytes(x2))
 		lx1 := len(vmtype.ConvertBigIntegerToBytes(x1))
-		if lx2 > MAX_SIZE_FOR_BIGINTEGER || lx1 > MAX_SIZE_FOR_BIGINTEGER || (lx1 + lx2) > MAX_SIZE_FOR_BIGINTEGER {
+		if lx2 > MAX_SIZE_FOR_BIGINTEGER || lx1 > MAX_SIZE_FOR_BIGINTEGER || (lx1+lx2) > MAX_SIZE_FOR_BIGINTEGER {
 			return false
 		}
 	case vm.DIV:

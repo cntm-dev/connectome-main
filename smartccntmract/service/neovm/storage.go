@@ -21,16 +21,17 @@ package neovm
 import (
 	"bytes"
 
-	vm "github.com/cntmio/cntmology/vm/neovm"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/states"
 	scommon "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/errors"
-	"github.com/cntmio/cntmology/core/states"
-	"github.com/cntmio/cntmology/common"
+	vm "github.com/cntmio/cntmology/vm/neovm"
 )
 
 // StoragePut put smart ccntmract storage item to cache
 func StoragePut(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	ccntmext, err := getCcntmext(engine); if err != nil {
+	ccntmext, err := getCcntmext(engine)
+	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StoragePut] get pop ccntmext error!")
 	}
 	if err := checkStorageCcntmext(service, ccntmext); err != nil {
@@ -49,7 +50,8 @@ func StoragePut(service *NeoVmService, engine *vm.ExecutionEngine) error {
 
 // StorageDelete delete smart ccntmract storage item from cache
 func StorageDelete(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	ccntmext, err := getCcntmext(engine); if err != nil {
+	ccntmext, err := getCcntmext(engine)
+	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StorageDelete] get pop ccntmext error!")
 	}
 	if err := checkStorageCcntmext(service, ccntmext); err != nil {
@@ -63,11 +65,13 @@ func StorageDelete(service *NeoVmService, engine *vm.ExecutionEngine) error {
 
 // StorageGet push smart ccntmract storage item from cache to vm stack
 func StorageGet(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	ccntmext, err := getCcntmext(engine); if err != nil {
+	ccntmext, err := getCcntmext(engine)
+	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StorageGet] get pop ccntmext error!")
 	}
 
-	item, err := service.CloneCache.Get(scommon.ST_STORAGE, getStorageKey(ccntmext.address, vm.PopByteArray(engine))); if err != nil {
+	item, err := service.CloneCache.Get(scommon.ST_STORAGE, getStorageKey(ccntmext.address, vm.PopByteArray(engine)))
+	if err != nil {
 		return err
 	}
 
@@ -97,10 +101,12 @@ func getCcntmext(engine *vm.ExecutionEngine) (*StorageCcntmext, error) {
 	if vm.EvaluationStackCount(engine) < 2 {
 		return nil, errors.NewErr("[Ccntmext] Too few input parameters ")
 	}
-	opInterface := vm.PopInteropInterface(engine); if opInterface == nil {
+	opInterface := vm.PopInteropInterface(engine)
+	if opInterface == nil {
 		return nil, errors.NewErr("[Ccntmext] Get storageCcntmext nil")
 	}
-	ccntmext, ok := opInterface.(*StorageCcntmext); if !ok {
+	ccntmext, ok := opInterface.(*StorageCcntmext)
+	if !ok {
 		return nil, errors.NewErr("[Ccntmext] Get storageCcntmext invalid")
 	}
 	return ccntmext, nil
@@ -112,4 +118,3 @@ func getStorageKey(codeHash common.Address, key []byte) []byte {
 	buf.Write(key)
 	return buf.Bytes()
 }
-

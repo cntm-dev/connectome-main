@@ -28,6 +28,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
+	_ "github.com/cntmio/cntmology/smartccntmract/service/native/init"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
 	"github.com/cntmio/cntmology/smartccntmract/states"
@@ -52,6 +53,7 @@ type SmartCcntmract struct {
 	Engine        Engine
 	Code          stypes.VmCode
 	Notifications []*event.NotifyEventInfo // all execute smart ccntmract event notify info
+	Gas           uint64
 }
 
 // Config describe smart ccntmract need parameters configuration
@@ -104,6 +106,14 @@ func (this *SmartCcntmract) PopCcntmext() {
 // PushNotifications push smart ccntmract event info
 func (this *SmartCcntmract) PushNotifications(notifications []*event.NotifyEventInfo) {
 	this.Notifications = append(this.Notifications, notifications...)
+}
+
+func (this *SmartCcntmract) CheckUseGas(gas uint64) bool {
+	if this.Gas < gas {
+		return false
+	}
+	this.Gas -= gas
+	return true
 }
 
 // Execute is smart ccntmract execute manager

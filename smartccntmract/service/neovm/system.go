@@ -19,8 +19,8 @@
 package neovm
 
 import (
-	vm "github.com/cntmio/cntmology/vm/neovm"
 	"github.com/cntmio/cntmology/errors"
+	vm "github.com/cntmio/cntmology/vm/neovm"
 )
 
 // GetCodeCcntmainer push current transaction to vm stack
@@ -31,7 +31,8 @@ func GetCodeCcntmainer(service *NeoVmService, engine *vm.ExecutionEngine) error 
 
 // GetExecutingAddress push current ccntmext to vm stack
 func GetExecutingAddress(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	ccntmext := service.CcntmextRef.CurrentCcntmext(); if ccntmext == nil {
+	ccntmext := service.CcntmextRef.CurrentCcntmext()
+	if ccntmext == nil {
 		return errors.NewErr("Current ccntmext invalid")
 	}
 	vm.PushData(engine, ccntmext.CcntmractAddress[:])
@@ -40,7 +41,8 @@ func GetExecutingAddress(service *NeoVmService, engine *vm.ExecutionEngine) erro
 
 // GetExecutingAddress push previous ccntmext to vm stack
 func GetCallingAddress(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	ccntmext := service.CcntmextRef.CallingCcntmext(); if ccntmext == nil {
+	ccntmext := service.CcntmextRef.CallingCcntmext()
+	if ccntmext == nil {
 		return errors.NewErr("Calling ccntmext invalid")
 	}
 	vm.PushData(engine, ccntmext.CcntmractAddress[:])
@@ -49,10 +51,10 @@ func GetCallingAddress(service *NeoVmService, engine *vm.ExecutionEngine) error 
 
 // GetExecutingAddress push entry call ccntmext to vm stack
 func GetEntryAddress(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	ccntmext := service.CcntmextRef.EntryCcntmext(); if ccntmext == nil {
+	ccntmext := service.CcntmextRef.EntryCcntmext()
+	if ccntmext == nil {
 		return errors.NewErr("Entry ccntmext invalid")
 	}
 	vm.PushData(engine, ccntmext.CcntmractAddress[:])
 	return nil
 }
-

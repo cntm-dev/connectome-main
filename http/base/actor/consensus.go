@@ -19,8 +19,8 @@
 package actor
 
 import (
-	cactor "github.com/cntmio/cntmology/consensus/actor"
 	"github.com/cntmio/cntmology-eventbus/actor"
+	cactor "github.com/cntmio/cntmology/consensus/actor"
 )
 
 var consensusSrvPid *actor.PID

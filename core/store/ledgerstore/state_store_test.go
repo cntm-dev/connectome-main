@@ -21,12 +21,12 @@ package ledgerstore
 import (
 	"testing"
 
+	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/states"
 	scommon "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/core/store/statestore"
 	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
-	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
 func TestCcntmractState(t *testing.T) {

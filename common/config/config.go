@@ -94,13 +94,13 @@ func NewGenesisConfig() *GenesisConfig {
 }
 
 type VBFTConfig struct {
-	View                 uint32            `json:"view"` // config-updated version
-	N                    uint32            `json:"n"`    // network size
-	C                    uint32            `json:"c"`    // consensus quorum
+	View                 uint32               `json:"view"` // config-updated version
+	N                    uint32               `json:"n"`    // network size
+	C                    uint32               `json:"c"`    // consensus quorum
 	K                    uint32               `json:"k"`
 	L                    uint32               `json:"l"`
 	InitTxid             uint64               `json:"init_txid"`
-	GenesisTimestamp    uint64                `json:"genesis_timestamp"`
+	GenesisTimestamp     uint64               `json:"genesis_timestamp"`
 	BlockMsgDelay        time.Duration        `json:"block_msg_delay"`
 	HashMsgDelay         time.Duration        `json:"hash_msg_delay"`
 	PeerHandshakeTimeout time.Duration        `json:"peer_handshake_timeout"`
@@ -126,8 +126,6 @@ type SOLOConfig struct {
 
 type CommonConfig struct {
 	MaxTxInBlock    uint
-	LogLevel        uint
-	MaxLogSize      uint
 	NodeType        string
 	EnableConsensus bool
 	DisableEventLog bool
@@ -180,8 +178,6 @@ func NewOntologyConfig() *OntologyConfig {
 		Genesis: PolarisConfig,
 		Common: &CommonConfig{
 			MaxTxInBlock:    DEFAULT_MAX_TX_IN_BLOCK,
-			LogLevel:        DEFAULT_LOG_LEVEL,
-			MaxLogSize:      DEFAULT_MAX_LOG_SIZE,
 			EnableConsensus: DEFAULT_ENABLE_CONSENSUS,
 			DisableEventLog: DEFAULT_DISABLE_EVENT_LOG,
 			SystemFee:       make(map[string]int64),

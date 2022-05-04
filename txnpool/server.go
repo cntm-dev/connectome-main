@@ -21,13 +21,13 @@
 package txnpool
 
 import (
+	"fmt"
 	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/events"
 	"github.com/cntmio/cntmology/events/message"
 	tc "github.com/cntmio/cntmology/txnpool/common"
 	tp "github.com/cntmio/cntmology/txnpool/proc"
-	"fmt"
 )
 
 // startActor starts an actor with the proxy and unique id,

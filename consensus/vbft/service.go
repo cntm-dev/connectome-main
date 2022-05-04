@@ -33,13 +33,13 @@ import (
 	"github.com/cntmio/cntmology/common/log"
 	actorTypes "github.com/cntmio/cntmology/consensus/actor"
 	vconfig "github.com/cntmio/cntmology/consensus/vbft/config"
+	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/events"
 	"github.com/cntmio/cntmology/events/message"
 	p2pmsg "github.com/cntmio/cntmology/p2pserver/message/types"
 	"github.com/cntmio/cntmology/validator/increment"
-	"github.com/cntmio/cntmology/core/ledger"
 )
 
 type BftActionType uint8

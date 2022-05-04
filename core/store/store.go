@@ -19,12 +19,12 @@
 package store
 
 import (
+	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract/event"
-	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
 // LedgerStore provides func with store package.

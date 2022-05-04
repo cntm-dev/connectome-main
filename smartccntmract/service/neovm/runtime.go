@@ -19,14 +19,14 @@
 package neovm
 
 import (
-	vm "github.com/cntmio/cntmology/vm/neovm"
-	"github.com/cntmio/cntmology/errors"
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology-crypto/keypair"
-	"github.com/cntmio/cntmology/smartccntmract/event"
-	scommon "github.com/cntmio/cntmology/smartccntmract/common"
+	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/signature"
+	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/errors"
+	scommon "github.com/cntmio/cntmology/smartccntmract/common"
+	"github.com/cntmio/cntmology/smartccntmract/event"
+	vm "github.com/cntmio/cntmology/vm/neovm"
 )
 
 // HeaderGetNextConsensus put current block time to vm stack
@@ -47,7 +47,8 @@ func RuntimeCheckWitness(service *NeoVmService, engine *vm.ExecutionEngine) erro
 		}
 		result = service.CcntmextRef.CheckWitness(address)
 	} else {
-		pk, err := keypair.DeserializePublicKey(data); if err != nil {
+		pk, err := keypair.DeserializePublicKey(data)
+		if err != nil {
 			return errors.NewDetailErr(err, errors.ErrNoCode, "[RuntimeCheckWitness] data invalid.")
 		}
 		result = service.CcntmextRef.CheckWitness(types.AddressFromPubKey(pk))
@@ -70,7 +71,7 @@ func RuntimeLog(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	item := vm.PopByteArray(engine)
 	ccntmext := service.CcntmextRef.CurrentCcntmext()
 	txHash := service.Tx.Hash()
-	event.PushSmartCodeEvent(txHash, 0, event.EVENT_LOG, &event.LogEventArgs{TxHash:txHash, CcntmractAddress: ccntmext.CcntmractAddress, Message: string(item)})
+	event.PushSmartCodeEvent(txHash, 0, event.EVENT_LOG, &event.LogEventArgs{TxHash: txHash, CcntmractAddress: ccntmext.CcntmractAddress, Message: string(item)})
 	return nil
 }
 
@@ -81,7 +82,3 @@ func RuntimeCheckSig(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	sig := vm.PopByteArray(engine)
 	return signature.Verify(pubKey, data, sig)
 }
-
-
-
-

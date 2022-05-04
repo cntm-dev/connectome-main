@@ -39,6 +39,7 @@ type CcntmextRef interface {
 	CheckWitness(address common.Address) bool
 	PushNotifications(notifications []*event.NotifyEventInfo)
 	AppCall(address common.Address, method string, codes, args []byte) (interface{}, error)
+	CheckUseGas(gas uint64) bool
 }
 
 // Ccntmext describe smart ccntmract execute ccntmext struct

@@ -21,8 +21,8 @@ package ledgerstore
 import (
 	"fmt"
 	"sort"
-	"sync"
 	"strings"
+	"sync"
 
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
@@ -814,9 +814,10 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (interfac
 		if v, ok := result.([]byte); ok {
 			result = common.ToHexString(v)
 		}
+	} else if prefix == vmtype.Native {
+		result = common.ToHexString(result.([]byte))
 	}
 	return result, nil
-
 }
 
 //Close ledger store.

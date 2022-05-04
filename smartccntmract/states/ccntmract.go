@@ -63,11 +63,13 @@ func (this *Ccntmract) Serialize(w io.Writer) error {
 // Deserialize ccntmract
 func (this *Ccntmract) Deserialize(r io.Reader) error {
 	var err error
-	this.Version, err = serialization.ReadByte(r); if err != nil {
+	this.Version, err = serialization.ReadByte(r)
+	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[Ccntmract] Version deserialize error!")
 	}
 
-	this.Code, err = serialization.ReadVarBytes(r); if err != nil {
+	this.Code, err = serialization.ReadVarBytes(r)
+	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[Ccntmract] Code deserialize error!")
 	}
 
@@ -75,12 +77,14 @@ func (this *Ccntmract) Deserialize(r io.Reader) error {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[Ccntmract] Address deserialize error!")
 	}
 
-	method, err := serialization.ReadVarBytes(r); if err != nil {
+	method, err := serialization.ReadVarBytes(r)
+	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[Ccntmract] Method deserialize error!")
 	}
 	this.Method = string(method)
 
-	this.Args, err = serialization.ReadVarBytes(r); if err != nil {
+	this.Args, err = serialization.ReadVarBytes(r)
+	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[Ccntmract] Args deserialize error!")
 	}
 	return nil

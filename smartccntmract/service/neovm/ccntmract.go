@@ -21,18 +21,19 @@ package neovm
 import (
 	"bytes"
 
-	vm "github.com/cntmio/cntmology/vm/neovm"
-	"github.com/cntmio/cntmology/errors"
-	stypes "github.com/cntmio/cntmology/smartccntmract/types"
-	scommon "github.com/cntmio/cntmology/core/store/common"
+	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/states"
-	"github.com/cntmio/cntmology/common"
+	scommon "github.com/cntmio/cntmology/core/store/common"
+	"github.com/cntmio/cntmology/errors"
+	stypes "github.com/cntmio/cntmology/smartccntmract/types"
+	vm "github.com/cntmio/cntmology/vm/neovm"
 )
 
 // CcntmractCreate create a new smart ccntmract on blockchain, and put it to vm stack
 func CcntmractCreate(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	ccntmract, err := isCcntmractParamValid(engine); if err != nil {
+	ccntmract, err := isCcntmractParamValid(engine)
+	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractCreate] ccntmract parameters invalid!")
 	}
 	ccntmractAddress := ccntmract.Code.AddressFromVmCode()
@@ -46,7 +47,8 @@ func CcntmractCreate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 
 // CcntmractMigrate migrate old smart ccntmract to a new ccntmract, and destory old ccntmract
 func CcntmractMigrate(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	ccntmract, err := isCcntmractParamValid(engine); if err != nil {
+	ccntmract, err := isCcntmractParamValid(engine)
+	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractMigrate] ccntmract parameters invalid!")
 	}
 	ccntmractAddress := ccntmract.Code.AddressFromVmCode()
@@ -65,7 +67,8 @@ func CcntmractMigrate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 
 // CcntmractDestory destory a ccntmract
 func CcntmractDestory(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	ccntmext := service.CcntmextRef.CurrentCcntmext(); if ccntmext == nil {
+	ccntmext := service.CcntmextRef.CurrentCcntmext()
+	if ccntmext == nil {
 		return errors.NewErr("[CcntmractDestory] current ccntmract ccntmext invalid!")
 	}
 	item, err := service.CloneCache.Store.TryGet(scommon.ST_CcntmRACT, ccntmext.CcntmractAddress[:])
@@ -75,7 +78,8 @@ func CcntmractDestory(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	}
 
 	service.CloneCache.Delete(scommon.ST_CcntmRACT, ccntmext.CcntmractAddress[:])
-	stateValues, err := service.CloneCache.Store.Find(scommon.ST_CcntmRACT, ccntmext.CcntmractAddress[:]); if err != nil {
+	stateValues, err := service.CloneCache.Store.Find(scommon.ST_CcntmRACT, ccntmext.CcntmractAddress[:])
+	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractDestory] find error!")
 	}
 	for _, v := range stateValues {
@@ -89,10 +93,12 @@ func CcntmractGetStorageCcntmext(service *NeoVmService, engine *vm.ExecutionEngi
 	if vm.EvaluationStackCount(engine) < 1 {
 		return errors.NewErr("[GetStorageCcntmext] Too few input parameter!")
 	}
-	opInterface := vm.PopInteropInterface(engine); if opInterface == nil {
+	opInterface := vm.PopInteropInterface(engine)
+	if opInterface == nil {
 		return errors.NewErr("[GetStorageCcntmext] Pop data nil!")
 	}
-	ccntmractState, ok := opInterface.(*payload.DeployCode); if !ok {
+	ccntmractState, ok := opInterface.(*payload.DeployCode)
+	if !ok {
 		return errors.NewErr("[GetStorageCcntmext] Pop data not ccntmract!")
 	}
 	address := ccntmractState.Code.AddressFromVmCode()
@@ -117,27 +123,33 @@ func isCcntmractParamValid(engine *vm.ExecutionEngine) (*payload.DeployCode, err
 	if vm.EvaluationStackCount(engine) < 7 {
 		return nil, errors.NewErr("[Ccntmract] Too few input parameters")
 	}
-	code := vm.PopByteArray(engine); if len(code) > 1024 * 1024 {
+	code := vm.PopByteArray(engine)
+	if len(code) > 1024*1024 {
 		return nil, errors.NewErr("[Ccntmract] Code too lcntm!")
 	}
 	needStorage := vm.PopBoolean(engine)
-	name := vm.PopByteArray(engine); if len(name) > 252 {
+	name := vm.PopByteArray(engine)
+	if len(name) > 252 {
 		return nil, errors.NewErr("[Ccntmract] Name too lcntm!")
 	}
-	version := vm.PopByteArray(engine); if len(version) > 252 {
+	version := vm.PopByteArray(engine)
+	if len(version) > 252 {
 		return nil, errors.NewErr("[Ccntmract] Version too lcntm!")
 	}
-	author := vm.PopByteArray(engine); if len(author) > 252 {
+	author := vm.PopByteArray(engine)
+	if len(author) > 252 {
 		return nil, errors.NewErr("[Ccntmract] Author too lcntm!")
 	}
-	email := vm.PopByteArray(engine); if len(email) > 252 {
+	email := vm.PopByteArray(engine)
+	if len(email) > 252 {
 		return nil, errors.NewErr("[Ccntmract] Email too lcntm!")
 	}
-	desc := vm.PopByteArray(engine); if len(desc) > 65536 {
+	desc := vm.PopByteArray(engine)
+	if len(desc) > 65536 {
 		return nil, errors.NewErr("[Ccntmract] Desc too lcntm!")
 	}
 	ccntmract := &payload.DeployCode{
-		Code:        stypes.VmCode{VmType:stypes.NEOVM, Code: code},
+		Code:        stypes.VmCode{VmType: stypes.NEOVM, Code: code},
 		NeedStorage: needStorage,
 		Name:        string(name),
 		Version:     string(version),
@@ -158,7 +170,8 @@ func isCcntmractExist(service *NeoVmService, ccntmractAddress common.Address) er
 }
 
 func storeMigration(service *NeoVmService, ccntmractAddress common.Address) error {
-	stateValues, err := service.CloneCache.Store.Find(scommon.ST_CcntmRACT, ccntmractAddress[:]); if err != nil {
+	stateValues, err := service.CloneCache.Store.Find(scommon.ST_CcntmRACT, ccntmractAddress[:])
+	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[Ccntmract] Find error!")
 	}
 	for _, v := range stateValues {
@@ -176,5 +189,3 @@ func storeMigration(service *NeoVmService, ccntmractAddress common.Address) erro
 	}
 	return nil
 }
-
-

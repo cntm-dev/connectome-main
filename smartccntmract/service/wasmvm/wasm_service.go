@@ -16,7 +16,7 @@ import (
 	sccommon "github.com/cntmio/cntmology/smartccntmract/common"
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
 	"github.com/cntmio/cntmology/smartccntmract/event"
-	nstates "github.com/cntmio/cntmology/smartccntmract/service/native/states"
+	nstates "github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
 	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
@@ -251,7 +251,7 @@ func (this *WasmVmService) marshalNativeParams(engine *exec.ExecutionEngine) (bo
 		state.To = toAddress
 		//tmpbytes[12:16] is padding
 		amount := binary.LittleEndian.Uint64(tmpbytes[16:])
-		state.Value = big.NewInt(int64(amount))
+		state.Value = amount
 		states[i] = state
 
 	}
@@ -365,7 +365,7 @@ func (this *WasmVmService) callCcntmract(engine *exec.ExecutionEngine) (bool, er
 					res = string(result.([]byte))
 				}
 			default:
-				res = fmt.Sprintf("%s",result)
+				res = fmt.Sprintf("%s", result)
 			}
 
 		}
@@ -379,7 +379,7 @@ func (this *WasmVmService) callCcntmract(engine *exec.ExecutionEngine) (bool, er
 
 		}
 		if ccntmractAddress[0] == byte(vmtypes.WASMVM) {
-			res = fmt.Sprintf("%s",result)
+			res = fmt.Sprintf("%s", result)
 		}
 
 		idx, err := vm.SetPointerMemory(res)

@@ -1,9 +1,9 @@
 package exec
 
 import (
-	"strconv"
-	"github.com/cntmio/cntmology/vm/wasmvm/util"
 	"github.com/cntmio/cntmology/errors"
+	"github.com/cntmio/cntmology/vm/wasmvm/util"
+	"strconv"
 )
 
 func strToInt(engine *ExecutionEngine) (bool, error) {

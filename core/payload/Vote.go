@@ -22,9 +22,9 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/serialization"
-	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
 const (

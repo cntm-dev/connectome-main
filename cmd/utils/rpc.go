@@ -3,10 +3,10 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
-	"io/ioutil"
 	"github.com/cntmio/cntmology/common/config"
+	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 //JsonRpc version

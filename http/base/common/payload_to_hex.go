@@ -1,10 +1,10 @@
 package common
 
 import (
+	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology-crypto/keypair"
 )
 
 type PayloadInfo interface{}
@@ -102,7 +102,6 @@ func TransPayloadToHex(p types.Payload) PayloadInfo {
 	case *payload.InvokeCode:
 		obj := new(InvokeCodeInfo)
 		obj.Code = common.ToHexString(object.Code.Code)
-		obj.GasLimit = uint64(object.GasLimit)
 		obj.VmType = int(object.Code.VmType)
 		return obj
 	case *payload.DeployCode:

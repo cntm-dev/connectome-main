@@ -35,11 +35,6 @@ var (
 		Usage: "Set the log level to `<level>` (0~6). 0:Debug 1:Info 2:Warn 3:Error 4:Fatal 5:Trace 6:MaxLevel",
 		Value: config.DEFAULT_LOG_LEVEL,
 	}
-	MaxLogSizeFlag = cli.UintFlag{
-		Name:  "maxlogsize",
-		Usage: "Max size of log file, unit(M)",
-		Value: config.DEFAULT_MAX_LOG_SIZE,
-	}
 	MaxTxInBlockFlag = cli.IntFlag{
 		Name:  "maxtxinblock",
 		Usage: "Max transaction number in block",
@@ -202,7 +197,7 @@ var (
 		Value: "",
 	}
 	CcntmractParamsFlag = cli.StringFlag{
-		Name: "params",
+		Name:  "params",
 		Usage: "Invoke ccntmract parameters list. use comma ',' to split params, and must add type prefix to params.0:bytearray(hexstring), 1:string, 2:integer, 3:boolean,For example: 1:foo,2:0,3:true;If parameter is an object array, enclose array with '[]', For example:  1:foo,[2:0,3:true]",
 	}
 

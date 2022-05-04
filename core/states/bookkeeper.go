@@ -22,8 +22,8 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology-crypto/keypair"
+	"github.com/cntmio/cntmology/common/serialization"
 )
 
 type BookkeeperState struct {

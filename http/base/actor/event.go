@@ -19,9 +19,9 @@
 package actor
 
 import (
+	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/events"
 	"github.com/cntmio/cntmology/events/message"
-	"github.com/cntmio/cntmology-eventbus/actor"
 )
 
 type EventActor struct {

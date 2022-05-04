@@ -22,13 +22,13 @@ import (
 	"net/http"
 	"strconv"
 
+	"fmt"
 	cfg "github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/http/base/rpc"
-	"fmt"
 )
 
-func StartRPCServer() error{
+func StartRPCServer() error {
 	log.Debug()
 	http.HandleFunc("/", rpc.Handle)
 

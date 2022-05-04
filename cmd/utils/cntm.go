@@ -13,7 +13,6 @@ import (
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	rpccommon "github.com/cntmio/cntmology/http/base/common"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/states"
 	cstates "github.com/cntmio/cntmology/smartccntmract/states"
 	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
 	"math/big"
@@ -22,6 +21,7 @@ import (
 
 	"encoding/binary"
 	"github.com/cntmio/cntmology/common/serialization"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
 	"github.com/cntmio/cntmology/vm/neovm"
 	"github.com/cntmio/cntmology/vm/wasmvm/exec"
@@ -48,13 +48,13 @@ func Transfer(signer *account.Account, to string, amount uint) (string, error) {
 		return "", fmt.Errorf("To address:%s invalid:%s", to, err)
 	}
 	buf := bytes.NewBuffer(nil)
-	var sts []*states.State
-	sts = append(sts, &states.State{
+	var sts []*cntm.State
+	sts = append(sts, &cntm.State{
 		From:  signer.Address,
 		To:    toAddr,
-		Value: new(big.Int).SetUint64(uint64(amount)),
+		Value: uint64(amount),
 	})
-	transfers := &states.Transfers{
+	transfers := &cntm.Transfers{
 		States: sts,
 	}
 	err = transfers.Serialize(buf)
@@ -114,7 +114,6 @@ func sign(cryptScheme string, data []byte, signer *account.Account) ([]byte, err
 //NewInvokeTransaction return smart ccntmract invoke transaction
 func NewInvokeTransaction(gasLimit *big.Int, vmType vmtypes.VmType, code []byte) *types.Transaction {
 	invokePayload := &payload.InvokeCode{
-		GasLimit: common.Fixed64(gasLimit.Int64()),
 		Code: vmtypes.VmCode{
 			VmType: vmType,
 			Code:   code,
@@ -126,8 +125,6 @@ func NewInvokeTransaction(gasLimit *big.Int, vmType vmtypes.VmType, code []byte)
 		Nonce:      uint32(time.Now().Unix()),
 		Payload:    invokePayload,
 		Attributes: make([]*types.TxAttribute, 0, 0),
-		Fee:        make([]*types.Fee, 0, 0),
-		NetWorkFee: 0,
 		Sigs:       make([]*types.Sig, 0, 0),
 	}
 	return tx
@@ -210,7 +207,6 @@ func DeployCcntmract(singer *account.Account,
 	return txHash, nil
 }
 
-
 //Invoke wasm smart ccntmract
 //methodName is wasm ccntmract action name
 //paramType  is Json or Raw format
@@ -224,12 +220,12 @@ func InvokeWasmVMSmartCcntmract(
 	version byte,
 	params []interface{}) (string, error) {
 
-	code, err :=BuildWasmVMInvokeCode(smartcodeAddress, methodName, paramType, version, params)
+	code, err := BuildWasmVMInvokeCode(smartcodeAddress, methodName, paramType, version, params)
 	if err != nil {
 		return "", err
 	}
 	tx := NewInvokeTransaction(new(big.Int), vmtypes.WASMVM, code)
-	err = SignTransaction(siger,tx)
+	err = SignTransaction(siger, tx)
 	if err != nil {
 		return "", nil
 	}
@@ -247,7 +243,7 @@ func InvokeNeoVMSmartCcntmract(
 		return "", fmt.Errorf("BuildNVMInvokeCode error:%s", err)
 	}
 	tx := NewInvokeTransaction(gasLimit, vmtypes.NEOVM, code)
-	err = SignTransaction(siger,tx)
+	err = SignTransaction(siger, tx)
 	if err != nil {
 		return "", nil
 	}
@@ -280,8 +276,6 @@ func NewDeployCodeTransaction(
 		Nonce:      uint32(time.Now().Unix()),
 		Payload:    deployPayload,
 		Attributes: make([]*types.TxAttribute, 0, 0),
-		Fee:        make([]*types.Fee, 0, 0),
-		NetWorkFee: 0,
 		Sigs:       make([]*types.Sig, 0, 0),
 	}
 	return tx

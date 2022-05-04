@@ -19,9 +19,9 @@
 package neovm
 
 import (
-	vm "github.com/cntmio/cntmology/vm/neovm"
-	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/errors"
+	vm "github.com/cntmio/cntmology/vm/neovm"
 )
 
 // HeaderGetHash put header's hash to vm stack
@@ -144,12 +144,3 @@ func HeaderGetNextConsensus(service *NeoVmService, engine *vm.ExecutionEngine) e
 	vm.PushData(engine, data.NextBookkeeper[:])
 	return nil
 }
-
-
-
-
-
-
-
-
-
