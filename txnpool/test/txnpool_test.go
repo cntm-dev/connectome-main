@@ -29,7 +29,6 @@ import (
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/ledger"
-	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	tc "github.com/cntmio/cntmology/txnpool/common"
 	tp "github.com/cntmio/cntmology/txnpool/proc"
@@ -46,15 +45,9 @@ func init() {
 	log.Init(log.PATH, log.Stdout)
 	topic = "TXN"
 
-	bookKeepingPayload := &payload.Bookkeeping{
-		Nonce: uint64(time.Now().UnixNano()),
-	}
-
 	tx = &types.Transaction{
 		Version:    0,
 		Attributes: []*types.TxAttribute{},
-		TxType:     types.BookKeeping,
-		Payload:    bookKeepingPayload,
 	}
 
 	tempStr := "3369930accc1ddd067245e8edadcd9bea207ba5e1753ac18a51df77a343bfe92"

@@ -98,7 +98,7 @@ func (this *WasmVmService) runtimeNotify(engine *exec.ExecutionEngine) (bool, er
 	}
 	ccntmext := this.CcntmextRef.CurrentCcntmext()
 
-	this.Notifications = append(this.Notifications, &event.NotifyEventInfo{TxHash: this.Tx.Hash(), CcntmractAddress: ccntmext.CcntmractAddress, States: []string{string(item)}})
+	this.Notifications = append(this.Notifications, &event.NotifyEventInfo{CcntmractAddress: ccntmext.CcntmractAddress, States: []string{string(item)}})
 	vm.RestoreCtx()
 	return true, nil
 }

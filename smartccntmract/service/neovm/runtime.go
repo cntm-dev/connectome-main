@@ -62,7 +62,7 @@ func RuntimeCheckWitness(service *NeoVmService, engine *vm.ExecutionEngine) erro
 func RuntimeNotify(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	item := vm.PopStackItem(engine)
 	ccntmext := service.CcntmextRef.CurrentCcntmext()
-	service.Notifications = append(service.Notifications, &event.NotifyEventInfo{TxHash: service.Tx.Hash(), CcntmractAddress: ccntmext.CcntmractAddress, States: scommon.ConvertNeoVmTypeHexString(item)})
+	service.Notifications = append(service.Notifications, &event.NotifyEventInfo{CcntmractAddress: ccntmext.CcntmractAddress, States: scommon.ConvertNeoVmTypeHexString(item)})
 	return nil
 }
 

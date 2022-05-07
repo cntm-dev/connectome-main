@@ -23,16 +23,26 @@ import (
 	"github.com/cntmio/cntmology/vm/neovm/types"
 )
 
+const (
+	CcntmRACT_STATE_FAIL    byte = 0
+	CcntmRACT_STATE_SUCCESS byte = 1
+)
+
 // NotifyEventArgs describe smart ccntmract event notify arguments struct
 type NotifyEventArgs struct {
-	TxHash          common.Uint256
 	CcntmractAddress common.Address
 	States          types.StackItems
 }
 
 // NotifyEventInfo describe smart ccntmract event notify info struct
 type NotifyEventInfo struct {
-	TxHash          common.Uint256
 	CcntmractAddress common.Address
 	States          interface{}
+}
+
+type ExecuteNotify struct {
+	TxHash      common.Uint256
+	State       byte
+	GasConsumed uint64
+	Notify      []*NotifyEventInfo
 }

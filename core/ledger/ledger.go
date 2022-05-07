@@ -169,7 +169,7 @@ func (self *Ledger) PreExecuteCcntmract(tx *types.Transaction) (interface{}, err
 	return self.ldgStore.PreExecuteCcntmract(tx)
 }
 
-func (self *Ledger) GetEventNotifyByTx(tx common.Uint256) ([]*event.NotifyEventInfo, error) {
+func (self *Ledger) GetEventNotifyByTx(tx common.Uint256) (*event.ExecuteNotify, error) {
 	return self.ldgStore.GetEventNotifyByTx(tx)
 }
 

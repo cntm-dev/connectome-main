@@ -43,7 +43,6 @@ type MerkleProof struct {
 }
 
 type NotifyEventInfo struct {
-	TxHash          string
 	CcntmractAddress string
 	States          interface{}
 }

@@ -41,7 +41,6 @@ var (
 func AddNotifications(native *native.NativeService, ccntmract common.Address, state *State) {
 	native.Notifications = append(native.Notifications,
 		&event.NotifyEventInfo{
-			TxHash:          native.Tx.Hash(),
 			CcntmractAddress: ccntmract,
 			States:          []interface{}{TRANSFER_NAME, state.From.ToBase58(), state.To.ToBase58(), state.Value},
 		})
@@ -99,9 +98,9 @@ func Transfer(native *native.NativeService, ccntmract common.Address, state *Sta
 	return fromBalance, toBalance, nil
 }
 
-func GetApproveKey(ccntmract common.Address, state *State) []byte {
-	temp := append(ccntmract[:], state.From[:]...)
-	return append(temp, state.To[:]...)
+func GetApproveKey(ccntmract, from, to common.Address) []byte {
+	temp := append(ccntmract[:], from[:]...)
+	return append(temp, to[:]...)
 }
 
 func TransferedFrom(native *native.NativeService, currentCcntmract common.Address, state *TransferFrom) error {

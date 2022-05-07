@@ -74,7 +74,7 @@ func PreExecuteCcntmract(tx *types.Transaction) (interface{}, error) {
 	return ledger.DefLedger.PreExecuteCcntmract(tx)
 }
 
-func GetEventNotifyByTxHash(txHash common.Uint256) ([]*event.NotifyEventInfo, error) {
+func GetEventNotifyByTxHash(txHash common.Uint256) (*event.ExecuteNotify, error) {
 	return ledger.DefLedger.GetEventNotifyByTx(txHash)
 }
 

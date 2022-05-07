@@ -64,7 +64,6 @@ func getAdminKey(ccntmract common.Address, isTransferAdmin bool) []byte {
 func notifyParamSetSuccess(native *native.NativeService, ccntmract common.Address, params Params) {
 	native.Notifications = append(native.Notifications,
 		&event.NotifyEventInfo{
-			TxHash:          native.Tx.Hash(),
 			CcntmractAddress: ccntmract,
 			States:          []interface{}{SET_PARAM, params},
 		})

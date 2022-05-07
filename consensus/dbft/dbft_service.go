@@ -32,7 +32,6 @@ import (
 	actorTypes "github.com/cntmio/cntmology/consensus/actor"
 	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/ledger"
-	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/signature"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/core/vote"
@@ -243,19 +242,6 @@ func (ds *DbftService) CheckSignatures() error {
 		}
 	}
 	return nil
-}
-
-func (ds *DbftService) CreateBookkeepingTransaction(nonce uint64, fee common.Fixed64) *types.Transaction {
-	log.Debug()
-	//TODO: sysfee
-	bookKeepingPayload := &payload.Bookkeeping{
-		Nonce: uint64(time.Now().UnixNano()),
-	}
-	return &types.Transaction{
-		TxType:     types.BookKeeping,
-		Payload:    bookKeepingPayload,
-		Attributes: []*types.TxAttribute{},
-	}
 }
 
 func (ds *DbftService) ChangeViewReceived(payload *p2pmsg.ConsensusPayload, message *ChangeView) {
