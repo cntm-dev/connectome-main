@@ -24,6 +24,7 @@ import (
 
 	"github.com/cntmio/cntmology-eventbus/actor"
 
+	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	tx "github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/events/message"
@@ -73,6 +74,12 @@ func (ta *TxActor) handleTransaction(sender tc.SenderType, self *actor.PID,
 
 		ta.server.increaseStats(tc.FailureStats)
 	} else {
+		if txn.GasLimit < config.DefConfig.Common.GasLimit ||
+			txn.GasPrice < config.DefConfig.Common.GasPrice {
+			log.Debug(fmt.Sprintf("[handleTransaction] invalid gasLimit %v, gasPrice %v",
+				txn.GasLimit, txn.GasPrice))
+			return
+		}
 		<-ta.server.slots
 		ta.server.assignTxToWorker(txn, sender)
 	}

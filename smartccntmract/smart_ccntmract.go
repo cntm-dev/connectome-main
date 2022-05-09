@@ -35,6 +35,8 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/storage"
 	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 	vm "github.com/cntmio/cntmology/vm/neovm"
+
+	_ "github.com/cntmio/cntmology/smartccntmract/service/native/cntmid"
 )
 
 var (

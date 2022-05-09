@@ -1,7 +1,6 @@
 # Native Ccntmract API : Param
 * [Introduction](#introduction)
 * [Ccntmract Method](#ccntmract-method)
-* [How to get a parameter](#how-to-get-a-parameter)
 
 ## Introduction
 This document describes the global parameter manager native ccntmract used in the cntmology network.
@@ -27,7 +26,7 @@ Transfer the administrator of this ccntmract, should be invoked by administrator
 
 method: transferAdmin
 
-args: smartccntmract/service/native/states.Admin
+args: smartccntmract/service/native/global_params.Admin
 
 #### example
 ```
@@ -51,7 +50,7 @@ Accept administrator permission of the ccntmract.
 
 method: acceptAdmin
 
-args: smartccntmract/service/native/states.Admin
+args: smartccntmract/service/native/global_params.Admin
 
 #### example
 ```
@@ -76,7 +75,7 @@ Administrator set global parameter, is prepare value, won't take effect immediat
 
 method: setGlobalParam
 
-args: smartccntmract/service/native/states.Params
+args: smartccntmract/service/native/global_params.Params
 
 #### example
 ```
@@ -100,6 +99,32 @@ args: smartccntmract/service/native/states.Params
 	}
 ```
 
+### GetGlobalParam
+Get global parameter
+
+method: getGlobalParam
+
+args: smartccntmract/service/native/global_params.ParamNameList
+
+#### example
+```
+    nameList := new(global_params.ParamNameList)
+	for i := 0; i < 3; i++ {
+		k := "key-test" + strconv.Itoa(i) + "-" + key
+		(*nameList) = append(*nameList, k)
+	}
+	nameListBuffer := new(bytes.Buffer)
+	if err := nameList.Serialize(nameListBuffer); err != nil {
+		fmt.Println("Serialize ParamNameList struct error.")
+		os.Exit(1)
+	}
+	ccntmract := &sstates.Ccntmract{
+		Address: genesis.ParamCcntmractAddress,
+		Method:  "getGlobalParam",
+		Args:    nameListBuffer.Bytes(),
+	}
+```
+
 ### CreateSnapshot
 Administrator make prepare parameter effective.
 
@@ -114,9 +139,3 @@ args: nil
 		Method:  "createSnapshot",
 	}
 ```
-
-## How to get a parameter
-Call the function "GetGlobalParam" to get a global parameter value.
-
-args: smartccntmract/service/native.NativeService, the NativeServe instance<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;string, parameter name
