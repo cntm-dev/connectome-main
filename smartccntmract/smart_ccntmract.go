@@ -29,14 +29,13 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 	_ "github.com/cntmio/cntmology/smartccntmract/service/native/init"
+	_ "github.com/cntmio/cntmology/smartccntmract/service/native/cntmid"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
 	"github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
 	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 	vm "github.com/cntmio/cntmology/vm/neovm"
-
-	_ "github.com/cntmio/cntmology/smartccntmract/service/native/cntmid"
 )
 
 var (

@@ -19,6 +19,7 @@
 package init
 
 import (
+	"github.com/cntmio/cntmology/smartccntmract/service/native/auth"
 	params "github.com/cntmio/cntmology/smartccntmract/service/native/global_params"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
@@ -28,4 +29,5 @@ func init() {
 	cntm.InitOng()
 	cntm.InitOnt()
 	params.InitGlobalParams()
+	auth.Init()
 }

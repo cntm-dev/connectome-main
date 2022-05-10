@@ -44,6 +44,7 @@ var (
 	OngCcntmractAddress, _   = common.AddressParseFromBytes([]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02})
 	OntIDCcntmractAddress, _ = common.AddressParseFromBytes([]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03})
 	ParamCcntmractAddress, _ = common.AddressParseFromBytes([]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04})
+	AuthCcntmractAddress, _  = common.AddressParseFromBytes([]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06})
 
 	cntmToken   = newGoverningToken()
 	cntmToken   = newUtilityToken()
@@ -89,6 +90,7 @@ func GenesisBlockInit(defaultBookkeeper []keypair.PublicKey) (*types.Block, erro
 	cntm := newUtilityToken()
 	param := newParamCcntmract()
 	oid := deployOntIDCcntmract()
+	auth := deployAuthCcntmract()
 
 	genesisBlock := &types.Block{
 		Header: genesisHeader,
@@ -97,6 +99,7 @@ func GenesisBlockInit(defaultBookkeeper []keypair.PublicKey) (*types.Block, erro
 			cntm,
 			param,
 			oid,
+			auth,
 			newGoverningInit(),
 			newUtilityInit(),
 			newParamInit(),
@@ -122,6 +125,12 @@ func newParamCcntmract() *types.Transaction {
 	tx := utils.NewDeployTransaction(stypes.VmCode{Code: ParamCcntmractAddress[:], VmType: stypes.Native},
 		"ParamConfig", "1.0", "Ontology Team", "ccntmact@cntm.io",
 		"Chain Global Enviroment Variables Manager ", true)
+	return tx
+}
+
+func deployAuthCcntmract() *types.Transaction {
+	tx := utils.NewDeployTransaction(stypes.VmCode{Code: AuthCcntmractAddress[:], VmType: stypes.Native}, "AuthCcntmract", "1.0",
+		"Ontology Team", "ccntmact@cntm.io", "Ontology Network Authorization Ccntmract", true)
 	return tx
 }
 
