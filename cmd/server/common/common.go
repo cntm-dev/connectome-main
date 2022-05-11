@@ -16,18 +16,25 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package cli
+package common
 
 import (
-	"math/rand"
-	"time"
-
-	"github.com/cntmio/cntmology/common/log"
+	"encoding/json"
+	"github.com/cntmio/cntmology/account"
 )
 
-func init() {
-	log.Init()
-	//crypto.SetAlg(config.Parameters.EncryptAlg)
-	//seed transaction nonce
-	rand.Seed(time.Now().UnixNano())
+var DefAccount *account.Account
+
+type CliRpcRequest struct {
+	Qid    string          `json:"qid"`
+	Params json.RawMessage `json:"params"`
+	Method string          `json:"method"`
+}
+
+type CliRpcResponse struct {
+	Qid       string      `json:"qid"`
+	Method    string      `json:"method"`
+	Result    interface{} `json:"result"`
+	ErrorCode int         `json:"error_code"`
+	ErrorInfo string      `json:"error_info"`
 }

@@ -22,12 +22,10 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"math/big"
-
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/core/genesis"
+	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
@@ -419,6 +417,21 @@ func GetBlockHeightByTxHash(params []interface{}) map[string]interface{} {
 	return responsePack(berr.INVALID_PARAMS, "")
 }
 
+func getStoreUint64Value(ccntmractAddress, accountAddress common.Address) (uint64, error) {
+	data, err := bactor.GetStorageItem(ccntmractAddress, accountAddress[:])
+	if err != nil {
+		return 0, fmt.Errorf("GetOntBalanceOf GetStorageItem cntm address:%s error:%s", accountAddress.ToBase58(), err)
+	}
+	if len(data) == 0 {
+		return 0, nil
+	}
+	value, err := serialization.ReadUint64(bytes.NewBuffer(data))
+	if err != nil {
+		return 0, fmt.Errorf("serialization.ReadUint64:%x error:%s", data, err)
+	}
+	return value, err
+}
+
 func GetBalance(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return responsePack(berr.INVALID_PARAMS, "")
@@ -431,31 +444,11 @@ func GetBalance(params []interface{}) map[string]interface{} {
 	if err != nil {
 		return responsePack(berr.INVALID_PARAMS, "")
 	}
-	cntm := new(big.Int)
-	cntm := new(big.Int)
-	appove := big.NewInt(0)
-
-	cntmBalance, err := bactor.GetStorageItem(genesis.OntCcntmractAddress, address[:])
+	rsp, err := bcomn.GetBalance(address)
 	if err != nil {
-		log.Errorf("GetOntBalanceOf GetStorageItem cntm address:%s error:%s", addrBase58, err)
-		return responsePack(berr.INTERNAL_ERROR, "internal error")
+		log.Errorf("GetBalance address:%s error:%s", addrBase58, err)
+		return responsePack(berr.INTERNAL_ERROR, "")
 	}
-	if cntmBalance != nil {
-		cntm.SetBytes(cntmBalance)
-	}
-
-	appoveKey := append(genesis.OntCcntmractAddress[:], address[:]...)
-	cntmappove, err := bactor.GetStorageItem(genesis.OngCcntmractAddress, appoveKey[:])
-
-	if cntmappove != nil {
-		appove.SetBytes(cntmappove)
-	}
-	rsp := &bcomn.BalanceOfRsp{
-		Ont:       cntm.String(),
-		Ong:       cntm.String(),
-		OngAppove: appove.String(),
-	}
-
 	return responseSuccess(rsp)
 }
 

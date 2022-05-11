@@ -20,19 +20,16 @@ package rest
 
 import (
 	"bytes"
-	"math/big"
-	"strconv"
-
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
 	bactor "github.com/cntmio/cntmology/http/base/actor"
 	bcomn "github.com/cntmio/cntmology/http/base/common"
 	berr "github.com/cntmio/cntmology/http/base/error"
+	"strconv"
 )
 
 const TLS_PORT int = 443
@@ -332,7 +329,8 @@ func GetSmartCodeEventByTxHash(cmd map[string]interface{}) map[string]interface{
 	if err != nil {
 		return ResponsePack(berr.INVALID_PARAMS)
 	}
-	resp["Result"] = eventInfo
+	_, notify := bcomn.GetExecuteNotify(eventInfo)
+	resp["Result"] = notify
 	return resp
 }
 
@@ -397,41 +395,12 @@ func GetBalance(cmd map[string]interface{}) map[string]interface{} {
 	if err != nil {
 		return ResponsePack(berr.INVALID_PARAMS)
 	}
-
-	cntm := big.NewInt(0)
-	cntm := big.NewInt(0)
-	appove := big.NewInt(0)
-
-	cntmBalance, err := bactor.GetStorageItem(genesis.OntCcntmractAddress, address[:])
+	balance, err := bcomn.GetBalance(address)
 	if err != nil {
-		log.Errorf("GetOntBalanceOf GetStorageItem cntm address:%s error:%s", address, err)
+		log.Errorf("GetBalance address:%s error:%s", addrBase58, err)
 		return ResponsePack(berr.INTERNAL_ERROR)
 	}
-	if cntmBalance != nil {
-		cntm.SetBytes(cntmBalance)
-	}
-
-	cntmBalance, err := bactor.GetStorageItem(genesis.OngCcntmractAddress, address[:])
-	if err != nil {
-		log.Errorf("GetOngBalanceOf GetStorageItem cntm address:%s error:%s", address, err)
-		return ResponsePack(berr.INTERNAL_ERROR)
-	}
-	if cntmBalance != nil {
-		cntm.SetBytes(cntmBalance)
-	}
-
-	appoveKey := append(genesis.OntCcntmractAddress[:], address[:]...)
-	cntmappove, err := bactor.GetStorageItem(genesis.OngCcntmractAddress, appoveKey[:])
-
-	if cntmappove != nil {
-		appove.SetBytes(cntmappove)
-	}
-	rsp := &bcomn.BalanceOfRsp{
-		Ont:       cntm.String(),
-		Ong:       cntm.String(),
-		OngAppove: appove.String(),
-	}
-	resp["Result"] = rsp
+	resp["Result"] = balance
 	return resp
 }
 
