@@ -30,12 +30,23 @@ import (
 	"sort"
 
 	"github.com/cntmio/cntmology/common/config"
-	"github.com/cntmio/cntmology/common/log"
+	vbftconfig "github.com/cntmio/cntmology/consensus/vbft/config"
 	"github.com/cntmio/cntmology/core/genesis"
 	cstates "github.com/cntmio/cntmology/core/states"
 	scommon "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/states"
+)
+
+const (
+	//status
+	RegisterSyncNodeStatus states.Status = iota
+	SyncNodeStatus
+	RegisterCandidateStatus
+	CandidateStatus
+	ConsensusStatus
+	QuitStatus
+	QuitConsensusStatus
 )
 
 const (
@@ -61,15 +72,6 @@ const (
 	FORCE_COMMIT     = "forceCommit"
 	VOTE_COMMIT_INFO = "voteCommitInfo"
 
-	//status
-	RegisterSyncNodeStatus states.Status = 0
-	SyncNodeStatus
-	RegisterCandidateStatus
-	CandidateStatus
-	ConsensusStatus
-	QuitStatus
-	QuitConsensusStatus
-
 	//global
 	ConsensusNum = 7
 	CandidateNum = 7 * 7
@@ -91,6 +93,7 @@ func RegisterGovernanceCcntmract(native *NativeService) {
 	native.Register(COMMIT_DPOS, CommitDpos)
 	native.Register(VOTE_COMMIT_DPOS, VoteCommitDpos)
 	native.Register(UPDATE_CONFIG, UpdateConfig)
+	native.Register("dataQuery", DataQuery)
 }
 
 func InitConfig(native *NativeService) error {
@@ -115,7 +118,7 @@ func InitConfig(native *NativeService) error {
 	}
 	native.CloneCache.Add(scommon.ST_STORAGE, concatKey(ccntmract, []byte(VBFT_CONFIG)), &cstates.StorageItem{Value: value})
 
-	initPeerPool := &states.InitPeerPool{}
+	initPeerPool := &states.PeerPoolList{}
 	if err := json.Unmarshal(file, initPeerPool); err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[initConfig] Failed to unmarshal config file!")
 	}
@@ -135,6 +138,16 @@ func InitConfig(native *NativeService) error {
 	}
 
 	native.CloneCache.Add(scommon.ST_STORAGE, concatKey(ccntmract, []byte(CANDIDITE_INDEX)), &cstates.StorageItem{Value: new(big.Int).SetInt64(8).Bytes()})
+
+	governanceView := &states.GovernanceView{
+		View:       new(big.Int).SetInt64(1),
+		VoteCommit: false,
+	}
+	v, err := json.Marshal(governanceView)
+	if err != nil {
+		return errors.NewDetailErr(err, errors.ErrNoCode, "[initConfig] Marshal governanceView error")
+	}
+	native.CloneCache.Add(scommon.ST_STORAGE, concatKey(ccntmract, []byte(GOVERNANCE_VIEW)), &cstates.StorageItem{Value: v})
 
 	addCommonEvent(native, ccntmract, INIT_CONFIG, true)
 	return nil
@@ -475,7 +488,7 @@ func VoteForPeer(native *NativeService) error {
 			FreezePos:  new(big.Int),
 			NewPos:     new(big.Int),
 		}
-		if pos.Cmp(new(big.Int)) >= 0 {
+		if pos.Sign() >= 0 {
 			if voteInfoPoolBytes != nil {
 				voteInfoPoolStore, _ := voteInfoPoolBytes.(*cstates.StorageItem)
 				err = json.Unmarshal(voteInfoPoolStore.Value, voteInfoPool)
@@ -509,9 +522,9 @@ func VoteForPeer(native *NativeService) error {
 					return errors.NewDetailErr(err, errors.ErrNoCode, "[voteForPeer] Unmarshal voteInfoPool error!")
 				}
 				temp := new(big.Int).Add(voteInfoPool.NewPos, pos)
-				if temp.Cmp(new(big.Int)) < 0 {
+				if temp.Sign() < 0 {
 					voteInfoPool.PrePos = new(big.Int).Sub(voteInfoPool.PrePos, temp)
-					if voteInfoPool.PrePos.Cmp(new(big.Int)) < 0 {
+					if voteInfoPool.PrePos.Sign() < 0 {
 						ccntminue
 					}
 					voteInfoPool.FreezePos = new(big.Int).Add(voteInfoPool.FreezePos, temp)
@@ -539,10 +552,10 @@ func VoteForPeer(native *NativeService) error {
 			}
 		}
 	}
-	if total.Cmp(new(big.Int)) > 0 {
+	if total.Sign() > 0 {
 		//TODO: pay
 	}
-	if total.Cmp(new(big.Int)) < 0 {
+	if total.Sign() < 0 {
 		//TODO: withdraw
 	}
 
@@ -602,7 +615,7 @@ func CommitDpos(native *NativeService) error {
 			fmt.Println(peerPool)
 			stake := new(big.Int).Add(peerPool.TotalPos, peerPool.InitPos)
 			peers = append(peers, &states.PeerStakeInfo{
-				Index:      peerPool.Index.Uint64(),
+				Index:      uint32(peerPool.Index.Uint64()),
 				PeerPubkey: peerPool.PeerPubkey,
 				Stake:      stake.Uint64(),
 			})
@@ -844,28 +857,46 @@ func CommitDpos(native *NativeService) error {
 		peerRanks = append(peerRanks, s)
 	}
 
-	// calculate dpos table
-	dposTable := make([]uint64, 0)
+	// calculate pos table
+	chainPeers := make(map[uint32]*vbftconfig.PeerConfig, 0)
+	posTable := make([]uint32, 0)
 	for i := 0; i < int(config.K); i++ {
+		nodeId, err := vbftconfig.StringID(peers[i].PeerPubkey)
+		if err != nil {
+			return errors.NewDetailErr(err, errors.ErrNoCode, fmt.Sprintf("[commitDpos] Failed to format NodeID, index: %d: %s", peers[i].Index, err))
+		}
+		chainPeers[peers[i].Index] = &vbftconfig.PeerConfig{
+			Index: peers[i].Index,
+			ID:    nodeId,
+		}
 		for j := uint64(0); j < peerRanks[i]; j++ {
-			dposTable = append(dposTable, peers[i].Index)
+			posTable = append(posTable, peers[i].Index)
 		}
 	}
 
 	// shuffle
-	for i := len(dposTable) - 1; i > 0; i-- {
-		h, err := Shufflehash(native.Tx.Hash(), native.Height, peers[dposTable[i]].PeerPubkey, i)
+	for i := len(posTable) - 1; i > 0; i-- {
+		h, err := Shufflehash(native.Tx.Hash(), native.Height, chainPeers[posTable[i]].ID.Bytes(), i)
 		if err != nil {
-			return errors.NewDetailErr(err, errors.ErrNoCode, "[commitDpos] Failed to calculate hash value!")
+			return errors.NewDetailErr(err, errors.ErrNoCode, "[commitDpos] Failed to calculate hash value")
 		}
 		j := h % uint64(i)
-		dposTable[i], dposTable[j] = dposTable[j], dposTable[i]
+		posTable[i], posTable[j] = posTable[j], posTable[i]
 	}
-	log.Debugf("DPOS table is:", dposTable)
+
+	fmt.Println("DPOS table is:", posTable)
 
 	//update view
 	view = new(big.Int).Add(view, new(big.Int).SetInt64(1))
-	native.CloneCache.Add(scommon.ST_STORAGE, concatKey(ccntmract, []byte(GOVERNANCE_VIEW)), &cstates.StorageItem{Value: view.Bytes()})
+	governanceView := &states.GovernanceView{
+		View:       view,
+		VoteCommit: false,
+	}
+	v, err := json.Marshal(governanceView)
+	if err != nil {
+		return errors.NewDetailErr(err, errors.ErrNoCode, "[commitDpos] Marshal governanceView error")
+	}
+	native.CloneCache.Add(scommon.ST_STORAGE, concatKey(ccntmract, []byte(GOVERNANCE_VIEW)), &cstates.StorageItem{Value: v})
 
 	addCommonEvent(native, ccntmract, COMMIT_DPOS, true)
 
@@ -909,7 +940,7 @@ func VoteCommitDpos(native *NativeService) error {
 		voteCommitInfo = new(big.Int).SetBytes(voteCommitStore.Value)
 	}
 	newVoteCommitInfo := new(big.Int).Add(voteCommitInfo, params.Pos)
-	if newVoteCommitInfo.Cmp(new(big.Int)) < 0 {
+	if newVoteCommitInfo.Sign() < 0 {
 		return errors.NewErr("[voteCommitDpos] Remain pos is negative!")
 	}
 	native.CloneCache.Add(scommon.ST_STORAGE, concatKey(ccntmract, []byte(VOTE_COMMIT_INFO), view.Bytes(), addressPrefix), &cstates.StorageItem{Value: newVoteCommitInfo.Bytes()})
@@ -924,7 +955,15 @@ func VoteCommitDpos(native *NativeService) error {
 	newPosCommit := new(big.Int).Add(posCommit, params.Pos)
 
 	if newPosCommit.Cmp(new(big.Int).SetInt64(100000)) >= 0 {
-		native.CloneCache.Add(scommon.ST_STORAGE, concatKey(ccntmract, []byte(FORCE_COMMIT), view.Bytes()), &cstates.StorageItem{Value: new(big.Int).SetInt64(1).Bytes()})
+		governanceView := &states.GovernanceView{
+			View:       view,
+			VoteCommit: true,
+		}
+		v, err := json.Marshal(governanceView)
+		if err != nil {
+			return errors.NewDetailErr(err, errors.ErrNoCode, "[voteCommitDpos] Marshal governanceView error")
+		}
+		native.CloneCache.Add(scommon.ST_STORAGE, concatKey(ccntmract, []byte(GOVERNANCE_VIEW)), &cstates.StorageItem{Value: v})
 	}
 
 	return nil
@@ -947,6 +986,47 @@ func UpdateConfig(native *NativeService) error {
 	native.CloneCache.Add(scommon.ST_STORAGE, concatKey(ccntmract, []byte(VBFT_CONFIG)), &cstates.StorageItem{Value: value})
 
 	addCommonEvent(native, ccntmract, UPDATE_CONFIG, config)
+
+	return nil
+}
+
+func DataQuery(native *NativeService) error {
+	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
+	//get all peerPool
+	stateValues, err := native.CloneCache.Store.Find(scommon.ST_STORAGE, concatKey(ccntmract, []byte(PEER_POOL)))
+	if err != nil {
+		return errors.NewDetailErr(err, errors.ErrNoCode, "[DataQuery] Get all peerPool error!")
+	}
+
+	peerPool := new(states.PeerPool)
+	for _, v := range stateValues {
+		peerPoolStore, _ := v.Value.(*cstates.StorageItem)
+		err = json.Unmarshal(peerPoolStore.Value, peerPool)
+		if err != nil {
+			return errors.NewDetailErr(err, errors.ErrNoCode, "[DataQuery] Unmarshal peerPool error!")
+		}
+		fmt.Println("PeerPool is : ", peerPool)
+	}
+
+	//get current view
+	view, err := getGovernanceView(native, ccntmract)
+	if err != nil {
+		return errors.NewDetailErr(err, errors.ErrNoCode, "[DataQuery] Get view error!")
+	}
+	//update voteInfoPool
+	stateValues, err = native.CloneCache.Store.Find(scommon.ST_STORAGE, concatKey(ccntmract, []byte(VOTE_INFO_POOL), view.Bytes()))
+	if err != nil {
+		return errors.NewDetailErr(err, errors.ErrNoCode, "[DataQuery] Get all peerPool error!")
+	}
+	voteInfoPool := new(states.VoteInfoPool)
+	for _, v := range stateValues {
+		voteInfoPoolStore, _ := v.Value.(*cstates.StorageItem)
+		err = json.Unmarshal(voteInfoPoolStore.Value, voteInfoPool)
+		if err != nil {
+			return errors.NewDetailErr(err, errors.ErrNoCode, "[DataQuery] Unmarshal voteInfoPool error!")
+		}
+		fmt.Println("VoteInfoPool is : ", peerPool)
+	}
 
 	return nil
 }

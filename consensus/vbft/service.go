@@ -253,7 +253,13 @@ func (self *Server) LoadChainConfig(chainStore *ChainStore) error {
 	if err != nil {
 		return fmt.Errorf("failed to get chainconfig from leveldb: %s", err)
 	}
-	cfg, err := vconfig.GenesisChainConfig(config)
+
+	peersinfo, err := chainStore.GetPeersConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get peersinfo from leveldb: %s", err)
+	}
+
+	cfg, err := vconfig.GenesisChainConfig(config, peersinfo)
 	if err != nil {
 		return fmt.Errorf("GenesisChainConfig failed: %s", err)
 	}
@@ -288,21 +294,66 @@ func (self *Server) LoadChainConfig(chainStore *ChainStore) error {
 func (self *Server) updateChainConfig() error {
 	self.metaLock.Lock()
 	defer self.metaLock.Unlock()
+
 	config, err := self.chainStore.GetVbftConfigInfo()
 	if err != nil {
 		return fmt.Errorf("failed to get chainconfig from leveldb: %s", err)
 	}
-	cfg, err := vconfig.GenesisChainConfig(config)
+
+	peersinfo, err := self.chainStore.GetPeersConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get peersinfo from leveldb: %s", err)
+	}
+
+	cfg, err := vconfig.GenesisChainConfig(config, peersinfo)
 	if err != nil {
 		return fmt.Errorf("GenesisChainConfig failed: %s", err)
 	}
 	self.config = cfg
 	// TODO
 	// 1. update peer pool
-	// 2. reset all peer connections, create new connections with new peers
-	// 3. check connections num for state-mgmt
-	// 4. update chainStore
-
+	// 2. remove nonparticipation consensus node
+	// 3. update statemgr peers
+	// 4. reset remove peer connections, create new connections with new peers
+	peermap := make(map[vconfig.NodeID]uint32)
+	for _, p := range self.config.Peers {
+		peermap[p.ID] = p.Index
+		_, present := self.peerPool.GetPeerIndex(p.ID)
+		if !present {
+			if err := self.peerPool.addPeer(p); err != nil {
+				return fmt.Errorf("failed to add peer %d: %s", p.Index, err)
+			}
+			log.Infof("updateChainConfig add peer index%v,id:%v", p.ID.String(), p.Index)
+		}
+	}
+	//  delmap := make(map[vconfig.NodeID]uint32)
+	for id, index := range self.peerPool.IDMap {
+		_, present := peermap[id]
+		if !present {
+			if index == self.Index {
+				self.stop()
+				log.Info("updateChainConfig stop consensus service")
+			} else {
+				//delmap[id] = index
+				log.Info("updateChainConfig remove consensus")
+				if C, present := self.msgRecvC[index]; present {
+					C <- nil
+				}
+				go func() {
+					self.peerPool.peerDisconnected(index)
+					self.stateMgr.StateEventC <- &StateEvent{
+						Type: UpdatePeerState,
+						peerState: &PeerState{
+							peerIdx:   index,
+							connected: false,
+						},
+					}
+					delete(self.msgRecvC, index)
+				}()
+			}
+			log.Infof("updateChainConfig remove nonparticipation node: index:%v,nodeid:%v len:%d", index, id, len(self.peerPool.IDMap))
+		}
+	}
 	return nil
 }
 

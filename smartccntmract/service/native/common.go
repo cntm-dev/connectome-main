@@ -242,18 +242,21 @@ func validateOwner(native *NativeService, address string) error {
 }
 
 func getGovernanceView(native *NativeService, ccntmract common.Address) (*big.Int, error) {
-	viewBytes, err := native.CloneCache.Get(scommon.ST_STORAGE, concatKey(ccntmract, []byte(GOVERNANCE_VIEW)))
+	governanceViewBytes, err := native.CloneCache.Get(scommon.ST_STORAGE, concatKey(ccntmract, []byte(GOVERNANCE_VIEW)))
 	if err != nil {
-		return new(big.Int), errors.NewDetailErr(err, errors.ErrNoCode, "[getGovernanceView] Get viewBytes error!")
+		return new(big.Int), errors.NewDetailErr(err, errors.ErrNoCode, "[getGovernanceView] Get governanceViewBytes error!")
 	}
-	var view *big.Int
-	if viewBytes == nil {
-		view = new(big.Int).SetInt64(1)
+	governanceView := new(states.GovernanceView)
+	if governanceViewBytes == nil {
+		return new(big.Int), errors.NewDetailErr(err, errors.ErrNoCode, "[getGovernanceView] Get nil governanceViewBytes!")
 	} else {
-		candidateIndexStore, _ := viewBytes.(*cstates.StorageItem)
-		view = new(big.Int).SetBytes(candidateIndexStore.Value)
+		governanceViewStore, _ := governanceViewBytes.(*cstates.StorageItem)
+		err = json.Unmarshal(governanceViewStore.Value, governanceView)
+		if err != nil {
+			return new(big.Int), errors.NewDetailErr(err, errors.ErrNoCode, "[getGovernanceView] Unmarshal governanceView error!")
+		}
 	}
-	return view, nil
+	return governanceView.View, nil
 }
 
 func addCommonEvent(native *NativeService, ccntmract common.Address, name string, params interface{}) {
@@ -265,11 +268,11 @@ func addCommonEvent(native *NativeService, ccntmract common.Address, name string
 		})
 }
 
-func Shufflehash(txid common.Uint256, ts uint32, id string, idx int) (uint64, error) {
+func Shufflehash(txid common.Uint256, ts uint32, id []byte, idx int) (uint64, error) {
 	data, err := json.Marshal(struct {
 		Txid           common.Uint256 `json:"txid"`
 		BlockTimestamp uint32         `json:"block_timestamp"`
-		NodeID         string         `json:"node_id"`
+		NodeID         []byte         `json:"node_id"`
 		Index          int            `json:"index"`
 	}{txid, ts, id, idx})
 	if err != nil {

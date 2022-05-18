@@ -19,13 +19,12 @@
 package vbft
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"math"
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
+	vconfig "github.com/cntmio/cntmology/consensus/vbft/config"
 	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/states"
@@ -124,7 +123,7 @@ func (self *ChainStore) GetBlock(blockNum uint64) (*Block, error) {
 	return initVbftBlock(block)
 }
 
-func (self *ChainStore) GetVbftConfigInfo() (*govcon.Configuration, error) {
+func (self *ChainStore) GetVbftConfigInfo() (*vconfig.Configuration, error) {
 	storageKey := &states.StorageKey{
 		CodeHash: genesis.GovernanceCcntmractAddress,
 		Key:      append([]byte(gov.VBFT_CONFIG)),
@@ -133,11 +132,47 @@ func (self *ChainStore) GetVbftConfigInfo() (*govcon.Configuration, error) {
 	if err != nil {
 		return nil, err
 	}
-	chainconfig := &govcon.Configuration{}
-	if err := json.Unmarshal(vbft, chainconfig); err != nil {
-		return nil, fmt.Errorf("unmarshal chainconfig: %s", err)
+	config := &govcon.Configuration{}
+	if err := json.Unmarshal(vbft, config); err != nil {
+		return nil, fmt.Errorf("unmarshal config: %s", err)
+	}
+	chainconfig := &vconfig.Configuration{
+		View:                 uint32(1),
+		N:                    config.N,
+		C:                    config.C,
+		K:                    config.K,
+		L:                    config.L,
+		BlockMsgDelay:        config.BlockMsgDelay,
+		HashMsgDelay:         config.HashMsgDelay,
+		PeerHandshakeTimeout: config.PeerHandshakeTimeout,
 	}
 	return chainconfig, nil
+}
+
+func (self *ChainStore) GetPeersConfig() ([]*vconfig.PeerStakeInfo, error) {
+	storageKey := &states.StorageKey{
+		CodeHash: genesis.GovernanceCcntmractAddress,
+		Key:      append([]byte(gov.PEER_POOL)),
+	}
+	peers, err := ledger.DefLedger.FindStorageItem(storageKey.CodeHash, storageKey.Key)
+	if err != nil {
+		return nil, err
+	}
+	var peerstakes []*vconfig.PeerStakeInfo
+	for _, peer := range peers {
+		peersconfig := &govcon.PeerPool{}
+		if err := json.Unmarshal(peer, peersconfig); err != nil {
+			return nil, fmt.Errorf("unmarshal peersconfig: %s", err)
+		}
+
+		config := &vconfig.PeerStakeInfo{
+			Index:  uint32(peersconfig.Index.Uint64()),
+			NodeID: peersconfig.PeerPubkey,
+			Stake:  (peersconfig.InitPos.Uint64() + peersconfig.TotalPos.Uint64()),
+		}
+		peerstakes = append(peerstakes, config)
+	}
+	return peerstakes, nil
 }
 
 func (self *ChainStore) GetForceUpdate() (bool, error) {
@@ -145,56 +180,13 @@ func (self *ChainStore) GetForceUpdate() (bool, error) {
 		CodeHash: genesis.GovernanceCcntmractAddress,
 		Key:      append([]byte(gov.FORCE_COMMIT)),
 	}
-	isforce, err := ledger.DefLedger.GetStorageItem(storageKey.CodeHash, storageKey.Key)
+	force, err := ledger.DefLedger.GetStorageItem(storageKey.CodeHash, storageKey.Key)
 	if err != nil {
 		return false, err
 	}
-	if bytes.Compare(isforce, []byte{1}) == 0 {
-		return true, nil
+	config := &govcon.GovernanceView{}
+	if err := json.Unmarshal(force, config); err != nil {
+		return false, fmt.Errorf("unmarshal config: %s", err)
 	}
-	return false, nil
-}
-
-func (self *ChainStore) GetNewDopsInfo() ([]uint64, error) {
-	// calculate peer ranks
-	config, err := self.GetVbftConfigInfo()
-	if err != nil {
-		return nil, fmt.Errorf("GetVbftConfigInfo err:%s", err)
-	}
-	scale := config.L/config.K - 1
-	if scale <= 0 {
-		return nil, fmt.Errorf(" L is equal or less than K!")
-	}
-	peers := config.Peers
-	peerRanks := make([]uint64, 0)
-	var sum uint64
-	for i := 0; i < int(config.K); i++ {
-		sum += peers[i].Stake
-	}
-	for i := 0; i < int(config.K); i++ {
-		if peers[i].Stake == 0 {
-			return nil, fmt.Errorf(fmt.Sprintf("peers rank %d, has zero stake!", i))
-		}
-		s := uint64(math.Ceil(float64(peers[i].Stake) * float64(scale) * float64(config.K) / float64(sum)))
-		peerRanks = append(peerRanks, s)
-	}
-	// calculate dpos table
-	dposTable := make([]uint64, 0)
-	for i := 0; i < int(config.K); i++ {
-		for j := uint64(0); j < peerRanks[i]; j++ {
-			dposTable = append(dposTable, peers[i].Index)
-		}
-	}
-	// shuffle
-	for i := len(dposTable) - 1; i > 0; i-- {
-		h, err := gov.Shufflehash(common.Uint256{}, 1, peers[dposTable[i]].PeerPubkey, i)
-		//	h, err := gov.Shufflehash(native.Tx.Hash(), native.Height, peers[dposTable[i]].PeerPubkey, i)
-		if err != nil {
-			return nil, fmt.Errorf("[commitDpos] Failed to calculate hash value!")
-		}
-		j := h % uint64(i)
-		dposTable[i], dposTable[j] = dposTable[j], dposTable[i]
-	}
-	log.Debugf("DPOS table is:", dposTable)
-	return dposTable, nil
+	return config.VoteCommit, nil
 }
