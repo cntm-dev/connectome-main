@@ -18,12 +18,16 @@
 
 package states
 
-import (
-	"math/big"
-)
-
 type CandidateSplitInfo struct {
 	PeerPubkey string  `json:"peerPubkey"`
+	InitPos    uint64  `json:"initPos"`
+	Address    string  `json:"address"`
 	Stake      float64 `json:"stake"`
 	S          float64 `json:"s"`
+}
+
+type SyncNodeSplitInfo struct {
+	PeerPubkey string  `json:"peerPubkey"`
+	InitPos    uint64  `json:"initPos"`
+	Address    string  `json:"address"`
 }

@@ -19,22 +19,26 @@
 package native
 
 import (
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"math/big"
+	"sort"
 
+	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/genesis"
 	cstates "github.com/cntmio/cntmology/core/states"
 	scommon "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/states"
-	"math/big"
-	"sort"
-	"fmt"
-	"encoding/hex"
 )
 
 const (
 	EXECUTE_SPLIT = "executeSplit"
-	TOTAL_cntm = 10000000000
+	a             = 0.75
+	b             = 0.2
+	c             = 0.05
+	TOTAL_cntm     = 10000000000
 )
 
 func init() {
@@ -60,7 +64,9 @@ func ExecuteSplit(native *NativeService) error {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Get all peerPool error!")
 	}
 	peersCandidate := []*states.CandidateSplitInfo{}
+	peersSyncNode := []*states.SyncNodeSplitInfo{}
 	peerPool := new(states.PeerPool)
+	var syncNodePosSum uint64
 	for _, v := range stateValues {
 		peerPoolStore, _ := v.Value.(*cstates.StorageItem)
 		err = json.Unmarshal(peerPoolStore.Value, peerPool)
@@ -68,13 +74,73 @@ func ExecuteSplit(native *NativeService) error {
 			return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Unmarshal peerPool error!")
 		}
 		if peerPool.Status == CandidateStatus || peerPool.Status == ConsensusStatus {
-			stake := new(big.Int).Add(peerPool.TotalPos, peerPool.InitPos)
+			stake := peerPool.TotalPos + peerPool.InitPos
 			peersCandidate = append(peersCandidate, &states.CandidateSplitInfo{
 				PeerPubkey: peerPool.PeerPubkey,
-				Stake:      float64(stake.Uint64()),
+				InitPos:    peerPool.InitPos,
+				Address:    peerPool.Address,
+				Stake:      float64(stake),
+			})
+		}
+		if peerPool.Status == SyncNodeStatus || peerPool.Status == RegisterCandidateStatus {
+			syncNodePosSum += peerPool.InitPos
+			peersSyncNode = append(peersSyncNode, &states.SyncNodeSplitInfo{
+				PeerPubkey: peerPool.PeerPubkey,
+				InitPos:    peerPool.InitPos,
+				Address:    peerPool.Address,
 			})
 		}
 	}
+
+	//fee split of syncNode peer
+	fmt.Println("###############################################################")
+	var splitSyncNodeAmount uint64
+	for _, v := range stateValues {
+		peerPoolStore, _ := v.Value.(*cstates.StorageItem)
+		err = json.Unmarshal(peerPoolStore.Value, peerPool)
+		if err != nil {
+			return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Unmarshal peerPool error!")
+		}
+		if peerPool.Status == SyncNodeStatus || peerPool.Status == RegisterCandidateStatus {
+			amount := TOTAL_cntm * c * peerPool.InitPos / syncNodePosSum
+			addressBytes, err := hex.DecodeString(peerPool.Address)
+			if err != nil {
+				return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Address format error!")
+			}
+			address, err := common.AddressParseFromBytes(addressBytes)
+			if err != nil {
+				return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Address format error!")
+			}
+			err = appCallApproveOng(native, genesis.FeeSplitCcntmractAddress, address, new(big.Int).SetUint64(amount))
+			if err != nil {
+				return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Ong transfer error!")
+			}
+			fmt.Printf("Amount of address %v is: %d \n", peerPool.Address, amount)
+			splitSyncNodeAmount += amount
+		}
+	}
+	remainSyncNodeAmount := TOTAL_cntm*c - splitSyncNodeAmount
+	fmt.Println("RemainSyncNodeAmount is : ", remainSyncNodeAmount)
+
+	// sort peers by peerPubkey
+	sort.Slice(peersSyncNode, func(i, j int) bool {
+		return peersSyncNode[i].PeerPubkey > peersSyncNode[j].PeerPubkey
+	})
+	//TODO: how if initPos is the same
+	addressBytes, err := hex.DecodeString(peersSyncNode[0].Address)
+	if err != nil {
+		return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Address format error!")
+	}
+	address, err := common.AddressParseFromBytes(addressBytes)
+	if err != nil {
+		return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Address format error!")
+	}
+	err = appCallApproveOng(native, genesis.FeeSplitCcntmractAddress, address, new(big.Int).SetUint64(remainSyncNodeAmount))
+	if err != nil {
+		return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Ong transfer error!")
+	}
+	fmt.Printf("Amount of address %v is: %d \n", peersSyncNode[0].Address, remainSyncNodeAmount)
+
 	// get config
 	config := new(states.Configuration)
 	configBytes, err := native.CloneCache.Get(scommon.ST_STORAGE, concatKey(ccntmract, []byte(VBFT_CONFIG)))
@@ -100,7 +166,7 @@ func ExecuteSplit(native *NativeService) error {
 	for i := 0; i < int(config.K); i++ {
 		sum += peersCandidate[i].Stake
 	}
-	avg := sum/float64(config.K)
+	avg := sum / float64(config.K)
 	var sumS float64
 	for i := 0; i < int(config.K); i++ {
 		peersCandidate[i].S = (0.5 * peersCandidate[i].Stake) / (2 * avg)
@@ -108,9 +174,16 @@ func ExecuteSplit(native *NativeService) error {
 	}
 
 	//fee split of consensus peer
-	for i := int(config.K) - 1; i > 0; i-- {
-		amount := uint64(TOTAL_cntm * peersCandidate[i].S / sumS)
-		fmt.Println("Amount of node i is:", amount)
+	fmt.Println("###############################################################")
+	var splitAmount uint64
+	remainCandidate := peersCandidate[0]
+	for i := int(config.K) - 1; i >= 0; i-- {
+		if peersCandidate[i].PeerPubkey > remainCandidate.PeerPubkey {
+			remainCandidate = peersCandidate[i]
+		}
+
+		nodeAmount := TOTAL_cntm * a * peersCandidate[i].S / sumS
+		fmt.Printf("Amount of node %v is %v: \n", i, nodeAmount)
 		peerPubkeyPrefix, err := hex.DecodeString(peersCandidate[i].PeerPubkey)
 		if err != nil {
 			return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] PeerPubkey format error!")
@@ -118,32 +191,166 @@ func ExecuteSplit(native *NativeService) error {
 		stateValues, err = native.CloneCache.Store.Find(scommon.ST_STORAGE, concatKey(ccntmract, []byte(VOTE_INFO_POOL),
 			view.Bytes(), peerPubkeyPrefix))
 		if err != nil {
-			return errors.NewDetailErr(err, errors.ErrNoCode, "[commitDpos] Get all peerPool error!")
+			return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Get all peerPool error!")
 		}
+
+		//init pos cntm transfer
+		initAmount := uint64(nodeAmount * float64(peersCandidate[i].InitPos) / peersCandidate[i].Stake)
+		initAddressBytes, err := hex.DecodeString(peersCandidate[i].Address)
+		if err != nil {
+			return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Address format error!")
+		}
+		initAddress, err := common.AddressParseFromBytes(initAddressBytes)
+		if err != nil {
+			return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Address format error!")
+		}
+		err = appCallApproveOng(native, genesis.FeeSplitCcntmractAddress, initAddress, new(big.Int).SetUint64(initAmount))
+		if err != nil {
+			return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Ong transfer error!")
+		}
+		fmt.Printf("Amount of address %v is: %d \n", peersCandidate[i].Address, initAmount)
+		splitAmount += initAmount
+
+		//vote pos cntm transfer
 		voteInfoPool := new(states.VoteInfoPool)
 		for _, v := range stateValues {
 			voteInfoPoolStore, _ := v.Value.(*cstates.StorageItem)
 			err = json.Unmarshal(voteInfoPoolStore.Value, voteInfoPool)
 			if err != nil {
-				return errors.NewDetailErr(err, errors.ErrNoCode, "[commitDpos] Unmarshal voteInfoPool error!")
+				return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Unmarshal voteInfoPool error!")
 			}
-			//addressPrefix, err := hex.DecodeString(voteInfoPool.Address)
-			//if err != nil {
-			//	errors.NewDetailErr(err, errors.ErrNoCode, "[commitDpos] Address format error!")
-			//}
+			addressBytes, err := hex.DecodeString(voteInfoPool.Address)
+			if err != nil {
+				return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Address format error!")
+			}
+			address, err := common.AddressParseFromBytes(addressBytes)
+			if err != nil {
+				return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Address format error!")
+			}
+			pos := voteInfoPool.PrePos + voteInfoPool.PreFreezePos + voteInfoPool.FreezePos + voteInfoPool.NewPos
+			amount := uint64(nodeAmount * float64(pos) / peersCandidate[i].Stake)
+
+			//cntm transfer
+			err = appCallApproveOng(native, genesis.FeeSplitCcntmractAddress, address, new(big.Int).SetUint64(amount))
+			if err != nil {
+				return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Ong transfer error!")
+			}
+			fmt.Printf("Amount of address %v is: %d \n", voteInfoPool.Address, amount)
+			splitAmount += amount
 		}
 	}
+	//split remained amount
+	remainAmount := TOTAL_cntm*a - splitAmount
+	fmt.Println("Remained Amount is : ", remainAmount)
+	remainAddressBytes, err := hex.DecodeString(remainCandidate.Address)
+	if err != nil {
+		return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Address format error!")
+	}
+	remainAddress, err := common.AddressParseFromBytes(remainAddressBytes)
+	if err != nil {
+		return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Address format error!")
+	}
+	err = appCallApproveOng(native, genesis.FeeSplitCcntmractAddress, remainAddress, new(big.Int).SetUint64(remainAmount))
+	if err != nil {
+		return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Ong transfer error!")
+	}
+	fmt.Printf("Amount of address %v is: %d \n", remainCandidate.Address, remainAmount)
 
+	//fee split of candidate peer
+	fmt.Println("###############################################################")
+	// cal s of each candidate node
+	sum = 0
+	for i := int(config.K); i < len(peersCandidate); i++ {
+		sum += peersCandidate[i].Stake
+	}
+	avg = sum / float64(config.K)
+	sumS = 0
+	for i := int(config.K); i < len(peersCandidate); i++ {
+		peersCandidate[i].S = (0.5 * peersCandidate[i].Stake) / (2 * avg)
+		sumS += peersCandidate[i].S
+	}
+	splitAmount = 0
+	remainCandidate = peersCandidate[int(config.K)]
+	for i := int(config.K); i < len(peersCandidate); i++ {
+		if peersCandidate[i].PeerPubkey > remainCandidate.PeerPubkey {
+			remainCandidate = peersCandidate[i]
+		}
+
+		nodeAmount := TOTAL_cntm * b * peersCandidate[i].S / sumS
+		fmt.Printf("Amount of node %v is %v: \n", i, nodeAmount)
+		peerPubkeyPrefix, err := hex.DecodeString(peersCandidate[i].PeerPubkey)
+		if err != nil {
+			return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] PeerPubkey format error!")
+		}
+		stateValues, err = native.CloneCache.Store.Find(scommon.ST_STORAGE, concatKey(ccntmract, []byte(VOTE_INFO_POOL),
+			view.Bytes(), peerPubkeyPrefix))
+		if err != nil {
+			return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Get all peerPool error!")
+		}
+
+		//init pos cntm transfer
+		initAmount := uint64(nodeAmount * float64(peersCandidate[i].InitPos) / peersCandidate[i].Stake)
+		initAddressBytes, err := hex.DecodeString(peersCandidate[i].Address)
+		if err != nil {
+			return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Address format error!")
+		}
+		initAddress, err := common.AddressParseFromBytes(initAddressBytes)
+		if err != nil {
+			return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Address format error!")
+		}
+		err = appCallApproveOng(native, genesis.FeeSplitCcntmractAddress, initAddress, new(big.Int).SetUint64(initAmount))
+		if err != nil {
+			return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Ong transfer error!")
+		}
+		fmt.Printf("Amount of address %v is: %d \n", peersCandidate[i].Address, initAmount)
+		splitAmount += initAmount
+
+		//vote pos cntm transfer
+		voteInfoPool := new(states.VoteInfoPool)
+		for _, v := range stateValues {
+			voteInfoPoolStore, _ := v.Value.(*cstates.StorageItem)
+			err = json.Unmarshal(voteInfoPoolStore.Value, voteInfoPool)
+			if err != nil {
+				return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Unmarshal voteInfoPool error!")
+			}
+			addressBytes, err := hex.DecodeString(voteInfoPool.Address)
+			if err != nil {
+				return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Address format error!")
+			}
+			address, err := common.AddressParseFromBytes(addressBytes)
+			if err != nil {
+				return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Address format error!")
+			}
+			pos := voteInfoPool.PrePos + voteInfoPool.PreFreezePos + voteInfoPool.FreezePos + voteInfoPool.NewPos
+			amount := uint64(nodeAmount * float64(pos) / peersCandidate[i].Stake)
+
+			//cntm transfer
+			err = appCallApproveOng(native, genesis.FeeSplitCcntmractAddress, address, new(big.Int).SetUint64(amount))
+			if err != nil {
+				return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Ong transfer error!")
+			}
+			fmt.Printf("Amount of address %v is: %d \n", voteInfoPool.Address, amount)
+			splitAmount += amount
+		}
+	}
+	//split remained amount
+	remainAmount = TOTAL_cntm*b - splitAmount
+	fmt.Println("Remained Amount is : ", remainAmount)
+	remainAddressBytes, err = hex.DecodeString(remainCandidate.Address)
+	if err != nil {
+		return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Address format error!")
+	}
+	remainAddress, err = common.AddressParseFromBytes(remainAddressBytes)
+	if err != nil {
+		return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Address format error!")
+	}
+	err = appCallApproveOng(native, genesis.FeeSplitCcntmractAddress, remainAddress, new(big.Int).SetUint64(remainAmount))
+	if err != nil {
+		return errors.NewDetailErr(err, errors.ErrNoCode, "[executeSplit] Ong transfer error!")
+	}
+	fmt.Printf("Amount of address %v is: %d \n", remainCandidate.Address, remainAmount)
+
+	addCommonEvent(native, genesis.FeeSplitCcntmractAddress, EXECUTE_SPLIT, true)
 
 	return nil
 }
-
-
-
-
-
-
-
-
-
-
