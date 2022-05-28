@@ -177,7 +177,6 @@ func fromTransfer(native *NativeService, fromKey []byte, value *big.Int) (*big.I
 	} else {
 		native.CloneCache.Add(scommon.ST_STORAGE, fromKey, getAmountStorageItem(balance))
 	}
-	//native.CloneCache.Add(scommon.ST_STORAGE, fromKey, getAmountStorageItem(balance))
 	return fromBalance, nil
 }
 
@@ -402,4 +401,30 @@ func calDposTable(native *NativeService, config *states.Configuration,
 	}
 
 	return posTable, chainPeers, nil
+}
+
+func getPeerPoolMap(native *NativeService, ccntmract common.Address, view *big.Int) (*states.PeerPoolMap, error) {
+	peerPoolMap := &states.PeerPoolMap{
+		PeerPoolMap: make(map[string]*states.PeerPool),
+	}
+	peerPoolMapBytes, err := native.CloneCache.Get(scommon.ST_STORAGE, concatKey(ccntmract, []byte(PEER_POOL), view.Bytes()))
+	if err != nil {
+		return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[getPeerPoolMap] Get all peerPoolMap error!")
+	}
+	if peerPoolMapBytes == nil {
+		return nil, errors.NewErr("[getPeerPoolMap] peerPoolMap is nil!")
+	}
+	peerPoolMapStore, _ := peerPoolMapBytes.(*cstates.StorageItem)
+	err = json.Unmarshal(peerPoolMapStore.Value, peerPoolMap)
+	if err != nil {
+		return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[getPeerPoolMap] Unmarshal peerPoolMap error!")
+	}
+	return peerPoolMap, nil
+}
+
+func splitCurve(pos uint64, avg uint64) uint64 {
+	xi := PRECISE * YITA * 2 * pos / (avg * 10)
+	index := xi / (PRECISE / 10)
+	s := ((Yi[index + 1] - Yi[index]) * xi + Yi[index] * Xi[index + 1] - Yi[index + 1] * Xi[index]) / (Xi[index + 1] - Xi[index])
+	return s
 }

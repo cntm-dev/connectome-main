@@ -211,18 +211,18 @@ func (self *Server) handleBlockPersistCompleted(block *types.Block) {
 
 	self.incrValidator.AddBlock(block)
 
-	if self.checkNeedUpdateChainConfig() || self.checkForceUpdateChainConfig() {
-		err := self.updateChainConfig()
-		if err != nil {
-			log.Errorf("updateChainConfig failed:%s", err)
-		}
-	}
-
 	if uint64(block.Header.Height) > self.completedBlockNum {
 		self.completedBlockNum = uint64(block.Header.Height)
 	} else {
 		log.Errorf("server %d, persist block %d, vs completed %d",
 			self.Index, block.Header.Height, self.completedBlockNum)
+	}
+
+	if self.checkNeedUpdateChainConfig(self.completedBlockNum+1) || self.checkForceUpdateChainConfig() {
+		err := self.updateChainConfig()
+		if err != nil {
+			log.Errorf("updateChainConfig failed:%s", err)
+		}
 	}
 }
 
@@ -304,6 +304,10 @@ func (self *Server) getChainConfig() (*vconfig.ChainConfig, error) {
 		return nil, fmt.Errorf("GenesisChainConfig failed: %s", err)
 	}
 	return cfg, err
+}
+
+func (self *Server) nonConsensusNode() bool {
+	return self.Index == math.MaxUint32
 }
 
 //updateChainCofig
@@ -1881,7 +1885,7 @@ func (self *Server) msgSendLoop() {
 	for {
 		select {
 		case evt := <-self.msgSendC:
-			if self.Index == math.MaxUint32 {
+			if self.nonConsensusNode() {
 				ccntminue
 			}
 			payload, err := SerializeVbftMsg(evt.Msg)
@@ -1956,8 +1960,8 @@ func (self *Server) creategovernaceTransaction() *types.Transaction {
 }
 
 //checkNeedUpdateChainConfig use blockcount
-func (self *Server) checkNeedUpdateChainConfig() bool {
-	if self.currentBlockNum%self.config.MaxBlockChangeView == 0 {
+func (self *Server) checkNeedUpdateChainConfig(blockNum uint64) bool {
+	if blockNum%self.config.MaxBlockChangeView == 0 {
 		return true
 	}
 	log.Debugf("blockcount: %d", self.config.BlockCount)
@@ -1967,7 +1971,7 @@ func (self *Server) checkNeedUpdateChainConfig() bool {
 
 //checkForceUpdateChainConfig query leveldb check is force update
 func (self *Server) checkForceUpdateChainConfig() bool {
-	force, err := self.chainStore.GetForceUpdate()
+	force, err := self.chainStore.isForceUpdate()
 	if err != nil {
 		log.Errorf("checkForceUpdateChainConfig err:%s", err)
 		return false
@@ -1999,14 +2003,19 @@ func (self *Server) makeProposal(blkNum uint64, forEmpty bool) error {
 	txs = append(txs, txBookkeeping)
 
 	//check need upate chainconfig
-	if self.checkNeedUpdateChainConfig() || self.checkForceUpdateChainConfig() {
+	cfg := &vconfig.ChainConfig{}
+	if self.checkNeedUpdateChainConfig(self.currentBlockNum) || self.checkForceUpdateChainConfig() {
 		err := self.updateChainConfig()
 		if err != nil {
 			log.Errorf("updateChainConfig failed:%s", err)
 		} else {
+			cfg = self.config
 			//add transaction invoke governance native,executeSplit、commit_pos ccntmract
 			txs = append(txs, self.createfeeSplitTransaction(), self.creategovernaceTransaction())
 		}
+	}
+	if self.nonConsensusNode() {
+		return fmt.Errorf("%d quit consensus node", self.Index)
 	}
 
 	if !forEmpty {
@@ -2016,8 +2025,7 @@ func (self *Server) makeProposal(blkNum uint64, forEmpty bool) error {
 			}
 		}
 	}
-
-	proposal, err := self.constructProposalMsg(blkNum, txs)
+	proposal, err := self.constructProposalMsg(blkNum, txs, cfg)
 	if err != nil {
 		return fmt.Errorf("failed to construct proposal: %s", err)
 	}
