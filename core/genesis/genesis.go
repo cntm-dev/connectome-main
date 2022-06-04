@@ -128,6 +128,9 @@ func newParamCcntmract() *types.Transaction {
 	tx := utils.NewDeployTransaction(stypes.VmCode{Code: ParamCcntmractAddress[:], VmType: stypes.Native},
 		"ParamConfig", "1.0", "Ontology Team", "ccntmact@cntm.io",
 		"Chain Global Enviroment Variables Manager ", true)
+	return tx
+}
+
 func newConfig() *types.Transaction {
 	tx := utils.NewDeployTransaction(stypes.VmCode{Code: GovernanceCcntmractAddress[:], VmType: stypes.Native}, "CONFIG", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network Consensus Config", true)

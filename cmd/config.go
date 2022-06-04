@@ -22,11 +22,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/urfave/cli"
-	"io/ioutil"
 )
 
 func SetOntologyConfig(ctx *cli.Ccntmext) (*config.OntologyConfig, error) {
