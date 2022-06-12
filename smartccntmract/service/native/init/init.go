@@ -25,7 +25,6 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/governance"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/oracle"
 )
 
 func init() {
@@ -33,7 +32,6 @@ func init() {
 	cntm.InitOnt()
 	params.InitGlobalParams()
 	auth.Init()
-	oracle.InitOracle()
 	governance.InitGovernance()
 	fee_split.InitFeeSplit()
 }
