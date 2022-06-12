@@ -1945,7 +1945,7 @@ func (self *Server) createBookkeepingTransaction(nonce uint64, fee uint64) *type
 func (self *Server) createfeeSplitTransaction() *types.Transaction {
 	init := states.Ccntmract{
 		Address: genesis.FeeSplitCcntmractAddress,
-		Method:  "executeSplit",
+		Method:  feesplit.EXECUTE_SPLIT,
 	}
 	bf := new(bytes.Buffer)
 	init.Serialize(bf)
