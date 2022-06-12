@@ -19,7 +19,7 @@
 package vbft
 
 import (
-	"encoding/json"
+	"bytes"
 	"fmt"
 
 	"github.com/cntmio/cntmology/common"
@@ -176,7 +176,6 @@ func (self *ChainStore) GetPeersConfig() ([]*config.VBFTPeerStakeInfo, error) {
 			InitPos:    id.InitPos + id.TotalPos,
 		}
 		peerstakes = append(peerstakes, config)
-
 	}
 	return peerstakes, nil
 }

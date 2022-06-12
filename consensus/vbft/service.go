@@ -36,7 +36,6 @@ import (
 	"github.com/cntmio/cntmology/consensus/vbft/config"
 	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/ledger"
-	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/core/utils"
 	"github.com/cntmio/cntmology/events"
@@ -1959,21 +1958,6 @@ func (self *Server) msgSendLoop() {
 	}
 }
 
-// FIXME
-//    copied from dbft
-func (self *Server) createBookkeepingTransaction(nonce uint64, fee uint64) *types.Transaction {
-	log.Debug()
-	//TODO: sysfee
-	bookKeepingPayload := &payload.Bookkeeping{
-		Nonce: uint64(time.Now().UnixNano()),
-	}
-	return &types.Transaction{
-		TxType:     types.BookKeeping,
-		Payload:    bookKeepingPayload,
-		Attributes: []*types.TxAttribute{},
-	}
-}
-
 //createfeeSplitTransaction invoke fee native ccntmract EXECUTE_SPLIT
 func (self *Server) createfeeSplitTransaction() *types.Transaction {
 	init := states.Ccntmract{
@@ -2043,11 +2027,6 @@ func (self *Server) makeProposal(blkNum uint64, forEmpty bool) error {
 	} else {
 		self.incrValidator.Clean()
 	}
-
-	// FIXME: self.index as nonce??
-	// FIXME: fix feesum calculation
-	txBookkeeping := self.createBookkeepingTransaction(uint64(self.Index), 0)
-	txs = append(txs, txBookkeeping)
 
 	//check need upate chainconfig
 	cfg := &vconfig.ChainConfig{}
