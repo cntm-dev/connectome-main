@@ -20,7 +20,6 @@ package init
 
 import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/auth"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/fee_split"
 	params "github.com/cntmio/cntmology/smartccntmract/service/native/global_params"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/governance"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
@@ -33,5 +32,4 @@ func init() {
 	params.InitGlobalParams()
 	auth.Init()
 	governance.InitGovernance()
-	fee_split.InitFeeSplit()
 }

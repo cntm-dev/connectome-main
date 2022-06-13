@@ -217,11 +217,7 @@ func (self *Server) handleBlockPersistCompleted(block *types.Block) {
 		log.Errorf("server %d, persist block %d, vs completed %d",
 			self.Index, block.Header.Height, self.completedBlockNum)
 	}
-	num := 1
-	if self.nonConsensusNode() {
-		num++
-	}
-	if self.checkNeedUpdateChainConfig(self.completedBlockNum+uint64(num)) || self.checkForceUpdateChainConfig() {
+	if self.checkNeedUpdateChainConfig(self.completedBlockNum) || self.checkUpdateChainConfig() {
 		err := self.updateChainConfig()
 		if err != nil {
 			log.Errorf("updateChainConfig failed:%s", err)
@@ -258,23 +254,40 @@ func (self *Server) NewConsensusPayload(payload *p2pmsg.ConsensusPayload) {
 func (self *Server) LoadChainConfig(chainStore *ChainStore) error {
 	self.metaLock.Lock()
 	defer self.metaLock.Unlock()
+	//get chainconfig from genesis block
 
-	cfg, err := self.getChainConfig()
+	block, err := chainStore.GetBlock(chainStore.GetChainedBlockNum())
 	if err != nil {
-		return fmt.Errorf("getChainConfig failed: %s", err)
+		return err
 	}
+	var cfg vconfig.ChainConfig
+	if block.getNewChainConfig() != nil {
+		cfg = *block.getNewChainConfig()
+	} else {
+		cfgBlock := block
+		if block.getLastConfigBlockNum() != math.MaxUint64 {
+			cfgBlock, err = chainStore.GetBlock(block.getLastConfigBlockNum())
+			if err != nil {
+				return fmt.Errorf("failed to get cfg block: %s", err)
+			}
+		}
+		if cfgBlock.getNewChainConfig() == nil {
+			panic("failed to get chain config from config block")
+		}
+		cfg = *cfgBlock.getNewChainConfig()
+	}
+	self.config = &cfg
 
-	self.config = cfg
 	if self.config.View == 0 || self.config.MaxBlockChangeView == 0 {
 		panic("invalid view or maxblockchangeview ")
 	}
 	// update msg delays
-	makeProposalTimeout = time.Duration(cfg.BlockMsgDelay * 2)
-	make2ndProposalTimeout = time.Duration(cfg.BlockMsgDelay)
-	endorseBlockTimeout = time.Duration(cfg.HashMsgDelay * 2)
-	commitBlockTimeout = time.Duration(cfg.HashMsgDelay * 3)
-	peerHandshakeTimeout = time.Duration(cfg.PeerHandshakeTimeout)
-	zeroTxBlockTimeout = time.Duration(cfg.BlockMsgDelay * 3)
+	makeProposalTimeout = time.Duration(self.config.BlockMsgDelay * 2)
+	make2ndProposalTimeout = time.Duration(self.config.BlockMsgDelay)
+	endorseBlockTimeout = time.Duration(self.config.HashMsgDelay * 2)
+	commitBlockTimeout = time.Duration(self.config.HashMsgDelay * 3)
+	peerHandshakeTimeout = time.Duration(self.config.PeerHandshakeTimeout)
+	zeroTxBlockTimeout = time.Duration(self.config.BlockMsgDelay * 3)
 	// TODO: load sealed blocks from chainStore
 
 	// protected by server.metaLock
@@ -305,6 +318,11 @@ func (self *Server) getChainConfig() (*vconfig.ChainConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GenesisChainConfig failed: %s", err)
 	}
+	goverview, err := self.chainStore.GetGovernanceView()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get governanceview failed:%s", err)
+	}
+	cfg.View = uint32(goverview.View.Uint64())
 	return cfg, err
 }
 
@@ -317,11 +335,11 @@ func (self *Server) updateChainConfig() error {
 	self.metaLock.Lock()
 	defer self.metaLock.Unlock()
 
-	cfg, err := self.getChainConfig()
+	block, err := self.chainStore.GetBlock(self.completedBlockNum)
 	if err != nil {
-		return fmt.Errorf("getChainConfig failed: %s", err)
+		return fmt.Errorf("GetBlockInfo failed:%s", err)
 	}
-	self.config = cfg
+	self.config = block.Info.NewChainConfig
 	// TODO
 	// 1. update peer pool
 	// 2. remove nonparticipation consensus node
@@ -1428,8 +1446,7 @@ func (self *Server) actionLoop() {
 					}
 				} else if proposal, forEmpty := self.blockPool.getEndorsedProposal(blkNum); proposal != nil {
 					// construct endorse msg
-					blkHash, _ := HashBlock(proposal.Block)
-					if endorseMsg, _ := self.constructEndorseMsg(proposal, blkHash, forEmpty); endorseMsg != nil {
+					if endorseMsg, _ := self.constructEndorseMsg(proposal, forEmpty); endorseMsg != nil {
 						self.broadcast(endorseMsg)
 					}
 				}
@@ -1742,11 +1759,6 @@ func (self *Server) endorseBlock(proposal *blockProposalMsg, forEmpty bool) erro
 		return nil
 	}
 
-	blkHash, err := HashBlock(proposal.Block)
-	if err != nil {
-		return fmt.Errorf("failed to hash proposal block: %s", err)
-	}
-
 	if !forEmpty {
 		if self.blockPool.endorseFailed(blkNum, self.config.C) {
 			forEmpty = true
@@ -1755,7 +1767,7 @@ func (self *Server) endorseBlock(proposal *blockProposalMsg, forEmpty bool) erro
 	}
 
 	// build endorsement msg
-	endorseMsg, err := self.constructEndorseMsg(proposal, blkHash, forEmpty)
+	endorseMsg, err := self.constructEndorseMsg(proposal, forEmpty)
 	if err != nil {
 		return fmt.Errorf("failed to construct endorse msg: %s", err)
 	}
@@ -1801,9 +1813,14 @@ func (self *Server) commitBlock(proposal *blockProposalMsg, forEmpty bool) error
 		return nil
 	}
 
-	blkHash, err := HashBlock(proposal.Block)
-	if err != nil {
-		return fmt.Errorf("failed to hash proposal proposal: %s", err)
+	var blkHash common.Uint256
+	if !forEmpty {
+		blkHash = proposal.Block.Block.Hash()
+	} else {
+		if proposal.Block.EmptyBlock == nil {
+			return fmt.Errorf("blk %d proposal from %d has no empty proposal", blkNum, proposal.Block.getProposer())
+		}
+		blkHash = proposal.Block.EmptyBlock.Hash()
 	}
 
 	endorses := make([]*blockEndorseMsg, 0)
@@ -1816,7 +1833,7 @@ func (self *Server) commitBlock(proposal *blockProposalMsg, forEmpty bool) error
 	}
 
 	// build commit msg
-	commitMsg, err := self.constructCommitMsg(proposal, endorses, blkHash, forEmpty)
+	commitMsg, err := self.constructCommitMsg(proposal, endorses, forEmpty)
 	if err != nil {
 		return fmt.Errorf("failed to construct commit msg: %s", err)
 	}
@@ -1876,7 +1893,8 @@ func (self *Server) fastForwardBlock(block *Block) error {
 		return nil
 	}
 	if self.GetCurrentBlockNo() == block.getBlockNum() {
-		return self.sealBlock(block, block.isEmpty())
+		// block from peer syncer, there should only one candidate block
+		return self.sealBlock(block, false)
 	}
 	return fmt.Errorf("server %d: fastforward blk %d failed, current blkNum: %d",
 		self.Index, block.getBlockNum(), self.GetCurrentBlockNo())
@@ -1958,22 +1976,6 @@ func (self *Server) msgSendLoop() {
 	}
 }
 
-//createfeeSplitTransaction invoke fee native ccntmract EXECUTE_SPLIT
-func (self *Server) createfeeSplitTransaction() *types.Transaction {
-	init := states.Ccntmract{
-		Address: genesis.FeeSplitCcntmractAddress,
-		Method:  feesplit.EXECUTE_SPLIT,
-	}
-	bf := new(bytes.Buffer)
-	init.Serialize(bf)
-	vmCode := stypes.VmCode{
-		VmType: stypes.Native,
-		Code:   bf.Bytes(),
-	}
-	tx := utils.NewInvokeTransaction(vmCode)
-	return tx
-}
-
 //creategovernaceTransaction invoke governance native ccntmract commit_pos
 func (self *Server) creategovernaceTransaction() *types.Transaction {
 	init := states.Ccntmract{
@@ -2000,14 +2002,14 @@ func (self *Server) checkNeedUpdateChainConfig(blockNum uint64) bool {
 	return false
 }
 
-//checkForceUpdateChainConfig query leveldb check is force update
-func (self *Server) checkForceUpdateChainConfig() bool {
-	force, err := self.chainStore.isForceUpdate()
+//checkUpdateChainConfig query leveldb check is force update
+func (self *Server) checkUpdateChainConfig() bool {
+	force, err := self.chainStore.isUpdate(self.config.View)
 	if err != nil {
-		log.Errorf("checkForceUpdateChainConfig err:%s", err)
+		log.Errorf("checkUpdateChainConfig err:%s", err)
 		return false
 	}
-	log.Debugf("checkForceUpdateChainConfig force: %v", force)
+	log.Debugf("checkUpdateChainConfig force: %v", force)
 	return force
 }
 
@@ -2024,24 +2026,27 @@ func (self *Server) valideHeight(blkNum uint64) uint32 {
 }
 
 func (self *Server) makeProposal(blkNum uint64, forEmpty bool) error {
-	var txs []*types.Transaction
-
 	if blkNum < self.GetCurrentBlockNo() {
 		return fmt.Errorf("server %d ignore deprecatd blk proposal %d, current %d",
 			self.Index, blkNum, self.GetCurrentBlockNo())
 	}
 
 	validHeight := self.valideHeight(blkNum)
+	sysTxs := make([]*types.Transaction, 0)
+	userTxs := make([]*types.Transaction, 0)
+
 	//check need upate chainconfig
 	cfg := &vconfig.ChainConfig{}
-	if self.checkNeedUpdateChainConfig(self.currentBlockNum) || self.checkForceUpdateChainConfig() {
-		err := self.updateChainConfig()
+	if self.checkNeedUpdateChainConfig(self.currentBlockNum) || self.checkUpdateChainConfig() {
+		chainconfig, err := self.getChainConfig()
 		if err != nil {
-			log.Errorf("updateChainConfig failed:%s", err)
-		} else {
-			cfg = self.config
-			//add transaction invoke governance native,executeSplit、commit_pos ccntmract
-			txs = append(txs, self.createfeeSplitTransaction(), self.creategovernaceTransaction())
+			return fmt.Errorf("getChainConfig failed:%s", err)
+		}
+		self.config = chainconfig
+		cfg = self.config
+		//add transaction invoke governance native commit_pos ccntmract
+		if self.checkNeedUpdateChainConfig(self.currentBlockNum) {
+			sysTxs = append(sysTxs, self.creategovernaceTransaction())
 		}
 	}
 	if self.nonConsensusNode() {
@@ -2051,11 +2056,11 @@ func (self *Server) makeProposal(blkNum uint64, forEmpty bool) error {
 	if !forEmpty {
 		for _, e := range self.poolActor.GetTxnPool(true, uint32(validHeight)) {
 			if err := self.incrValidator.Verify(e.Tx, uint32(validHeight)); err == nil {
-				txs = append(txs, e.Tx)
+				userTxs = append(userTxs, e.Tx)
 			}
 		}
 	}
-	proposal, err := self.constructProposalMsg(blkNum, txs, cfg)
+	proposal, err := self.constructProposalMsg(blkNum, sysTxs, userTxs, cfg)
 	if err != nil {
 		return fmt.Errorf("failed to construct proposal: %s", err)
 	}
