@@ -40,7 +40,7 @@ var (
 			{
 				Action:    deployCcntmract,
 				Name:      "deploy",
-				Usage:     "Deploy a smart ccntmract to the chain",
+				Usage:     "Deploy a smart ccntmract to cntmolgoy",
 				ArgsUsage: " ",
 				Flags: []cli.Flag{
 					utils.TransactionGasPrice,
@@ -59,7 +59,7 @@ var (
 			{
 				Action:    invokeCcntmract,
 				Name:      "invoke",
-				Usage:     "Invoke neovm smart ccntmract",
+				Usage:     "Invoke smart ccntmract",
 				ArgsUsage: " ",
 				Flags: []cli.Flag{
 					utils.TransactionGasPrice,
@@ -80,7 +80,9 @@ var (
 func deployCcntmract(ctx *cli.Ccntmext) error {
 	if !ctx.IsSet(utils.GetFlagName(utils.CcntmractCodeFileFlag)) ||
 		!ctx.IsSet(utils.GetFlagName(utils.CcntmractNameFlag)) {
-		return fmt.Errorf("Missing code or name argument")
+		fmt.Errorf("Missing code or name argument\n")
+		cli.ShowSubcommandHelp(ctx)
+		return nil
 	}
 
 	singer, err := cmdcom.GetAccount(ctx)
@@ -121,7 +123,9 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 
 func invokeCcntmract(ctx *cli.Ccntmext) error {
 	if !ctx.IsSet(utils.GetFlagName(utils.CcntmractAddrFlag)) {
-		return fmt.Errorf("Missing ccntmract address argument.\n")
+		fmt.Errorf("Missing ccntmract address argument.\n")
+		cli.ShowSubcommandHelp(ctx)
+		return nil
 	}
 	ccntmractAddrStr := ctx.String(utils.GetFlagName(utils.CcntmractAddrFlag))
 	ccntmractAddr, err := common.AddressFromBase58(ccntmractAddrStr)

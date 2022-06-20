@@ -60,7 +60,7 @@ func (self *IncrementValidator) AddBlock(block *types.Block) {
 
 	if self.baseHeight+uint32(len(self.blocks)) != block.Header.Height {
 		start, end := self.BlockRange()
-		log.Error("disccntminue block is not allowed: [start, end)=[%d, %d), block height= %d",
+		log.Errorf("disccntminue block is not allowed: [start, end)=[%d, %d), block height= %d",
 			start, end, block.Header.Height)
 		return
 	}
