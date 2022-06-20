@@ -24,12 +24,14 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/governance"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/cntmid"
 )
 
 func init() {
 	cntm.InitOng()
 	cntm.InitOnt()
 	params.InitGlobalParams()
+	cntmid.Init()
 	auth.Init()
 	governance.InitGovernance()
 }

@@ -22,7 +22,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 )
 
-func init() {
+func Init() {
 	native.Ccntmracts[genesis.OntIDCcntmractAddress] = RegisterIDCcntmract
 }
 
@@ -33,7 +33,7 @@ func RegisterIDCcntmract(srvc *native.NativeService) {
 	srvc.Register("addRecovery", addRecovery)
 	srvc.Register("changeRecovery", changeRecovery)
 	srvc.Register("regIDWithAttributes", regIdWithAttributes)
-	srvc.Register("addAttribute", addAttribute)
+	srvc.Register("addAttributes", addAttributes)
 	srvc.Register("removeAttribute", removeAttribute)
 	srvc.Register("verifySignature", verifySignature)
 	srvc.Register("getPublicKeys", GetPublicKeys)

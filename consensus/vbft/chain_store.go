@@ -34,15 +34,15 @@ import (
 
 type ChainStore struct {
 	db              *ledger.Ledger
-	chainedBlockNum uint64
-	pendingBlocks   map[uint64]*Block
+	chainedBlockNum uint32
+	pendingBlocks   map[uint32]*Block
 }
 
 func OpenBlockStore(db *ledger.Ledger) (*ChainStore, error) {
 	return &ChainStore{
 		db:              db,
-		chainedBlockNum: uint64(db.GetCurrentBlockHeight()),
-		pendingBlocks:   make(map[uint64]*Block),
+		chainedBlockNum: db.GetCurrentBlockHeight(),
+		pendingBlocks:   make(map[uint32]*Block),
 	}, nil
 }
 
@@ -50,7 +50,7 @@ func (self *ChainStore) close() {
 	// TODO: any action on ledger actor??
 }
 
-func (self *ChainStore) GetChainedBlockNum() uint64 {
+func (self *ChainStore) GetChainedBlockNum() uint32 {
 	return self.chainedBlockNum
 }
 
@@ -80,7 +80,7 @@ func (self *ChainStore) AddBlock(block *Block) error {
 			}
 
 			self.chainedBlockNum = blkNum
-			if blkNum != uint64(self.db.GetCurrentBlockHeight()) {
+			if blkNum != self.db.GetCurrentBlockHeight() {
 				log.Errorf("!!! chain store added chained block (%d, %d): %s",
 					blkNum, self.db.GetCurrentBlockHeight(), err)
 			}
@@ -101,7 +101,7 @@ func (self *ChainStore) AddBlock(block *Block) error {
 func (self *ChainStore) SetBlock(block *Block, blockHash common.Uint256) error {
 
 	err := self.db.AddBlock(block.Block)
-	self.chainedBlockNum = uint64(self.db.GetCurrentBlockHeight())
+	self.chainedBlockNum = self.db.GetCurrentBlockHeight()
 	if err != nil {
 		return fmt.Errorf("ledger failed to add block: %s", err)
 	}
@@ -109,7 +109,7 @@ func (self *ChainStore) SetBlock(block *Block, blockHash common.Uint256) error {
 	return nil
 }
 
-func (self *ChainStore) GetBlock(blockNum uint64) (*Block, error) {
+func (self *ChainStore) GetBlock(blockNum uint32) (*Block, error) {
 
 	if blk, present := self.pendingBlocks[blockNum]; present {
 		return blk, nil

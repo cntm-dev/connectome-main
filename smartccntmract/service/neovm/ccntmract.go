@@ -45,7 +45,7 @@ func CcntmractCreate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	return nil
 }
 
-// CcntmractMigrate migrate old smart ccntmract to a new ccntmract, and destory old ccntmract
+// CcntmractMigrate migrate old smart ccntmract to a new ccntmract, and destroy old ccntmract
 func CcntmractMigrate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	ccntmract, err := isCcntmractParamValid(engine)
 	if err != nil {
@@ -65,7 +65,7 @@ func CcntmractMigrate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	return CcntmractDestory(service, engine)
 }
 
-// CcntmractDestory destory a ccntmract
+// CcntmractDestory destroy a ccntmract
 func CcntmractDestory(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	ccntmext := service.CcntmextRef.CurrentCcntmext()
 	if ccntmext == nil {

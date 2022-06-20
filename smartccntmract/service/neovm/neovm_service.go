@@ -175,7 +175,7 @@ func (this *NeoVmService) Invoke() (interface{}, error) {
 	return nil, nil
 }
 
-// SystemCall provide register service for smart ccntmract to interaction with blockchian
+// SystemCall provide register service for smart ccntmract to interaction with blockchain
 func (this *NeoVmService) SystemCall(engine *vm.ExecutionEngine) error {
 	serviceName := engine.Ccntmext.OpReader.ReadVarString()
 	service, ok := ServiceMap[serviceName]
