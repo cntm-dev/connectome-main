@@ -20,6 +20,7 @@ package ledgerstore
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"sync"
@@ -39,6 +40,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract"
 	scommon "github.com/cntmio/cntmology/smartccntmract/common"
 	"github.com/cntmio/cntmology/smartccntmract/event"
+	sstate "github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
 	vmtype "github.com/cntmio/cntmology/smartccntmract/types"
 )
@@ -779,13 +781,15 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (interfac
 		Store:      this,
 		CloneCache: storage.NewCloneCache(this.stateStore.NewStateBatch()),
 		Code:       invoke.Code,
-		TestMode:   true,
+		Gas:        math.MaxUint64,
 	}
+
+	gasCost := math.MaxUint64 - sc.Gas
 
 	//start the smart ccntmract executive function
 	result, err := sc.Execute()
 	if err != nil {
-		return nil, err
+		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_FAIL, Gas: gasCost, Result: nil}, err
 	}
 
 	prefix := invoke.Code.VmType
@@ -798,20 +802,7 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (interfac
 	} else if prefix == vmtype.Native {
 		result = common.ToHexString(result.([]byte))
 	}
-	return result, nil
-}
-
-func (this *LedgerStoreImp) InvokeNative(cache *storage.CloneCache, code []byte) ([]byte, error) {
-	sc := &smartccntmract.SmartCcntmract{
-		Store:      this,
-		CloneCache: cache,
-		Code:       vmtype.VmCode{Code: code, VmType: vmtype.Native},
-	}
-	result, err := sc.Execute()
-	if err != nil {
-		return nil, err
-	}
-	return result.([]byte), nil
+	return &sstate.PreExecResult{State: event.CcntmRACT_STATE_SUCCESS, Gas: gasCost, Result: result}, nil
 }
 
 //Close ledger store.

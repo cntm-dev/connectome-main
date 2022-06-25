@@ -89,3 +89,9 @@ func (this *Ccntmract) Deserialize(r io.Reader) error {
 	}
 	return nil
 }
+
+type PreExecResult struct {
+	State  byte
+	Gas    uint64
+	Result interface{}
+}

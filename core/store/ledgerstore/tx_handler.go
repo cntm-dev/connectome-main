@@ -21,6 +21,7 @@ package ledgerstore
 import (
 	"bytes"
 	"fmt"
+	"math"
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
@@ -39,6 +40,7 @@ import (
 	sstates "github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
 	stypes "github.com/cntmio/cntmology/smartccntmract/types"
+	vmtype "github.com/cntmio/cntmology/smartccntmract/types"
 )
 
 //HandleDeployTransaction deal with smart ccntmract deploy transaction
@@ -95,15 +97,21 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 
 	//start the smart ccntmract executive function
 	_, err = sc.Execute()
-	var state []*cntm.State
-	transfers := &cntm.Transfers{
-		States: append(state, &cntm.State{
-			From:  tx.Payer,
-			To:    genesis.GovernanceCcntmractAddress,
-			Value: (tx.GasLimit - sc.Gas) * tx.GasPrice})}
+
+	totalGas := (tx.GasLimit - sc.Gas) * tx.GasPrice
+	transcode := genNativeTransferCode(genesis.OngCcntmractAddress, tx.Payer,
+		genesis.GovernanceCcntmractAddress, totalGas)
+	transCcntmract := smartccntmract.SmartCcntmract{
+		Config:     config,
+		CloneCache: cache,
+		Store:      store,
+		Code:       transcode,
+		Gas:        math.MaxUint64,
+	}
 	if err != nil {
 		cache = storage.NewCloneCache(stateBatch)
-		if err := Transfer(store, cache, genesis.OngCcntmractAddress, transfers); err != nil {
+		transCcntmract.CloneCache = cache
+		if _, err := transCcntmract.Execute(); err != nil {
 			return err
 		}
 		cache.Commit()
@@ -113,7 +121,7 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 		}
 		return err
 	}
-	if err := Transfer(store, cache, genesis.OngCcntmractAddress, transfers); err != nil {
+	if _, err := transCcntmract.Execute(); err != nil {
 		return err
 	}
 	if err := saveNotify(eventStore, txHash, &event.ExecuteNotify{TxHash: txHash,
@@ -151,25 +159,19 @@ func (self *StateStore) HandleVoteTransaction(stateBatch *statestore.StateBatch,
 	return nil
 }
 
-func Transfer(store store.LedgerStore, cache *storage.CloneCache, ccntmract common.Address, transfer *cntm.Transfers) error {
+func genNativeTransferCode(ccntmract, from, to common.Address, value uint64) vmtype.VmCode {
+	transfer := cntm.Transfers{States: []*cntm.State{{From: from, To: to, Value: value}}}
 	tr := new(bytes.Buffer)
-	if err := transfer.Serialize(tr); err != nil {
-		return err
-	}
+	transfer.Serialize(tr)
 	trans := &sstates.Ccntmract{
 		Address: ccntmract,
 		Method:  "transfer",
 		Args:    tr.Bytes(),
 	}
 	ts := new(bytes.Buffer)
-	if err := trans.Serialize(ts); err != nil {
-		return err
-	}
-	_, err := store.InvokeNative(cache, ts.Bytes())
-	if err != nil {
-		return err
-	}
-	return nil
+	trans.Serialize(ts)
+	return vmtype.VmCode{Code: ts.Bytes(), VmType: vmtype.Native}
+
 }
 
 func GetBalance(stateBatch *statestore.StateBatch, address, ccntmract common.Address) (uint64, error) {
