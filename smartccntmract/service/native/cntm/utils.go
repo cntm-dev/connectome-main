@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/serialization"
 	cstates "github.com/cntmio/cntmology/core/states"
 	scommon "github.com/cntmio/cntmology/core/store/common"
@@ -39,6 +40,9 @@ var (
 )
 
 func AddNotifications(native *native.NativeService, ccntmract common.Address, state *State) {
+	if !config.DefConfig.Common.EnableEventLog {
+		return
+	}
 	native.Notifications = append(native.Notifications,
 		&event.NotifyEventInfo{
 			CcntmractAddress: ccntmract,

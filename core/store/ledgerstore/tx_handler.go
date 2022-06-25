@@ -23,6 +23,9 @@ import (
 	"fmt"
 
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/serialization"
+	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/core/store"
@@ -31,6 +34,9 @@ import (
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract"
 	"github.com/cntmio/cntmology/smartccntmract/event"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
+	neovm "github.com/cntmio/cntmology/smartccntmract/service/neovm"
+	sstates "github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
 	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 )
@@ -66,30 +72,48 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 	invoke := tx.Payload.(*payload.InvokeCode)
 	txHash := tx.Hash()
 
+	// check payer cntm balance
+	balance, err := GetBalance(stateBatch, tx.Payer, genesis.OngCcntmractAddress)
+	if balance < tx.GasLimit*tx.GasPrice {
+		return fmt.Errorf("%v", "Payer Gas Insufficient")
+	}
 	// init smart ccntmract configuration info
 	config := &smartccntmract.Config{
 		Time:   block.Header.Timestamp,
 		Height: block.Header.Height,
 		Tx:     tx,
 	}
-
+	cache := storage.NewCloneCache(stateBatch)
 	//init smart ccntmract info
 	sc := smartccntmract.SmartCcntmract{
 		Config:     config,
-		CloneCache: storage.NewCloneCache(stateBatch),
+		CloneCache: cache,
 		Store:      store,
 		Code:       invoke.Code,
-		Gas:        tx.GasLimit,
+		Gas:        tx.GasLimit - neovm.TRANSACTION_GAS,
 	}
 
 	//start the smart ccntmract executive function
-	_, err := sc.Execute()
-
+	_, err = sc.Execute()
+	var state []*cntm.State
+	transfers := &cntm.Transfers{
+		States: append(state, &cntm.State{
+			From:  tx.Payer,
+			To:    genesis.GovernanceCcntmractAddress,
+			Value: (tx.GasLimit - sc.Gas) * tx.GasPrice})}
 	if err != nil {
+		cache = storage.NewCloneCache(stateBatch)
+		if err := Transfer(store, cache, genesis.OngCcntmractAddress, transfers); err != nil {
+			return err
+		}
+		cache.Commit()
 		if err := saveNotify(eventStore, txHash, &event.ExecuteNotify{TxHash: txHash,
 			State: event.CcntmRACT_STATE_FAIL, Notify: []*event.NotifyEventInfo{}}); err != nil {
 			return err
 		}
+		return err
+	}
+	if err := Transfer(store, cache, genesis.OngCcntmractAddress, transfers); err != nil {
 		return err
 	}
 	if err := saveNotify(eventStore, txHash, &event.ExecuteNotify{TxHash: txHash,
@@ -102,6 +126,9 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 }
 
 func saveNotify(eventStore scommon.EventStore, txHash common.Uint256, notify *event.ExecuteNotify) error {
+	if !config.DefConfig.Common.EnableEventLog {
+		return nil
+	}
 	if err := eventStore.SaveEventNotifyByTx(txHash, notify); err != nil {
 		return fmt.Errorf("SaveEventNotifyByTx error %s", err)
 	}
@@ -122,4 +149,44 @@ func (self *StateStore) HandleVoteTransaction(stateBatch *statestore.StateBatch,
 	vote.Account.Serialize(buf)
 	stateBatch.TryAdd(scommon.ST_VOTE, buf.Bytes(), &states.VoteState{PublicKeys: vote.PubKeys})
 	return nil
+}
+
+func Transfer(store store.LedgerStore, cache *storage.CloneCache, ccntmract common.Address, transfer *cntm.Transfers) error {
+	tr := new(bytes.Buffer)
+	if err := transfer.Serialize(tr); err != nil {
+		return err
+	}
+	trans := &sstates.Ccntmract{
+		Address: ccntmract,
+		Method:  "transfer",
+		Args:    tr.Bytes(),
+	}
+	ts := new(bytes.Buffer)
+	if err := trans.Serialize(ts); err != nil {
+		return err
+	}
+	_, err := store.InvokeNative(cache, ts.Bytes())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetBalance(stateBatch *statestore.StateBatch, address, ccntmract common.Address) (uint64, error) {
+	bl, err := stateBatch.TryGet(scommon.ST_STORAGE, append(ccntmract[:], address[:]...))
+	if err != nil {
+		return 0, err
+	}
+	if bl == nil || bl.Value == nil {
+		return 0, err
+	}
+	item, ok := bl.Value.(*states.StorageItem)
+	if !ok {
+		return 0, fmt.Errorf("%s", "[GetStorageItem] instance doesn't StorageItem!")
+	}
+	balance, err := serialization.ReadUint64(bytes.NewBuffer(item.Value))
+	if err != nil {
+		return 0, err
+	}
+	return balance, nil
 }

@@ -130,8 +130,8 @@ func validatorGetCode(engine *vm.ExecutionEngine) error {
 	if item == nil {
 		return errors.NewErr("[validatorGetCode] Ccntmract is nil!")
 	}
-	_, ok := item.(*payload.DeployCode)
-	if !ok {
+	deploy, ok := item.(*payload.DeployCode)
+	if !ok || deploy == nil {
 		return errors.NewErr("[validatorGetCode] DeployCode wrcntm type!")
 	}
 	return nil

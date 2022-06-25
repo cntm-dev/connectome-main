@@ -55,6 +55,7 @@ type SmartCcntmract struct {
 	Code          stypes.VmCode
 	Notifications []*event.NotifyEventInfo // all execute smart ccntmract event notify info
 	Gas           uint64
+	TestMode      bool
 }
 
 // Config describe smart ccntmract need parameters configuration
@@ -110,8 +111,10 @@ func (this *SmartCcntmract) PushNotifications(notifications []*event.NotifyEvent
 }
 
 func (this *SmartCcntmract) CheckUseGas(gas uint64) bool {
-	if this.Gas < gas {
-		return false
+	if this.TestMode {
+		if this.Gas < gas {
+			return false
+		}
 	}
 	this.Gas -= gas
 	return true
@@ -123,7 +126,7 @@ func (this *SmartCcntmract) Execute() (interface{}, error) {
 	var engine Engine
 	switch this.Code.VmType {
 	case stypes.Native:
-		service := &native.NativeService{
+		engine = &native.NativeService{
 			CloneCache: this.CloneCache,
 			Code:       this.Code.Code,
 			Tx:         this.Config.Tx,
@@ -132,7 +135,6 @@ func (this *SmartCcntmract) Execute() (interface{}, error) {
 			CcntmextRef: this,
 			ServiceMap: make(map[string]native.Handler),
 		}
-		engine = service
 	case stypes.NEOVM:
 		engine = &neovm.NeoVmService{
 			Store:      this.Store,
