@@ -32,6 +32,7 @@ import (
 	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
+	httpcom "github.com/cntmio/cntmology/http/base/common"
 	rpccommon "github.com/cntmio/cntmology/http/base/common"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
@@ -47,27 +48,42 @@ import (
 )
 
 const (
-	VERSION_TRANSACTION  = 0
-	VERSION_CcntmRACT_cntm = 0
-	VERSION_CcntmRACT_cntm = 0
-	CcntmRACT_TRANSFER    = "transfer"
+	VERSION_TRANSACTION    = 0
+	VERSION_CcntmRACT_cntm   = 0
+	VERSION_CcntmRACT_cntm   = 0
+	CcntmRACT_TRANSFER      = "transfer"
+	CcntmRACT_TRANSFER_FROM = "transferFrom"
+	CcntmRACT_APPROVE       = "approve"
 
 	ASSET_cntm = "cntm"
 	ASSET_cntm = "cntm"
 )
 
 //Return balance of address in base58 code
-func GetBalance(add string) (*rpccommon.BalanceOfRsp, error) {
-	data, err := sendRpcRequest("getbalance", []interface{}{add})
+func GetBalance(address string) (*httpcom.BalanceOfRsp, error) {
+	result, err := sendRpcRequest("getbalance", []interface{}{address})
 	if err != nil {
 		return nil, fmt.Errorf("sendRpcRequest error:%s", err)
 	}
-	rsp := &rpccommon.BalanceOfRsp{}
-	err = json.Unmarshal(data, rsp)
+	balance := &httpcom.BalanceOfRsp{}
+	err = json.Unmarshal(result, balance)
 	if err != nil {
-		return nil, fmt.Errorf("json.Unmarshal:%s error:%s", data, err)
+		return nil, fmt.Errorf("json.Unmarshal error:%s", err)
 	}
-	return rsp, nil
+	return balance, nil
+}
+
+func GetAllowance(asset, from, to string) (string, error) {
+	result, err := sendRpcRequest("getallowance", []interface{}{asset, from, to})
+	if err != nil {
+		return "", fmt.Errorf("sendRpcRequest error:%s", err)
+	}
+	balance := ""
+	err = json.Unmarshal(result, &balance)
+	if err != nil {
+		return "", fmt.Errorf("json.Unmarshal error:%s", err)
+	}
+	return balance, nil
 }
 
 //Transfer cntm|cntm from account to another account
@@ -87,10 +103,76 @@ func Transfer(gasPrice, gasLimit uint64, signer *account.Account, asset, from, t
 	return txHash, nil
 }
 
-func TransferTx(gasPrice, gasLimit uint64, asset, from, to string, amount uint64) (*types.Transaction, error) {
+func TransferFrom(gasPrice, gasLimit uint64, signer *account.Account, asset, sender, from, to string, amount uint64) (string, error) {
+	transferFromTx, err := TransferFromTx(gasPrice, gasLimit, asset, sender, from, to, amount)
+	if err != nil {
+		return "", err
+	}
+	err = SignTransaction(signer, transferFromTx)
+	if err != nil {
+		return "", fmt.Errorf("SignTransaction error:%s", err)
+	}
+	txHash, err := SendRawTransaction(transferFromTx)
+	if err != nil {
+		return "", fmt.Errorf("SendTransaction error:%s", err)
+	}
+	return txHash, nil
+}
+
+func Approve(gasPrice, gasLimit uint64, signer *account.Account, asset, from, to string, amount uint64) (string, error) {
+	approveTx, err := ApproveTx(gasPrice, gasLimit, asset, from, to, amount)
+	if err != nil {
+		return "", err
+	}
+	err = SignTransaction(signer, approveTx)
+	if err != nil {
+		return "", fmt.Errorf("SignTransaction error:%s", err)
+	}
+	txHash, err := SendRawTransaction(approveTx)
+	if err != nil {
+		return "", fmt.Errorf("SendTransaction error:%s", err)
+	}
+	return txHash, nil
+}
+
+func ApproveTx(gasPrice, gasLimit uint64, asset string, from, to string, amount uint64) (*types.Transaction, error) {
 	fromAddr, err := common.AddressFromBase58(from)
 	if err != nil {
 		return nil, fmt.Errorf("To address:%s invalid:%s", from, err)
+	}
+	toAddr, err := common.AddressFromBase58(to)
+	if err != nil {
+		return nil, fmt.Errorf("To address:%s invalid:%s", to, err)
+	}
+	buf := bytes.NewBuffer(nil)
+	var state = &cntm.State{
+		From:  fromAddr,
+		To:    toAddr,
+		Value: amount,
+	}
+	err = state.Serialize(buf)
+	if err != nil {
+		return nil, fmt.Errorf("transfers.Serialize error %s", err)
+	}
+	var cversion byte
+	var ccntmractAddr common.Address
+	switch strings.ToLower(asset) {
+	case ASSET_cntm:
+		ccntmractAddr = genesis.OntCcntmractAddress
+		cversion = VERSION_CcntmRACT_cntm
+	case ASSET_cntm:
+		ccntmractAddr = genesis.OngCcntmractAddress
+		cversion = VERSION_CcntmRACT_cntm
+	default:
+		return nil, fmt.Errorf("Unsupport asset:%s", asset)
+	}
+	return InvokeNativeCcntmractTx(gasPrice, gasLimit, cversion, ccntmractAddr, CcntmRACT_APPROVE, buf.Bytes())
+}
+
+func TransferTx(gasPrice, gasLimit uint64, asset, from, to string, amount uint64) (*types.Transaction, error) {
+	fromAddr, err := common.AddressFromBase58(from)
+	if err != nil {
+		return nil, fmt.Errorf("from address:%s invalid:%s", from, err)
 	}
 	toAddr, err := common.AddressFromBase58(to)
 	if err != nil {
@@ -123,6 +205,45 @@ func TransferTx(gasPrice, gasLimit uint64, asset, from, to string, amount uint64
 		return nil, fmt.Errorf("Unsupport asset:%s", asset)
 	}
 	return InvokeNativeCcntmractTx(gasPrice, gasLimit, cversion, ccntmractAddr, CcntmRACT_TRANSFER, buf.Bytes())
+}
+
+func TransferFromTx(gasPrice, gasLimit uint64, asset, sender, from, to string, amount uint64) (*types.Transaction, error) {
+	senderAddr, err := common.AddressFromBase58(sender)
+	if err != nil {
+		return nil, fmt.Errorf("sender address:%s invalid:%s", to, err)
+	}
+	fromAddr, err := common.AddressFromBase58(from)
+	if err != nil {
+		return nil, fmt.Errorf("from address:%s invalid:%s", from, err)
+	}
+	toAddr, err := common.AddressFromBase58(to)
+	if err != nil {
+		return nil, fmt.Errorf("To address:%s invalid:%s", to, err)
+	}
+	transferFrom := &cntm.TransferFrom{
+		Sender: senderAddr,
+		From:   fromAddr,
+		To:     toAddr,
+		Value:  amount,
+	}
+	buf := bytes.NewBuffer(nil)
+	err = transferFrom.Serialize(buf)
+	if err != nil {
+		return nil, fmt.Errorf("transferFrom.Serialize error:%s", err)
+	}
+	var cversion byte
+	var ccntmractAddr common.Address
+	switch strings.ToLower(asset) {
+	case ASSET_cntm:
+		ccntmractAddr = genesis.OntCcntmractAddress
+		cversion = VERSION_CcntmRACT_cntm
+	case ASSET_cntm:
+		ccntmractAddr = genesis.OngCcntmractAddress
+		cversion = VERSION_CcntmRACT_cntm
+	default:
+		return nil, fmt.Errorf("Unsupport asset:%s", asset)
+	}
+	return InvokeNativeCcntmractTx(gasPrice, gasLimit, cversion, ccntmractAddr, CcntmRACT_TRANSFER_FROM, buf.Bytes())
 }
 
 func SignTransaction(signer *account.Account, tx *types.Transaction) error {
@@ -213,20 +334,16 @@ func GetSmartCcntmractEvent(txHash string) (*rpccommon.ExecuteNotify, error) {
 	return notifies, nil
 }
 
+func GetSmartCcntmractEventInfo(txHash string) ([]byte, error) {
+	return sendRpcRequest("getsmartcodeevent", []interface{}{txHash})
+}
+
 func GetRawTransaction(txHash string) ([]byte, error) {
-	data, err := sendRpcRequest("getrawtransaction", []interface{}{txHash, 1})
-	if err != nil {
-		return nil, fmt.Errorf("sendRpcRequest error:%s", err)
-	}
-	return data, nil
+	return sendRpcRequest("getrawtransaction", []interface{}{txHash, 1})
 }
 
 func GetBlock(hashOrHeight interface{}) ([]byte, error) {
-	data, err := sendRpcRequest("getblock", []interface{}{hashOrHeight, 1})
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
+	return sendRpcRequest("getblock", []interface{}{hashOrHeight, 1})
 }
 
 func DeployCcntmract(
@@ -399,6 +516,31 @@ func PrepareInvokeNeoVMCcntmract(
 	tx := NewInvokeTransaction(gasPrice, gasLimit, vmtypes.NEOVM, code)
 	var buffer bytes.Buffer
 	err = tx.Serialize(&buffer)
+	if err != nil {
+		return nil, fmt.Errorf("Serialize error:%s", err)
+	}
+	txData := hex.EncodeToString(buffer.Bytes())
+	data, err := sendRpcRequest("sendrawtransaction", []interface{}{txData, 1})
+	if err != nil {
+		return nil, err
+	}
+	var res interface{}
+	err = json.Unmarshal(data, &res)
+	if err != nil {
+		return nil, fmt.Errorf("json.Unmarshal hash:%s error:%s", data, err)
+	}
+	return res, nil
+}
+
+func PrepareInvokeNativeCcntmract(
+	gasPrice,
+	gasLimit uint64,
+	cversion byte,
+	ccntmractAddress common.Address,
+	code []byte) (interface{}, error) {
+	tx := NewInvokeTransaction(gasPrice, gasLimit, vmtypes.Native, code)
+	var buffer bytes.Buffer
+	err := tx.Serialize(&buffer)
 	if err != nil {
 		return nil, fmt.Errorf("Serialize error:%s", err)
 	}

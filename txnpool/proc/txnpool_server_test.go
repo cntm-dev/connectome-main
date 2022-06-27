@@ -30,6 +30,7 @@ import (
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
+	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
 	tc "github.com/cntmio/cntmology/txnpool/common"
 	"github.com/cntmio/cntmology/validator/stateless"
 	vt "github.com/cntmio/cntmology/validator/types"
@@ -46,15 +47,21 @@ func init() {
 	log.Init(log.PATH, log.Stdout)
 	topic = "TXN"
 
-	bookKeepingPayload := &payload.Bookkeeping{
-		Nonce: uint64(time.Now().UnixNano()),
+	code := []byte("cntm")
+	vmcode := vmtypes.VmCode{
+		VmType: vmtypes.Native,
+		Code:   code,
+	}
+
+	invokeCodePayload := &payload.InvokeCode{
+		Code: vmcode,
 	}
 
 	txn = &types.Transaction{
 		Version:    0,
 		Attributes: []*types.TxAttribute{},
-		TxType:     types.Bookkeeper,
-		Payload:    bookKeepingPayload,
+		TxType:     types.Invoke,
+		Payload:    invokeCodePayload,
 	}
 
 	tempStr := "3369930accc1ddd067245e8edadcd9bea207ba5e1753ac18a51df77a343bfe92"
@@ -107,7 +114,6 @@ func TestTxn(t *testing.T) {
 	txEntry := &tc.TXEntry{
 		Tx:    txn,
 		Attrs: []*tc.TXAttr{},
-		Fee:   txn.GasPrice,
 	}
 	s.addTxList(txEntry)
 

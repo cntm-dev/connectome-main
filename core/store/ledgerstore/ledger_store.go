@@ -40,6 +40,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract"
 	scommon "github.com/cntmio/cntmology/smartccntmract/common"
 	"github.com/cntmio/cntmology/smartccntmract/event"
+	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	sstate "github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
 	vmtype "github.com/cntmio/cntmology/smartccntmract/types"
@@ -784,7 +785,7 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (interfac
 		Gas:        math.MaxUint64,
 	}
 
-	gasCost := math.MaxUint64 - sc.Gas
+	gasCost := math.MaxUint64 - sc.Gas + neovm.TRANSACTION_GAS
 
 	//start the smart ccntmract executive function
 	result, err := sc.Execute()

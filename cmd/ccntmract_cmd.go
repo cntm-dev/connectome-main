@@ -43,8 +43,8 @@ var (
 				Usage:     "Deploy a smart ccntmract to cntmolgoy",
 				ArgsUsage: " ",
 				Flags: []cli.Flag{
-					utils.TransactionGasPrice,
-					utils.TransactionGasLimit,
+					utils.TransactionGasPriceFlag,
+					utils.TransactionGasLimitFlag,
 					utils.CcntmractStorageFlag,
 					utils.CcntmractCodeFileFlag,
 					utils.CcntmractNameFlag,
@@ -62,8 +62,8 @@ var (
 				Usage:     "Invoke smart ccntmract",
 				ArgsUsage: " ",
 				Flags: []cli.Flag{
-					utils.TransactionGasPrice,
-					utils.TransactionGasLimit,
+					utils.TransactionGasPriceFlag,
+					utils.TransactionGasLimitFlag,
 					utils.CcntmractAddrFlag,
 					utils.CcntmractParamsFlag,
 					utils.CcntmractVersionFlag,
@@ -106,8 +106,8 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 	email := ctx.String(utils.GetFlagName(utils.CcntmractEmailFlag))
 	desc := ctx.String(utils.GetFlagName(utils.CcntmractDescFlag))
 
-	gasPrice := ctx.Uint64(utils.GetFlagName(utils.TransactionGasPrice))
-	gasLimit := ctx.Uint64(utils.GetFlagName(utils.TransactionGasLimit))
+	gasPrice := ctx.Uint64(utils.GetFlagName(utils.TransactionGasPriceFlag))
+	gasLimit := ctx.Uint64(utils.GetFlagName(utils.TransactionGasLimitFlag))
 	vmType := types.NEOVM
 	cversion := fmt.Sprintf("%s", version)
 
@@ -116,8 +116,11 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 		return fmt.Errorf("DeployCcntmract error:%s", err)
 	}
 	address := utils.GetCcntmractAddress(string(code), vmType)
-	fmt.Printf("Deploy TxHash:%s\n", txHash)
-	fmt.Printf("Ccntmract Address:%s\n", address.ToBase58())
+	fmt.Printf("Deploy ccntmract:\n")
+	fmt.Printf("  Ccntmract Address:%s\n", address.ToBase58())
+	fmt.Printf("  TxHash:%s\n", txHash)
+	fmt.Printf("\nTip:\n")
+	fmt.Printf("  Using './cntmology info status %s' to query transaction status\n", txHash)
 	return nil
 }
 
@@ -144,8 +147,8 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 	if err != nil {
 		return fmt.Errorf("Get singer account error:%s", err)
 	}
-	gasPrice := ctx.Uint64(utils.GetFlagName(utils.TransactionGasPrice))
-	gasLimit := ctx.Uint64(utils.GetFlagName(utils.TransactionGasLimit))
+	gasPrice := ctx.Uint64(utils.GetFlagName(utils.TransactionGasPriceFlag))
+	gasLimit := ctx.Uint64(utils.GetFlagName(utils.TransactionGasLimitFlag))
 
 	paramData, _ := json.Marshal(params)
 	fmt.Printf("Invoke:%s Params:%s\n", ccntmractAddr.ToBase58(), paramData)
@@ -180,5 +183,7 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 	}
 
 	fmt.Printf("TxHash:%s\n", txHash)
+	fmt.Printf("\nTip:\n")
+	fmt.Printf("  Using './cntmology info status %s' to query transaction status\n", txHash)
 	return nil
 }

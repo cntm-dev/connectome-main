@@ -20,22 +20,28 @@ package common
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/core/genesis"
+	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
 	bactor "github.com/cntmio/cntmology/http/base/actor"
 	"github.com/cntmio/cntmology/smartccntmract/event"
+	cstates "github.com/cntmio/cntmology/smartccntmract/states"
+	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
+	"math/big"
+	"strings"
+	"time"
 )
 
 type BalanceOfRsp struct {
-	Ont       string `json:"cntm"`
-	Ong       string `json:"cntm"`
-	OngAppove string `json:"cntm_appove"`
+	Ont string `json:"cntm"`
+	Ong string `json:"cntm"`
 }
 
 type MerkleProof struct {
@@ -238,33 +244,130 @@ func GetBlockInfo(block *types.Block) BlockInfo {
 	return b
 }
 
-func getStoreUint64Value(ccntmractAddress, accountAddress common.Address) (uint64, error) {
-	data, err := bactor.GetStorageItem(ccntmractAddress, accountAddress[:])
-	if err != nil {
-		return 0, fmt.Errorf("GetOntBalanceOf GetStorageItem cntm address:%s error:%s", accountAddress.ToBase58(), err)
-	}
-	if len(data) == 0 {
-		return 0, nil
-	}
-	value, err := serialization.ReadUint64(bytes.NewBuffer(data))
-	if err != nil {
-		return 0, fmt.Errorf("serialization.ReadUint64:%x error:%s", data, err)
-	}
-	return value, err
-}
-
 func GetBalance(address common.Address) (*BalanceOfRsp, error) {
-	cntm, err := getStoreUint64Value(genesis.OntCcntmractAddress, address)
+	cntm, err := GetCcntmractBalance(0, genesis.OntCcntmractAddress, address)
 	if err != nil {
-		return nil, fmt.Errorf("getStoreUint64Value cntm error:%s", err)
+		return nil, fmt.Errorf("get cntm balance error:%s", err)
 	}
-	cntm, err := getStoreUint64Value(genesis.OngCcntmractAddress, address)
+	cntm, err := GetCcntmractBalance(0, genesis.OngCcntmractAddress, address)
 	if err != nil {
-		return nil, fmt.Errorf("getStoreUint64Value cntm error:%s", err)
+		return nil, fmt.Errorf("get cntm balance error:%s", err)
 	}
 	return &BalanceOfRsp{
-		Ont:       fmt.Sprintf("%d", cntm),
-		Ong:       fmt.Sprintf("%d", cntm),
-		OngAppove: "0",
+		Ont: fmt.Sprintf("%d", cntm),
+		Ong: fmt.Sprintf("%d", cntm),
 	}, nil
+}
+
+func GetAllowance(asset string, from, to common.Address) (string, error) {
+	var ccntmractAddr common.Address
+	switch strings.ToLower(asset) {
+	case "cntm":
+		ccntmractAddr = genesis.OntCcntmractAddress
+	case "cntm":
+		ccntmractAddr = genesis.OngCcntmractAddress
+	default:
+		return "", fmt.Errorf("unsupport asset")
+	}
+	allowance, err := GetCcntmractAllowance(0, ccntmractAddr, from, to)
+	if err != nil {
+		return "", fmt.Errorf("get allowance error:%s", err)
+	}
+	return fmt.Sprintf("%v", allowance), nil
+}
+
+func GetCcntmractBalance(cVersion byte, ccntmractAddr, accAddr common.Address) (uint64, error) {
+	addrBuf := bytes.NewBuffer(nil)
+	err := accAddr.Serialize(addrBuf)
+	if err != nil {
+		return 0, fmt.Errorf("address serialize error:%s", err)
+	}
+	argBuf := bytes.NewBuffer(nil)
+	err = serialization.WriteVarBytes(argBuf, addrBuf.Bytes())
+	if err != nil {
+		return 0, fmt.Errorf("serialization.WriteVarBytes error:%s", err)
+	}
+	crt := &cstates.Ccntmract{
+		Version: cVersion,
+		Address: ccntmractAddr,
+		Method:  "balanceOf",
+		Args:    argBuf.Bytes(),
+	}
+	buf := bytes.NewBuffer(nil)
+	err = crt.Serialize(buf)
+	if err != nil {
+		return 0, fmt.Errorf("Serialize ccntmract error:%s", err)
+	}
+	result, err := PrepareInvokeCcntmract(cVersion, vmtypes.Native, buf.Bytes())
+	if err != nil {
+		return 0, fmt.Errorf("PrepareInvokeCcntmract error:%s", err)
+	}
+	data, err := hex.DecodeString(result.(string))
+	if err != nil {
+		return 0, fmt.Errorf("hex.DecodeString error:%s", err)
+	}
+	balance := new(big.Int).SetBytes(data)
+	return balance.Uint64(), nil
+}
+
+func GetCcntmractAllowance(cVersion byte, ccntmractAddr, fromAddr, toAddr common.Address) (uint64, error) {
+	fromBuf := bytes.NewBuffer(nil)
+	err := fromAddr.Serialize(fromBuf)
+	if err != nil {
+		return 0, fmt.Errorf("from address serialize error:%s", err)
+	}
+	toBuf := bytes.NewBuffer(nil)
+	err = toAddr.Serialize(toBuf)
+	if err != nil {
+		return 0, fmt.Errorf("to address serialize error:%s", err)
+	}
+
+	argBuf := bytes.NewBuffer(nil)
+	err = serialization.WriteVarBytes(argBuf, fromBuf.Bytes())
+	if err != nil {
+		return 0, fmt.Errorf("serialization.WriteVarBytes error:%s", err)
+	}
+	err = serialization.WriteVarBytes(argBuf, toBuf.Bytes())
+	if err != nil {
+		return 0, fmt.Errorf("serialization.WriteVarBytes error:%s", err)
+	}
+	crt := &cstates.Ccntmract{
+		Version: cVersion,
+		Address: ccntmractAddr,
+		Method:  "allowance",
+		Args:    argBuf.Bytes(),
+	}
+	buf := bytes.NewBuffer(nil)
+	err = crt.Serialize(buf)
+	if err != nil {
+		return 0, fmt.Errorf("Serialize ccntmract error:%s", err)
+	}
+	result, err := PrepareInvokeCcntmract(cVersion, vmtypes.Native, buf.Bytes())
+	if err != nil {
+		return 0, fmt.Errorf("PrepareInvokeCcntmract error:%s", err)
+	}
+	data, err := hex.DecodeString(result.(string))
+	if err != nil {
+		return 0, fmt.Errorf("hex.DecodeString error:%s", err)
+	}
+	allowance := new(big.Int).SetBytes(data)
+	return allowance.Uint64(), nil
+}
+
+func PrepareInvokeCcntmract(cVersion byte, vmType vmtypes.VmType, invokeCode []byte) (interface{}, error) {
+	invokePayload := &payload.InvokeCode{
+		Code: vmtypes.VmCode{
+			VmType: vmType,
+			Code:   invokeCode,
+		},
+	}
+	tx := &types.Transaction{
+		Version:    cVersion,
+		TxType:     types.Invoke,
+		Nonce:      uint32(time.Now().Unix()),
+		Payload:    invokePayload,
+		Attributes: make([]*types.TxAttribute, 0, 0),
+		Sigs:       make([]*types.Sig, 0, 0),
+	}
+	return bactor.PreExecuteCcntmract(tx)
 }
