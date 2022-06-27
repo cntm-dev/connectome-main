@@ -31,6 +31,7 @@ import (
 	"github.com/cntmio/cntmology/core/store/ledgerstore"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract/event"
+	cstate "github.com/cntmio/cntmology/smartccntmract/states"
 )
 
 var DefLedger *Ledger
@@ -181,7 +182,7 @@ func (self *Ledger) GetMerkleProof(proofHeight, rootHeight uint32) ([]common.Uin
 	return self.ldgStore.GetMerkleProof(proofHeight, rootHeight)
 }
 
-func (self *Ledger) PreExecuteCcntmract(tx *types.Transaction) (interface{}, error) {
+func (self *Ledger) PreExecuteCcntmract(tx *types.Transaction) (*cstate.PreExecResult, error) {
 	return self.ldgStore.PreExecuteCcntmract(tx)
 }
 

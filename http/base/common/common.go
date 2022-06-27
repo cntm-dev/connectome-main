@@ -302,7 +302,10 @@ func GetCcntmractBalance(cVersion byte, ccntmractAddr, accAddr common.Address) (
 	if err != nil {
 		return 0, fmt.Errorf("PrepareInvokeCcntmract error:%s", err)
 	}
-	data, err := hex.DecodeString(result.(string))
+	if result.State == 0 {
+		return 0, fmt.Errorf("prepare invoke failed")
+	}
+	data, err := hex.DecodeString(result.Result.(string))
 	if err != nil {
 		return 0, fmt.Errorf("hex.DecodeString error:%s", err)
 	}
@@ -346,7 +349,10 @@ func GetCcntmractAllowance(cVersion byte, ccntmractAddr, fromAddr, toAddr common
 	if err != nil {
 		return 0, fmt.Errorf("PrepareInvokeCcntmract error:%s", err)
 	}
-	data, err := hex.DecodeString(result.(string))
+	if result.State == 0 {
+		return 0, fmt.Errorf("prepare invoke failed")
+	}
+	data, err := hex.DecodeString(result.Result.(string))
 	if err != nil {
 		return 0, fmt.Errorf("hex.DecodeString error:%s", err)
 	}
@@ -354,7 +360,7 @@ func GetCcntmractAllowance(cVersion byte, ccntmractAddr, fromAddr, toAddr common
 	return allowance.Uint64(), nil
 }
 
-func PrepareInvokeCcntmract(cVersion byte, vmType vmtypes.VmType, invokeCode []byte) (interface{}, error) {
+func PrepareInvokeCcntmract(cVersion byte, vmType vmtypes.VmType, invokeCode []byte) (*cstates.PreExecResult, error) {
 	invokePayload := &payload.InvokeCode{
 		Code: vmtypes.VmCode{
 			VmType: vmType,

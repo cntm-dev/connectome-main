@@ -25,6 +25,7 @@ import (
 	"github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract/event"
+	cstates "github.com/cntmio/cntmology/smartccntmract/states"
 )
 
 // LedgerStore provides func with store package.

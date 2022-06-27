@@ -154,16 +154,22 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 	fmt.Printf("Invoke:%s Params:%s\n", ccntmractAddr.ToBase58(), paramData)
 
 	if ctx.IsSet(utils.GetFlagName(utils.CcntmractPrepareInvokeFlag)) {
-		res, err := utils.PrepareInvokeNeoVMCcntmract(gasPrice, gasLimit, cversion, ccntmractAddr, params)
+		preResult, err := utils.PrepareInvokeNeoVMCcntmract(gasPrice, gasLimit, cversion, ccntmractAddr, params)
 		if err != nil {
 			return fmt.Errorf("PrepareInvokeNeoVMSmartCcntmact error:%s", err)
 		}
+		if preResult.State == 0 {
+			return fmt.Errorf("Ccntmract invoke failed\n")
+		}
+		fmt.Printf("Ccntmract invoke successfully\n")
+		fmt.Printf("Gas consumed:%d\n", preResult.Gas)
+
 		rawReturnTypes := ctx.String(utils.GetFlagName(utils.CcntmranctReturnTypeFlag))
 		if rawReturnTypes == "" {
-			fmt.Printf("Return:%s (raw value)\n", res)
+			fmt.Printf("Return:%s (raw value)\n", preResult.Result)
 			return nil
 		}
-		values, err := utils.ParseReturnValue(res, rawReturnTypes)
+		values, err := utils.ParseReturnValue(preResult.Result, rawReturnTypes)
 		if err != nil {
 			return fmt.Errorf("parseReturnValue values:%+v types:%s error:%s", values, rawReturnTypes, err)
 		}

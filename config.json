@@ -1,6 +1,9 @@
 ﻿{
   "SeedList": [
-    "127.0.0.1:20318"
+    "polaris1.cntm.io:20338",
+    "polaris2.cntm.io:20338",
+    "polaris3.cntm.io:20338",
+    "polaris4.cntm.io:20338"
   ],
   "ConsensusType":"dbft",
   "DBFT":{

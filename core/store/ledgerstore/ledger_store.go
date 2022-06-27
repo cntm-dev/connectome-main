@@ -755,7 +755,7 @@ func (this *LedgerStoreImp) GetEventNotifyByBlock(height uint32) ([]common.Uint2
 }
 
 //PreExecuteCcntmract return the result of smart ccntmract execution without commit to store
-func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (interface{}, error) {
+func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.PreExecResult, error) {
 	if tx.TxType != types.Invoke {
 		return nil, errors.NewErr("transaction type error")
 	}
@@ -785,10 +785,9 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (interfac
 		Gas:        math.MaxUint64,
 	}
 
-	gasCost := math.MaxUint64 - sc.Gas + neovm.TRANSACTION_GAS
-
 	//start the smart ccntmract executive function
 	result, err := sc.Execute()
+	gasCost := math.MaxUint64 - sc.Gas + neovm.TRANSACTION_GAS
 	if err != nil {
 		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_FAIL, Gas: gasCost, Result: nil}, err
 	}

@@ -24,6 +24,7 @@ import (
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract/event"
+	cstate "github.com/cntmio/cntmology/smartccntmract/states"
 )
 
 const (
@@ -70,7 +71,7 @@ func GetTxnWithHeightByTxHash(hash common.Uint256) (uint32, *types.Transaction, 
 	return height, tx, err
 }
 
-func PreExecuteCcntmract(tx *types.Transaction) (interface{}, error) {
+func PreExecuteCcntmract(tx *types.Transaction) (*cstate.PreExecResult, error) {
 	return ledger.DefLedger.PreExecuteCcntmract(tx)
 }
 

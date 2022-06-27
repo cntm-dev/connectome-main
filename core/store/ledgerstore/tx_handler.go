@@ -35,6 +35,7 @@ import (
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract"
 	"github.com/cntmio/cntmology/smartccntmract/event"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/governance"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	neovm "github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	sstates "github.com/cntmio/cntmology/smartccntmract/states"
@@ -74,17 +75,26 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 	invoke := tx.Payload.(*payload.InvokeCode)
 	txHash := tx.Hash()
 
-	// check payer cntm balance
-	balance, err := GetBalance(stateBatch, tx.Payer, genesis.OngCcntmractAddress)
-	if balance < tx.GasLimit*tx.GasPrice {
-		return fmt.Errorf("%v", "Payer Gas Insufficient")
+	sysTransFlag := bytes.Compare(invoke.Code.Code, governance.COMMIT_DPOS_BYTES) == 0 || bytes.Compare(invoke.Code.Code, governance.INIT_CONFIG_BYTES) == 0
+
+	if !sysTransFlag {
+		// check payer cntm balance
+		balance, err := GetBalance(stateBatch, tx.Payer, genesis.OngCcntmractAddress)
+		if err != nil {
+			return err
+		}
+		if balance < tx.GasLimit*tx.GasPrice {
+			return fmt.Errorf("payer gas insufficient, need %d , only have %d", tx.GasLimit*tx.GasPrice, balance)
+		}
 	}
+
 	// init smart ccntmract configuration info
 	config := &smartccntmract.Config{
 		Time:   block.Header.Timestamp,
 		Height: block.Header.Height,
 		Tx:     tx,
 	}
+
 	cache := storage.NewCloneCache(stateBatch)
 	//init smart ccntmract info
 	sc := smartccntmract.SmartCcntmract{
@@ -96,51 +106,71 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 	}
 
 	//start the smart ccntmract executive function
-	_, err = sc.Execute()
+	_, err := sc.Execute()
 
-	totalGas := (tx.GasLimit - sc.Gas) * tx.GasPrice
-	transcode := genNativeTransferCode(genesis.OngCcntmractAddress, tx.Payer,
-		genesis.GovernanceCcntmractAddress, totalGas)
-	transCcntmract := smartccntmract.SmartCcntmract{
-		Config:     config,
-		CloneCache: cache,
-		Store:      store,
-		Code:       transcode,
-		Gas:        math.MaxUint64,
-	}
-	if err != nil {
-		cache = storage.NewCloneCache(stateBatch)
-		transCcntmract.CloneCache = cache
+	if !sysTransFlag {
+		totalGas := (tx.GasLimit - sc.Gas) * tx.GasPrice
+		nativeTransferCode := genNativeTransferCode(genesis.OngCcntmractAddress, tx.Payer,
+			genesis.GovernanceCcntmractAddress, totalGas)
+		transCcntmract := smartccntmract.SmartCcntmract{
+			Config:     config,
+			CloneCache: cache,
+			Store:      store,
+			Code:       nativeTransferCode,
+			Gas:        math.MaxUint64,
+		}
+		if err != nil {
+			cache = storage.NewCloneCache(stateBatch)
+			transCcntmract.CloneCache = cache
+			if _, err := transCcntmract.Execute(); err != nil {
+				return err
+			}
+			cache.Commit()
+			if err := saveNotify(eventStore, txHash, []*event.NotifyEventInfo{}, false); err != nil {
+				return err
+			}
+			return err
+		}
 		if _, err := transCcntmract.Execute(); err != nil {
 			return err
 		}
-		cache.Commit()
-		if err := saveNotify(eventStore, txHash, &event.ExecuteNotify{TxHash: txHash,
-			State: event.CcntmRACT_STATE_FAIL, Notify: []*event.NotifyEventInfo{}}); err != nil {
+		if err := saveNotify(eventStore, txHash, sc.Notifications, true); err != nil {
 			return err
 		}
-		return err
-	}
-	if _, err := transCcntmract.Execute(); err != nil {
-		return err
-	}
-	if err := saveNotify(eventStore, txHash, &event.ExecuteNotify{TxHash: txHash,
-		State: event.CcntmRACT_STATE_SUCCESS, Notify: sc.Notifications}); err != nil {
-		return err
+	} else {
+		if err != nil {
+			if err := saveNotify(eventStore, txHash, []*event.NotifyEventInfo{}, false); err != nil {
+				return err
+			}
+			return err
+		}
+		if err := saveNotify(eventStore, txHash, []*event.NotifyEventInfo{}, true); err != nil {
+			return err
+		}
 	}
 	sc.CloneCache.Commit()
 
 	return nil
 }
 
-func saveNotify(eventStore scommon.EventStore, txHash common.Uint256, notify *event.ExecuteNotify) error {
+func saveNotify(eventStore scommon.EventStore, txHash common.Uint256, notifies []*event.NotifyEventInfo, execSucc bool) error {
 	if !config.DefConfig.Common.EnableEventLog {
 		return nil
 	}
-	if err := eventStore.SaveEventNotifyByTx(txHash, notify); err != nil {
+	var notifyInfo *event.ExecuteNotify
+	if execSucc {
+		notifyInfo = &event.ExecuteNotify{TxHash: txHash,
+			State: event.CcntmRACT_STATE_SUCCESS, Notify: notifies}
+	} else {
+		notifyInfo = &event.ExecuteNotify{TxHash: txHash,
+			State: event.CcntmRACT_STATE_FAIL, Notify: notifies}
+
+	}
+	if err := eventStore.SaveEventNotifyByTx(txHash, notifyInfo); err != nil {
 		return fmt.Errorf("SaveEventNotifyByTx error %s", err)
 	}
-	event.PushSmartCodeEvent(txHash, 0, event.EVENT_NOTIFY, notify)
+	event.PushSmartCodeEvent(txHash, 0, event.EVENT_NOTIFY, notifyInfo)
+
 	return nil
 }
 
