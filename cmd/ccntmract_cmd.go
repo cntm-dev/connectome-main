@@ -27,6 +27,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/types"
 	"github.com/urfave/cli"
 	"io/ioutil"
+	"strings"
 )
 
 var (
@@ -85,9 +86,9 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 		return nil
 	}
 
-	singer, err := cmdcom.GetAccount(ctx)
+	signer, err := cmdcom.GetAccount(ctx)
 	if err != nil {
-		return fmt.Errorf("Get singer account error:%s", err)
+		return fmt.Errorf("Get signer account error:%s", err)
 	}
 
 	store := ctx.Bool(utils.GetFlagName(utils.CcntmractStorageFlag))
@@ -95,7 +96,7 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 	if "" == codeFile {
 		return fmt.Errorf("Please specific code file")
 	}
-	code, err := ioutil.ReadFile(codeFile)
+	codeStr, err := ioutil.ReadFile(codeFile)
 	if err != nil {
 		return fmt.Errorf("Read code:%s error:%s", codeFile, err)
 	}
@@ -105,13 +106,13 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 	author := ctx.String(utils.GetFlagName(utils.CcntmractAuthorFlag))
 	email := ctx.String(utils.GetFlagName(utils.CcntmractEmailFlag))
 	desc := ctx.String(utils.GetFlagName(utils.CcntmractDescFlag))
-
+	code := strings.TrimSpace(string(codeStr))
 	gasPrice := ctx.Uint64(utils.GetFlagName(utils.TransactionGasPriceFlag))
 	gasLimit := ctx.Uint64(utils.GetFlagName(utils.TransactionGasLimitFlag))
 	vmType := types.NEOVM
 	cversion := fmt.Sprintf("%s", version)
 
-	txHash, err := utils.DeployCcntmract(gasPrice, gasLimit, singer, vmType, store, string(code), name, cversion, author, email, desc)
+	txHash, err := utils.DeployCcntmract(gasPrice, gasLimit, signer, vmType, store, code, name, cversion, author, email, desc)
 	if err != nil {
 		return fmt.Errorf("DeployCcntmract error:%s", err)
 	}
@@ -143,18 +144,11 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 		return fmt.Errorf("parseParams error:%s", err)
 	}
 
-	singer, err := cmdcom.GetAccount(ctx)
-	if err != nil {
-		return fmt.Errorf("Get singer account error:%s", err)
-	}
-	gasPrice := ctx.Uint64(utils.GetFlagName(utils.TransactionGasPriceFlag))
-	gasLimit := ctx.Uint64(utils.GetFlagName(utils.TransactionGasLimitFlag))
-
 	paramData, _ := json.Marshal(params)
 	fmt.Printf("Invoke:%s Params:%s\n", ccntmractAddr.ToBase58(), paramData)
 
 	if ctx.IsSet(utils.GetFlagName(utils.CcntmractPrepareInvokeFlag)) {
-		preResult, err := utils.PrepareInvokeNeoVMCcntmract(gasPrice, gasLimit, cversion, ccntmractAddr, params)
+		preResult, err := utils.PrepareInvokeNeoVMCcntmract(cversion, ccntmractAddr, params)
 		if err != nil {
 			return fmt.Errorf("PrepareInvokeNeoVMSmartCcntmact error:%s", err)
 		}
@@ -183,7 +177,14 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 		}
 		return nil
 	}
-	txHash, err := utils.InvokeNeoVMCcntmract(gasPrice, gasLimit, singer, cversion, ccntmractAddr, params)
+	signer, err := cmdcom.GetAccount(ctx)
+	if err != nil {
+		return fmt.Errorf("Get signer account error:%s", err)
+	}
+	gasPrice := ctx.Uint64(utils.GetFlagName(utils.TransactionGasPriceFlag))
+	gasLimit := ctx.Uint64(utils.GetFlagName(utils.TransactionGasLimitFlag))
+
+	txHash, err := utils.InvokeNeoVMCcntmract(gasPrice, gasLimit, signer, cversion, ccntmractAddr, params)
 	if err != nil {
 		return fmt.Errorf("Invoke NeoVM ccntmract error:%s", err)
 	}
