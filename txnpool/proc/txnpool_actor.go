@@ -27,6 +27,7 @@ import (
 	"github.com/cntmio/cntmology/common/log"
 	tx "github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/events/message"
+	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	tc "github.com/cntmio/cntmology/txnpool/common"
 	"github.com/cntmio/cntmology/validator/types"
 )
@@ -80,6 +81,13 @@ func (ta *TxActor) handleTransaction(sender tc.SenderType, self *actor.PID,
 				txn.GasLimit, txn.GasPrice)
 			return
 		}
+
+		if txn.TxType == tx.Deploy && txn.GasLimit < neovm.CcntmRACT_CREATE_GAS {
+			log.Debugf("handleTransaction: deploy tx invalid gasLimit %v, gasPrice %v",
+				txn.GasLimit, txn.GasPrice)
+			return
+		}
+
 		<-ta.server.slots
 		ta.server.assignTxToWorker(txn, sender)
 	}

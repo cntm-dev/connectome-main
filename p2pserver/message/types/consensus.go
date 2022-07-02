@@ -23,7 +23,6 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/errors"
 )
@@ -31,11 +30,6 @@ import (
 type Consensus struct {
 	MsgHdr
 	Cons ConsensusPayload
-}
-
-type PeerStateUpdate struct {
-	PeerPubKey keypair.PublicKey
-	Connected  bool
 }
 
 //Serialize message payload

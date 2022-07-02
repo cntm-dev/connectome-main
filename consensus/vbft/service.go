@@ -170,8 +170,6 @@ func (self *Server) Receive(ccntmext actor.Ccntmext) {
 		log.Infof("vbft actor receives block complete event. block height=%d, numtx=%d",
 			msg.Block.Header.Height, len(msg.Block.Transactions))
 		self.handleBlockPersistCompleted(msg.Block)
-	case *p2pmsg.PeerStateUpdate:
-		self.handlePeerStateUpdate(msg)
 	case *p2pmsg.ConsensusPayload:
 		self.NewConsensusPayload(msg)
 
@@ -191,25 +189,6 @@ func (self *Server) Start() error {
 func (self *Server) Halt() error {
 	self.pid.Tell(&actorTypes.StopConsensus{})
 	return nil
-}
-
-func (self *Server) handlePeerStateUpdate(peer *p2pmsg.PeerStateUpdate) {
-	if peer.PeerPubKey == nil {
-		log.Errorf("server %d, invalid peer state update (no pk)", self.Index)
-		return
-	}
-	peerID, err := vconfig.PubkeyID(peer.PeerPubKey)
-	if err != nil {
-		log.Errorf("failed to get peer ID for pubKey: %v", peer.PeerPubKey)
-		return
-	}
-	peerIdx, present := self.peerPool.GetPeerIndex(peerID)
-	if !present {
-		log.Errorf("invalid consensus node: %s", peerID.String())
-		return
-	}
-
-	log.Infof("peer state update: %d, connect: %t", peerIdx, peer.Connected)
 }
 
 func (self *Server) handleBlockPersistCompleted(block *types.Block) {
@@ -367,16 +346,6 @@ func (self *Server) updateChainConfig() error {
 			if err := self.peerPool.addPeer(p); err != nil {
 				return fmt.Errorf("failed to add peer %d: %s", p.Index, err)
 			}
-			publickey, err := p.ID.Pubkey()
-			if err != nil {
-				log.Errorf("Pubkey failed: %v", err)
-				return fmt.Errorf("Pubkey failed: %v", err)
-			}
-			msg := &p2pmsg.PeerStateUpdate{
-				PeerPubKey: publickey,
-				Connected:  true,
-			}
-			self.handlePeerStateUpdate(msg)
 			log.Infof("updateChainConfig add peer index%v,id:%v", p.ID.String(), p.Index)
 		}
 	}
@@ -705,7 +674,7 @@ func (self *Server) startNewRound() error {
 			}
 		}
 	}
-	if _, _, done := self.blockPool.commitDone(blkNum, self.config.C); done && len(commits) > 0 {
+	if _, _, done := self.blockPool.commitDone(blkNum, self.config.C, self.config.N); done && len(commits) > 0 {
 		// resend commit msg to msg-processor to restart commit-done processing
 		// Note: commitDone will set Done flag in block-pool, so removed Done flag checking
 		// in commit msg processing.
@@ -1255,7 +1224,7 @@ func (self *Server) processMsgEvent() error {
 				log.Infof("server %d received commit from %d, for proposer %d, block %d, empty: %t",
 					self.Index, pMsg.Committer, pMsg.BlockProposer, msgBlkNum, pMsg.CommitForEmpty)
 
-				if proposer, forEmpty, done := self.blockPool.commitDone(msgBlkNum, self.config.C); done {
+				if proposer, forEmpty, done := self.blockPool.commitDone(msgBlkNum, self.config.C, self.config.N); done {
 					self.blockPool.setCommitDone(msgBlkNum)
 					proposal := self.findBlockProposal(msgBlkNum, proposer, forEmpty)
 					if proposal == nil {
@@ -1703,7 +1672,7 @@ func (self *Server) processTimerEvent(evt *TimerEvent) error {
 			return nil
 		}
 		if !self.blockPool.isCommitHadDone(evt.blockNum) {
-			if proposer, forEmpty, done := self.blockPool.commitDone(evt.blockNum, self.config.C); done {
+			if proposer, forEmpty, done := self.blockPool.commitDone(evt.blockNum, self.config.C, self.config.N); done {
 				self.blockPool.setCommitDone(evt.blockNum)
 				proposal := self.findBlockProposal(evt.blockNum, proposer, forEmpty)
 				if proposal == nil {
