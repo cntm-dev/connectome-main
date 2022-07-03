@@ -502,7 +502,7 @@ According to the ccntmract script hash, query the ccntmract information.
 
 ```
 {
-    "Action": "gettransaction",
+    "Action": "getccntmract",
     "Version": "1.0.0",
     "Hash": "fff49c809d302a2956e9dc0012619a452d4b846c"
 }
@@ -727,6 +727,28 @@ get allowance
     "Desc": "SUCCESS",
     "Error": 0,
     "Result": "10",
+    "Version": "1.0.0"
+}
+```
+
+### 22. Get unclaimcntm
+get unclaimcntm
+
+#### Request Example:
+```
+{
+    "Action": "getunclaimcntm",
+    "Addr": "cntm",
+    "Version": "1.0.0"
+}
+```
+#### Response
+```
+{
+    "Action": "getunclaimcntm",
+    "Desc": "SUCCESS",
+    "Error": 0,
+    "Result": "204957950400000",
     "Version": "1.0.0"
 }
 ```

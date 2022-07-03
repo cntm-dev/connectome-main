@@ -26,6 +26,7 @@ import (
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/common/serialization"
+	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"

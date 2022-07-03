@@ -23,6 +23,7 @@ import (
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
@@ -512,6 +513,26 @@ func GetAllowance(cmd map[string]interface{}) map[string]interface{} {
 	rsp, err := bcomn.GetAllowance(asset, fromAddr, toAddr)
 	if err != nil {
 		log.Errorf("GetAllowance %s from:%s to:%s error:%s", asset, fromAddrStr, toAddrStr, err)
+		return ResponsePack(berr.INTERNAL_ERROR)
+	}
+	resp["Result"] = rsp
+	return resp
+}
+
+func GetUnclaimOng(cmd map[string]interface{}) map[string]interface{} {
+	resp := ResponsePack(berr.SUCCESS)
+	toAddrStr, ok := cmd["Addr"].(string)
+	if !ok {
+		return ResponsePack(berr.INVALID_PARAMS)
+	}
+	toAddr, err := common.AddressFromBase58(toAddrStr)
+	if err != nil {
+		return ResponsePack(berr.INVALID_PARAMS)
+	}
+	fromAddr := genesis.OntCcntmractAddress
+	rsp, err := bcomn.GetAllowance("cntm", fromAddr, toAddr)
+	if err != nil {
+		log.Errorf("GetUnclaimOng %s error:%s", toAddr.ToBase58(), err)
 		return ResponsePack(berr.INTERNAL_ERROR)
 	}
 	resp["Result"] = rsp

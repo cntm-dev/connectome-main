@@ -88,6 +88,7 @@ Transaction field description
 | getmerkleproof | tx_hash | return merkle_proof |  |
 | getgasprice |  | return gasprice |  |
 | getallowance | asset, from, to | return allowance |  |
+| getunclaimcntm | address | return unclaimcntm |  |
 
 ### 1. getbestblockhash
 
@@ -992,6 +993,35 @@ Response:
 }
 ```
 
+#### 20. getunclaimcntm
+
+return unclaimcntm.
+
+
+#### Example
+
+Request:
+
+```
+{
+  "jsonrpc": "2.0",
+  "method": "getunclaimcntm",
+  "params": ["address"],
+  "id": 1
+}
+```
+
+Response:
+
+```
+{
+   "desc":"SUCCESS",
+   "error":0,
+   "id":1,
+   "jsonpc":"2.0",
+   "result": "204957950400000"
+}
+```
 ## Error Code
 
 errorcode instruction

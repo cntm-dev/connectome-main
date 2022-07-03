@@ -106,7 +106,7 @@ func AcceptAdmin(native *native.NativeService) ([]byte, error) {
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
 	getAdmin(native, ccntmract)
 	transferAdmin, err := getStorageAdmin(native, getAdminKey(ccntmract, true))
-	if err != nil || *transferAdmin != *destinationAdmin {
+	if err != nil || transferAdmin == nil || *transferAdmin != *destinationAdmin {
 		return utils.BYTE_FALSE, fmt.Errorf("accept admin, destination account hasn't been approved, casused by %v", err)
 	}
 	// delete transfer admin item

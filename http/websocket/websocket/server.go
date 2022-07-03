@@ -179,6 +179,7 @@ func (self *WsServer) registryMethod() {
 		"getbalance":                {handler: rest.GetBalance},
 		"getconnectioncount":        {handler: rest.GetConnectionCount},
 		"getblockbyheight":          {handler: rest.GetBlockByHeight},
+		"getblockhash":              {handler: rest.GetBlockHash},
 		"getblockbyhash":            {handler: rest.GetBlockByHash},
 		"getblockheight":            {handler: rest.GetBlockHeight},
 		"getgenerateblocktime":      {handler: rest.GetGenerateBlockTime},
@@ -191,6 +192,7 @@ func (self *WsServer) registryMethod() {
 		"getmerkleproof":            {handler: rest.GetMerkleProof},
 		"getblocktxsbyheight":       {handler: rest.GetBlockTxsByHeight},
 		"getgasprice":               {handler: rest.GetGasPrice},
+		"getunclaimcntm":             {handler: rest.GetUnclaimOng},
 
 		"getsessioncount": {handler: getsessioncount},
 	}

@@ -23,5 +23,6 @@ import "github.com/cntmio/cntmology/cmd/server/handlers"
 func init() {
 	DefCliRpcSvr.RegHandler("sigrawtx", handlers.SigRawTransaction)
 	DefCliRpcSvr.RegHandler("sigtransfertx", handlers.SigTransferTransaction)
-	DefCliRpcSvr.RegHandler("siginvoketx", handlers.SigNeoVMInvokeTx)
+	DefCliRpcSvr.RegHandler("signeovminvoketx", handlers.SigNeoVMInvokeTx)
+	DefCliRpcSvr.RegHandler("signativeinvoketx", handlers.SigNativeInvokeTx)
 }
