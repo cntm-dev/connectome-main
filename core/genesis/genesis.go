@@ -19,7 +19,6 @@
 package genesis
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"time"
@@ -30,7 +29,8 @@ import (
 	vconfig "github.com/cntmio/cntmology/consensus/vbft/config"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/core/utils"
-	"github.com/cntmio/cntmology/smartccntmract/states"
+	ninit "github.com/cntmio/cntmology/smartccntmract/service/native/init"
+	nutils "github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 )
 
@@ -40,13 +40,6 @@ const (
 )
 
 var (
-	OntCcntmractAddress, _        = common.AddressParseFromBytes([]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01})
-	OngCcntmractAddress, _        = common.AddressParseFromBytes([]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02})
-	OntIDCcntmractAddress, _      = common.AddressParseFromBytes([]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03})
-	ParamCcntmractAddress, _      = common.AddressParseFromBytes([]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04})
-	AuthCcntmractAddress, _       = common.AddressParseFromBytes([]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06})
-	GovernanceCcntmractAddress, _ = common.AddressParseFromBytes([]byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07})
-
 	cntmToken   = newGoverningToken()
 	cntmToken   = newUtilityToken()
 	cntmTokenID = cntmToken.Hash()
@@ -111,97 +104,73 @@ func GenesisBlockInit(defaultBookkeeper []keypair.PublicKey) (*types.Block, erro
 }
 
 func newGoverningToken() *types.Transaction {
-	tx := utils.NewDeployTransaction(stypes.VmCode{Code: OntCcntmractAddress[:], VmType: stypes.Native}, "cntm", "1.0",
+	tx := utils.NewDeployTransaction(stypes.VmCode{Code: nutils.OntCcntmractAddress[:], VmType: stypes.Native}, "cntm", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", true)
 	return tx
 }
 
 func newUtilityToken() *types.Transaction {
-	tx := utils.NewDeployTransaction(stypes.VmCode{Code: OngCcntmractAddress[:], VmType: stypes.Native}, "cntm", "1.0",
+	tx := utils.NewDeployTransaction(stypes.VmCode{Code: nutils.OngCcntmractAddress[:], VmType: stypes.Native}, "cntm", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", true)
 	return tx
 }
 
 func newParamCcntmract() *types.Transaction {
-	tx := utils.NewDeployTransaction(stypes.VmCode{Code: ParamCcntmractAddress[:], VmType: stypes.Native},
+	tx := utils.NewDeployTransaction(stypes.VmCode{Code: nutils.ParamCcntmractAddress[:], VmType: stypes.Native},
 		"ParamConfig", "1.0", "Ontology Team", "ccntmact@cntm.io",
 		"Chain Global Environment Variables Manager ", true)
 	return tx
 }
 
 func newConfig() *types.Transaction {
-	tx := utils.NewDeployTransaction(stypes.VmCode{Code: GovernanceCcntmractAddress[:], VmType: stypes.Native}, "CONFIG", "1.0",
+	tx := utils.NewDeployTransaction(stypes.VmCode{Code: nutils.GovernanceCcntmractAddress[:], VmType: stypes.Native}, "CONFIG", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network Consensus Config", true)
 	return tx
 }
 
 func deployAuthCcntmract() *types.Transaction {
-	tx := utils.NewDeployTransaction(stypes.VmCode{Code: AuthCcntmractAddress[:], VmType: stypes.Native}, "AuthCcntmract", "1.0",
+	tx := utils.NewDeployTransaction(stypes.VmCode{Code: nutils.AuthCcntmractAddress[:], VmType: stypes.Native}, "AuthCcntmract", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network Authorization Ccntmract", true)
 	return tx
 }
 
 func deployOntIDCcntmract() *types.Transaction {
-	tx := utils.NewDeployTransaction(stypes.VmCode{Code: OntIDCcntmractAddress[:], VmType: stypes.Native}, "OID", "1.0",
+	tx := utils.NewDeployTransaction(stypes.VmCode{Code: nutils.OntIDCcntmractAddress[:], VmType: stypes.Native}, "OID", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm ID", true)
 	return tx
 }
 
 func newGoverningInit() *types.Transaction {
-	init := states.Ccntmract{
-		Address: OntCcntmractAddress,
-		Method:  "init",
-	}
-	bf := new(bytes.Buffer)
-	init.Serialize(bf)
 	vmCode := stypes.VmCode{
 		VmType: stypes.Native,
-		Code:   bf.Bytes(),
+		Code:   ninit.cntm_INIT_BYTES,
 	}
 	tx := utils.NewInvokeTransaction(vmCode)
 	return tx
 }
 
 func newUtilityInit() *types.Transaction {
-	init := states.Ccntmract{
-		Address: OngCcntmractAddress,
-		Method:  "init",
-	}
-	bf := new(bytes.Buffer)
-	init.Serialize(bf)
 	vmCode := stypes.VmCode{
 		VmType: stypes.Native,
-		Code:   bf.Bytes(),
+		Code:   ninit.cntm_INIT_BYTES,
 	}
 	tx := utils.NewInvokeTransaction(vmCode)
 	return tx
 }
 
 func newParamInit() *types.Transaction {
-	init := states.Ccntmract{
-		Address: ParamCcntmractAddress,
-		Method:  "init",
-	}
-	bf := new(bytes.Buffer)
-	init.Serialize(bf)
 	vmCode := stypes.VmCode{
 		VmType: stypes.Native,
-		Code:   bf.Bytes(),
+		Code:   ninit.PARAM_INIT_BYTES,
 	}
 	tx := utils.NewInvokeTransaction(vmCode)
 	return tx
 }
 
 func newConfigInit() *types.Transaction {
-	init := states.Ccntmract{
-		Address: GovernanceCcntmractAddress,
-		Method:  "initConfig",
-	}
-	bf := new(bytes.Buffer)
-	init.Serialize(bf)
 	vmCode := stypes.VmCode{
 		VmType: stypes.Native,
-		Code:   bf.Bytes(),
+		Code:   ninit.INIT_CONFIG_BYTES,
 	}
 	tx := utils.NewInvokeTransaction(vmCode)
 	return tx

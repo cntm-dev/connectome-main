@@ -22,17 +22,18 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/common/serialization"
-	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
 	bactor "github.com/cntmio/cntmology/http/base/actor"
 	bcomn "github.com/cntmio/cntmology/http/base/common"
 	berr "github.com/cntmio/cntmology/http/base/error"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 )
 
 func GetGenerateBlockTime(params []interface{}) map[string]interface{} {

@@ -22,21 +22,21 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"math/big"
+	"strings"
+	"time"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/common/serialization"
-	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
 	bactor "github.com/cntmio/cntmology/http/base/actor"
 	"github.com/cntmio/cntmology/smartccntmract/event"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	cstates "github.com/cntmio/cntmology/smartccntmract/states"
 	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
-	"math/big"
-	"strings"
-	"time"
 )
 
 const MAX_SEARCH_HEIGHT uint32 = 100
@@ -247,11 +247,11 @@ func GetBlockInfo(block *types.Block) BlockInfo {
 }
 
 func GetBalance(address common.Address) (*BalanceOfRsp, error) {
-	cntm, err := GetCcntmractBalance(0, genesis.OntCcntmractAddress, address)
+	cntm, err := GetCcntmractBalance(0, utils.OntCcntmractAddress, address)
 	if err != nil {
 		return nil, fmt.Errorf("get cntm balance error:%s", err)
 	}
-	cntm, err := GetCcntmractBalance(0, genesis.OngCcntmractAddress, address)
+	cntm, err := GetCcntmractBalance(0, utils.OngCcntmractAddress, address)
 	if err != nil {
 		return nil, fmt.Errorf("get cntm balance error:%s", err)
 	}
@@ -265,9 +265,9 @@ func GetAllowance(asset string, from, to common.Address) (string, error) {
 	var ccntmractAddr common.Address
 	switch strings.ToLower(asset) {
 	case "cntm":
-		ccntmractAddr = genesis.OntCcntmractAddress
+		ccntmractAddr = utils.OntCcntmractAddress
 	case "cntm":
-		ccntmractAddr = genesis.OngCcntmractAddress
+		ccntmractAddr = utils.OngCcntmractAddress
 	default:
 		return "", fmt.Errorf("unsupport asset")
 	}
@@ -285,7 +285,7 @@ func GetCcntmractBalance(cVersion byte, ccntmractAddr, accAddr common.Address) (
 		return 0, fmt.Errorf("address serialize error:%s", err)
 	}
 	argBuf := bytes.NewBuffer(nil)
-	err = serialization.WriteVarBytes(argBuf, addrBuf.Bytes())
+	err = accAddr.Serialize(argBuf)
 	if err != nil {
 		return 0, fmt.Errorf("serialization.WriteVarBytes error:%s", err)
 	}
@@ -316,26 +316,16 @@ func GetCcntmractBalance(cVersion byte, ccntmractAddr, accAddr common.Address) (
 }
 
 func GetCcntmractAllowance(cVersion byte, ccntmractAddr, fromAddr, toAddr common.Address) (uint64, error) {
-	fromBuf := bytes.NewBuffer(nil)
-	err := fromAddr.Serialize(fromBuf)
+	argBuf := new(bytes.Buffer)
+	err := fromAddr.Serialize(argBuf)
 	if err != nil {
 		return 0, fmt.Errorf("from address serialize error:%s", err)
 	}
-	toBuf := bytes.NewBuffer(nil)
-	err = toAddr.Serialize(toBuf)
+	err = toAddr.Serialize(argBuf)
 	if err != nil {
 		return 0, fmt.Errorf("to address serialize error:%s", err)
 	}
 
-	argBuf := bytes.NewBuffer(nil)
-	err = serialization.WriteVarBytes(argBuf, fromBuf.Bytes())
-	if err != nil {
-		return 0, fmt.Errorf("serialization.WriteVarBytes error:%s", err)
-	}
-	err = serialization.WriteVarBytes(argBuf, toBuf.Bytes())
-	if err != nil {
-		return 0, fmt.Errorf("serialization.WriteVarBytes error:%s", err)
-	}
 	crt := &cstates.Ccntmract{
 		Version: cVersion,
 		Address: ccntmractAddr,

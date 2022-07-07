@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/cntmio/cntmology/common/serialization"
-	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/errors"
 	. "github.com/cntmio/cntmology/smartccntmract/service/native"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
@@ -35,7 +34,7 @@ var (
 )
 
 func Init() {
-	Ccntmracts[genesis.AuthCcntmractAddress] = RegisterAuthCcntmract
+	Ccntmracts[utils.AuthCcntmractAddress] = RegisterAuthCcntmract
 }
 
 func GetCcntmractAdmin(native *NativeService, ccntmractAddr []byte) ([]byte, error) {
@@ -554,7 +553,7 @@ func verifySig(native *NativeService, cntmID []byte, keyNo uint32) (bool, error)
 		return false, err
 	}
 	args := bf.Bytes()
-	ret, err := native.CcntmextRef.AppCall(genesis.OntIDCcntmractAddress, "verifySignature", []byte{}, args)
+	ret, err := native.CcntmextRef.AppCall(utils.OntIDCcntmractAddress, "verifySignature", []byte{}, args)
 	if err != nil {
 		return false, err
 	}

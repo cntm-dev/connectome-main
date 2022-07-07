@@ -20,6 +20,7 @@ package utils
 
 import (
 	"bytes"
+
 	"github.com/cntmio/cntmology/common/serialization"
 	cstates "github.com/cntmio/cntmology/core/states"
 	scommon "github.com/cntmio/cntmology/core/store/common"

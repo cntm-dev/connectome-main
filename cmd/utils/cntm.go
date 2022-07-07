@@ -29,12 +29,12 @@ import (
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/serialization"
-	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	httpcom "github.com/cntmio/cntmology/http/base/common"
 	rpccommon "github.com/cntmio/cntmology/http/base/common"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
 	cstates "github.com/cntmio/cntmology/smartccntmract/states"
 	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
@@ -158,10 +158,10 @@ func ApproveTx(gasPrice, gasLimit uint64, asset string, from, to string, amount 
 	var ccntmractAddr common.Address
 	switch strings.ToLower(asset) {
 	case ASSET_cntm:
-		ccntmractAddr = genesis.OntCcntmractAddress
+		ccntmractAddr = utils.OntCcntmractAddress
 		cversion = VERSION_CcntmRACT_cntm
 	case ASSET_cntm:
-		ccntmractAddr = genesis.OngCcntmractAddress
+		ccntmractAddr = utils.OngCcntmractAddress
 		cversion = VERSION_CcntmRACT_cntm
 	default:
 		return nil, fmt.Errorf("Unsupport asset:%s", asset)
@@ -196,10 +196,10 @@ func TransferTx(gasPrice, gasLimit uint64, asset, from, to string, amount uint64
 	var ccntmractAddr common.Address
 	switch strings.ToLower(asset) {
 	case ASSET_cntm:
-		ccntmractAddr = genesis.OntCcntmractAddress
+		ccntmractAddr = utils.OntCcntmractAddress
 		cversion = VERSION_CcntmRACT_cntm
 	case ASSET_cntm:
-		ccntmractAddr = genesis.OngCcntmractAddress
+		ccntmractAddr = utils.OngCcntmractAddress
 		cversion = VERSION_CcntmRACT_cntm
 	default:
 		return nil, fmt.Errorf("Unsupport asset:%s", asset)
@@ -235,10 +235,10 @@ func TransferFromTx(gasPrice, gasLimit uint64, asset, sender, from, to string, a
 	var ccntmractAddr common.Address
 	switch strings.ToLower(asset) {
 	case ASSET_cntm:
-		ccntmractAddr = genesis.OntCcntmractAddress
+		ccntmractAddr = utils.OntCcntmractAddress
 		cversion = VERSION_CcntmRACT_cntm
 	case ASSET_cntm:
-		ccntmractAddr = genesis.OngCcntmractAddress
+		ccntmractAddr = utils.OngCcntmractAddress
 		cversion = VERSION_CcntmRACT_cntm
 	default:
 		return nil, fmt.Errorf("Unsupport asset:%s", asset)

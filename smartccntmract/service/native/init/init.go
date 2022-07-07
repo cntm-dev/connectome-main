@@ -19,12 +19,25 @@
 package init
 
 import (
+	"bytes"
+
+	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/auth"
 	params "github.com/cntmio/cntmology/smartccntmract/service/native/global_params"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/governance"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntmid"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
+	"github.com/cntmio/cntmology/smartccntmract/states"
+)
+
+var (
+	cntm_INIT_BYTES    = InitBytes(utils.OntCcntmractAddress, cntm.INIT_NAME)
+	cntm_INIT_BYTES    = InitBytes(utils.OngCcntmractAddress, cntm.INIT_NAME)
+	PARAM_INIT_BYTES  = InitBytes(utils.ParamCcntmractAddress, params.INIT_NAME)
+	COMMIT_DPOS_BYTES = InitBytes(utils.GovernanceCcntmractAddress, governance.COMMIT_DPOS)
+	INIT_CONFIG_BYTES = InitBytes(utils.GovernanceCcntmractAddress, governance.INIT_CONFIG)
 )
 
 func init() {
@@ -34,4 +47,11 @@ func init() {
 	cntmid.Init()
 	auth.Init()
 	governance.InitGovernance()
+}
+
+func InitBytes(addr common.Address, method string) []byte {
+	init := states.Ccntmract{Address: addr, Method: method}
+	bf := new(bytes.Buffer)
+	init.Serialize(bf)
+	return bf.Bytes()
 }

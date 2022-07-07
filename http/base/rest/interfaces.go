@@ -20,17 +20,18 @@ package rest
 
 import (
 	"bytes"
+	"strconv"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
 	bactor "github.com/cntmio/cntmology/http/base/actor"
 	bcomn "github.com/cntmio/cntmology/http/base/common"
 	berr "github.com/cntmio/cntmology/http/base/error"
-	"strconv"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 )
 
 const TLS_PORT int = 443
@@ -529,7 +530,7 @@ func GetUnclaimOng(cmd map[string]interface{}) map[string]interface{} {
 	if err != nil {
 		return ResponsePack(berr.INVALID_PARAMS)
 	}
-	fromAddr := genesis.OntCcntmractAddress
+	fromAddr := utils.OntCcntmractAddress
 	rsp, err := bcomn.GetAllowance("cntm", fromAddr, toAddr)
 	if err != nil {
 		log.Errorf("GetUnclaimOng %s error:%s", toAddr.ToBase58(), err)

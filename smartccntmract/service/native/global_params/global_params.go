@@ -27,7 +27,6 @@ import (
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/core/genesis"
 	scommon "github.com/cntmio/cntmology/core/store/common"
 	ctypes "github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
@@ -50,26 +49,32 @@ var GLOBAL_PARAM = map[string]string{
 type paramType byte
 
 const (
-	CURRENT_VALUE paramType = 0x00
-	PREPARE_VALUE paramType = 0x01
+	CURRENT_VALUE         paramType = 0x00
+	PREPARE_VALUE         paramType = 0x01
+	INIT_NAME                       = "init"
+	ACCEPT_ADMIN_NAME               = "acceptAdmin"
+	TRANSFER_ADMIN_NAME             = "transferAdmin"
+	SET_GLOBAL_PARAM_NAME           = "setGlobalParam"
+	GET_GLOBAL_PARAM_NAME           = "getGlobalParam"
+	CREATE_SNAPSHOT_NAME            = "createSnapshot"
 )
 
 var paramCache *ParamCache
 var admin *Admin
 
 func InitGlobalParams() {
-	native.Ccntmracts[genesis.ParamCcntmractAddress] = RegisterParamCcntmract
+	native.Ccntmracts[utils.ParamCcntmractAddress] = RegisterParamCcntmract
 	paramCache = new(ParamCache)
 	paramCache.Params = make(map[string]string)
 }
 
 func RegisterParamCcntmract(native *native.NativeService) {
-	native.Register("init", ParamInit)
-	native.Register("acceptAdmin", AcceptAdmin)
-	native.Register("transferAdmin", TransferAdmin)
-	native.Register("setGlobalParam", SetGlobalParam)
-	native.Register("getGlobalParam", GetGlobalParam)
-	native.Register("createSnapshot", CreateSnapshot)
+	native.Register(INIT_NAME, ParamInit)
+	native.Register(ACCEPT_ADMIN_NAME, AcceptAdmin)
+	native.Register(TRANSFER_ADMIN_NAME, TransferAdmin)
+	native.Register(SET_GLOBAL_PARAM_NAME, SetGlobalParam)
+	native.Register(GET_GLOBAL_PARAM_NAME, GetGlobalParam)
+	native.Register(CREATE_SNAPSHOT_NAME, CreateSnapshot)
 }
 
 func ParamInit(native *native.NativeService) ([]byte, error) {

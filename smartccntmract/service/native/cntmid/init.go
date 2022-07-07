@@ -18,12 +18,12 @@
 package cntmid
 
 import (
-	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 )
 
 func Init() {
-	native.Ccntmracts[genesis.OntIDCcntmractAddress] = RegisterIDCcntmract
+	native.Ccntmracts[utils.OntIDCcntmractAddress] = RegisterIDCcntmract
 }
 
 func RegisterIDCcntmract(srvc *native.NativeService) {

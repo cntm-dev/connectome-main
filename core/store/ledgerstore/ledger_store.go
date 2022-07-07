@@ -787,7 +787,10 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.
 
 	//start the smart ccntmract executive function
 	result, err := sc.Execute()
-	gasCost := math.MaxUint64 - sc.Gas + neovm.TRANSACTION_GAS
+	gasCost := math.MaxUint64 - sc.Gas
+	if gasCost < neovm.TRANSACTION_GAS {
+		gasCost = neovm.TRANSACTION_GAS
+	}
 	if err != nil {
 		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_FAIL, Gas: gasCost, Result: nil}, err
 	}

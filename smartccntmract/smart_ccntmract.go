@@ -29,7 +29,6 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
-	_ "github.com/cntmio/cntmology/smartccntmract/service/native/init"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
 	"github.com/cntmio/cntmology/smartccntmract/states"

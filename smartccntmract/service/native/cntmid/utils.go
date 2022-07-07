@@ -23,7 +23,6 @@ import (
 
 	"github.com/cntmio/cntmology-crypto/keypair"
 	cmn "github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/core/types"
@@ -59,7 +58,7 @@ func encodeID(id []byte) ([]byte, error) {
 	}
 	enc := []byte{byte(length)}
 	enc = append(enc, id...)
-	enc = append(genesis.OntIDCcntmractAddress[:], enc...)
+	enc = append(utils.OntIDCcntmractAddress[:], enc...)
 	return enc, nil
 }
 

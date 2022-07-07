@@ -23,7 +23,7 @@ import (
 	"github.com/cntmio/cntmology/account"
 	cmdcom "github.com/cntmio/cntmology/cmd/common"
 	"github.com/cntmio/cntmology/cmd/utils"
-	"github.com/cntmio/cntmology/core/genesis"
+	nutils "github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/urfave/cli"
 	"strconv"
 	"strings"
@@ -391,7 +391,7 @@ func unclaimOng(ctx *cli.Ccntmext) error {
 	if err != nil {
 		return err
 	}
-	fromAddr := genesis.OntCcntmractAddress.ToBase58()
+	fromAddr := nutils.OntCcntmractAddress.ToBase58()
 	balanceStr, err := utils.GetAllowance("cntm", fromAddr, accAddr)
 	if err != nil {
 		return err
@@ -418,7 +418,7 @@ func claimOng(ctx *cli.Ccntmext) error {
 	if err != nil {
 		return err
 	}
-	fromAddr := genesis.OntCcntmractAddress.ToBase58()
+	fromAddr := nutils.OntCcntmractAddress.ToBase58()
 	balance, err := utils.GetAllowance("cntm", fromAddr, accAddr)
 	if err != nil {
 		return err
