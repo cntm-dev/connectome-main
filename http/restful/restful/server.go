@@ -136,7 +136,7 @@ func (this *restServer) registryMethod() {
 		GET_ALLOWANCE:         {name: "getallowance", handler: rest.GetAllowance},
 		GET_MERKLE_PROOF:      {name: "getmerkleproof", handler: rest.GetMerkleProof},
 		GET_GAS_PRICE:         {name: "getgasprice", handler: rest.GetGasPrice},
-		GET_UNCLAIMcntm:        {name: "getgasprice", handler: rest.GetUnclaimOng},
+		GET_UNCLAIMcntm:        {name: "getunclaimcntm", handler: rest.GetUnclaimOng},
 	}
 
 	postMethodMap := map[string]Action{

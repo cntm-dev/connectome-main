@@ -27,6 +27,7 @@ import (
 
 	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/types"
@@ -70,7 +71,7 @@ func Test_RCV(t *testing.T) {
 	var s *tp.TXPoolServer
 	var wg sync.WaitGroup
 
-	ledger.DefLedger, _ = ledger.NewLedger()
+	ledger.DefLedger, _ = ledger.NewLedger(config.DEFAULT_DATA_DIR)
 
 	// Start txnpool server to receive msgs from p2p, consensus and valdiators
 	s = tp.NewTxPoolServer(tc.MAX_WORKER_NUM)

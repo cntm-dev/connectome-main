@@ -23,16 +23,14 @@ import (
 
 	"github.com/cntmio/cntmology/common"
 	cstates "github.com/cntmio/cntmology/core/states"
-	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 )
 
 const (
-	SET_PARAM = "SetGlobalParam"
-	PARAM     = "param"
-	TRANSFER  = "transfer"
-	ADMIN     = "admin"
+	PARAM    = "param"
+	TRANSFER = "transfer"
+	ADMIN    = "admin"
 )
 
 func getAdminStorageItem(admin *Admin) *cstates.StorageItem {
@@ -53,20 +51,12 @@ func getParamKey(ccntmract common.Address, valueType paramType) []byte {
 	return key
 }
 
-func getAdminKey(ccntmract common.Address, isTransferAdmin bool) []byte {
+func GetAdminKey(ccntmract common.Address, isTransferAdmin bool) []byte {
 	if isTransferAdmin {
 		return append(ccntmract[:], TRANSFER...)
 	} else {
 		return append(ccntmract[:], ADMIN...)
 	}
-}
-
-func notifyParamSetSuccess(native *native.NativeService, ccntmract common.Address, params Params) {
-	native.Notifications = append(native.Notifications,
-		&event.NotifyEventInfo{
-			CcntmractAddress: ccntmract,
-			States:          []interface{}{SET_PARAM, params},
-		})
 }
 
 func getStorageParam(native *native.NativeService, key []byte) (*Params, error) {
@@ -83,7 +73,7 @@ func getStorageParam(native *native.NativeService, key []byte) (*Params, error) 
 	return params, nil
 }
 
-func getStorageAdmin(native *native.NativeService, key []byte) (*Admin, error) {
+func GetStorageAdmin(native *native.NativeService, key []byte) (*Admin, error) {
 	item, err := utils.GetStorageItem(native, key)
 	if err != nil {
 		return nil, err

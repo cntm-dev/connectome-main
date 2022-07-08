@@ -150,7 +150,7 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 	}
 
 	paramData, _ := json.Marshal(params)
-	fmt.Printf("Invoke:%s Params:%s\n", ccntmractAddr.ToBase58(), paramData)
+	fmt.Printf("Invoke:%x Params:%s\n", ccntmractAddr[:], paramData)
 
 	if ctx.IsSet(utils.GetFlagName(utils.CcntmractPrepareInvokeFlag)) {
 		preResult, err := utils.PrepareInvokeNeoVMCcntmract(cversion, ccntmractAddr, params)
