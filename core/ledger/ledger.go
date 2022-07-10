@@ -23,7 +23,6 @@ import (
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/core/store"
@@ -53,12 +52,8 @@ func (self *Ledger) GetStore() store.LedgerStore {
 	return self.ldgStore
 }
 
-func (self *Ledger) Init(defaultBookkeeper []keypair.PublicKey) error {
-	genesisBlock, err := genesis.GenesisBlockInit(defaultBookkeeper)
-	if err != nil {
-		return fmt.Errorf("genesisBlock error %s", err)
-	}
-	err = self.ldgStore.InitLedgerStoreWithGenesisBlock(genesisBlock, defaultBookkeeper)
+func (self *Ledger) Init(defaultBookkeeper []keypair.PublicKey, genesisBlock *types.Block) error {
+	err := self.ldgStore.InitLedgerStoreWithGenesisBlock(genesisBlock, defaultBookkeeper)
 	if err != nil {
 		return fmt.Errorf("InitLedgerStoreWithGenesisBlock error %s", err)
 	}

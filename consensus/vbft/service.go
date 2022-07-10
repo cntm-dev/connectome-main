@@ -224,7 +224,7 @@ func (self *Server) NewConsensusPayload(payload *p2pmsg.ConsensusPayload) {
 	}
 	peerIdx, present := self.peerPool.GetPeerIndex(peerID)
 	if !present {
-		log.Errorf("invalid consensus node: %s", peerID.String())
+		log.Errorf("invalid consensus node: %s", peerID)
 		return
 	}
 	if self.peerPool.isNewPeer(peerIdx) {
@@ -237,7 +237,7 @@ func (self *Server) NewConsensusPayload(payload *p2pmsg.ConsensusPayload) {
 			payload:  payload,
 		}
 	} else {
-		log.Errorf("consensus msg without receiver: %d node: %s", peerIdx, peerID.String())
+		log.Errorf("consensus msg without receiver: %d node: %s", peerIdx, peerID)
 		return
 	}
 }
@@ -329,13 +329,13 @@ func (self *Server) updateChainConfig() error {
 	// 2. remove nonparticipation consensus node
 	// 3. update statemgr peers
 	// 4. reset remove peer connections, create new connections with new peers
-	peermap := make(map[vconfig.NodeID]uint32)
+	peermap := make(map[string]uint32)
 	for _, p := range self.config.Peers {
 		peermap[p.ID] = p.Index
 		_, present := self.peerPool.GetPeerIndex(p.ID)
 		if !present {
 			// check if peer pubkey support VRF
-			if pk, err := p.ID.Pubkey(); err != nil {
+			if pk, err := vconfig.Pubkey(p.ID); err != nil {
 				return fmt.Errorf("failed to parse peer %d PeerID: %s", p.Index, err)
 			} else if !vrf.ValidatePublicKey(pk) {
 				return fmt.Errorf("peer %d: invalid peer pubkey for VRF", p.Index)
@@ -344,7 +344,7 @@ func (self *Server) updateChainConfig() error {
 			if err := self.peerPool.addPeer(p); err != nil {
 				return fmt.Errorf("failed to add peer %d: %s", p.Index, err)
 			}
-			publickey, err := p.ID.Pubkey()
+			publickey, err := vconfig.Pubkey(p.ID)
 			if err != nil {
 				log.Errorf("Pubkey failed: %v", err)
 				return fmt.Errorf("Pubkey failed: %v", err)
@@ -360,7 +360,7 @@ func (self *Server) updateChainConfig() error {
 						self.Index, peerIdx, err)
 				}
 			}()
-			log.Infof("updateChainConfig add peer index%v,id:%v", p.ID.String(), p.Index)
+			log.Infof("updateChainConfig add peer index%v,id:%v", p.ID, p.Index)
 		}
 	}
 
@@ -399,7 +399,7 @@ func (self *Server) initialize() error {
 	if err != nil {
 		return fmt.Errorf("faied to get account pubkey: %s", err)
 	}
-	log.Infof("server: %s starting", selfNodeId.String())
+	log.Infof("server: %s starting", selfNodeId)
 
 	store, err := OpenBlockStore(self.ledger)
 	if err != nil {
@@ -434,7 +434,7 @@ func (self *Server) initialize() error {
 	// add all consensus peers to peer_pool
 	for _, p := range self.config.Peers {
 		// check if peer pubkey support VRF
-		if pk, err := p.ID.Pubkey(); err != nil {
+		if pk, err := vconfig.Pubkey(p.ID); err != nil {
 			return fmt.Errorf("failed to parse peer %d PeerID: %s", p.Index, err)
 		} else if !vrf.ValidatePublicKey(pk) {
 			return fmt.Errorf("peer %d: invalid peer pubkey for VRF", p.Index)
@@ -443,7 +443,7 @@ func (self *Server) initialize() error {
 		if err := self.peerPool.addPeer(p); err != nil {
 			return fmt.Errorf("failed to add peer %d: %s", p.Index, err)
 		}
-		log.Infof("added peer: %s", p.ID.String())
+		log.Infof("added peer: %s", p.ID)
 	}
 
 	//index equal math.MaxUint32  is noconsensus node
@@ -544,7 +544,7 @@ func (self *Server) run(peerPubKey keypair.PublicKey) error {
 	}
 	peerIdx, present := self.peerPool.GetPeerIndex(peerID)
 	if !present {
-		return fmt.Errorf("invalid consensus node: %s", peerID.String())
+		return fmt.Errorf("invalid consensus node: %s", peerID)
 	}
 
 	// broadcast heartbeat
@@ -2121,8 +2121,8 @@ func (self *Server) makeProposal(blkNum uint32, forEmpty bool) error {
 		//add transaction invoke governance native commit_pos ccntmract
 		if self.checkNeedUpdateChainConfig(self.currentBlockNum) {
 			sysTxs = append(sysTxs, self.creategovernaceTransaction(blkNum))
-			forEmpty = true
 		}
+		forEmpty = true
 		cfg = chainconfig
 		cfg.View++
 	}

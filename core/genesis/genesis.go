@@ -23,14 +23,18 @@ import (
 	"fmt"
 	"time"
 
+	"bytes"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
-	vconfig "github.com/cntmio/cntmology/consensus/vbft/config"
+	"github.com/cntmio/cntmology/consensus/vbft/config"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/core/utils"
-	ninit "github.com/cntmio/cntmology/smartccntmract/service/native/init"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/global_params"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/governance"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	nutils "github.com/cntmio/cntmology/smartccntmract/service/native/utils"
+	"github.com/cntmio/cntmology/smartccntmract/states"
 	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 )
 
@@ -50,15 +54,20 @@ var GenBlockTime = (config.DEFAULT_GEN_BLOCK_TIME * time.Second)
 
 var GenesisBookkeepers []keypair.PublicKey
 
-// GenesisBlockInit returns the genesis block with default consensus bookkeeper list
-func GenesisBlockInit(defaultBookkeeper []keypair.PublicKey) (*types.Block, error) {
+// BuildGenesisBlock returns the genesis block with default consensus bookkeeper list
+func BuildGenesisBlock(defaultBookkeeper []keypair.PublicKey, genesisConfig *config.GenesisConfig) (*types.Block, error) {
 	//getBookkeeper
 	GenesisBookkeepers = defaultBookkeeper
 	nextBookkeeper, err := types.AddressFromBookkeepers(defaultBookkeeper)
 	if err != nil {
-		return nil, errors.New("[Block],GenesisBlockInit err with GetBookkeeperAddress")
+		return nil, errors.New("[Block],BuildGenesisBlock err with GetBookkeeperAddress")
 	}
-	consensusPayload, err := vconfig.GenesisConsensusPayload(newConfigInit().Hash(), 0)
+	conf := bytes.NewBuffer(nil)
+	if genesisConfig.VBFT != nil {
+		genesisConfig.VBFT.Serialize(conf)
+	}
+	govConfig := newGoverConfigInit(conf.Bytes())
+	consensusPayload, err := vconfig.GenesisConsensusPayload(govConfig.Hash(), 0)
 	if err != nil {
 		return nil, fmt.Errorf("consensus genesus init failed: %s", err)
 	}
@@ -141,37 +150,31 @@ func deployOntIDCcntmract() *types.Transaction {
 }
 
 func newGoverningInit() *types.Transaction {
+	return buildInitTransaction(nutils.OntCcntmractAddress, cntm.INIT_NAME, nil)
+}
+
+func buildInitTransaction(addr common.Address, initMethod string, args []byte) *types.Transaction {
+	init := states.Ccntmract{Address: addr, Method: initMethod, Args: args}
+	bf := new(bytes.Buffer)
+	init.Serialize(bf)
+
 	vmCode := stypes.VmCode{
 		VmType: stypes.Native,
-		Code:   ninit.cntm_INIT_BYTES,
+		Code:   bf.Bytes(),
 	}
+
 	tx := utils.NewInvokeTransaction(vmCode)
 	return tx
 }
 
 func newUtilityInit() *types.Transaction {
-	vmCode := stypes.VmCode{
-		VmType: stypes.Native,
-		Code:   ninit.cntm_INIT_BYTES,
-	}
-	tx := utils.NewInvokeTransaction(vmCode)
-	return tx
+	return buildInitTransaction(nutils.OngCcntmractAddress, cntm.INIT_NAME, nil)
 }
 
 func newParamInit() *types.Transaction {
-	vmCode := stypes.VmCode{
-		VmType: stypes.Native,
-		Code:   ninit.PARAM_INIT_BYTES,
-	}
-	tx := utils.NewInvokeTransaction(vmCode)
-	return tx
+	return buildInitTransaction(nutils.ParamCcntmractAddress, global_params.INIT_NAME, nil)
 }
 
-func newConfigInit() *types.Transaction {
-	vmCode := stypes.VmCode{
-		VmType: stypes.Native,
-		Code:   ninit.INIT_CONFIG_BYTES,
-	}
-	tx := utils.NewInvokeTransaction(vmCode)
-	return tx
+func newGoverConfigInit(config []byte) *types.Transaction {
+	return buildInitTransaction(nutils.GovernanceCcntmractAddress, governance.INIT_CONFIG, config)
 }

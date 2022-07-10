@@ -20,10 +20,7 @@ package init
 
 import (
 	"bytes"
-	"fmt"
-
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/auth"
 	params "github.com/cntmio/cntmology/smartccntmract/service/native/global_params"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/governance"
@@ -35,11 +32,7 @@ import (
 )
 
 var (
-	cntm_INIT_BYTES    = InitBytes(utils.OntCcntmractAddress, cntm.INIT_NAME)
-	cntm_INIT_BYTES    = InitBytes(utils.OngCcntmractAddress, cntm.INIT_NAME)
-	PARAM_INIT_BYTES  = InitBytes(utils.ParamCcntmractAddress, params.INIT_NAME)
 	COMMIT_DPOS_BYTES = InitBytes(utils.GovernanceCcntmractAddress, governance.COMMIT_DPOS)
-	INIT_CONFIG_BYTES = InitConfigBytes(utils.GovernanceCcntmractAddress, governance.INIT_CONFIG)
 )
 
 func init() {
@@ -53,17 +46,6 @@ func init() {
 
 func InitBytes(addr common.Address, method string) []byte {
 	init := states.Ccntmract{Address: addr, Method: method}
-	bf := new(bytes.Buffer)
-	init.Serialize(bf)
-	return bf.Bytes()
-}
-
-func InitConfigBytes(addr common.Address, method string) []byte {
-	configbf := new(bytes.Buffer)
-	if err := config.DefConfig.Genesis.VBFT.Serialize(configbf); err != nil {
-		fmt.Println("vbft config serialize failed")
-	}
-	init := states.Ccntmract{Address: addr, Method: method, Args: configbf.Bytes()}
 	bf := new(bytes.Buffer)
 	init.Serialize(bf)
 	return bf.Bytes()
