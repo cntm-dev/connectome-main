@@ -45,13 +45,13 @@ func getParamStorageItem(params *Params) *cstates.StorageItem {
 	return &cstates.StorageItem{Value: bf.Bytes()}
 }
 
-func getParamKey(ccntmract common.Address, valueType paramType) []byte {
+func generateParamKey(ccntmract common.Address, valueType paramType) []byte {
 	key := append(ccntmract[:], PARAM...)
 	key = append(key[:], byte(valueType))
 	return key
 }
 
-func GetAdminKey(ccntmract common.Address, isTransferAdmin bool) []byte {
+func GenerateAdminKey(ccntmract common.Address, isTransferAdmin bool) []byte {
 	if isTransferAdmin {
 		return append(ccntmract[:], TRANSFER...)
 	} else {

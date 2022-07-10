@@ -1,6 +1,6 @@
 
 <h1 align="center">Ontology </h1>
-<h4 align="center">Version 0.81 </h4>
+<h4 align="center">Version 0.82 </h4>
 
 [![GoDoc](https://godoc.org/github.com/cntmio/cntmology?status.svg)](https://godoc.org/github.com/cntmio/cntmology)
 [![Go Report Card](https://goreportcard.com/badge/github.com/cntmio/cntmology)](https://goreportcard.com/report/github.com/cntmio/cntmology)
