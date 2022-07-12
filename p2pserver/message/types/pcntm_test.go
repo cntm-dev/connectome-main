@@ -60,7 +60,7 @@ func TestPcntmSerializationDeserialization(t *testing.T) {
 		t.Error(err)
 		return
 	} else {
-		t.Log("pcntm Test_Deserialization sucessful")
+		t.Log("pcntm Test_Deserialization successful")
 	}
 
 	t.Log("deserialize pcntm message, msg.Height = ", demsg.Height)
