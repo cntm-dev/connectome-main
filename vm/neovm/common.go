@@ -196,6 +196,8 @@ func NewStackItem(data interface{}) types.StackItems {
 		stackItem = data.(*types.Integer)
 	case *types.Array:
 		stackItem = data.(*types.Array)
+	case *types.Map:
+		stackItem = data.(*types.Map)
 	case *types.Boolean:
 		stackItem = data.(*types.Boolean)
 	case *types.ByteArray:
@@ -251,6 +253,16 @@ func PopBoolean(e *ExecutionEngine) bool {
 }
 
 func PopArray(e *ExecutionEngine) []types.StackItems {
+	x := PopStackItem(e)
+	return x.GetArray()
+}
+
+func PopMap(e *ExecutionEngine) map[types.StackItems]types.StackItems {
+	x := PopStackItem(e)
+	return x.GetMap()
+}
+
+func Pop(e *ExecutionEngine) []types.StackItems {
 	x := PopStackItem(e)
 	return x.GetArray()
 }

@@ -80,3 +80,7 @@ func (this *ByteArray) GetArray() []StackItems {
 func (this *ByteArray) GetStruct() []StackItems {
 	return []StackItems{this}
 }
+
+func (this *ByteArray) GetMap() map[StackItems]StackItems {
+	return nil
+}

@@ -59,7 +59,6 @@ type DbftService struct {
 }
 
 func NewDbftService(bkAccount *account.Account, txpool, p2p *actor.PID) (*DbftService, error) {
-
 	service := &DbftService{
 		Account:       bkAccount,
 		timer:         time.NewTimer(time.Second * 15),
@@ -148,8 +147,6 @@ func (this *DbftService) Halt() error {
 func (self *DbftService) handleBlockPersistCompleted(block *types.Block) {
 	log.Infof("persist block: %x", block.Hash())
 	self.p2p.Broadcast(block.Hash())
-
-	self.blockReceivedTime = time.Now()
 
 	self.InitializeConsensus(0)
 }
@@ -304,7 +301,6 @@ func (ds *DbftService) InitializeConsensus(viewNum byte) error {
 			ds.timer.Reset(genesis.GenBlockTime - span)
 		}
 	} else {
-
 		//backup peer
 		ds.ccntmext.State = Backup
 		ds.timerHeight = ds.ccntmext.Height

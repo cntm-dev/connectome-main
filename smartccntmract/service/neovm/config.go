@@ -83,6 +83,9 @@ var (
 	RUNTIME_NOTIFY_NAME       = "Neo.Runtime.Notify"
 	RUNTIME_LOG_NAME          = "Neo.Runtime.Log"
 
+	RUNTIME_SERIALIZE   = "Neo.Runtime.Serialize"
+	RUNTIME_DESERIALIZE = "Neo.Runtime.Deserialize"
+
 	GETSCRIPTCcntmAINER_NAME     = "System.ExecutionEngine.GetScriptCcntmainer"
 	GETEXECUTINGSCRIPTHASH_NAME = "System.ExecutionEngine.GetExecutingScriptHash"
 	GETCALLINGSCRIPTHASH_NAME   = "System.ExecutionEngine.GetCallingScriptHash"
