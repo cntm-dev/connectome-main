@@ -25,6 +25,8 @@ import (
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/constants"
+	"github.com/cntmio/cntmology/common/log"
 	scommon "github.com/cntmio/cntmology/core/store/common"
 	ctypes "github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
@@ -35,16 +37,6 @@ import (
 const (
 	TRANSFER_FLAG byte = 1
 	APPROVE_FLAG  byte = 2
-)
-
-var (
-	cntm_NAME           = "cntm Token"
-	cntm_SYMBOL         = "cntm"
-	cntm_DECIMALS       = 1
-	DECREMENT_INTERVAL = uint32(2000000)
-	GENERATION_AMOUNT  = [17]uint32{80, 70, 60, 50, 40, 30, 20, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10}
-	GL                 = uint32(len(GENERATION_AMOUNT))
-	cntm_TOTAL_SUPPLY   = 1000000000
 )
 
 func InitOnt() {
@@ -65,12 +57,12 @@ func RegisterOntCcntmract(native *native.NativeService) {
 }
 
 func OntInit(native *native.NativeService) ([]byte, error) {
-	booKeepers, err := config.DefConfig.GetBookkeepers()
+	bookkeepers, err := config.DefConfig.GetBookkeepers()
 	if err != nil {
 		return utils.BYTE_FALSE, fmt.Errorf("GetBookkeepers error:%s", err)
 	}
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-	amount, err := utils.GetStorageUInt64(native, GetTotalSupplyKey(ccntmract))
+	amount, err := utils.GetStorageUInt64(native, GenTotalSupplyKey(ccntmract))
 	if err != nil {
 		return utils.BYTE_FALSE, err
 	}
@@ -79,14 +71,15 @@ func OntInit(native *native.NativeService) ([]byte, error) {
 		return utils.BYTE_FALSE, errors.NewErr("Init cntm has been completed!")
 	}
 
-	assign := uint64(cntm_TOTAL_SUPPLY / len(booKeepers))
-	item := utils.GetUInt64StorageItem(assign)
-	for _, v := range booKeepers {
+	assign := constants.cntm_TOTAL_SUPPLY / uint64(len(bookkeepers))
+	item := utils.GenUInt64StorageItem(assign)
+	for _, v := range bookkeepers {
 		address := ctypes.AddressFromPubKey(v)
-		native.CloneCache.Add(scommon.ST_STORAGE, append(ccntmract[:], address[:]...), item)
+		balanceKey := GenBalanceKey(ccntmract, address)
+		native.CloneCache.Add(scommon.ST_STORAGE, balanceKey, item)
 		AddNotifications(native, ccntmract, &State{To: address, Value: assign})
 	}
-	native.CloneCache.Add(scommon.ST_STORAGE, GetTotalSupplyKey(ccntmract), utils.GetUInt64StorageItem(uint64(cntm_TOTAL_SUPPLY)))
+	native.CloneCache.Add(scommon.ST_STORAGE, GenTotalSupplyKey(ccntmract), utils.GenUInt64StorageItem(constants.cntm_TOTAL_SUPPLY))
 
 	return utils.BYTE_TRUE, nil
 }
@@ -106,21 +99,11 @@ func OntTransfer(native *native.NativeService) ([]byte, error) {
 			return utils.BYTE_FALSE, err
 		}
 
-		fromStartHeight, err := getStartHeight(native, ccntmract, v.From)
-		if err != nil {
+		if err := grantOng(native, ccntmract, v.From, fromBalance); err != nil {
 			return utils.BYTE_FALSE, err
 		}
 
-		toStartHeight, err := getStartHeight(native, ccntmract, v.To)
-		if err != nil {
-			return utils.BYTE_FALSE, err
-		}
-
-		if err := grantOng(native, ccntmract, v.From, fromBalance, fromStartHeight); err != nil {
-			return utils.BYTE_FALSE, err
-		}
-
-		if err := grantOng(native, ccntmract, v.To, toBalance, toStartHeight); err != nil {
+		if err := grantOng(native, ccntmract, v.To, toBalance); err != nil {
 			return utils.BYTE_FALSE, err
 		}
 
@@ -138,7 +121,14 @@ func OntTransferFrom(native *native.NativeService) ([]byte, error) {
 		return utils.BYTE_FALSE, nil
 	}
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-	if err := TransferedFrom(native, ccntmract, state); err != nil {
+	fromBalance, toBalance, err := TransferedFrom(native, ccntmract, state)
+	if err != nil {
+		return utils.BYTE_FALSE, err
+	}
+	if err := grantOng(native, ccntmract, state.From, fromBalance); err != nil {
+		return utils.BYTE_FALSE, err
+	}
+	if err := grantOng(native, ccntmract, state.To, toBalance); err != nil {
 		return utils.BYTE_FALSE, err
 	}
 	AddNotifications(native, ccntmract, &State{From: state.From, To: state.To, Value: state.Value})
@@ -153,29 +143,29 @@ func OntApprove(native *native.NativeService) ([]byte, error) {
 	if state.Value == 0 {
 		return utils.BYTE_FALSE, nil
 	}
-	if err := IsApproveValid(native, state); err != nil {
-		return utils.BYTE_FALSE, err
+	if native.CcntmextRef.CheckWitness(state.From) == false {
+		return utils.BYTE_FALSE, errors.NewErr("authentication failed!")
 	}
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-	native.CloneCache.Add(scommon.ST_STORAGE, GetApproveKey(ccntmract, state.From, state.To), utils.GetUInt64StorageItem(state.Value))
+	native.CloneCache.Add(scommon.ST_STORAGE, GenApproveKey(ccntmract, state.From, state.To), utils.GenUInt64StorageItem(state.Value))
 	return utils.BYTE_TRUE, nil
 }
 
 func OntName(native *native.NativeService) ([]byte, error) {
-	return []byte(cntm_NAME), nil
+	return []byte(constants.cntm_NAME), nil
 }
 
 func OntDecimals(native *native.NativeService) ([]byte, error) {
-	return big.NewInt(int64(cntm_DECIMALS)).Bytes(), nil
+	return big.NewInt(int64(constants.cntm_DECIMALS)).Bytes(), nil
 }
 
 func OntSymbol(native *native.NativeService) ([]byte, error) {
-	return []byte(cntm_SYMBOL), nil
+	return []byte(constants.cntm_SYMBOL), nil
 }
 
 func OntTotalSupply(native *native.NativeService) ([]byte, error) {
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-	amount, err := utils.GetStorageUInt64(native, GetTotalSupplyKey(ccntmract))
+	amount, err := utils.GetStorageUInt64(native, GenTotalSupplyKey(ccntmract))
 	if err != nil {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[OntTotalSupply] get totalSupply error!")
 	}
@@ -203,9 +193,9 @@ func GetBalanceValue(native *native.NativeService, flag byte) ([]byte, error) {
 		if err := to.Deserialize(buf); err != nil {
 			return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[GetBalanceValue] get to address error!")
 		}
-		key = GetApproveKey(ccntmract, from, to)
+		key = GenApproveKey(ccntmract, from, to)
 	} else if flag == TRANSFER_FLAG {
-		key = GetTransferKey(ccntmract, from)
+		key = GenBalanceKey(ccntmract, from)
 	}
 	amount, err := utils.GetStorageUInt64(native, key)
 	if err != nil {
@@ -214,54 +204,49 @@ func GetBalanceValue(native *native.NativeService, flag byte) ([]byte, error) {
 	return big.NewInt(int64(amount)).Bytes(), nil
 }
 
-func grantOng(native *native.NativeService, ccntmract, address common.Address, balance uint64, startHeight uint32) error {
-	var amount uint32 = 0
-	ustart := startHeight / DECREMENT_INTERVAL
-	if ustart < GL {
-		istart := startHeight % DECREMENT_INTERVAL
-		uend := native.Height / DECREMENT_INTERVAL
-		iend := native.Height % DECREMENT_INTERVAL
-		if uend >= GL {
-			uend = GL
-			iend = 0
-		}
-		if iend == 0 {
-			uend--
-			iend = DECREMENT_INTERVAL
-		}
-		for {
-			if ustart >= uend {
-				break
-			}
-			amount += (DECREMENT_INTERVAL - istart) * GENERATION_AMOUNT[ustart]
-			ustart++
-			istart = 0
-		}
-		amount += (iend - istart) * GENERATION_AMOUNT[ustart]
-	}
-
-	args, err := getApproveArgs(native, ccntmract, utils.OngCcntmractAddress, address, balance, uint64(amount))
+func grantOng(native *native.NativeService, ccntmract, address common.Address, balance uint64) error {
+	startOffset, err := getUnboundOffset(native, ccntmract, address)
 	if err != nil {
 		return err
 	}
-
-	if _, err := native.CcntmextRef.AppCall(utils.OngCcntmractAddress, "approve", []byte{}, args); err != nil {
-		return err
+	if native.Time <= constants.GENESIS_BLOCK_TIMESTAMP {
+		return nil
+	}
+	endOffset := native.Time - constants.GENESIS_BLOCK_TIMESTAMP
+	if endOffset < startOffset {
+		errstr := fmt.Sprintf("grant Ong error: wrcntm timestamp endOffset: %d < startOffset: %d", endOffset, startOffset)
+		log.Error(errstr)
+		return errors.NewErr(errstr)
+	} else if endOffset == startOffset {
+		return nil
 	}
 
-	native.CloneCache.Add(scommon.ST_STORAGE, getAddressHeightKey(ccntmract, address), utils.GetUInt32StorageItem(native.Height))
+	if balance != 0 {
+		value := utils.CalcUnbindOng(balance, startOffset, endOffset)
+
+		args, err := getApproveArgs(native, ccntmract, utils.OngCcntmractAddress, address, value)
+		if err != nil {
+			return err
+		}
+
+		if _, err := native.CcntmextRef.AppCall(utils.OngCcntmractAddress, "approve", []byte{}, args); err != nil {
+			return err
+		}
+	}
+
+	native.CloneCache.Add(scommon.ST_STORAGE, genAddressUnboundOffsetKey(ccntmract, address), utils.GenUInt32StorageItem(endOffset))
 	return nil
 }
 
-func getApproveArgs(native *native.NativeService, ccntmract, cntmCcntmract, address common.Address, balance, amount uint64) ([]byte, error) {
+func getApproveArgs(native *native.NativeService, ccntmract, cntmCcntmract, address common.Address, value uint64) ([]byte, error) {
 	bf := new(bytes.Buffer)
 	approve := &State{
 		From:  ccntmract,
 		To:    address,
-		Value: balance * amount,
+		Value: value,
 	}
 
-	stateValue, err := utils.GetStorageUInt64(native, GetApproveKey(cntmCcntmract, approve.From, approve.To))
+	stateValue, err := utils.GetStorageUInt64(native, GenApproveKey(cntmCcntmract, approve.From, approve.To))
 	if err != nil {
 		return nil, err
 	}

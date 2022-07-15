@@ -27,6 +27,7 @@ import (
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/consensus/vbft/config"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/core/utils"
@@ -52,6 +53,10 @@ var (
 
 var GenBlockTime = (config.DEFAULT_GEN_BLOCK_TIME * time.Second)
 
+var INIT_PARAM = map[string]string{
+	"gasPrice": "0",
+}
+
 var GenesisBookkeepers []keypair.PublicKey
 
 // BuildGenesisBlock returns the genesis block with default consensus bookkeeper list
@@ -76,7 +81,7 @@ func BuildGenesisBlock(defaultBookkeeper []keypair.PublicKey, genesisConfig *con
 		Version:          BlockVersion,
 		PrevBlockHash:    common.Uint256{},
 		TransactionsRoot: common.Uint256{},
-		Timestamp:        uint32(uint32(time.Date(2017, time.February, 23, 0, 0, 0, 0, time.UTC).Unix())),
+		Timestamp:        constants.GENESIS_BLOCK_TIMESTAMP,
 		Height:           uint32(0),
 		ConsensusData:    GenesisNonce,
 		NextBookkeeper:   nextBookkeeper,
@@ -172,7 +177,13 @@ func newUtilityInit() *types.Transaction {
 }
 
 func newParamInit() *types.Transaction {
-	return buildInitTransaction(nutils.ParamCcntmractAddress, global_params.INIT_NAME, nil)
+	initParams := new(global_params.Params)
+	for k, v := range INIT_PARAM {
+		initParams.SetParam(&global_params.Param{k, v})
+	}
+	bf := new(bytes.Buffer)
+	initParams.Serialize(bf)
+	return buildInitTransaction(nutils.ParamCcntmractAddress, global_params.INIT_NAME, bf.Bytes())
 }
 
 func newGoverConfigInit(config []byte) *types.Transaction {
