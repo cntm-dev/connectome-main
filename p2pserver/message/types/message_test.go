@@ -10,26 +10,32 @@
  * The cntmology is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package types
 
 import (
+	"bytes"
 	"testing"
 
-	cm "github.com/cntmio/cntmology/common"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestBlkReqSerializationDeserialization(t *testing.T) {
-	var msg BlocksReq
-	msg.HeaderHashCount = 1
+func TestMsgHdrSerializationDeserialization(t *testing.T) {
+	hdr := newMessageHeader("hdrtest", 0, CheckSum(nil))
 
-	hashstr := "8932da73f52b1e22f30c609988ed1f693b6144f74fed9a2a20869afa7abfdf5e"
-	bhash, _ := cm.HexToBytes(hashstr)
-	copy(msg.HashStart[:], bhash)
+	buf := bytes.NewBuffer(nil)
+	err := writeMessageHeader(buf, hdr)
+	if err != nil {
+		return
+	}
 
-	MessageTest(t, &msg)
+	dehdr, err := readMessageHeader(buf)
+	assert.Nil(t, err)
+
+	assert.Equal(t, hdr, dehdr)
+
 }

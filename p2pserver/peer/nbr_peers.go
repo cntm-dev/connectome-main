@@ -23,6 +23,7 @@ import (
 	"sync"
 
 	"github.com/cntmio/cntmology/p2pserver/common"
+	"github.com/cntmio/cntmology/p2pserver/message/types"
 )
 
 //NbrPeers: The neigbor list
@@ -32,12 +33,12 @@ type NbrPeers struct {
 }
 
 //Broadcast tranfer msg buffer to all establish peer
-func (this *NbrPeers) Broadcast(buf []byte, isConsensus bool) {
+func (this *NbrPeers) Broadcast(msg types.Message, isConsensus bool) {
 	this.RLock()
 	defer this.RUnlock()
 	for _, node := range this.List {
 		if node.syncState == common.ESTABLISH && node.GetRelay() == true {
-			node.Send(buf, isConsensus)
+			node.Send(msg, isConsensus)
 		}
 	}
 }

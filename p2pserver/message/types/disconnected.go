@@ -15,31 +15,25 @@
  * You should have received a copy of the GNU Lesser General Public License
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package types
 
 import (
-	"testing"
+	"github.com/cntmio/cntmology/p2pserver/common"
 )
 
-func TestMsgHdrSerializationDeserialization(t *testing.T) {
-	var msg MsgHdr
-	var sum []byte
-	sum = []byte{0x5d, 0xf6, 0xe0, 0xe2}
-	msg.Init("hdrtest", sum, 0)
+type Disconnected struct{}
 
-	buf, err := msg.Serialization()
-	if err != nil {
-		return
-	}
+//Serialize message payload
+func (this Disconnected) Serialization() ([]byte, error) {
+	return nil, nil
+}
 
-	var demsg MsgHdr
-	err = demsg.Deserialization(buf)
-	if err != nil {
-		t.Error(err)
-		return
-	} else {
-		t.Log("Message Header Test_Deserialization successful")
-	}
-	t.Log("cmd is ", msg.CMD)
+func (this Disconnected) CmdType() string {
+	return common.DISCONNECT_TYPE
+}
 
+//Deserialize message payload
+func (this *Disconnected) Deserialization(p []byte) error {
+	return nil
 }

@@ -27,6 +27,7 @@ import (
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
 	netActor "github.com/cntmio/cntmology/p2pserver/actor/server"
+	ptypes "github.com/cntmio/cntmology/p2pserver/message/types"
 	txpool "github.com/cntmio/cntmology/txnpool/common"
 )
 
@@ -72,7 +73,7 @@ func (self *P2PActor) Broadcast(msg interface{}) {
 	self.P2P.Tell(msg)
 }
 
-func (self *P2PActor) Transmit(target keypair.PublicKey, msg []byte) {
+func (self *P2PActor) Transmit(target keypair.PublicKey, msg ptypes.Message) {
 	self.P2P.Tell(&netActor.TransmitConsensusMsgReq{
 		Target: target,
 		Msg:    msg,
