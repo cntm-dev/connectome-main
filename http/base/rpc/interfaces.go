@@ -42,7 +42,7 @@ func GetGenerateBlockTime(params []interface{}) map[string]interface{} {
 
 func GetBestBlockHash(params []interface{}) map[string]interface{} {
 	hash := bactor.CurrentBlockHash()
-	return responseSuccess(common.ToHexString(hash.ToArray()))
+	return responseSuccess(hash.ToHexString())
 }
 
 // Input JSON string examples for getblock method as following:
@@ -397,12 +397,8 @@ func GetBlockHeightByTxHash(params []interface{}) map[string]interface{} {
 	// tx hash
 	case string:
 		str := params[0].(string)
-		hex, err := hex.DecodeString(str)
+		hash, err := common.Uint256FromHexString(str)
 		if err != nil {
-			return responsePack(berr.INVALID_PARAMS, "")
-		}
-		var hash common.Uint256
-		if err := hash.Deserialize(bytes.NewReader(hex)); err != nil {
 			return responsePack(berr.INVALID_PARAMS, "")
 		}
 		height, tx, err := bactor.GetTxnWithHeightByTxHash(hash)

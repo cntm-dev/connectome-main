@@ -78,18 +78,11 @@ func pushSmartCodeEvent(v interface{}) {
 	go func() {
 		switch object := rs.Result.(type) {
 		case *event.LogEventArgs:
-			type logEventArgs struct {
-				TxHash          string
-				CcntmractAddress string
-				Message         string
-			}
-			hash := object.TxHash
-			addr := object.CcntmractAddress.ToHexString()
-			pushEvent(map[string]bool{addr: true}, rs.TxHash, rs.Error, rs.Action,
-				logEventArgs{common.ToHexString(hash[:]), addr, object.Message})
+			ccntmractAddrs, evts := bcomn.GetLogEvent(object)
+			pushEvent(ccntmractAddrs, rs.TxHash.ToHexString(), rs.Error, rs.Action, evts)
 		case *event.ExecuteNotify:
 			ccntmractAddrs, notify := bcomn.GetExecuteNotify(object)
-			pushEvent(ccntmractAddrs, rs.TxHash, rs.Error, rs.Action, notify)
+			pushEvent(ccntmractAddrs, rs.TxHash.ToHexString(), rs.Error, rs.Action, notify)
 		default:
 		}
 	}()
