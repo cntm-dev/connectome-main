@@ -38,9 +38,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
-	sstates "github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
-	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 )
 
 //HandleDeployTransaction deal with smart ccntmract deploy transaction
@@ -48,20 +46,13 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, stateBa
 	tx *types.Transaction, block *types.Block, eventStore scommon.EventStore) error {
 	deploy := tx.Payload.(*payload.DeployCode)
 	txHash := tx.Hash()
-	originAddress := deploy.Code.AddressFromVmCode()
-
+	address := types.AddressFromVmCode(deploy.Code)
 	var (
 		notifies []*event.NotifyEventInfo
 		err      error
 	)
-	// mapping native ccntmract origin address to target address
-	if deploy.Code.VmType == stypes.Native {
-		targetAddress, err := common.AddressParseFromBytes(deploy.Code.Code)
-		if err != nil {
-			return fmt.Errorf("Invalid native ccntmract address:%s", err)
-		}
-		originAddress = targetAddress
-	} else {
+
+	if tx.GasPrice != 0 {
 		if err := isBalanceSufficient(tx, stateBatch); err != nil {
 			return err
 		}
@@ -83,7 +74,7 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, stateBa
 	}
 
 	// store ccntmract message
-	err = stateBatch.TryGetOrAdd(scommon.ST_CcntmRACT, originAddress[:], deploy)
+	err = stateBatch.TryGetOrAdd(scommon.ST_CcntmRACT, address[:], deploy)
 	if err != nil {
 		return err
 	}
@@ -97,10 +88,11 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 	tx *types.Transaction, block *types.Block, eventStore scommon.EventStore) error {
 	invoke := tx.Payload.(*payload.InvokeCode)
 	txHash := tx.Hash()
-	code := invoke.Code.Code
+	code := invoke.Code
 	sysTransFlag := bytes.Compare(code, ninit.COMMIT_DPOS_BYTES) == 0 || block.Header.Height == 0
 
-	if !sysTransFlag && tx.GasPrice != 0 {
+	isCharge := !sysTransFlag && tx.GasPrice != 0
+	if isCharge {
 		if err := isBalanceSufficient(tx, stateBatch); err != nil {
 			return err
 		}
@@ -119,19 +111,22 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 		Config:     config,
 		CloneCache: cache,
 		Store:      store,
-		Code:       invoke.Code,
 		Gas:        tx.GasLimit,
 	}
 
 	//start the smart ccntmract executive function
-	_, err := sc.Execute()
+	engine, err := sc.NewExecuteEngine(invoke.Code)
+	if err != nil {
+		return err
+	}
 
+	_, err = engine.Invoke()
 	if err != nil {
 		return err
 	}
 
 	var notifies []*event.NotifyEventInfo
-	if !sysTransFlag {
+	if isCharge {
 		totalGas := tx.GasLimit - sc.Gas
 		if totalGas < neovm.TRANSACTION_GAS {
 			totalGas = neovm.TRANSACTION_GAS
@@ -166,24 +161,11 @@ func SaveNotify(eventStore scommon.EventStore, txHash common.Uint256, notifies [
 	return nil
 }
 
-//HandleClaimTransaction deal with cntm claim transaction
-func (self *StateStore) HandleClaimTransaction(stateBatch *statestore.StateBatch, tx *types.Transaction) error {
-	//TODO
-	return nil
-}
-
-func genNativeTransferCode(ccntmract, from, to common.Address, value uint64) stypes.VmCode {
+func genNativeTransferCode(from, to common.Address, value uint64) []byte {
 	transfer := cntm.Transfers{States: []*cntm.State{{From: from, To: to, Value: value}}}
 	tr := new(bytes.Buffer)
 	transfer.Serialize(tr)
-	trans := &sstates.Ccntmract{
-		Address: ccntmract,
-		Method:  "transfer",
-		Args:    tr.Bytes(),
-	}
-	ts := new(bytes.Buffer)
-	trans.Serialize(ts)
-	return stypes.VmCode{Code: ts.Bytes(), VmType: stypes.Native}
+	return tr.Bytes()
 }
 
 // check whether payer cntm balance sufficient
@@ -201,19 +183,17 @@ func isBalanceSufficient(tx *types.Transaction, stateBatch *statestore.StateBatc
 func costGas(payer common.Address, gas uint64, config *smartccntmract.Config,
 	cache *storage.CloneCache, store store.LedgerStore) ([]*event.NotifyEventInfo, error) {
 
-	nativeTransferCode := genNativeTransferCode(utils.OngCcntmractAddress, payer,
-		utils.GovernanceCcntmractAddress, gas)
+	params := genNativeTransferCode(payer, utils.GovernanceCcntmractAddress, gas)
 
 	sc := smartccntmract.SmartCcntmract{
 		Config:     config,
 		CloneCache: cache,
 		Store:      store,
-		Code:       nativeTransferCode,
 		Gas:        math.MaxUint64,
 	}
 
-	_, err := sc.Execute()
-
+	service, _ := sc.NewNativeService()
+	_, err := service.NativeCall(utils.OngCcntmractAddress, "transfer", params)
 	if err != nil {
 		return nil, err
 	}

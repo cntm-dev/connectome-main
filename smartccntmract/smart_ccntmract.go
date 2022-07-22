@@ -18,30 +18,21 @@
 package smartccntmract
 
 import (
-	"bytes"
+	"fmt"
 
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/store"
-	scommon "github.com/cntmio/cntmology/core/store/common"
 	ctypes "github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
-	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
-	"github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
-	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 	vm "github.com/cntmio/cntmology/vm/neovm"
 )
 
-var (
-	CcntmRACT_NOT_EXIST    = errors.NewErr("[AppCall] Get ccntmract ccntmext nil")
-	DEPLOYCODE_TYPE_ERROR = errors.NewErr("[AppCall] DeployCode type error!")
-	INVOKE_CODE_EXIST     = errors.NewErr("[AppCall] Invoke codes exist!")
-	ENGINE_NOT_SUPPORT    = errors.NewErr("[Execute] Engine doesn't support!")
+const (
+	MAX_EXECUTE_ENGINE = 1024
 )
 
 // SmartCcntmract describe smart ccntmract execute engine
@@ -50,8 +41,6 @@ type SmartCcntmract struct {
 	CloneCache    *storage.CloneCache // state cache
 	Store         store.LedgerStore   // ledger store
 	Config        *Config
-	Engine        Engine
-	Code          stypes.VmCode
 	Notifications []*event.NotifyEventInfo // all execute smart ccntmract event notify info
 	Gas           uint64
 }
@@ -61,10 +50,6 @@ type Config struct {
 	Time   uint32              // current block timestamp
 	Height uint32              // current block height
 	Tx     *ctypes.Transaction // current transaction
-}
-
-type Engine interface {
-	Invoke() (interface{}, error)
 }
 
 // PushCcntmext push current ccntmext to smart ccntmract
@@ -116,105 +101,44 @@ func (this *SmartCcntmract) CheckUseGas(gas uint64) bool {
 	return true
 }
 
-// Execute is smart ccntmract execute manager
-// According different vm type to launch different service
-func (this *SmartCcntmract) Execute() (interface{}, error) {
-	var engine Engine
-	switch this.Code.VmType {
-	case stypes.Native:
-		engine = &native.NativeService{
-			CloneCache: this.CloneCache,
-			Code:       this.Code.Code,
-			Tx:         this.Config.Tx,
-			Height:     this.Config.Height,
-			Time:       this.Config.Time,
-			CcntmextRef: this,
-			ServiceMap: make(map[string]native.Handler),
-		}
-	case stypes.NEOVM:
-		engine = &neovm.NeoVmService{
-			Store:      this.Store,
-			CloneCache: this.CloneCache,
-			CcntmextRef: this,
-			Code:       this.Code.Code,
-			Tx:         this.Config.Tx,
-			Time:       this.Config.Time,
-		}
-	case stypes.WASMVM:
-		engine = &wasmvm.WasmVmService{
-			Store:      this.Store,
-			CloneCache: this.CloneCache,
-			CcntmextRef: this,
-			Code:       this.Code.Code,
-			Tx:         this.Config.Tx,
-			Time:       this.Config.Time,
-		}
-	default:
-		return nil, ENGINE_NOT_SUPPORT
+func (this *SmartCcntmract) checkCcntmexts() bool {
+	if len(this.Ccntmexts) > MAX_EXECUTE_ENGINE {
+		return false
 	}
-	return engine.Invoke()
+	return true
 }
 
-// AppCall a smart ccntmract, if ccntmract exist on blockchain, you should set the address
-// Param address: invoke smart ccntmract on blockchain according ccntmract address
-// Param method: invoke smart ccntmract method name
-// Param codes: invoke smart ccntmract off blockchain
-// Param args: invoke smart ccntmract args
-func (this *SmartCcntmract) AppCall(address common.Address, method string, codes, args []byte) (interface{}, error) {
-	var code []byte
-	vmType := stypes.VmType(address[0])
-	switch vmType {
-	case stypes.Native:
-		bf := new(bytes.Buffer)
-		c := states.Ccntmract{
-			Address: address,
-			Method:  method,
-			Args:    args,
-		}
-		if err := c.Serialize(bf); err != nil {
-			return nil, err
-		}
-		code = bf.Bytes()
-	case stypes.NEOVM:
-		c, err := this.loadCode(address, codes)
-		if err != nil {
-			return nil, err
-		}
-		var temp []byte
-		build := vm.NewParamsBuilder(new(bytes.Buffer))
-		if method != "" {
-			build.EmitPushByteArray([]byte(method))
-		}
-		temp = append(args, build.ToArray()...)
-		code = append(temp, c...)
-		vmCode := stypes.VmCode{Code: c, VmType: stypes.NEOVM}
-		this.PushCcntmext(&ccntmext.Ccntmext{CcntmractAddress: vmCode.AddressFromVmCode()})
-	case stypes.WASMVM:
-		c, err := this.loadCode(address, codes)
-		if err != nil {
-			return nil, err
-		}
-		bf := new(bytes.Buffer)
-		ccntmract := states.Ccntmract{
-			Version: 1, //fix to > 0
-			Address: address,
-			Method:  method,
-			Args:    args,
-			Code:    c,
-		}
-		if err := ccntmract.Serialize(bf); err != nil {
-			return nil, err
-		}
-		code = bf.Bytes()
+// Execute is smart ccntmract execute manager
+// According different vm type to launch different service
+func (this *SmartCcntmract) NewExecuteEngine(code []byte) (ccntmext.Engine, error) {
+	if !this.checkCcntmexts() {
+		return nil, fmt.Errorf("%s", "engine over max limit!")
 	}
-
-	this.Code = stypes.VmCode{Code: code, VmType: vmType}
-	res, err := this.Execute()
-	if err != nil {
-		return nil, err
+	service := &neovm.NeoVmService{
+		Store:      this.Store,
+		CloneCache: this.CloneCache,
+		CcntmextRef: this,
+		Code:       code,
+		Tx:         this.Config.Tx,
+		Time:       this.Config.Time,
+		Height:     this.Config.Height,
+		Engine:     vm.NewExecutionEngine(),
 	}
+	return service, nil
+}
 
-	return res, nil
+func (this *SmartCcntmract) NewNativeService() (*native.NativeService, error) {
+	if !this.checkCcntmexts() {
+		return nil, fmt.Errorf("%s", "engine over max limit!")
+	}
+	service := &native.NativeService{
+		CloneCache: this.CloneCache,
+		CcntmextRef: this,
+		Tx:         this.Config.Tx,
+		Time:       this.Config.Time,
+		Height:     this.Config.Height,
+	}
+	return service, nil
 }
 
 // CheckWitness check whether authorization correct
@@ -222,56 +146,25 @@ func (this *SmartCcntmract) AppCall(address common.Address, method string, codes
 // Else check whether address is calling ccntmract address
 // Param address: wallet address or ccntmract address
 func (this *SmartCcntmract) CheckWitness(address common.Address) bool {
-	if stypes.IsVmCodeAddress(address) {
-		if this.CallingCcntmext() != nil && this.CallingCcntmext().CcntmractAddress == address {
+	if this.checkAccountAddress(address) || this.checkCcntmractAddress(address) {
+		return true
+	}
+	return false
+}
+
+func (this *SmartCcntmract) checkAccountAddress(address common.Address) bool {
+	addresses := this.Config.Tx.GetSignatureAddresses()
+	for _, v := range addresses {
+		if v == address {
 			return true
-		}
-	} else {
-		addresses := this.Config.Tx.GetSignatureAddresses()
-		for _, v := range addresses {
-			if v == address {
-				return true
-			}
 		}
 	}
 	return false
 }
 
-// loadCode load smart ccntmract execute code
-// Param address, invoke on blockchain smart ccntmract address
-// Param codes, invoke off blockchain smart ccntmract code
-// If you invoke off blockchain smart ccntmract, you can set address is codes address
-// But this address doesn't deployed on blockchain
-func (this *SmartCcntmract) loadCode(address common.Address, codes []byte) ([]byte, error) {
-	isLoad := false
-	if len(codes) == 0 {
-		isLoad = true
+func (this *SmartCcntmract) checkCcntmractAddress(address common.Address) bool {
+	if this.CallingCcntmext() != nil && this.CallingCcntmext().CcntmractAddress == address {
+		return true
 	}
-	item, err := this.getCcntmract(address[:])
-	if err != nil {
-		return nil, err
-	}
-	if isLoad {
-		if item == nil {
-			return nil, CcntmRACT_NOT_EXIST
-		}
-		ccntmract, ok := item.Value.(*payload.DeployCode)
-		if !ok {
-			return nil, DEPLOYCODE_TYPE_ERROR
-		}
-		return ccntmract.Code.Code, nil
-	} else {
-		if item != nil {
-			return nil, INVOKE_CODE_EXIST
-		}
-		return codes, nil
-	}
-}
-
-func (this *SmartCcntmract) getCcntmract(address []byte) (*scommon.StateItem, error) {
-	item, err := this.CloneCache.Store.TryGet(scommon.ST_CcntmRACT, address[:])
-	if err != nil {
-		return nil, errors.NewErr("[getCcntmract] Get ccntmract ccntmext error!")
-	}
-	return item, nil
+	return false
 }

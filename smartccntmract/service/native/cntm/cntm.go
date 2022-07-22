@@ -183,15 +183,15 @@ func OntAllowance(native *native.NativeService) ([]byte, error) {
 func GetBalanceValue(native *native.NativeService, flag byte) ([]byte, error) {
 	var key []byte
 	buf := bytes.NewBuffer(native.Input)
-	var from common.Address
-	if err := from.Deserialize(buf); err != nil {
+	from, err := utils.ReadAddress(buf)
+	if err != nil {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[GetBalanceValue] get from address error!")
 	}
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
 	if flag == APPROVE_FLAG {
-		var to common.Address
-		if err := to.Deserialize(buf); err != nil {
-			return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[GetBalanceValue] get to address error!")
+		to, err := utils.ReadAddress(buf)
+		if err != nil {
+			return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[GetBalanceValue] get from address error!")
 		}
 		key = GenApproveKey(ccntmract, from, to)
 	} else if flag == TRANSFER_FLAG {
@@ -229,7 +229,7 @@ func grantOng(native *native.NativeService, ccntmract, address common.Address, b
 			return err
 		}
 
-		if _, err := native.CcntmextRef.AppCall(utils.OngCcntmractAddress, "approve", []byte{}, args); err != nil {
+		if _, err := native.NativeCall(utils.OngCcntmractAddress, "approve", args); err != nil {
 			return err
 		}
 	}

@@ -19,22 +19,15 @@ package states
 
 import (
 	"bytes"
+	"github.com/cntmio/cntmology/core/types"
 	"testing"
-
-	"github.com/cntmio/cntmology/smartccntmract/types"
 )
 
 func TestCcntmract_Serialize_Deserialize(t *testing.T) {
-	vmcode := types.VmCode{
-		VmType: types.Native,
-		Code:   []byte{1},
-	}
-
-	addr := vmcode.AddressFromVmCode()
+	addr := types.AddressFromVmCode([]byte{1})
 
 	c := &Ccntmract{
 		Version: 0,
-		Code:    []byte{1},
 		Address: addr,
 		Method:  "init",
 		Args:    []byte{2},

@@ -39,7 +39,6 @@ import (
 	"github.com/cntmio/cntmology/p2pserver/net/netserver"
 	"github.com/cntmio/cntmology/p2pserver/net/protocol"
 	"github.com/cntmio/cntmology/p2pserver/peer"
-	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -455,10 +454,9 @@ func TestTransactionHandle(t *testing.T) {
 	}
 
 	tx := &ct.Transaction{
-		Version:    0,
-		Attributes: []*ct.TxAttribute{},
-		TxType:     ct.Invoke,
-		Payload:    invokeCodePayload,
+		Version: 0,
+		TxType:  ct.Invoke,
+		Payload: invokeCodePayload,
 	}
 
 	buf, err := msgpack.NewTxn(tx)

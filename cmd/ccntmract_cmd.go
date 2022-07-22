@@ -25,7 +25,6 @@ import (
 	cmdcom "github.com/cntmio/cntmology/cmd/common"
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/smartccntmract/types"
 	"github.com/urfave/cli"
 	"io/ioutil"
 	"strings"
@@ -75,6 +74,19 @@ var (
 					utils.AccountAddressFlag,
 				},
 			},
+			{
+				Action:    invokeCodeCcntmract,
+				Name:      "invokeCode",
+				Usage:     "Invoke smart ccntmract by code",
+				ArgsUsage: " ",
+				Flags: []cli.Flag{
+					utils.CcntmractCodeFileFlag,
+					utils.TransactionGasPriceFlag,
+					utils.TransactionGasLimitFlag,
+					utils.WalletFileFlag,
+					utils.AccountAddressFlag,
+				},
+			},
 		},
 	}
 )
@@ -110,17 +122,60 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 	code := strings.TrimSpace(string(codeStr))
 	gasPrice := ctx.Uint64(utils.GetFlagName(utils.TransactionGasPriceFlag))
 	gasLimit := ctx.Uint64(utils.GetFlagName(utils.TransactionGasLimitFlag))
-	vmType := types.NEOVM
 	cversion := fmt.Sprintf("%s", version)
 
-	txHash, err := utils.DeployCcntmract(gasPrice, gasLimit, signer, vmType, store, code, name, cversion, author, email, desc)
+	txHash, err := utils.DeployCcntmract(gasPrice, gasLimit, signer, store, code, name, cversion, author, email, desc)
 	if err != nil {
 		return fmt.Errorf("DeployCcntmract error:%s", err)
 	}
-	address := utils.GetCcntmractAddress(string(code), vmType)
+	c, _ := common.HexToBytes(code)
+	address := utils.GetCcntmractAddress(c)
 	fmt.Printf("Deploy ccntmract:\n")
 	fmt.Printf("  Ccntmract Address:%x\n", address[:])
 	fmt.Printf("  TxHash:%s\n", txHash)
+	fmt.Printf("\nTip:\n")
+	fmt.Printf("  Using './cntmology info status %s' to query transaction status\n", txHash)
+	return nil
+}
+
+func invokeCodeCcntmract(ctx *cli.Ccntmext) error {
+	if !ctx.IsSet(utils.GetFlagName(utils.CcntmractCodeFileFlag)) {
+		fmt.Errorf("Missing code or name argument\n")
+		cli.ShowSubcommandHelp(ctx)
+		return nil
+	}
+	signer, err := cmdcom.GetAccount(ctx)
+	if err != nil {
+		return fmt.Errorf("Get signer account error:%s", err)
+	}
+	codeFile := ctx.String(utils.GetFlagName(utils.CcntmractCodeFileFlag))
+	if "" == codeFile {
+		return fmt.Errorf("Please specific code file")
+	}
+	codeStr, err := ioutil.ReadFile(codeFile)
+	if err != nil {
+		return fmt.Errorf("Read code:%s error:%s", codeFile, err)
+	}
+	code := strings.TrimSpace(string(codeStr))
+	c, err := common.HexToBytes(code)
+	if err != nil {
+		return fmt.Errorf("hex to bytes error:%s", err)
+	}
+	gasPrice := ctx.Uint64(utils.GetFlagName(utils.TransactionGasPriceFlag))
+	gasLimit := ctx.Uint64(utils.GetFlagName(utils.TransactionGasLimitFlag))
+	invokeTx := utils.NewInvokeTransaction(gasLimit, gasPrice, c)
+	if err != nil {
+		return err
+	}
+	err = utils.SignTransaction(signer, invokeTx)
+	if err != nil {
+		return fmt.Errorf("SignTransaction error:%s", err)
+	}
+	txHash, err := utils.SendRawTransaction(invokeTx)
+	if err != nil {
+		return fmt.Errorf("SendTransaction error:%s", err)
+	}
+	fmt.Printf("TxHash:%s\n", txHash)
 	fmt.Printf("\nTip:\n")
 	fmt.Printf("  Using './cntmology info status %s' to query transaction status\n", txHash)
 	return nil

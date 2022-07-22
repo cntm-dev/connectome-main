@@ -30,7 +30,6 @@ import (
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	cstates "github.com/cntmio/cntmology/smartccntmract/states"
-	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
 	"testing"
 	"time"
 )
@@ -111,9 +110,8 @@ func TestBlockHash(t *testing.T) {
 func TestSaveTransaction(t *testing.T) {
 	invoke := &payload.InvokeCode{}
 	tx := &types.Transaction{
-		TxType:     types.Invoke,
-		Payload:    invoke,
-		Attributes: []*types.TxAttribute{},
+		TxType:  types.Invoke,
+		Payload: invoke,
 	}
 	blockHeight := uint32(1)
 	txHash := tx.Hash()
@@ -407,14 +405,13 @@ func newInvokeTransaction(gasPirce, gasLimit uint64, vmType vmtypes.VmType, code
 		},
 	}
 	tx := &types.Transaction{
-		Version:    0,
-		GasPrice:   gasPirce,
-		GasLimit:   gasLimit,
-		TxType:     types.Invoke,
-		Nonce:      uint32(time.Now().Unix()),
-		Payload:    invokePayload,
-		Attributes: make([]*types.TxAttribute, 0, 0),
-		Sigs:       make([]*types.Sig, 0, 0),
+		Version:  0,
+		GasPrice: gasPirce,
+		GasLimit: gasLimit,
+		TxType:   types.Invoke,
+		Nonce:    uint32(time.Now().Unix()),
+		Payload:  invokePayload,
+		Sigs:     make([]*types.Sig, 0, 0),
 	}
 	return tx
 }

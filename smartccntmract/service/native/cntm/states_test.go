@@ -15,29 +15,32 @@
  * You should have received a copy of the GNU Lesser General Public License
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
-package payload
+
+package cntm
 
 import (
 	"bytes"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/magiconair/properties/assert"
+	"github.com/cntmio/cntmology/core/types"
 )
 
-func TestInvokeCode_Serialize(t *testing.T) {
-	code := InvokeCode{
-		Code: []byte{1, 2, 3},
+func TestState_Serialize(t *testing.T) {
+	state := State{
+		From:  types.AddressFromVmCode([]byte{1, 2, 3}),
+		To:    types.AddressFromVmCode([]byte{4, 5, 6}),
+		Value: 1,
+	}
+	bf := new(bytes.Buffer)
+	if err := state.Serialize(bf); err != nil {
+		t.Fatal("state serialize fail!")
 	}
 
-	buf := bytes.NewBuffer(nil)
-	code.Serialize(buf)
-	bs := buf.Bytes()
-	var code2 InvokeCode
-	code2.Deserialize(buf)
-	assert.Equal(t, code, code2)
+	state2 := State{}
+	if err := state2.Deserialize(bf); err != nil {
+		t.Fatal("state deserialize fail!")
+	}
 
-	buf = bytes.NewBuffer(bs[:len(bs)-2])
-	err := code.Deserialize(buf)
-
-	assert.NotNil(t, err)
+	assert.Equal(t, state, state2)
 }

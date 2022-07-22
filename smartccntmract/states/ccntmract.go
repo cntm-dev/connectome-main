@@ -28,13 +28,11 @@ import (
 
 // Invoke smart ccntmract struct
 // Param Version: invoke smart ccntmract version, default 0
-// Param Code: invoke off blockchain code
 // Param Address: invoke on blockchain smart ccntmract by address
 // Param Method: invoke smart ccntmract method, default ""
 // Param Args: invoke smart ccntmract arguments
 type Ccntmract struct {
 	Version byte
-	Code    []byte
 	Address common.Address
 	Method  string
 	Args    []byte
@@ -44,9 +42,6 @@ type Ccntmract struct {
 func (this *Ccntmract) Serialize(w io.Writer) error {
 	if err := serialization.WriteByte(w, this.Version); err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[Ccntmract] Version serialize error!")
-	}
-	if err := serialization.WriteVarBytes(w, this.Code); err != nil {
-		return errors.NewDetailErr(err, errors.ErrNoCode, "[Ccntmract] Code serialize error!")
 	}
 	if err := this.Address.Serialize(w); err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[Ccntmract] Address serialize error!")
@@ -66,11 +61,6 @@ func (this *Ccntmract) Deserialize(r io.Reader) error {
 	this.Version, err = serialization.ReadByte(r)
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[Ccntmract] Version deserialize error!")
-	}
-
-	this.Code, err = serialization.ReadVarBytes(r)
-	if err != nil {
-		return errors.NewDetailErr(err, errors.ErrNoCode, "[Ccntmract] Code deserialize error!")
 	}
 
 	if err := this.Address.Deserialize(r); err != nil {

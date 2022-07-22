@@ -27,7 +27,7 @@ import (
 	"github.com/cntmio/cntmology/core/states"
 	scommon "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/core/store/statestore"
-	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
+	"github.com/cntmio/cntmology/core/types"
 )
 
 func TestCcntmractState(t *testing.T) {
@@ -38,12 +38,8 @@ func TestCcntmractState(t *testing.T) {
 	}
 	testCode := []byte("testcode")
 
-	vmCode := vmtypes.VmCode{
-		VmType: vmtypes.NEOVM,
-		Code:   testCode,
-	}
 	deploy := &payload.DeployCode{
-		Code:        vmCode,
+		Code:        testCode,
 		NeedStorage: false,
 		Name:        "testsm",
 		Version:     "v1.0",
@@ -51,11 +47,8 @@ func TestCcntmractState(t *testing.T) {
 		Email:       "",
 		Description: "",
 	}
-	code := &vmtypes.VmCode{
-		Code:   testCode,
-		VmType: vmtypes.NEOVM,
-	}
-	codeHash := code.AddressFromVmCode()
+
+	codeHash := types.AddressFromVmCode(testCode)
 	err = batch.TryGetOrAdd(
 		scommon.ST_CcntmRACT,
 		codeHash[:],

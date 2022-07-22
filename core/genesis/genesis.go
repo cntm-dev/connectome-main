@@ -35,8 +35,6 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/governance"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	nutils "github.com/cntmio/cntmology/smartccntmract/service/native/utils"
-	"github.com/cntmio/cntmology/smartccntmract/states"
-	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 )
 
 const (
@@ -118,74 +116,54 @@ func BuildGenesisBlock(defaultBookkeeper []keypair.PublicKey, genesisConfig *con
 }
 
 func newGoverningToken() *types.Transaction {
-	tx := utils.NewDeployTransaction(stypes.VmCode{Code: nutils.OntCcntmractAddress[:], VmType: stypes.Native}, "cntm", "1.0",
+	tx := utils.NewDeployTransaction(nutils.OntCcntmractAddress[:], "cntm", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", true)
 	return tx
 }
 
 func newUtilityToken() *types.Transaction {
-	tx := utils.NewDeployTransaction(stypes.VmCode{Code: nutils.OngCcntmractAddress[:], VmType: stypes.Native}, "cntm", "1.0",
+	tx := utils.NewDeployTransaction(nutils.OngCcntmractAddress[:], "cntm", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", true)
 	return tx
 }
 
 func newParamCcntmract() *types.Transaction {
-	tx := utils.NewDeployTransaction(stypes.VmCode{Code: nutils.ParamCcntmractAddress[:], VmType: stypes.Native},
+	tx := utils.NewDeployTransaction(nutils.ParamCcntmractAddress[:],
 		"ParamConfig", "1.0", "Ontology Team", "ccntmact@cntm.io",
 		"Chain Global Environment Variables Manager ", true)
 	return tx
 }
 
 func newConfig() *types.Transaction {
-	tx := utils.NewDeployTransaction(stypes.VmCode{Code: nutils.GovernanceCcntmractAddress[:], VmType: stypes.Native}, "CONFIG", "1.0",
+	tx := utils.NewDeployTransaction(nutils.GovernanceCcntmractAddress[:], "CONFIG", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network Consensus Config", true)
 	return tx
 }
 
 func deployAuthCcntmract() *types.Transaction {
-	tx := utils.NewDeployTransaction(stypes.VmCode{Code: nutils.AuthCcntmractAddress[:], VmType: stypes.Native}, "AuthCcntmract", "1.0",
+	tx := utils.NewDeployTransaction(nutils.AuthCcntmractAddress[:], "AuthCcntmract", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network Authorization Ccntmract", true)
 	return tx
 }
 
 func deployOntIDCcntmract() *types.Transaction {
-	tx := utils.NewDeployTransaction(stypes.VmCode{Code: nutils.OntIDCcntmractAddress[:], VmType: stypes.Native}, "OID", "1.0",
+	tx := utils.NewDeployTransaction(nutils.OntIDCcntmractAddress[:], "OID", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm ID", true)
 	return tx
 }
 
 func newGoverningInit() *types.Transaction {
-	return buildInitTransaction(nutils.OntCcntmractAddress, cntm.INIT_NAME, nil)
-}
-
-func buildInitTransaction(addr common.Address, initMethod string, args []byte) *types.Transaction {
-	init := states.Ccntmract{Address: addr, Method: initMethod, Args: args}
-	bf := new(bytes.Buffer)
-	init.Serialize(bf)
-
-	vmCode := stypes.VmCode{
-		VmType: stypes.Native,
-		Code:   bf.Bytes(),
-	}
-
-	tx := utils.NewInvokeTransaction(vmCode)
-	return tx
+	return utils.BuildNativeTransaction(nutils.OntCcntmractAddress, cntm.INIT_NAME, nil)
 }
 
 func newUtilityInit() *types.Transaction {
-	return buildInitTransaction(nutils.OngCcntmractAddress, cntm.INIT_NAME, nil)
+	return utils.BuildNativeTransaction(nutils.OngCcntmractAddress, cntm.INIT_NAME, []byte{})
 }
 
 func newParamInit() *types.Transaction {
-	initParams := new(global_params.Params)
-	for k, v := range INIT_PARAM {
-		initParams.SetParam(&global_params.Param{k, v})
-	}
-	bf := new(bytes.Buffer)
-	initParams.Serialize(bf)
-	return buildInitTransaction(nutils.ParamCcntmractAddress, global_params.INIT_NAME, bf.Bytes())
+	return utils.BuildNativeTransaction(nutils.ParamCcntmractAddress, global_params.INIT_NAME, []byte{})
 }
 
 func newGoverConfigInit(config []byte) *types.Transaction {
-	return buildInitTransaction(nutils.GovernanceCcntmractAddress, governance.INIT_CONFIG, config)
+	return utils.BuildNativeTransaction(nutils.GovernanceCcntmractAddress, governance.INIT_CONFIG, config)
 }

@@ -21,7 +21,6 @@ package ccntmext
 import (
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/smartccntmract/event"
-	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 )
 
 // CcntmextRef is a interface of smart ccntmext
@@ -38,12 +37,16 @@ type CcntmextRef interface {
 	PopCcntmext()
 	CheckWitness(address common.Address) bool
 	PushNotifications(notifications []*event.NotifyEventInfo)
-	AppCall(address common.Address, method string, codes, args []byte) (interface{}, error)
+	NewExecuteEngine(code []byte) (Engine, error)
 	CheckUseGas(gas uint64) bool
+}
+
+type Engine interface {
+	Invoke() (interface{}, error)
 }
 
 // Ccntmext describe smart ccntmract execute ccntmext struct
 type Ccntmext struct {
 	CcntmractAddress common.Address
-	Code            stypes.VmCode
+	Code            []byte
 }

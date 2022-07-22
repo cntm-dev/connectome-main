@@ -56,7 +56,7 @@ func (this *Interop) GetBoolean() bool {
 }
 
 func (this *Interop) GetByteArray() []byte {
-	return this._object.ToArray()
+	return nil
 }
 
 func (this *Interop) GetInterface() interfaces.Interop {
@@ -64,11 +64,11 @@ func (this *Interop) GetInterface() interfaces.Interop {
 }
 
 func (this *Interop) GetArray() []StackItems {
-	return []StackItems{this}
+	return nil
 }
 
 func (this *Interop) GetStruct() []StackItems {
-	return []StackItems{this}
+	return nil
 }
 
 func (this *Interop) GetMap() map[StackItems]StackItems {

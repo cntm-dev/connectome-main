@@ -30,7 +30,6 @@ import (
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
-	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
 	tc "github.com/cntmio/cntmology/txnpool/common"
 	"github.com/cntmio/cntmology/validator/stateless"
 	vt "github.com/cntmio/cntmology/validator/types"
@@ -48,20 +47,15 @@ func init() {
 	topic = "TXN"
 
 	code := []byte("cntm")
-	vmcode := vmtypes.VmCode{
-		VmType: vmtypes.Native,
-		Code:   code,
-	}
 
 	invokeCodePayload := &payload.InvokeCode{
-		Code: vmcode,
+		Code: code,
 	}
 
 	txn = &types.Transaction{
-		Version:    0,
-		Attributes: []*types.TxAttribute{},
-		TxType:     types.Invoke,
-		Payload:    invokeCodePayload,
+		Version: 0,
+		TxType:  types.Invoke,
+		Payload: invokeCodePayload,
 	}
 
 	tempStr := "3369930accc1ddd067245e8edadcd9bea207ba5e1753ac18a51df77a343bfe92"

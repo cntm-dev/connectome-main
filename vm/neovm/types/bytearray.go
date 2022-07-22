@@ -53,7 +53,7 @@ func (this *ByteArray) Equals(other StackItems) bool {
 }
 
 func (this *ByteArray) GetBigInteger() *big.Int {
-	return ConvertBytesToBigInteger(this.value)
+	return common.BigIntFromNeoBytes(this.value)
 }
 
 func (this *ByteArray) GetBoolean() bool {
@@ -74,11 +74,11 @@ func (this *ByteArray) GetInterface() interfaces.Interop {
 }
 
 func (this *ByteArray) GetArray() []StackItems {
-	return []StackItems{this}
+	return nil
 }
 
 func (this *ByteArray) GetStruct() []StackItems {
-	return []StackItems{this}
+	return nil
 }
 
 func (this *ByteArray) GetMap() map[StackItems]StackItems {

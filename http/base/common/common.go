@@ -36,7 +36,6 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	cstates "github.com/cntmio/cntmology/smartccntmract/states"
-	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
 )
 
 const MAX_SEARCH_HEIGHT uint32 = 100
@@ -90,7 +89,7 @@ type Fee struct {
 
 type Sig struct {
 	PubKeys []string
-	M       uint8
+	M       uint16
 	SigData []string
 }
 type Transactions struct {
@@ -183,11 +182,7 @@ func TransArryByteToHexString(ptx *types.Transaction) *Transactions {
 	trans.Payer = ptx.Payer.ToHexString()
 	trans.Payload = TransPayloadToHex(ptx.Payload)
 
-	trans.Attributes = make([]TxAttributeInfo, len(ptx.Attributes))
-	for i, v := range ptx.Attributes {
-		trans.Attributes[i].Usage = v.Usage
-		trans.Attributes[i].Data = common.ToHexString(v.Data)
-	}
+	trans.Attributes = make([]TxAttributeInfo, 0)
 	trans.Sigs = []Sig{}
 	for _, sig := range ptx.Sigs {
 		e := Sig{M: sig.M}
@@ -311,7 +306,7 @@ func GetCcntmractBalance(cVersion byte, ccntmractAddr, accAddr common.Address) (
 	if err != nil {
 		return 0, fmt.Errorf("Serialize ccntmract error:%s", err)
 	}
-	result, err := PrepareInvokeCcntmract(cVersion, vmtypes.Native, buf.Bytes())
+	result, err := PrepareInvokeCcntmract(cVersion, buf.Bytes())
 	if err != nil {
 		return 0, fmt.Errorf("PrepareInvokeCcntmract error:%s", err)
 	}
@@ -348,7 +343,7 @@ func GetCcntmractAllowance(cVersion byte, ccntmractAddr, fromAddr, toAddr common
 	if err != nil {
 		return 0, fmt.Errorf("Serialize ccntmract error:%s", err)
 	}
-	result, err := PrepareInvokeCcntmract(cVersion, vmtypes.Native, buf.Bytes())
+	result, err := PrepareInvokeCcntmract(cVersion, buf.Bytes())
 	if err != nil {
 		return 0, fmt.Errorf("PrepareInvokeCcntmract error:%s", err)
 	}
@@ -363,20 +358,16 @@ func GetCcntmractAllowance(cVersion byte, ccntmractAddr, fromAddr, toAddr common
 	return allowance.Uint64(), nil
 }
 
-func PrepareInvokeCcntmract(cVersion byte, vmType vmtypes.VmType, invokeCode []byte) (*cstates.PreExecResult, error) {
+func PrepareInvokeCcntmract(cVersion byte, invokeCode []byte) (*cstates.PreExecResult, error) {
 	invokePayload := &payload.InvokeCode{
-		Code: vmtypes.VmCode{
-			VmType: vmType,
-			Code:   invokeCode,
-		},
+		Code: invokeCode,
 	}
 	tx := &types.Transaction{
-		Version:    cVersion,
-		TxType:     types.Invoke,
-		Nonce:      uint32(time.Now().Unix()),
-		Payload:    invokePayload,
-		Attributes: make([]*types.TxAttribute, 0, 0),
-		Sigs:       make([]*types.Sig, 0, 0),
+		Version: cVersion,
+		TxType:  types.Invoke,
+		Nonce:   uint32(time.Now().Unix()),
+		Payload: invokePayload,
+		Sigs:    make([]*types.Sig, 0, 0),
 	}
 	return bactor.PreExecuteCcntmract(tx)
 }

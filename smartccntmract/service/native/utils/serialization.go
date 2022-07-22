@@ -16,32 +16,37 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package payload
+package utils
 
 import (
 	"fmt"
 	"io"
+	"math/big"
 
+	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/serialization"
+	"github.com/cntmio/cntmology/vm/neovm/types"
 )
 
-// InvokeCode is an implementation of transaction payload for invoke smartccntmract
-type InvokeCode struct {
-	Code []byte
-}
-
-func (self *InvokeCode) Serialize(w io.Writer) error {
-	if err := serialization.WriteVarBytes(w, self.Code); err != nil {
-		return fmt.Errorf("InvokeCode Code Serialize failed: %s", err)
+func WriteVarUint(w io.Writer, value uint64) error {
+	if err := serialization.WriteVarBytes(w, types.BigIntToBytes(big.NewInt(int64(value)))); err != nil {
+		return fmt.Errorf("serialize value error:%v", err)
 	}
 	return nil
 }
 
-func (self *InvokeCode) Deserialize(r io.Reader) error {
-	code, err := serialization.ReadVarBytes(r)
+func ReadVarUint(r io.Reader) (uint64, error) {
+	value, err := serialization.ReadVarBytes(r)
 	if err != nil {
-		return fmt.Errorf("InvokeCode Code Deserialize failed: %s", err)
+		return 0, fmt.Errorf("deserialize value error:%v", err)
 	}
-	self.Code = code
-	return nil
+	return types.BigIntFromBytes(value).Uint64(), nil
+}
+
+func ReadAddress(r io.Reader) (common.Address, error) {
+	from, err := serialization.ReadVarBytes(r)
+	if err != nil {
+		return common.Address{}, fmt.Errorf("[State] deserialize from error:%v", err)
+	}
+	return common.AddressParseFromBytes(from)
 }

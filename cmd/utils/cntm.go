@@ -24,6 +24,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/big"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	sig "github.com/cntmio/cntmology-crypto/signature"
 	"github.com/cntmio/cntmology/account"
@@ -37,14 +42,8 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
 	cstates "github.com/cntmio/cntmology/smartccntmract/states"
-	vmtypes "github.com/cntmio/cntmology/smartccntmract/types"
 	"github.com/cntmio/cntmology/vm/neovm"
-	neotypes "github.com/cntmio/cntmology/vm/neovm/types"
 	"github.com/cntmio/cntmology/vm/wasmvm/exec"
-	"math/big"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
@@ -276,22 +275,18 @@ func Sign(data []byte, signer *account.Account) ([]byte, error) {
 }
 
 //NewInvokeTransaction return smart ccntmract invoke transaction
-func NewInvokeTransaction(gasPirce, gasLimit uint64, vmType vmtypes.VmType, code []byte) *types.Transaction {
+func NewInvokeTransaction(gasPirce, gasLimit uint64, code []byte) *types.Transaction {
 	invokePayload := &payload.InvokeCode{
-		Code: vmtypes.VmCode{
-			VmType: vmType,
-			Code:   code,
-		},
+		Code: code,
 	}
 	tx := &types.Transaction{
-		Version:    VERSION_TRANSACTION,
-		GasPrice:   gasPirce,
-		GasLimit:   gasLimit,
-		TxType:     types.Invoke,
-		Nonce:      uint32(time.Now().Unix()),
-		Payload:    invokePayload,
-		Attributes: make([]*types.TxAttribute, 0, 0),
-		Sigs:       make([]*types.Sig, 0, 0),
+		Version:  VERSION_TRANSACTION,
+		GasPrice: gasPirce,
+		GasLimit: gasLimit,
+		TxType:   types.Invoke,
+		Nonce:    uint32(time.Now().Unix()),
+		Payload:  invokePayload,
+		Sigs:     make([]*types.Sig, 0, 0),
 	}
 	return tx
 }
@@ -376,7 +371,6 @@ func DeployCcntmract(
 	gasPrice,
 	gasLimit uint64,
 	signer *account.Account,
-	vmType vmtypes.VmType,
 	needStorage bool,
 	code,
 	cname,
@@ -389,7 +383,7 @@ func DeployCcntmract(
 	if err != nil {
 		return "", fmt.Errorf("hex.DecodeString error:%s", err)
 	}
-	tx := NewDeployCodeTransaction(gasPrice, gasLimit, vmType, c, needStorage, cname, cversion, cauthor, cemail, cdesc)
+	tx := NewDeployCodeTransaction(gasPrice, gasLimit, c, needStorage, cname, cversion, cauthor, cemail, cdesc)
 
 	err = SignTransaction(signer, tx)
 	if err != nil {
@@ -411,7 +405,7 @@ func InvokeNativeCcntmract(
 	method string,
 	args []byte,
 ) (string, error) {
-	return InvokeSmartCcntmract(gasPrice, gasLimit, signer, vmtypes.Native, cversion, ccntmractAddress, method, args)
+	return InvokeSmartCcntmract(gasPrice, gasLimit, signer, cversion, ccntmractAddress, method, args)
 }
 
 func InvokeNativeCcntmractTx(gasPrice,
@@ -420,7 +414,7 @@ func InvokeNativeCcntmractTx(gasPrice,
 	ccntmractAddress common.Address,
 	method string,
 	args []byte) (*types.Transaction, error) {
-	return InvokeSmartCcntmractTx(gasPrice, gasLimit, vmtypes.Native, cversion, ccntmractAddress, method, args)
+	return InvokeSmartCcntmractTx(gasPrice, gasLimit, cversion, ccntmractAddress, method, args)
 }
 
 //Invoke wasm smart ccntmract
@@ -441,7 +435,7 @@ func InvokeWasmVMCcntmract(
 	if err != nil {
 		return "", fmt.Errorf("buildWasmCcntmractParam error:%s", err)
 	}
-	return InvokeSmartCcntmract(gasPrice, gasLimit, siger, vmtypes.WASMVM, cversion, ccntmractAddress, method, args)
+	return InvokeSmartCcntmract(gasPrice, gasLimit, siger, cversion, ccntmractAddress, method, args)
 }
 
 //Invoke neo vm smart ccntmract. if isPreExec is true, the invoke will not really execute
@@ -460,7 +454,7 @@ func InvokeNeoVMCcntmract(
 	}
 	args := builder.ToArray()
 
-	return InvokeSmartCcntmract(gasPrice, gasLimit, signer, vmtypes.NEOVM, cversion, smartcodeAddress, "", args)
+	return InvokeSmartCcntmract(gasPrice, gasLimit, signer, cversion, smartcodeAddress, "", args)
 }
 
 func InvokeNeoVMCcntmractTx(gasPrice,
@@ -474,7 +468,7 @@ func InvokeNeoVMCcntmractTx(gasPrice,
 		return nil, err
 	}
 	args := builder.ToArray()
-	return InvokeSmartCcntmractTx(gasPrice, gasLimit, vmtypes.NEOVM, cversion, smartcodeAddress, "", args)
+	return InvokeSmartCcntmractTx(gasPrice, gasLimit, cversion, smartcodeAddress, "", args)
 }
 
 //InvokeSmartCcntmract is low level method to invoke ccntmact.
@@ -482,13 +476,12 @@ func InvokeSmartCcntmract(
 	gasPrice,
 	gasLimit uint64,
 	signer *account.Account,
-	vmType vmtypes.VmType,
 	cversion byte,
 	ccntmractAddress common.Address,
 	method string,
 	args []byte,
 ) (string, error) {
-	invokeTx, err := InvokeSmartCcntmractTx(gasPrice, gasLimit, vmType, cversion, ccntmractAddress, method, args)
+	invokeTx, err := InvokeSmartCcntmractTx(gasPrice, gasLimit, cversion, ccntmractAddress, method, args)
 	if err != nil {
 		return "", err
 	}
@@ -505,7 +498,6 @@ func InvokeSmartCcntmract(
 
 func InvokeSmartCcntmractTx(gasPrice,
 	gasLimit uint64,
-	vmType vmtypes.VmType,
 	cversion byte,
 	ccntmractAddress common.Address,
 	method string,
@@ -522,10 +514,10 @@ func InvokeSmartCcntmractTx(gasPrice,
 		return nil, fmt.Errorf("Serialize ccntmract error:%s", err)
 	}
 	invokCode := buf.Bytes()
-	if vmType == vmtypes.NEOVM {
-		invokCode = append([]byte{0x67}, invokCode[:]...)
-	}
-	return NewInvokeTransaction(gasPrice, gasLimit, vmType, invokCode), nil
+
+	invokCode = append([]byte{0x67}, invokCode[:]...)
+
+	return NewInvokeTransaction(gasPrice, gasLimit, invokCode), nil
 }
 
 func PrepareInvokeNeoVMCcntmract(
@@ -537,7 +529,7 @@ func PrepareInvokeNeoVMCcntmract(
 	if err != nil {
 		return nil, fmt.Errorf("BuildNVMInvokeCode error:%s", err)
 	}
-	tx := NewInvokeTransaction(0, 0, vmtypes.NEOVM, code)
+	tx := NewInvokeTransaction(0, 0, code)
 	var buffer bytes.Buffer
 	err = tx.Serialize(&buffer)
 	if err != nil {
@@ -559,7 +551,7 @@ func PrepareInvokeNeoVMCcntmract(
 func PrepareInvokeNativeCcntmract(
 	ccntmractAddress common.Address,
 	code []byte) (*cstates.PreExecResult, error) {
-	tx := NewInvokeTransaction(0, 0, vmtypes.Native, code)
+	tx := NewInvokeTransaction(0, 0, code)
 	var buffer bytes.Buffer
 	err := tx.Serialize(&buffer)
 	if err != nil {
@@ -579,20 +571,11 @@ func PrepareInvokeNativeCcntmract(
 }
 
 //NewDeployCodeTransaction return a smart ccntmract deploy transaction instance
-func NewDeployCodeTransaction(
-	gasPrice,
-	gasLimit uint64,
-	vmType vmtypes.VmType,
-	code []byte,
-	needStorage bool,
+func NewDeployCodeTransaction(gasPrice, gasLimit uint64, code []byte, needStorage bool,
 	cname, cversion, cauthor, cemail, cdesc string) *types.Transaction {
 
-	vmCode := vmtypes.VmCode{
-		VmType: vmType,
-		Code:   code,
-	}
 	deployPayload := &payload.DeployCode{
-		Code:        vmCode,
+		Code:        code,
 		NeedStorage: needStorage,
 		Name:        cname,
 		Version:     cversion,
@@ -601,14 +584,13 @@ func NewDeployCodeTransaction(
 		Description: cdesc,
 	}
 	tx := &types.Transaction{
-		Version:    VERSION_TRANSACTION,
-		TxType:     types.Deploy,
-		Nonce:      uint32(time.Now().Unix()),
-		Payload:    deployPayload,
-		Attributes: make([]*types.TxAttribute, 0, 0),
-		GasPrice:   gasPrice,
-		GasLimit:   gasLimit,
-		Sigs:       make([]*types.Sig, 0, 0),
+		Version:  VERSION_TRANSACTION,
+		TxType:   types.Deploy,
+		Nonce:    uint32(time.Now().Unix()),
+		Payload:  deployPayload,
+		GasPrice: gasPrice,
+		GasLimit: gasLimit,
+		Sigs:     make([]*types.Sig, 0, 0),
 	}
 	return tx
 }
@@ -778,13 +760,8 @@ func BuildWasmVMInvokeCode(smartcodeAddress common.Address, methodName string, p
 }
 
 //GetCcntmractAddress return ccntmract address
-func GetCcntmractAddress(code string, vmType vmtypes.VmType) common.Address {
-	data, _ := hex.DecodeString(code)
-	vmCode := &vmtypes.VmCode{
-		VmType: vmType,
-		Code:   data,
-	}
-	return vmCode.AddressFromVmCode()
+func GetCcntmractAddress(code []byte) common.Address {
+	return types.AddressFromVmCode(code)
 }
 
 //ParseNeoVMCcntmractReturnTypeBool return bool value of smart ccntmract execute code.
@@ -798,7 +775,7 @@ func ParseNeoVMCcntmractReturnTypeInteger(hexStr string) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("hex.DecodeString error:%s", err)
 	}
-	return neotypes.ConvertBytesToBigInteger(data).Int64(), nil
+	return common.BigIntFromNeoBytes(data).Int64(), nil
 }
 
 //ParseNeoVMCcntmractReturnTypeByteArray return []byte value of smart ccntmract execute code.

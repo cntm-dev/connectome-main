@@ -44,7 +44,6 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	sstate "github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
-	vmtype "github.com/cntmio/cntmology/smartccntmract/types"
 )
 
 const (
@@ -782,12 +781,18 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.
 		Config:     config,
 		Store:      this,
 		CloneCache: storage.NewCloneCache(this.stateStore.NewStateBatch()),
-		Code:       invoke.Code,
 		Gas:        math.MaxUint64,
 	}
 
 	//start the smart ccntmract executive function
-	result, err := sc.Execute()
+	engine, err := sc.NewExecuteEngine(invoke.Code)
+	if err != nil {
+		return nil, err
+	}
+	result, err := engine.Invoke()
+	if err != nil {
+		return nil, err
+	}
 	gasCost := math.MaxUint64 - sc.Gas
 	if gasCost < neovm.TRANSACTION_GAS {
 		gasCost = neovm.TRANSACTION_GAS
@@ -795,18 +800,7 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.
 	if err != nil {
 		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_FAIL, Gas: gasCost, Result: nil}, err
 	}
-
-	prefix := invoke.Code.VmType
-	if prefix == vmtype.NEOVM {
-		result = scommon.ConvertNeoVmTypeHexString(result)
-	} else if prefix == vmtype.WASMVM {
-		if v, ok := result.([]byte); ok {
-			result = common.ToHexString(v)
-		}
-	} else if prefix == vmtype.Native {
-		result = common.ToHexString(result.([]byte))
-	}
-	return &sstate.PreExecResult{State: event.CcntmRACT_STATE_SUCCESS, Gas: gasCost, Result: result}, nil
+	return &sstate.PreExecResult{State: event.CcntmRACT_STATE_SUCCESS, Gas: gasCost, Result: scommon.ConvertNeoVmTypeHexString(result)}, nil
 }
 
 //Close ledger store.

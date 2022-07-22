@@ -25,8 +25,8 @@ import (
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/states"
 	scommon "github.com/cntmio/cntmology/core/store/common"
+	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
-	stypes "github.com/cntmio/cntmology/smartccntmract/types"
 	vm "github.com/cntmio/cntmology/vm/neovm"
 )
 
@@ -36,7 +36,7 @@ func CcntmractCreate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractCreate] ccntmract parameters invalid!")
 	}
-	ccntmractAddress := ccntmract.Code.AddressFromVmCode()
+	ccntmractAddress := types.AddressFromVmCode(ccntmract.Code)
 	state, err := service.CloneCache.GetOrAdd(scommon.ST_CcntmRACT, ccntmractAddress[:], ccntmract)
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractCreate] GetOrAdd error!")
@@ -51,7 +51,7 @@ func CcntmractMigrate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractMigrate] ccntmract parameters invalid!")
 	}
-	ccntmractAddress := ccntmract.Code.AddressFromVmCode()
+	ccntmractAddress := types.AddressFromVmCode(ccntmract.Code)
 
 	if err := isCcntmractExist(service, ccntmractAddress); err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractMigrate] ccntmract invalid!")
@@ -101,7 +101,7 @@ func CcntmractGetStorageCcntmext(service *NeoVmService, engine *vm.ExecutionEngi
 	if !ok {
 		return errors.NewErr("[GetStorageCcntmext] Pop data not ccntmract!")
 	}
-	address := ccntmractState.Code.AddressFromVmCode()
+	address := types.AddressFromVmCode(ccntmractState.Code)
 	item, err := service.CloneCache.Store.TryGet(scommon.ST_CcntmRACT, address[:])
 	if err != nil || item == nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[GetStorageCcntmext] Get StorageCcntmext nil")
@@ -115,7 +115,7 @@ func CcntmractGetStorageCcntmext(service *NeoVmService, engine *vm.ExecutionEngi
 
 // CcntmractGetCode put ccntmract to vm stack
 func CcntmractGetCode(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	vm.PushData(engine, vm.PopInteropInterface(engine).(*payload.DeployCode).Code.Code)
+	vm.PushData(engine, vm.PopInteropInterface(engine).(*payload.DeployCode).Code)
 	return nil
 }
 
@@ -149,7 +149,7 @@ func isCcntmractParamValid(engine *vm.ExecutionEngine) (*payload.DeployCode, err
 		return nil, errors.NewErr("[Ccntmract] Desc too lcntm!")
 	}
 	ccntmract := &payload.DeployCode{
-		Code:        stypes.VmCode{VmType: stypes.NEOVM, Code: code},
+		Code:        code,
 		NeedStorage: needStorage,
 		Name:        string(name),
 		Version:     string(version),

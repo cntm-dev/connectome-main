@@ -30,7 +30,6 @@ import (
 	"math"
 
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/smartccntmract/types"
 	"github.com/cntmio/cntmology/vm/wasmvm/disasm"
 	"github.com/cntmio/cntmology/vm/wasmvm/exec/internal/compile"
 	"github.com/cntmio/cntmology/vm/wasmvm/memory"
@@ -103,7 +102,7 @@ type VM struct {
 	CcntmractAddress common.Address
 	Caller          common.Address
 	Engine          *ExecutionEngine
-	VMCode          types.VmCode
+	VMCode          []byte
 }
 
 // As per the WebAssembly spec: https://github.com/WebAssembly/design/blob/27ac254c854994103c24834a994be16f74f54186/Semantics.md#linear-memory

@@ -16,14 +16,18 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package types
+package common
 
-import (
-	"github.com/Ontology/common"
-	"math/big"
-)
+import "math/big"
 
-func ConvertBigIntegerToBytes(data *big.Int) []byte {
+func bytesReverse(u []byte) []byte {
+	for i, j := 0, len(u)-1; i < j; i, j = i+1, j-1 {
+		u[i], u[j] = u[j], u[i]
+	}
+	return u
+}
+
+func BigIntToNeoBytes(data *big.Int) []byte {
 	if data.Int64() == 0 {
 		return []byte{}
 	}
@@ -52,7 +56,7 @@ func ConvertBigIntegerToBytes(data *big.Int) []byte {
 	return bs
 }
 
-func BigIntFromBytes(ba []byte) *big.Int {
+func BigIntFromNeoBytes(ba []byte) *big.Int {
 	res := big.NewInt(0)
 	l := len(ba)
 	if l == 0 {
