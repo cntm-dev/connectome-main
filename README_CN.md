@@ -60,7 +60,7 @@ Ontology致力于创建一个组件化、可自由配置、跨链支持、高性
 克隆cntmology仓库到 **$GOPATH/src/github.com/cntmio** 目录
 
 ```shell
-$ git clone https://github.com/cntmio/cntmology.git
+$ git clone --recursive https://github.com/cntmio/cntmology.git
 ```
 或者
 ```shell

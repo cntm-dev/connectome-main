@@ -23,7 +23,7 @@ The requirements to build Ontology are:
 Clone the Ontology repository into the appropriate $GOPATH/src/github.com/cntmio directory.
 
 ```
-$ git clone https://github.com/cntmio/cntmology.git
+$ git clone --recursive https://github.com/cntmio/cntmology.git
 ```
 or
 ```
