@@ -22,17 +22,17 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"sort"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	clisvrcom "github.com/cntmio/cntmology/cmd/server/common"
 	cliutil "github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/signature"
 	"github.com/cntmio/cntmology/core/types"
-	"sort"
 )
-
-const MAX_PUBLIC_KEY_SIZE = 24
 
 type SigMutilRawTransactionReq struct {
 	RawTx   string   `json:"raw_tx"`
@@ -51,7 +51,7 @@ func SigMutilRawTransaction(req *clisvrcom.CliRpcRequest, resp *clisvrcom.CliRpc
 		resp.ErrorCode = clisvrcom.CLIERR_INVALID_PARAMS
 		return
 	}
-	if rawReq.M <= 0 || len(rawReq.PubKeys) < rawReq.M || len(rawReq.PubKeys) > MAX_PUBLIC_KEY_SIZE {
+	if rawReq.M <= 0 || len(rawReq.PubKeys) < rawReq.M || len(rawReq.PubKeys) > constants.MULTI_SIG_MAX_PUBKEY_SIZE {
 		resp.ErrorCode = clisvrcom.CLIERR_INVALID_PARAMS
 		return
 	}

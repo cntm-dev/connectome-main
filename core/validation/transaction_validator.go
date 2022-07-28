@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/payload"
@@ -59,7 +60,7 @@ func checkTransactionSignatures(tx *types.Transaction) error {
 		kn := len(sig.PubKeys)
 		sn := len(sig.SigData)
 
-		if kn > 24 || sn < m || m > kn || m <= 0 {
+		if kn > constants.MULTI_SIG_MAX_PUBKEY_SIZE || sn < m || m > kn || m <= 0 {
 			return errors.New("wrcntm tx sig param length")
 		}
 

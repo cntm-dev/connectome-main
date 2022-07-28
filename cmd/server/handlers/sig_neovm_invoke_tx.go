@@ -55,12 +55,7 @@ func SigNeoVMInvokeTx(req *clisvrcom.CliRpcRequest, resp *clisvrcom.CliRpcRespon
 		resp.ErrorInfo = fmt.Sprintf("ParseNeoVMInvokeParams error:%s", err)
 		return
 	}
-	addrData, err := hex.DecodeString(rawReq.Address)
-	if err != nil {
-		log.Infof("Cli Qid:%s SigNeoVMInvokeTx hex.DecodeString address:%s error:%s", rawReq.Address, err)
-		return
-	}
-	ccntmAddr, err := common.AddressParseFromBytes(addrData)
+	ccntmAddr, err := common.AddressFromHexString(rawReq.Address)
 	if err != nil {
 		log.Infof("Cli Qid:%s SigNeoVMInvokeTx AddressParseFromBytes:%s error:%s", req.Qid, rawReq.Address, err)
 		resp.ErrorCode = clisvrcom.CLIERR_INVALID_PARAMS

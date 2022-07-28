@@ -24,6 +24,7 @@ import (
 
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/core/program"
 	"golang.org/x/crypto/ripemd160"
 )
@@ -37,7 +38,7 @@ func AddressFromPubKey(pubkey keypair.PublicKey) common.Address {
 func AddressFromMultiPubKeys(pubkeys []keypair.PublicKey, m int) (common.Address, error) {
 	var addr common.Address
 	n := len(pubkeys)
-	if !(1 <= m && m <= n && n <= 1024) {
+	if !(1 <= m && m <= n && n <= constants.MULTI_SIG_MAX_PUBKEY_SIZE) {
 		return addr, errors.New("wrcntm multi-sig param")
 	}
 

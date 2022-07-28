@@ -19,12 +19,12 @@
 package cmd
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	cmdcom "github.com/cntmio/cntmology/cmd/common"
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/types"
 	"github.com/urfave/cli"
 	"io/ioutil"
 	"strings"
@@ -129,9 +129,9 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 		return fmt.Errorf("DeployCcntmract error:%s", err)
 	}
 	c, _ := common.HexToBytes(code)
-	address := utils.GetCcntmractAddress(c)
+	address := types.AddressFromVmCode(c)
 	fmt.Printf("Deploy ccntmract:\n")
-	fmt.Printf("  Ccntmract Address:%x\n", address[:])
+	fmt.Printf("  Ccntmract Address:%s\n", address.ToHexString())
 	fmt.Printf("  TxHash:%s\n", txHash)
 	fmt.Printf("\nTip:\n")
 	fmt.Printf("  Using './cntmology info status %s' to query transaction status\n", txHash)
@@ -188,11 +188,7 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 		return nil
 	}
 	ccntmractAddrStr := ctx.String(utils.GetFlagName(utils.CcntmractAddrFlag))
-	addrData, err := hex.DecodeString(ccntmractAddrStr)
-	if err != nil {
-		return fmt.Errorf("Invalid ccntmract address error:%s", err)
-	}
-	ccntmractAddr, err := common.AddressParseFromBytes(addrData)
+	ccntmractAddr, err := common.AddressFromHexString(ccntmractAddrStr)
 	if err != nil {
 		return fmt.Errorf("Invalid ccntmract address error:%s", err)
 	}

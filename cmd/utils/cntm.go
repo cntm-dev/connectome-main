@@ -759,11 +759,6 @@ func BuildWasmVMInvokeCode(smartcodeAddress common.Address, methodName string, p
 	return bf.Bytes(), nil
 }
 
-//GetCcntmractAddress return ccntmract address
-func GetCcntmractAddress(code []byte) common.Address {
-	return types.AddressFromVmCode(code)
-}
-
 //ParseNeoVMCcntmractReturnTypeBool return bool value of smart ccntmract execute code.
 func ParseNeoVMCcntmractReturnTypeBool(hexStr string) (bool, error) {
 	return hexStr == "01", nil

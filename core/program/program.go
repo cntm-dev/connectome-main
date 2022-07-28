@@ -28,6 +28,7 @@ import (
 
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/vm/neovm"
 )
@@ -90,7 +91,7 @@ func ProgramFromPubKey(pubkey keypair.PublicKey) []byte {
 
 func ProgramFromMultiPubKey(pubkeys []keypair.PublicKey, m int) ([]byte, error) {
 	n := len(pubkeys)
-	if !(1 <= m && m <= n && n <= 1024) {
+	if !(1 <= m && m <= n && n <= constants.MULTI_SIG_MAX_PUBKEY_SIZE) {
 		return nil, errors.New("wrcntm multi-sig param")
 	}
 
@@ -310,7 +311,7 @@ func GetProgramInfo(program []byte) (ProgramInfo, error) {
 			return info, fmt.Errorf("number of pubkeys unmarched, expected:%d, got: %d", len(info.PubKeys), n)
 		}
 
-		if !(1 <= m && int64(m) <= n && n <= 1024) {
+		if !(1 <= m && int64(m) <= n && n <= constants.MULTI_SIG_MAX_PUBKEY_SIZE) {
 			return info, errors.New("wrcntm multi-sig param")
 		}
 		info.M = m

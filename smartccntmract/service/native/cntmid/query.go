@@ -26,6 +26,7 @@ import (
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 )
 
 func GetPublicKeyByID(srvc *native.NativeService) ([]byte, error) {
@@ -155,7 +156,7 @@ func GetKeyState(srvc *native.NativeService) ([]byte, error) {
 		return nil, fmt.Errorf("get key state failed: argument 0 error, %s", err)
 	}
 	// arg1: public key ID
-	arg1, err := serialization.ReadVarUint(args, 0xFFFFFFFF)
+	arg1, err := utils.ReadVarUint(args)
 	if err != nil {
 		return nil, fmt.Errorf("get key state failed: argument 1 error, %s", err)
 	}
