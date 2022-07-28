@@ -750,7 +750,7 @@ func (this *LedgerStoreImp) GetEventNotifyByTx(tx common.Uint256) (*event.Execut
 }
 
 //GetEventNotifyByBlock return the transaction hash which have event notice after execution of smart ccntmract. Wrap function of EventStore.GetEventNotifyByBlock
-func (this *LedgerStoreImp) GetEventNotifyByBlock(height uint32) ([]common.Uint256, error) {
+func (this *LedgerStoreImp) GetEventNotifyByBlock(height uint32) ([]*event.ExecuteNotify, error) {
 	return this.eventStore.GetEventNotifyByBlock(height)
 }
 
