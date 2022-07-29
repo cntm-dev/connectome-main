@@ -35,22 +35,19 @@ var (
 	PreRoleFunc       = []byte{0x02}
 	PreRoleToken      = []byte{0x03}
 	PreDelegateStatus = []byte{0x04}
-	//PreDelegateList   = []byte{0x04}
 )
 
 //type(this.ccntmractAddr.Admin) = []byte
-func concatCcntmractAdminKey(native *native.NativeService, ccntmractAddr []byte) ([]byte, error) {
+func concatCcntmractAdminKey(native *native.NativeService, ccntmractAddr common.Address) []byte {
 	this := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-	adminKey, err := packKeys(this, [][]byte{ccntmractAddr, PreAdmin})
+	adminKey := append(this[:], ccntmractAddr[:]...)
+	adminKey = append(adminKey, PreAdmin...)
 
-	return adminKey, err
+	return adminKey
 }
 
-func getCcntmractAdmin(native *native.NativeService, ccntmractAddr []byte) ([]byte, error) {
-	key, err := concatCcntmractAdminKey(native, ccntmractAddr)
-	if err != nil {
-		return nil, err
-	}
+func getCcntmractAdmin(native *native.NativeService, ccntmractAddr common.Address) ([]byte, error) {
+	key := concatCcntmractAdminKey(native, ccntmractAddr)
 	item, err := utils.GetStorageItem(native, key)
 	if err != nil {
 		return nil, err
@@ -61,28 +58,24 @@ func getCcntmractAdmin(native *native.NativeService, ccntmractAddr []byte) ([]by
 	return item.Value, nil
 }
 
-func putCcntmractAdmin(native *native.NativeService, ccntmractAddr, adminOntID []byte) error {
-	key, err := concatCcntmractAdminKey(native, ccntmractAddr)
-	if err != nil {
-		return err
-	}
+func putCcntmractAdmin(native *native.NativeService, ccntmractAddr common.Address, adminOntID []byte) error {
+	key := concatCcntmractAdminKey(native, ccntmractAddr)
 	utils.PutBytes(native, key, adminOntID)
 	return nil
 }
 
 //type(this.ccntmractAddr.RoleFunc.role) = roleFuncs
-func concatRoleFuncKey(native *native.NativeService, ccntmractAddr, role []byte) ([]byte, error) {
+func concatRoleFuncKey(native *native.NativeService, ccntmractAddr common.Address, role []byte) []byte {
 	this := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-	roleFuncKey, err := packKeys(this, [][]byte{ccntmractAddr, PreRoleFunc, role})
+	roleFuncKey := append(this[:], ccntmractAddr[:]...)
+	roleFuncKey = append(roleFuncKey, PreRoleFunc...)
+	roleFuncKey = append(roleFuncKey, role...)
 
-	return roleFuncKey, err
+	return roleFuncKey
 }
 
-func getRoleFunc(native *native.NativeService, ccntmractAddr, role []byte) (*roleFuncs, error) {
-	key, err := concatRoleFuncKey(native, ccntmractAddr, role)
-	if err != nil {
-		return nil, err
-	}
+func getRoleFunc(native *native.NativeService, ccntmractAddr common.Address, role []byte) (*roleFuncs, error) {
+	key := concatRoleFuncKey(native, ccntmractAddr, role)
 	item, err := utils.GetStorageItem(native, key)
 	if err != nil {
 		return nil, err
@@ -99,8 +92,8 @@ func getRoleFunc(native *native.NativeService, ccntmractAddr, role []byte) (*rol
 	return rF, nil
 }
 
-func putRoleFunc(native *native.NativeService, ccntmractAddr, role []byte, funcs *roleFuncs) error {
-	key, _ := concatRoleFuncKey(native, ccntmractAddr, role)
+func putRoleFunc(native *native.NativeService, ccntmractAddr common.Address, role []byte, funcs *roleFuncs) error {
+	key := concatRoleFuncKey(native, ccntmractAddr, role)
 	bf := new(bytes.Buffer)
 	err := funcs.Serialize(bf)
 	if err != nil {
@@ -111,18 +104,17 @@ func putRoleFunc(native *native.NativeService, ccntmractAddr, role []byte, funcs
 }
 
 //type(this.ccntmractAddr.RoleP.cntmID) = roleTokens
-func concatOntIDTokenKey(native *native.NativeService, ccntmractAddr, cntmID []byte) ([]byte, error) {
+func concatOntIDTokenKey(native *native.NativeService, ccntmractAddr common.Address, cntmID []byte) []byte {
 	this := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-	tokenKey, err := packKeys(this, [][]byte{ccntmractAddr, PreRoleToken, cntmID})
+	tokenKey := append(this[:], ccntmractAddr[:]...)
+	tokenKey = append(tokenKey, PreRoleToken...)
+	tokenKey = append(tokenKey, cntmID...)
 
-	return tokenKey, err
+	return tokenKey
 }
 
-func getOntIDToken(native *native.NativeService, ccntmractAddr, cntmID []byte) (*roleTokens, error) {
-	key, err := concatOntIDTokenKey(native, ccntmractAddr, cntmID)
-	if err != nil {
-		return nil, err
-	}
+func getOntIDToken(native *native.NativeService, ccntmractAddr common.Address, cntmID []byte) (*roleTokens, error) {
+	key := concatOntIDTokenKey(native, ccntmractAddr, cntmID)
 	item, err := utils.GetStorageItem(native, key)
 	if err != nil {
 		return nil, err
@@ -139,8 +131,8 @@ func getOntIDToken(native *native.NativeService, ccntmractAddr, cntmID []byte) (
 	return rT, nil
 }
 
-func putOntIDToken(native *native.NativeService, ccntmractAddr, cntmID []byte, tokens *roleTokens) error {
-	key, _ := concatOntIDTokenKey(native, ccntmractAddr, cntmID)
+func putOntIDToken(native *native.NativeService, ccntmractAddr common.Address, cntmID []byte, tokens *roleTokens) error {
+	key := concatOntIDTokenKey(native, ccntmractAddr, cntmID)
 	bf := new(bytes.Buffer)
 	err := tokens.Serialize(bf)
 	if err != nil {
@@ -151,18 +143,17 @@ func putOntIDToken(native *native.NativeService, ccntmractAddr, cntmID []byte, t
 }
 
 //type(this.ccntmractAddr.DelegateStatus.cntmID)
-func concatDelegateStatusKey(native *native.NativeService, ccntmractAddr, cntmID []byte) ([]byte, error) {
+func concatDelegateStatusKey(native *native.NativeService, ccntmractAddr common.Address, cntmID []byte) []byte {
 	this := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-	key, err := packKeys(this, [][]byte{ccntmractAddr, PreDelegateStatus, cntmID})
+	key := append(this[:], ccntmractAddr[:]...)
+	key = append(key, PreDelegateStatus...)
+	key = append(key, cntmID...)
 
-	return key, err
+	return key
 }
 
-func getDelegateStatus(native *native.NativeService, ccntmractAddr, cntmID []byte) (*Status, error) {
-	key, err := concatDelegateStatusKey(native, ccntmractAddr, cntmID)
-	if err != nil {
-		return nil, err
-	}
+func getDelegateStatus(native *native.NativeService, ccntmractAddr common.Address, cntmID []byte) (*Status, error) {
+	key := concatDelegateStatusKey(native, ccntmractAddr, cntmID)
 	item, err := utils.GetStorageItem(native, key)
 	if err != nil {
 		return nil, err
@@ -179,8 +170,8 @@ func getDelegateStatus(native *native.NativeService, ccntmractAddr, cntmID []byt
 	return status, nil
 }
 
-func putDelegateStatus(native *native.NativeService, ccntmractAddr, cntmID []byte, status *Status) error {
-	key, _ := concatDelegateStatusKey(native, ccntmractAddr, cntmID)
+func putDelegateStatus(native *native.NativeService, ccntmractAddr common.Address, cntmID []byte, status *Status) error {
+	key := concatDelegateStatusKey(native, ccntmractAddr, cntmID)
 	bf := new(bytes.Buffer)
 	err := status.Serialize(bf)
 	if err != nil {
@@ -188,30 +179,6 @@ func putDelegateStatus(native *native.NativeService, ccntmractAddr, cntmID []byt
 	}
 	utils.PutBytes(native, key, bf.Bytes())
 	return nil
-}
-
-/*
- * pack data to be used as a key in the kv storage
- * key := field || ser_items[1] || ... || ser_items[n]
- */
-func packKeys(field common.Address, items [][]byte) ([]byte, error) {
-	w := new(bytes.Buffer)
-	for _, item := range items {
-		err := serialization.WriteVarBytes(w, item)
-		if err != nil {
-			return nil, fmt.Errorf("packKeys failed when serialize %x", item)
-		}
-	}
-	key := append(field[:], w.Bytes()...)
-	return key, nil
-}
-
-/*
- * pack data to be used as a key in the kv storage
- * key := field || ser_data
- */
-func packKey(field common.Address, data []byte) ([]byte, error) {
-	return packKeys(field, [][]byte{data})
 }
 
 //remote duplicates in the slice of string
@@ -237,10 +204,6 @@ func pushEvent(native *native.NativeService, s interface{}) {
 	event.CcntmractAddress = native.CcntmextRef.CurrentCcntmext().CcntmractAddress
 	event.States = s
 	native.Notifications = append(native.Notifications, event)
-}
-
-func invokeEvent(native *native.NativeService, fn string, ret bool) {
-	pushEvent(native, []interface{}{fn, ret})
 }
 
 func serializeAddress(w io.Writer, addr common.Address) error {

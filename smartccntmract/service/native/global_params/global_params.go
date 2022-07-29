@@ -24,10 +24,8 @@ import (
 	"sync"
 
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/config"
-	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/common/serialization"
 	scommon "github.com/cntmio/cntmology/core/store/common"
-	ctypes "github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
@@ -41,18 +39,19 @@ type ParamCache struct {
 type paramType byte
 
 const (
-	CURRENT_VALUE         paramType = 0x00
-	PREPARE_VALUE         paramType = 0x01
-	INIT_NAME                       = "init"
-	ACCEPT_ADMIN_NAME               = "acceptAdmin"
-	TRANSFER_ADMIN_NAME             = "transferAdmin"
-	SET_GLOBAL_PARAM_NAME           = "setGlobalParam"
-	GET_GLOBAL_PARAM_NAME           = "getGlobalParam"
-	CREATE_SNAPSHOT_NAME            = "createSnapshot"
+	VERSION_CcntmRACT_GLOBAL_PARAMS           = byte(0)
+	CURRENT_VALUE                  paramType = 0x00
+	PREPARE_VALUE                  paramType = 0x01
+	INIT_NAME                                = "init"
+	ACCEPT_ADMIN_NAME                        = "acceptAdmin"
+	TRANSFER_ADMIN_NAME                      = "transferAdmin"
+	SET_OPERATOR                             = "setOperator"
+	SET_GLOBAL_PARAM_NAME                    = "setGlobalParam"
+	GET_GLOBAL_PARAM_NAME                    = "getGlobalParam"
+	CREATE_SNAPSHOT_NAME                     = "createSnapshot"
 )
 
 var paramCache *ParamCache
-var admin *Admin
 
 func InitGlobalParams() {
 	native.Ccntmracts[utils.ParamCcntmractAddress] = RegisterParamCcntmract
@@ -64,6 +63,7 @@ func RegisterParamCcntmract(native *native.NativeService) {
 	native.Register(INIT_NAME, ParamInit)
 	native.Register(ACCEPT_ADMIN_NAME, AcceptAdmin)
 	native.Register(TRANSFER_ADMIN_NAME, TransferAdmin)
+	native.Register(SET_OPERATOR, SetOperator)
 	native.Register(SET_GLOBAL_PARAM_NAME, SetGlobalParam)
 	native.Register(GET_GLOBAL_PARAM_NAME, GetGlobalParam)
 	native.Register(CREATE_SNAPSHOT_NAME, CreateSnapshot)
@@ -74,25 +74,29 @@ func ParamInit(native *native.NativeService) ([]byte, error) {
 	paramCache.Params = make([]*Param, 0)
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
 	initParams := new(Params)
-	if err := initParams.Deserialize(bytes.NewBuffer(native.Input)); err != nil {
-		return utils.BYTE_FALSE, errors.NewErr("init param, deserialize failed!")
+	args, err := serialization.ReadVarBytes(bytes.NewBuffer(native.Input))
+	if err != nil {
+		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "init param, read native input failed!")
+	}
+	argsBuffer := bytes.NewBuffer(args)
+	if err := initParams.Deserialize(argsBuffer); err != nil {
+		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "init param, deserialize params failed!")
 	}
 	native.CloneCache.Add(scommon.ST_STORAGE, generateParamKey(ccntmract, CURRENT_VALUE), getParamStorageItem(initParams))
 	native.CloneCache.Add(scommon.ST_STORAGE, generateParamKey(ccntmract, PREPARE_VALUE), getParamStorageItem(initParams))
-	admin = new(Admin)
 
-	bookKeeepers, err := config.DefConfig.GetBookkeepers()
-	if err != nil {
-		return utils.BYTE_FALSE, fmt.Errorf("get bookkeepers error:%s", err)
+	admin := new(Role)
+	if err := admin.Deserialize(argsBuffer); err != nil {
+		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "init param, deserialize admin failed!")
 	}
-	initAddress := ctypes.AddressFromPubKey(bookKeeepers[0])
-	copy((*admin)[:], initAddress[:])
-	native.CloneCache.Add(scommon.ST_STORAGE, GenerateAdminKey(ccntmract, false), getAdminStorageItem(admin))
+	native.CloneCache.Add(scommon.ST_STORAGE, generateAdminKey(ccntmract, false), getRoleStorageItem(admin))
+	operator := admin
+	native.CloneCache.Add(scommon.ST_STORAGE, GenerateOperatorKey(ccntmract), getRoleStorageItem(operator))
 	return utils.BYTE_TRUE, nil
 }
 
 func AcceptAdmin(native *native.NativeService) ([]byte, error) {
-	destinationAdmin := new(Admin)
+	destinationAdmin := new(Role)
 	if err := destinationAdmin.Deserialize(bytes.NewBuffer(native.Input)); err != nil {
 		return utils.BYTE_FALSE, errors.NewErr("accept admin, deserialize admin failed!")
 	}
@@ -100,39 +104,60 @@ func AcceptAdmin(native *native.NativeService) ([]byte, error) {
 		return utils.BYTE_FALSE, errors.NewErr("accept admin, authentication failed!")
 	}
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-	getAdmin(native, ccntmract)
-	transferAdmin, err := GetStorageAdmin(native, GenerateAdminKey(ccntmract, true))
+	transferAdmin, err := GetStorageRole(native, generateAdminKey(ccntmract, true))
 	if err != nil || transferAdmin == nil || *transferAdmin != *destinationAdmin {
 		return utils.BYTE_FALSE, fmt.Errorf("accept admin, destination account hasn't been approved, casused by %v", err)
 	}
 	// delete transfer admin item
-	native.CloneCache.Delete(scommon.ST_STORAGE, GenerateAdminKey(ccntmract, true))
+	native.CloneCache.Delete(scommon.ST_STORAGE, generateAdminKey(ccntmract, true))
 	// modify admin in database
-	native.CloneCache.Add(scommon.ST_STORAGE, GenerateAdminKey(ccntmract, false), getAdminStorageItem(destinationAdmin))
+	native.CloneCache.Add(scommon.ST_STORAGE, generateAdminKey(ccntmract, false), getRoleStorageItem(destinationAdmin))
 
-	admin = destinationAdmin
 	return utils.BYTE_TRUE, nil
 }
 
 func TransferAdmin(native *native.NativeService) ([]byte, error) {
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-	getAdmin(native, ccntmract)
+	admin, err := GetStorageRole(native, generateAdminKey(ccntmract, false))
+	if err != nil {
+		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "transfer admin, admin doesn't exist!")
+	}
 	if !native.CcntmextRef.CheckWitness(common.Address(*admin)) {
 		return utils.BYTE_FALSE, errors.NewErr("transfer admin, authentication failed!")
 	}
-	destinationAdmin := new(Admin)
+	destinationAdmin := new(Role)
 	if err := destinationAdmin.Deserialize(bytes.NewBuffer(native.Input)); err != nil {
 		return utils.BYTE_FALSE, errors.NewErr("transfer admin, deserialize admin failed!")
 	}
-	native.CloneCache.Add(scommon.ST_STORAGE, GenerateAdminKey(ccntmract, true),
-		getAdminStorageItem(destinationAdmin))
+	native.CloneCache.Add(scommon.ST_STORAGE, generateAdminKey(ccntmract, true),
+		getRoleStorageItem(destinationAdmin))
+	return utils.BYTE_TRUE, nil
+}
+
+func SetOperator(native *native.NativeService) ([]byte, error) {
+	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
+	admin, err := GetStorageRole(native, generateAdminKey(ccntmract, false))
+	if err != nil {
+		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "set operator, admin doesn't exist!")
+	}
+	if !native.CcntmextRef.CheckWitness(common.Address(*admin)) {
+		return utils.BYTE_FALSE, errors.NewErr("set operator, authentication failed!")
+	}
+	destinationOperator := new(Role)
+	if err := destinationOperator.Deserialize(bytes.NewBuffer(native.Input)); err != nil {
+		return utils.BYTE_FALSE, errors.NewErr("set operator, deserialize operator failed!")
+	}
+	native.CloneCache.Add(scommon.ST_STORAGE, GenerateOperatorKey(ccntmract), getRoleStorageItem(destinationOperator))
 	return utils.BYTE_TRUE, nil
 }
 
 func SetGlobalParam(native *native.NativeService) ([]byte, error) {
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-	getAdmin(native, ccntmract)
-	if !native.CcntmextRef.CheckWitness(common.Address(*admin)) {
+	operator, err := GetStorageRole(native, GenerateOperatorKey(ccntmract))
+	if err != nil {
+		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "set param, operator doesn't exist!")
+	}
+	if !native.CcntmextRef.CheckWitness(common.Address(*operator)) {
 		return utils.BYTE_FALSE, errors.NewErr("set param, authentication failed!")
 	}
 	params := new(Params)
@@ -201,8 +226,11 @@ func GetGlobalParam(native *native.NativeService) ([]byte, error) {
 
 func CreateSnapshot(native *native.NativeService) ([]byte, error) {
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-	getAdmin(native, ccntmract)
-	if !native.CcntmextRef.CheckWitness(common.Address(*admin)) {
+	operator, err := GetStorageRole(native, GenerateOperatorKey(ccntmract))
+	if err != nil {
+		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "create snapshot, operator doesn't exist!")
+	}
+	if !native.CcntmextRef.CheckWitness(common.Address(*operator)) {
 		return utils.BYTE_FALSE, errors.NewErr("create snapshot, authentication failed!")
 	}
 	// read prepare param
@@ -218,24 +246,6 @@ func CreateSnapshot(native *native.NativeService) ([]byte, error) {
 	// clear memory cache
 	clearCache()
 	return utils.BYTE_TRUE, nil
-}
-
-func getAdmin(native *native.NativeService, ccntmract common.Address) {
-	if admin == nil || *admin == *new(Admin) {
-		var err error
-		// get admin from database
-		admin, err = GetStorageAdmin(native, GenerateAdminKey(ccntmract, false))
-		// there are no admin in database
-		if err != nil {
-			bookKeeepers, err := config.DefConfig.GetBookkeepers()
-			if err != nil {
-				log.Errorf("GetBookkeepers error: %v", err)
-				return
-			}
-			initAddress := ctypes.AddressFromPubKey(bookKeeepers[0])
-			copy((*admin)[:], initAddress[:])
-		}
-	}
 }
 
 func clearCache() {

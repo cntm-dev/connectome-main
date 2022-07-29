@@ -22,6 +22,8 @@ import (
 	"fmt"
 
 	"github.com/cntmio/cntmology-crypto/keypair"
+	scommon "github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/signature"
 	"github.com/cntmio/cntmology/core/store"
@@ -221,10 +223,11 @@ func (this *NeoVmService) SystemCall(engine *vm.ExecutionEngine) error {
 }
 
 func (this *NeoVmService) getCcntmract(address []byte) ([]byte, error) {
-	item, err := this.CloneCache.Store.TryGet(common.ST_CcntmRACT, address[:])
+	item, err := this.CloneCache.Store.TryGet(common.ST_CcntmRACT, address)
 	if err != nil {
 		return nil, errors.NewErr("[getCcntmract] Get ccntmract ccntmext error!")
 	}
+	log.Infof("invoke ccntmract address:%x", scommon.ToArrayReverse(address))
 	if item == nil {
 		return nil, CcntmRACT_NOT_EXIST
 	}

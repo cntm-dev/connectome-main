@@ -497,6 +497,29 @@ func PrepareInvokeNeoVMCcntmract(
 	return preResult, nil
 }
 
+func PrepareInvokeCodeNeoVMCcntmract(code []byte) (*cstates.PreExecResult, error) {
+	tx, err := httpcom.NewSmartCcntmractTransaction(0, 0, code)
+	if err != nil {
+		return nil, err
+	}
+	var buffer bytes.Buffer
+	err = tx.Serialize(&buffer)
+	if err != nil {
+		return nil, fmt.Errorf("Serialize error:%s", err)
+	}
+	txData := hex.EncodeToString(buffer.Bytes())
+	data, err := sendRpcRequest("sendrawtransaction", []interface{}{txData, 1})
+	if err != nil {
+		return nil, err
+	}
+	preResult := &cstates.PreExecResult{}
+	err = json.Unmarshal(data, &preResult)
+	if err != nil {
+		return nil, fmt.Errorf("json.Unmarshal PreExecResult:%s error:%s", data, err)
+	}
+	return preResult, nil
+}
+
 func PrepareInvokeNativeCcntmract(
 	ccntmractAddress common.Address,
 	version byte,

@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
@@ -41,7 +42,7 @@ func Init() {
 /*
  * ccntmract admin management
  */
-func initCcntmractAdmin(native *native.NativeService, ccntmractAddr, cntmID []byte) (bool, error) {
+func initCcntmractAdmin(native *native.NativeService, ccntmractAddr common.Address, cntmID []byte) (bool, error) {
 	admin, err := getCcntmractAdmin(native, ccntmractAddr)
 	if err != nil {
 		return false, err
@@ -69,7 +70,7 @@ func InitCcntmractAdmin(native *native.NativeService) ([]byte, error) {
 	}
 	invokeAddr := cxt.CcntmractAddress
 
-	ret, err := initCcntmractAdmin(native, invokeAddr[:], param.AdminOntID)
+	ret, err := initCcntmractAdmin(native, invokeAddr, param.AdminOntID)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +83,7 @@ func InitCcntmractAdmin(native *native.NativeService) ([]byte, error) {
 	return utils.BYTE_TRUE, nil
 }
 
-func transfer(native *native.NativeService, ccntmractAddr, newAdminOntID []byte, keyNo uint64) (bool, error) {
+func transfer(native *native.NativeService, ccntmractAddr common.Address, newAdminOntID []byte, keyNo uint64) (bool, error) {
 	admin, err := getCcntmractAdmin(native, ccntmractAddr)
 	if err != nil {
 		return false, err
@@ -99,10 +100,7 @@ func transfer(native *native.NativeService, ccntmractAddr, newAdminOntID []byte,
 		return false, nil
 	}
 
-	adminKey, err := concatCcntmractAdminKey(native, ccntmractAddr)
-	if err != nil {
-		return false, err
-	}
+	adminKey := concatCcntmractAdminKey(native, ccntmractAddr)
 	utils.PutBytes(native, adminKey, newAdminOntID)
 	return true, nil
 }
@@ -123,8 +121,7 @@ func Transfer(native *native.NativeService) ([]byte, error) {
 	sucState := []interface{}{"transfer", ccntmract, true}
 
 	//call transfer func
-	ccntmractAddr := param.CcntmractAddr[:]
-	ret, err := transfer(native, ccntmractAddr, param.NewAdminOntID, param.KeyNo)
+	ret, err := transfer(native, param.CcntmractAddr, param.NewAdminOntID, param.KeyNo)
 	if ret {
 		pushEvent(native, sucState)
 		return utils.BYTE_TRUE, nil
@@ -153,8 +150,7 @@ func AssignFuncsToRole(native *native.NativeService) ([]byte, error) {
 	}
 
 	//check the caller's permission
-	ccntmractAddr := param.CcntmractAddr[:]
-	admin, err := getCcntmractAdmin(native, ccntmractAddr)
+	admin, err := getCcntmractAdmin(native, param.CcntmractAddr)
 	if err != nil {
 		return nil, fmt.Errorf("get ccntmract admin failed, caused by %v", err)
 	}
@@ -175,7 +171,7 @@ func AssignFuncsToRole(native *native.NativeService) ([]byte, error) {
 		return utils.BYTE_FALSE, nil
 	}
 
-	funcs, err := getRoleFunc(native, ccntmractAddr, param.Role)
+	funcs, err := getRoleFunc(native, param.CcntmractAddr, param.Role)
 	if funcs != nil {
 		funcNames := append(funcs.funcNames, param.FuncNames...)
 		funcs.funcNames = stringSliceUniq(funcNames)
@@ -183,7 +179,7 @@ func AssignFuncsToRole(native *native.NativeService) ([]byte, error) {
 		funcs = new(roleFuncs)
 		funcs.funcNames = stringSliceUniq(param.FuncNames)
 	}
-	err = putRoleFunc(native, ccntmractAddr, param.Role, funcs)
+	err = putRoleFunc(native, param.CcntmractAddr, param.Role, funcs)
 	if err != nil {
 		return utils.BYTE_FALSE, err
 	}
@@ -194,8 +190,7 @@ func AssignFuncsToRole(native *native.NativeService) ([]byte, error) {
 
 func assignToRole(native *native.NativeService, param *OntIDsToRoleParam) (bool, error) {
 	//check admin's permission
-	ccntmractAddr := param.CcntmractAddr[:]
-	admin, err := getCcntmractAdmin(native, ccntmractAddr)
+	admin, err := getCcntmractAdmin(native, param.CcntmractAddr)
 	if err != nil {
 		return false, fmt.Errorf("get ccntmract admin failed, caused by %v", err)
 	}
@@ -223,7 +218,7 @@ func assignToRole(native *native.NativeService, param *OntIDsToRoleParam) (bool,
 		if p == nil {
 			ccntminue
 		}
-		tokens, err := getOntIDToken(native, ccntmractAddr, p)
+		tokens, err := getOntIDToken(native, param.CcntmractAddr, p)
 		if err != nil {
 			return false, err
 		}
@@ -232,7 +227,7 @@ func assignToRole(native *native.NativeService, param *OntIDsToRoleParam) (bool,
 			tokens.tokens = make([]*AuthToken, 1)
 			tokens.tokens[0] = token
 		} else {
-			ret, err := hasRole(native, ccntmractAddr, p, param.Role)
+			ret, err := hasRole(native, param.CcntmractAddr, p, param.Role)
 			if err != nil {
 				return false, err
 			}
@@ -242,7 +237,7 @@ func assignToRole(native *native.NativeService, param *OntIDsToRoleParam) (bool,
 				ccntminue
 			}
 		}
-		err = putOntIDToken(native, ccntmractAddr, p, tokens)
+		err = putOntIDToken(native, param.CcntmractAddr, p, tokens)
 		if err != nil {
 			return false, err
 		}
@@ -278,7 +273,7 @@ func AssignOntIDsToRole(native *native.NativeService) ([]byte, error) {
 	}
 }
 
-func getAuthToken(native *native.NativeService, ccntmractAddr, cntmID, role []byte) (*AuthToken, error) {
+func getAuthToken(native *native.NativeService, ccntmractAddr common.Address, cntmID, role []byte) (*AuthToken, error) {
 	tokens, err := getOntIDToken(native, ccntmractAddr, cntmID)
 	if err != nil {
 		return nil, fmt.Errorf("get token failed, caused by %v", err)
@@ -308,7 +303,7 @@ func getAuthToken(native *native.NativeService, ccntmractAddr, cntmID, role []by
 	return nil, nil
 }
 
-func hasRole(native *native.NativeService, ccntmractAddr, cntmID, role []byte) (bool, error) {
+func hasRole(native *native.NativeService, ccntmractAddr common.Address, cntmID, role []byte) (bool, error) {
 	token, err := getAuthToken(native, ccntmractAddr, cntmID, role)
 	if err != nil {
 		return false, err
@@ -319,7 +314,7 @@ func hasRole(native *native.NativeService, ccntmractAddr, cntmID, role []byte) (
 	return true, nil
 }
 
-func getLevel(native *native.NativeService, ccntmractAddr, cntmID, role []byte) (uint8, error) {
+func getLevel(native *native.NativeService, ccntmractAddr common.Address, cntmID, role []byte) (uint8, error) {
 	token, err := getAuthToken(native, ccntmractAddr, cntmID, role)
 	if err != nil {
 		return 0, err
@@ -334,7 +329,7 @@ func getLevel(native *native.NativeService, ccntmractAddr, cntmID, role []byte) 
  * if 'from' has the authority and 'to' has not been authorized 'role',
  * then make changes to storage as follows:
  */
-func delegate(native *native.NativeService, ccntmractAddr []byte, from []byte, to []byte,
+func delegate(native *native.NativeService, ccntmractAddr common.Address, from []byte, to []byte,
 	role []byte, period uint32, level uint8, keyNo uint64) (bool, error) {
 	var fromHasRole, toHasRole bool
 	var fromLevel uint8
@@ -443,8 +438,7 @@ func Delegate(native *native.NativeService) ([]byte, error) {
 	sucState := []interface{}{"delegate", ccntmract, param.From, param.To, true}
 
 	//call the delegate func
-	ccntmractAddr := param.CcntmractAddr[:]
-	ret, err := delegate(native, ccntmractAddr, param.From, param.To, param.Role,
+	ret, err := delegate(native, param.CcntmractAddr, param.From, param.To, param.Role,
 		uint32(param.Period), uint8(param.Level), param.KeyNo)
 	if err != nil {
 		return nil, err
@@ -458,7 +452,7 @@ func Delegate(native *native.NativeService) ([]byte, error) {
 	}
 }
 
-func withdraw(native *native.NativeService, ccntmractAddr []byte, initiator []byte, delegate []byte,
+func withdraw(native *native.NativeService, ccntmractAddr common.Address, initiator []byte, delegate []byte,
 	role []byte, keyNo uint64) (bool, error) {
 	//check from's permission
 	ret, err := verifySig(native, initiator, keyNo)
@@ -516,8 +510,7 @@ func Withdraw(native *native.NativeService) ([]byte, error) {
 	sucState := []interface{}{"withdraw", ccntmract, param.Initiator, param.Delegate, true}
 
 	//call the withdraw func
-	ccntmractAddr := param.CcntmractAddr[:]
-	ret, err := withdraw(native, ccntmractAddr, param.Initiator, param.Delegate, param.Role, param.KeyNo)
+	ret, err := withdraw(native, param.CcntmractAddr, param.Initiator, param.Delegate, param.Role, param.KeyNo)
 	if err != nil {
 		return nil, err
 	}
@@ -536,7 +529,7 @@ func Withdraw(native *native.NativeService) ([]byte, error) {
  *  @fn the name of the func to call
  *  @tokenSig the signature on the message
  */
-func verifyToken(native *native.NativeService, ccntmractAddr []byte, caller []byte, fn string, keyNo uint64) (bool, error) {
+func verifyToken(native *native.NativeService, ccntmractAddr common.Address, caller []byte, fn string, keyNo uint64) (bool, error) {
 	//check caller's identity
 	ret, err := verifySig(native, caller, keyNo)
 	if err != nil {
@@ -604,8 +597,7 @@ func VerifyToken(native *native.NativeService) ([]byte, error) {
 	failState := []interface{}{"verifyToken", ccntmract, param.Caller, param.Fn, false}
 	sucState := []interface{}{"verifyToken", ccntmract, param.Caller, param.Fn, true}
 
-	ccntmractAddr := param.CcntmractAddr[:]
-	ret, err := verifyToken(native, ccntmractAddr, param.Caller, param.Fn, param.KeyNo)
+	ret, err := verifyToken(native, param.CcntmractAddr, param.Caller, param.Fn, param.KeyNo)
 	if err != nil {
 		return nil, err
 	}
@@ -622,7 +614,7 @@ func verifySig(native *native.NativeService, cntmID []byte, keyNo uint64) (bool,
 	if err := serialization.WriteVarBytes(bf, cntmID); err != nil {
 		return false, err
 	}
-	if err := serialization.WriteVarUint(bf, keyNo); err != nil {
+	if err := utils.WriteVarUint(bf, keyNo); err != nil {
 		return false, err
 	}
 	args := bf.Bytes()

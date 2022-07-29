@@ -25,6 +25,7 @@ import (
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/states"
@@ -73,6 +74,7 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, stateBa
 		cache.Commit()
 	}
 
+	log.Infof("deploy ccntmract address:%x", address.ToHexString())
 	// store ccntmract message
 	err = stateBatch.TryGetOrAdd(scommon.ST_CcntmRACT, address[:], deploy)
 	if err != nil {
