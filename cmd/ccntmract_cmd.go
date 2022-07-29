@@ -25,6 +25,7 @@ import (
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/types"
+	httpcom "github.com/cntmio/cntmology/http/base/common"
 	"github.com/urfave/cli"
 	"io/ioutil"
 	"strings"
@@ -140,7 +141,7 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 
 func invokeCodeCcntmract(ctx *cli.Ccntmext) error {
 	if !ctx.IsSet(utils.GetFlagName(utils.CcntmractCodeFileFlag)) {
-		fmt.Errorf("Missing code or name argument\n")
+		fmt.Printf("Missing code or name argument\n")
 		cli.ShowSubcommandHelp(ctx)
 		return nil
 	}
@@ -163,7 +164,8 @@ func invokeCodeCcntmract(ctx *cli.Ccntmext) error {
 	}
 	gasPrice := ctx.Uint64(utils.GetFlagName(utils.TransactionGasPriceFlag))
 	gasLimit := ctx.Uint64(utils.GetFlagName(utils.TransactionGasLimitFlag))
-	invokeTx := utils.NewInvokeTransaction(gasLimit, gasPrice, c)
+
+	invokeTx, err := httpcom.NewSmartCcntmractTransaction(gasLimit, gasPrice, c)
 	if err != nil {
 		return err
 	}
@@ -183,7 +185,7 @@ func invokeCodeCcntmract(ctx *cli.Ccntmext) error {
 
 func invokeCcntmract(ctx *cli.Ccntmext) error {
 	if !ctx.IsSet(utils.GetFlagName(utils.CcntmractAddrFlag)) {
-		fmt.Errorf("Missing ccntmract address argument.\n")
+		fmt.Printf("Missing ccntmract address argument.\n")
 		cli.ShowSubcommandHelp(ctx)
 		return nil
 	}
@@ -193,7 +195,6 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 		return fmt.Errorf("Invalid ccntmract address error:%s", err)
 	}
 
-	cversion := byte(ctx.Int(utils.GetFlagName(utils.CcntmractVersionFlag)))
 	paramsStr := ctx.String(utils.GetFlagName(utils.CcntmractParamsFlag))
 	params, err := utils.ParseParams(paramsStr)
 	if err != nil {
@@ -204,7 +205,7 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 	fmt.Printf("Invoke:%x Params:%s\n", ccntmractAddr[:], paramData)
 
 	if ctx.IsSet(utils.GetFlagName(utils.CcntmractPrepareInvokeFlag)) {
-		preResult, err := utils.PrepareInvokeNeoVMCcntmract(cversion, ccntmractAddr, params)
+		preResult, err := utils.PrepareInvokeNeoVMCcntmract(ccntmractAddr, params)
 		if err != nil {
 			return fmt.Errorf("PrepareInvokeNeoVMSmartCcntmact error:%s", err)
 		}
@@ -240,7 +241,7 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 	gasPrice := ctx.Uint64(utils.GetFlagName(utils.TransactionGasPriceFlag))
 	gasLimit := ctx.Uint64(utils.GetFlagName(utils.TransactionGasLimitFlag))
 
-	txHash, err := utils.InvokeNeoVMCcntmract(gasPrice, gasLimit, signer, cversion, ccntmractAddr, params)
+	txHash, err := utils.InvokeNeoVMCcntmract(gasPrice, gasLimit, signer, ccntmractAddr, params)
 	if err != nil {
 		return fmt.Errorf("Invoke NeoVM ccntmract error:%s", err)
 	}

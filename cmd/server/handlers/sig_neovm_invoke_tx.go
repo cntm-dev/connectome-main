@@ -27,6 +27,7 @@ import (
 	cliutil "github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
+	httpcom "github.com/cntmio/cntmology/http/base/common"
 )
 
 type SigNeoVMInvokeTxReq struct {
@@ -34,7 +35,6 @@ type SigNeoVMInvokeTxReq struct {
 	GasLimit uint64        `json:"gas_limit"`
 	Address  string        `json:"address"`
 	Params   []interface{} `json:"params"`
-	Version  byte          `json:"version"`
 }
 
 type SigNeoVMInvokeTxRsp struct {
@@ -61,7 +61,7 @@ func SigNeoVMInvokeTx(req *clisvrcom.CliRpcRequest, resp *clisvrcom.CliRpcRespon
 		resp.ErrorCode = clisvrcom.CLIERR_INVALID_PARAMS
 		return
 	}
-	tx, err := cliutil.InvokeNeoVMCcntmractTx(rawReq.GasPrice, rawReq.GasLimit, rawReq.Version, ccntmAddr, params)
+	tx, err := httpcom.NewNeovmInvokeTransaction(rawReq.GasPrice, rawReq.GasLimit, ccntmAddr, params)
 	if err != nil {
 		log.Infof("Cli Qid:%s SigNeoVMInvokeTx InvokeNeoVMCcntmractTx error:%s", req.Qid, err)
 		resp.ErrorCode = clisvrcom.CLIERR_INVALID_PARAMS

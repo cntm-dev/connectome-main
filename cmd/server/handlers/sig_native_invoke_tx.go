@@ -22,7 +22,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"github.com/cntmio/cntmology/cmd/abi"
 	clisvrcom "github.com/cntmio/cntmology/cmd/server/common"
 	cliutil "github.com/cntmio/cntmology/cmd/utils"
@@ -67,13 +66,12 @@ func SigNativeInvokeTx(req *clisvrcom.CliRpcRequest, resp *clisvrcom.CliRpcRespo
 		resp.ErrorCode = clisvrcom.CLIERR_ABI_NOT_FOUND
 		return
 	}
-	data, err := cliutil.ParseNativeParam(rawReq.Params, funcAbi.Parameters)
+	tx, err := cliutil.NewNativeInvokeTransaction(rawReq.GasPrice, rawReq.GasLimit, ccntmractAddr, rawReq.Version, rawReq.Params, funcAbi)
 	if err != nil {
-		resp.ErrorCode = clisvrcom.CLIERR_ABI_UNMATCH
-		resp.ErrorInfo = fmt.Sprintf("Parse param error:%s", err)
+		resp.ErrorCode = clisvrcom.CLIERR_INTERNAL_ERR
+		resp.ErrorInfo = err.Error()
 		return
 	}
-	tx, err := cliutil.InvokeNativeCcntmractTx(rawReq.GasPrice, rawReq.GasLimit, rawReq.Version, ccntmractAddr, rawReq.Method, data)
 	if err != nil {
 		log.Infof("Cli Qid:%s SigNativeInvokeTx InvokeNativeCcntmractTx error:%s", req.Qid, err)
 		resp.ErrorCode = clisvrcom.CLIERR_INTERNAL_ERR

@@ -24,11 +24,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/big"
-	"strconv"
-	"strings"
-	"time"
-
 	"github.com/cntmio/cntmology-crypto/keypair"
 	sig "github.com/cntmio/cntmology-crypto/signature"
 	"github.com/cntmio/cntmology/account"
@@ -42,14 +37,16 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
 	cstates "github.com/cntmio/cntmology/smartccntmract/states"
-	"github.com/cntmio/cntmology/vm/neovm"
 	"github.com/cntmio/cntmology/vm/wasmvm/exec"
+	"strconv"
+	"strings"
+	"time"
 )
 
 const (
-	VERSION_TRANSACTION    = 0
-	VERSION_CcntmRACT_cntm   = 0
-	VERSION_CcntmRACT_cntm   = 0
+	VERSION_TRANSACTION    = byte(0)
+	VERSION_CcntmRACT_cntm   = byte(0)
+	VERSION_CcntmRACT_cntm   = byte(0)
 	CcntmRACT_TRANSFER      = "transfer"
 	CcntmRACT_TRANSFER_FROM = "transferFrom"
 	CcntmRACT_APPROVE       = "approve"
@@ -137,35 +134,45 @@ func Approve(gasPrice, gasLimit uint64, signer *account.Account, asset, from, to
 func ApproveTx(gasPrice, gasLimit uint64, asset string, from, to string, amount uint64) (*types.Transaction, error) {
 	fromAddr, err := common.AddressFromBase58(from)
 	if err != nil {
-		return nil, fmt.Errorf("To address:%s invalid:%s", from, err)
+		return nil, fmt.Errorf("from address:%s invalid:%s", from, err)
 	}
 	toAddr, err := common.AddressFromBase58(to)
 	if err != nil {
 		return nil, fmt.Errorf("To address:%s invalid:%s", to, err)
 	}
-	buf := bytes.NewBuffer(nil)
 	var state = &cntm.State{
 		From:  fromAddr,
 		To:    toAddr,
 		Value: amount,
 	}
-	err = state.Serialize(buf)
-	if err != nil {
-		return nil, fmt.Errorf("transfers.Serialize error %s", err)
-	}
-	var cversion byte
+	var version byte
 	var ccntmractAddr common.Address
 	switch strings.ToLower(asset) {
 	case ASSET_cntm:
+		version = VERSION_CcntmRACT_cntm
 		ccntmractAddr = utils.OntCcntmractAddress
-		cversion = VERSION_CcntmRACT_cntm
 	case ASSET_cntm:
+		version = VERSION_CcntmRACT_cntm
 		ccntmractAddr = utils.OngCcntmractAddress
-		cversion = VERSION_CcntmRACT_cntm
 	default:
 		return nil, fmt.Errorf("Unsupport asset:%s", asset)
 	}
-	return InvokeNativeCcntmractTx(gasPrice, gasLimit, cversion, ccntmractAddr, CcntmRACT_APPROVE, buf.Bytes())
+	invokeCode, err := httpcom.BuildNativeInvokeCode(ccntmractAddr, version, CcntmRACT_APPROVE, []interface{}{state})
+	if err != nil {
+		return nil, fmt.Errorf("build invoke code error:%s", err)
+	}
+	invokePayload := &payload.InvokeCode{
+		Code: invokeCode,
+	}
+	tx := &types.Transaction{
+		GasPrice: gasPrice,
+		GasLimit: gasLimit,
+		TxType:   types.Invoke,
+		Nonce:    uint32(time.Now().Unix()),
+		Payload:  invokePayload,
+		Sigs:     make([]*types.Sig, 0, 0),
+	}
+	return tx, nil
 }
 
 func TransferTx(gasPrice, gasLimit uint64, asset, from, to string, amount uint64) (*types.Transaction, error) {
@@ -177,33 +184,40 @@ func TransferTx(gasPrice, gasLimit uint64, asset, from, to string, amount uint64
 	if err != nil {
 		return nil, fmt.Errorf("To address:%s invalid:%s", to, err)
 	}
-	buf := bytes.NewBuffer(nil)
 	var sts []*cntm.State
 	sts = append(sts, &cntm.State{
 		From:  fromAddr,
 		To:    toAddr,
 		Value: amount,
 	})
-	transfers := &cntm.Transfers{
-		States: sts,
-	}
-	err = transfers.Serialize(buf)
-	if err != nil {
-		return nil, fmt.Errorf("transfers.Serialize error %s", err)
-	}
-	var cversion byte
+	var version byte
 	var ccntmractAddr common.Address
 	switch strings.ToLower(asset) {
 	case ASSET_cntm:
+		version = VERSION_CcntmRACT_cntm
 		ccntmractAddr = utils.OntCcntmractAddress
-		cversion = VERSION_CcntmRACT_cntm
 	case ASSET_cntm:
+		version = VERSION_CcntmRACT_cntm
 		ccntmractAddr = utils.OngCcntmractAddress
-		cversion = VERSION_CcntmRACT_cntm
 	default:
 		return nil, fmt.Errorf("Unsupport asset:%s", asset)
 	}
-	return InvokeNativeCcntmractTx(gasPrice, gasLimit, cversion, ccntmractAddr, CcntmRACT_TRANSFER, buf.Bytes())
+	invokeCode, err := httpcom.BuildNativeInvokeCode(ccntmractAddr, version, CcntmRACT_TRANSFER, []interface{}{sts})
+	if err != nil {
+		return nil, fmt.Errorf("build invoke code error:%s", err)
+	}
+	invokePayload := &payload.InvokeCode{
+		Code: invokeCode,
+	}
+	tx := &types.Transaction{
+		GasPrice: gasPrice,
+		GasLimit: gasLimit,
+		TxType:   types.Invoke,
+		Nonce:    uint32(time.Now().Unix()),
+		Payload:  invokePayload,
+		Sigs:     make([]*types.Sig, 0, 0),
+	}
+	return tx, nil
 }
 
 func TransferFromTx(gasPrice, gasLimit uint64, asset, sender, from, to string, amount uint64) (*types.Transaction, error) {
@@ -225,24 +239,34 @@ func TransferFromTx(gasPrice, gasLimit uint64, asset, sender, from, to string, a
 		To:     toAddr,
 		Value:  amount,
 	}
-	buf := bytes.NewBuffer(nil)
-	err = transferFrom.Serialize(buf)
-	if err != nil {
-		return nil, fmt.Errorf("transferFrom.Serialize error:%s", err)
-	}
-	var cversion byte
+	var version byte
 	var ccntmractAddr common.Address
 	switch strings.ToLower(asset) {
 	case ASSET_cntm:
+		version = VERSION_CcntmRACT_cntm
 		ccntmractAddr = utils.OntCcntmractAddress
-		cversion = VERSION_CcntmRACT_cntm
 	case ASSET_cntm:
+		version = VERSION_CcntmRACT_cntm
 		ccntmractAddr = utils.OngCcntmractAddress
-		cversion = VERSION_CcntmRACT_cntm
 	default:
 		return nil, fmt.Errorf("Unsupport asset:%s", asset)
 	}
-	return InvokeNativeCcntmractTx(gasPrice, gasLimit, cversion, ccntmractAddr, CcntmRACT_TRANSFER_FROM, buf.Bytes())
+	invokeCode, err := httpcom.BuildNativeInvokeCode(ccntmractAddr, version, CcntmRACT_TRANSFER_FROM, []interface{}{transferFrom})
+	if err != nil {
+		return nil, fmt.Errorf("build invoke code error:%s", err)
+	}
+	invokePayload := &payload.InvokeCode{
+		Code: invokeCode,
+	}
+	tx := &types.Transaction{
+		GasPrice: gasPrice,
+		GasLimit: gasLimit,
+		TxType:   types.Invoke,
+		Nonce:    uint32(time.Now().Unix()),
+		Payload:  invokePayload,
+		Sigs:     make([]*types.Sig, 0, 0),
+	}
+	return tx, nil
 }
 
 func SignTransaction(signer *account.Account, tx *types.Transaction) error {
@@ -272,23 +296,6 @@ func Sign(data []byte, signer *account.Account) ([]byte, error) {
 		return nil, fmt.Errorf("sig.Serialize error:%s", err)
 	}
 	return sigData, nil
-}
-
-//NewInvokeTransaction return smart ccntmract invoke transaction
-func NewInvokeTransaction(gasPirce, gasLimit uint64, code []byte) *types.Transaction {
-	invokePayload := &payload.InvokeCode{
-		Code: code,
-	}
-	tx := &types.Transaction{
-		Version:  VERSION_TRANSACTION,
-		GasPrice: gasPirce,
-		GasLimit: gasLimit,
-		TxType:   types.Invoke,
-		Nonce:    uint32(time.Now().Unix()),
-		Payload:  invokePayload,
-		Sigs:     make([]*types.Sig, 0, 0),
-	}
-	return tx
 }
 
 //SendRawTransaction send a transaction to cntmology network, and return hash of the transaction
@@ -400,21 +407,16 @@ func InvokeNativeCcntmract(
 	gasPrice,
 	gasLimit uint64,
 	signer *account.Account,
-	cversion byte,
 	ccntmractAddress common.Address,
+	version byte,
 	method string,
-	args []byte,
+	params []interface{},
 ) (string, error) {
-	return InvokeSmartCcntmract(gasPrice, gasLimit, signer, cversion, ccntmractAddress, method, args)
-}
-
-func InvokeNativeCcntmractTx(gasPrice,
-	gasLimit uint64,
-	cversion byte,
-	ccntmractAddress common.Address,
-	method string,
-	args []byte) (*types.Transaction, error) {
-	return InvokeSmartCcntmractTx(gasPrice, gasLimit, cversion, ccntmractAddress, method, args)
+	tx, err := httpcom.NewNativeInvokeTransaction(gasPrice, gasLimit, ccntmractAddress, version, method, params)
+	if err != nil {
+		return "", err
+	}
+	return InvokeSmartCcntmract(signer, tx)
 }
 
 //Invoke wasm smart ccntmract
@@ -431,11 +433,15 @@ func InvokeWasmVMCcntmract(
 	paramType wasmvm.ParamType,
 	params []interface{}) (string, error) {
 
-	args, err := buildWasmCcntmractParam(params, paramType)
+	invokeCode, err := BuildWasmVMInvokeCode(ccntmractAddress, method, paramType, cversion, params)
 	if err != nil {
-		return "", fmt.Errorf("buildWasmCcntmractParam error:%s", err)
+		return "", err
 	}
-	return InvokeSmartCcntmract(gasPrice, gasLimit, siger, cversion, ccntmractAddress, method, args)
+	tx, err := httpcom.NewSmartCcntmractTransaction(gasPrice, gasLimit, invokeCode)
+	if err != nil {
+		return "", err
+	}
+	return InvokeSmartCcntmract(siger, tx)
 }
 
 //Invoke neo vm smart ccntmract. if isPreExec is true, the invoke will not really execute
@@ -443,93 +449,36 @@ func InvokeNeoVMCcntmract(
 	gasPrice,
 	gasLimit uint64,
 	signer *account.Account,
-	cversion byte,
 	smartcodeAddress common.Address,
 	params []interface{}) (string, error) {
-
-	builder := neovm.NewParamsBuilder(new(bytes.Buffer))
-	err := buildNeoVMParamInter(builder, params)
+	tx, err := httpcom.NewNeovmInvokeTransaction(gasPrice, gasLimit, smartcodeAddress, params)
 	if err != nil {
 		return "", err
 	}
-	args := builder.ToArray()
-
-	return InvokeSmartCcntmract(gasPrice, gasLimit, signer, cversion, smartcodeAddress, "", args)
-}
-
-func InvokeNeoVMCcntmractTx(gasPrice,
-	gasLimit uint64,
-	cversion byte,
-	smartcodeAddress common.Address,
-	params []interface{}) (*types.Transaction, error) {
-	builder := neovm.NewParamsBuilder(new(bytes.Buffer))
-	err := buildNeoVMParamInter(builder, params)
-	if err != nil {
-		return nil, err
-	}
-	args := builder.ToArray()
-	return InvokeSmartCcntmractTx(gasPrice, gasLimit, cversion, smartcodeAddress, "", args)
+	return InvokeSmartCcntmract(signer, tx)
 }
 
 //InvokeSmartCcntmract is low level method to invoke ccntmact.
-func InvokeSmartCcntmract(
-	gasPrice,
-	gasLimit uint64,
-	signer *account.Account,
-	cversion byte,
-	ccntmractAddress common.Address,
-	method string,
-	args []byte,
-) (string, error) {
-	invokeTx, err := InvokeSmartCcntmractTx(gasPrice, gasLimit, cversion, ccntmractAddress, method, args)
-	if err != nil {
-		return "", err
-	}
-	err = SignTransaction(signer, invokeTx)
+func InvokeSmartCcntmract(signer *account.Account, tx *types.Transaction) (string, error) {
+	err := SignTransaction(signer, tx)
 	if err != nil {
 		return "", fmt.Errorf("SignTransaction error:%s", err)
 	}
-	txHash, err := SendRawTransaction(invokeTx)
+	txHash, err := SendRawTransaction(tx)
 	if err != nil {
 		return "", fmt.Errorf("SendTransaction error:%s", err)
 	}
 	return txHash, nil
 }
 
-func InvokeSmartCcntmractTx(gasPrice,
-	gasLimit uint64,
-	cversion byte,
-	ccntmractAddress common.Address,
-	method string,
-	args []byte) (*types.Transaction, error) {
-	crt := &cstates.Ccntmract{
-		Version: cversion,
-		Address: ccntmractAddress,
-		Method:  method,
-		Args:    args,
-	}
-	buf := bytes.NewBuffer(nil)
-	err := crt.Serialize(buf)
-	if err != nil {
-		return nil, fmt.Errorf("Serialize ccntmract error:%s", err)
-	}
-	invokCode := buf.Bytes()
-
-	invokCode = append([]byte{0x67}, invokCode[:]...)
-
-	return NewInvokeTransaction(gasPrice, gasLimit, invokCode), nil
-}
-
 func PrepareInvokeNeoVMCcntmract(
-	cversion byte,
 	ccntmractAddress common.Address,
 	params []interface{},
 ) (*cstates.PreExecResult, error) {
-	code, err := BuildNeoVMInvokeCode(cversion, ccntmractAddress, params)
+	tx, err := httpcom.NewNeovmInvokeTransaction(0, 0, ccntmractAddress, params)
 	if err != nil {
-		return nil, fmt.Errorf("BuildNVMInvokeCode error:%s", err)
+		return nil, err
 	}
-	tx := NewInvokeTransaction(0, 0, code)
 	var buffer bytes.Buffer
 	err = tx.Serialize(&buffer)
 	if err != nil {
@@ -550,10 +499,15 @@ func PrepareInvokeNeoVMCcntmract(
 
 func PrepareInvokeNativeCcntmract(
 	ccntmractAddress common.Address,
-	code []byte) (*cstates.PreExecResult, error) {
-	tx := NewInvokeTransaction(0, 0, code)
+	version byte,
+	method string,
+	params []interface{}) (*cstates.PreExecResult, error) {
+	tx, err := httpcom.NewNativeInvokeTransaction(0, 0, ccntmractAddress, version, method, params)
+	if err != nil {
+		return nil, err
+	}
 	var buffer bytes.Buffer
-	err := tx.Serialize(&buffer)
+	err = tx.Serialize(&buffer)
 	if err != nil {
 		return nil, fmt.Errorf("Serialize error:%s", err)
 	}
@@ -593,73 +547,6 @@ func NewDeployCodeTransaction(gasPrice, gasLimit uint64, code []byte, needStorag
 		Sigs:     make([]*types.Sig, 0, 0),
 	}
 	return tx
-}
-
-//buildNeoVMParamInter build neovm invoke param code
-func buildNeoVMParamInter(builder *neovm.ParamsBuilder, smartCcntmractParams []interface{}) error {
-	//VM load params in reverse order
-	for i := len(smartCcntmractParams) - 1; i >= 0; i-- {
-		switch v := smartCcntmractParams[i].(type) {
-		case bool:
-			builder.EmitPushBool(v)
-		case int:
-			builder.EmitPushInteger(big.NewInt(int64(v)))
-		case uint:
-			builder.EmitPushInteger(big.NewInt(int64(v)))
-		case int32:
-			builder.EmitPushInteger(big.NewInt(int64(v)))
-		case uint32:
-			builder.EmitPushInteger(big.NewInt(int64(v)))
-		case int64:
-			builder.EmitPushInteger(big.NewInt(int64(v)))
-		case common.Fixed64:
-			builder.EmitPushInteger(big.NewInt(int64(v.GetData())))
-		case uint64:
-			val := big.NewInt(0)
-			builder.EmitPushInteger(val.SetUint64(uint64(v)))
-		case string:
-			builder.EmitPushByteArray([]byte(v))
-		case *big.Int:
-			builder.EmitPushInteger(v)
-		case []byte:
-			builder.EmitPushByteArray(v)
-		case []interface{}:
-			err := buildNeoVMParamInter(builder, v)
-			if err != nil {
-				return err
-			}
-			builder.EmitPushInteger(big.NewInt(int64(len(v))))
-			builder.Emit(neovm.PACK)
-		default:
-			return fmt.Errorf("unsupported param:%s", v)
-		}
-	}
-	return nil
-}
-
-//BuildNeoVMInvokeCode build NeoVM Invoke code for params
-func BuildNeoVMInvokeCode(cversion byte, smartCcntmractAddress common.Address, params []interface{}) ([]byte, error) {
-	builder := neovm.NewParamsBuilder(new(bytes.Buffer))
-	err := buildNeoVMParamInter(builder, params)
-	if err != nil {
-		return nil, err
-	}
-	args := builder.ToArray()
-
-	crt := &cstates.Ccntmract{
-		Version: cversion,
-		Address: smartCcntmractAddress,
-		Args:    args,
-	}
-	crtBuf := bytes.NewBuffer(nil)
-	err = crt.Serialize(crtBuf)
-	if err != nil {
-		return nil, fmt.Errorf("Serialize ccntmract error:%s", err)
-	}
-
-	buf := bytes.NewBuffer(nil)
-	buf.Write(append([]byte{0x67}, crtBuf.Bytes()[:]...))
-	return buf.Bytes(), nil
 }
 
 //for wasm vm

@@ -24,22 +24,21 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"sort"
-	"strconv"
-	"sync"
-
 	"github.com/cntmio/cntmology-eventbus/actor"
-	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/ledger"
 	tx "github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
+	httpcom "github.com/cntmio/cntmology/http/base/common"
 	params "github.com/cntmio/cntmology/smartccntmract/service/native/global_params"
 	nutils "github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	tc "github.com/cntmio/cntmology/txnpool/common"
 	"github.com/cntmio/cntmology/validator/types"
+	"sort"
+	"strconv"
+	"sync"
 )
 
 type txStats struct {
@@ -96,14 +95,10 @@ func NewTxPoolServer(num uint8) *TXPoolServer {
 
 // getGlobalGasPrice returns a global gas price
 func getGlobalGasPrice() (uint64, error) {
-	paramNameList := &params.ParamNameList{"gasPrice"}
-	bf := new(bytes.Buffer)
-	paramNameList.Serialize(bf)
-	tx, err := utils.InvokeNativeCcntmractTx(0, 0, 0, nutils.ParamCcntmractAddress, "getGlobalParam", bf.Bytes())
+	tx, err := httpcom.NewNativeInvokeTransaction(0, 0, nutils.ParamCcntmractAddress, 0, "getGlobalParam", []interface{}{[]interface{}{"gasPrice"}})
 	if err != nil {
-		return 0, fmt.Errorf("failed to create invoke native ccntmract tx for getGlobalParam %v", err)
+		return 0, fmt.Errorf("NewNativeInvokeTransaction error:%s", err)
 	}
-
 	result, err := ledger.DefLedger.PreExecuteCcntmract(tx)
 	if err != nil {
 		return 0, fmt.Errorf("PreExecuteCcntmract failed %v", err)

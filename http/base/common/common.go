@@ -22,10 +22,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"math/big"
-	"strings"
-	"time"
-
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
@@ -35,7 +31,13 @@ import (
 	bactor "github.com/cntmio/cntmology/http/base/actor"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
+	svrneovm "github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	cstates "github.com/cntmio/cntmology/smartccntmract/states"
+	"github.com/cntmio/cntmology/vm/neovm"
+	"math/big"
+	"reflect"
+	"strings"
+	"time"
 )
 
 const MAX_SEARCH_HEIGHT uint32 = 100
@@ -285,28 +287,11 @@ func GetAllowance(asset string, from, to common.Address) (string, error) {
 }
 
 func GetCcntmractBalance(cVersion byte, ccntmractAddr, accAddr common.Address) (uint64, error) {
-	addrBuf := bytes.NewBuffer(nil)
-	err := accAddr.Serialize(addrBuf)
+	tx, err := NewNativeInvokeTransaction(0, 0, ccntmractAddr, cVersion, "balanceOf", []interface{}{accAddr[:]})
 	if err != nil {
-		return 0, fmt.Errorf("address serialize error:%s", err)
+		return 0, fmt.Errorf("NewNativeInvokeTransaction error:%s", err)
 	}
-	argBuf := bytes.NewBuffer(nil)
-	err = accAddr.Serialize(argBuf)
-	if err != nil {
-		return 0, fmt.Errorf("serialization.WriteVarBytes error:%s", err)
-	}
-	crt := &cstates.Ccntmract{
-		Version: cVersion,
-		Address: ccntmractAddr,
-		Method:  "balanceOf",
-		Args:    argBuf.Bytes(),
-	}
-	buf := bytes.NewBuffer(nil)
-	err = crt.Serialize(buf)
-	if err != nil {
-		return 0, fmt.Errorf("Serialize ccntmract error:%s", err)
-	}
-	result, err := PrepareInvokeCcntmract(cVersion, buf.Bytes())
+	result, err := bactor.PreExecuteCcntmract(tx)
 	if err != nil {
 		return 0, fmt.Errorf("PrepareInvokeCcntmract error:%s", err)
 	}
@@ -322,28 +307,19 @@ func GetCcntmractBalance(cVersion byte, ccntmractAddr, accAddr common.Address) (
 }
 
 func GetCcntmractAllowance(cVersion byte, ccntmractAddr, fromAddr, toAddr common.Address) (uint64, error) {
-	argBuf := new(bytes.Buffer)
-	err := fromAddr.Serialize(argBuf)
+	type allowanceStruct struct {
+		From common.Address
+		To   common.Address
+	}
+	tx, err := NewNativeInvokeTransaction(0, 0, ccntmractAddr, cVersion, "allowance",
+		[]interface{}{&allowanceStruct{
+			From: fromAddr,
+			To:   toAddr,
+		}})
 	if err != nil {
-		return 0, fmt.Errorf("from address serialize error:%s", err)
+		return 0, fmt.Errorf("NewNativeInvokeTransaction error:%s", err)
 	}
-	err = toAddr.Serialize(argBuf)
-	if err != nil {
-		return 0, fmt.Errorf("to address serialize error:%s", err)
-	}
-
-	crt := &cstates.Ccntmract{
-		Version: cVersion,
-		Address: ccntmractAddr,
-		Method:  "allowance",
-		Args:    argBuf.Bytes(),
-	}
-	buf := bytes.NewBuffer(nil)
-	err = crt.Serialize(buf)
-	if err != nil {
-		return 0, fmt.Errorf("Serialize ccntmract error:%s", err)
-	}
-	result, err := PrepareInvokeCcntmract(cVersion, buf.Bytes())
+	result, err := bactor.PreExecuteCcntmract(tx)
 	if err != nil {
 		return 0, fmt.Errorf("PrepareInvokeCcntmract error:%s", err)
 	}
@@ -356,20 +332,6 @@ func GetCcntmractAllowance(cVersion byte, ccntmractAddr, fromAddr, toAddr common
 	}
 	allowance := new(big.Int).SetBytes(data)
 	return allowance.Uint64(), nil
-}
-
-func PrepareInvokeCcntmract(cVersion byte, invokeCode []byte) (*cstates.PreExecResult, error) {
-	invokePayload := &payload.InvokeCode{
-		Code: invokeCode,
-	}
-	tx := &types.Transaction{
-		Version: cVersion,
-		TxType:  types.Invoke,
-		Nonce:   uint32(time.Now().Unix()),
-		Payload: invokePayload,
-		Sigs:    make([]*types.Sig, 0, 0),
-	}
-	return bactor.PreExecuteCcntmract(tx)
 }
 
 func GetGasPrice() (map[string]interface{}, error) {
@@ -417,4 +379,155 @@ func GetBlockTransactions(block *types.Block) interface{} {
 		Transactions: trans,
 	}
 	return b
+}
+
+//NewNativeInvokeTransaction return native ccntmract invoke transaction
+func NewNativeInvokeTransaction(gasPirce, gasLimit uint64, ccntmractAddress common.Address, verison byte, method string, params []interface{}) (*types.Transaction, error) {
+	invokeCode, err := BuildNativeInvokeCode(ccntmractAddress, verison, method, params)
+	if err != nil {
+		return nil, err
+	}
+	return NewSmartCcntmractTransaction(gasPirce, gasLimit, invokeCode)
+}
+
+func NewNeovmInvokeTransaction(gasPrice, gasLimit uint64, ccntmractAddress common.Address, params []interface{}) (*types.Transaction, error) {
+	invokeCode, err := BuildNeoVMInvokeCode(ccntmractAddress, params)
+	if err != nil {
+		return nil, err
+	}
+	return NewSmartCcntmractTransaction(gasPrice, gasLimit, invokeCode)
+}
+
+func NewSmartCcntmractTransaction(gasPrice, gasLimit uint64, invokeCode []byte) (*types.Transaction, error) {
+	invokePayload := &payload.InvokeCode{
+		Code: invokeCode,
+	}
+	tx := &types.Transaction{
+		GasPrice: gasPrice,
+		GasLimit: gasLimit,
+		TxType:   types.Invoke,
+		Nonce:    uint32(time.Now().Unix()),
+		Payload:  invokePayload,
+		Sigs:     make([]*types.Sig, 0, 0),
+	}
+	return tx, nil
+}
+
+func BuildNativeInvokeCode(ccntmractAddress common.Address, version byte, method string, params []interface{}) ([]byte, error) {
+	builder := neovm.NewParamsBuilder(new(bytes.Buffer))
+	err := BuildNeoVMParam(builder, params)
+	if err != nil {
+		return nil, err
+	}
+	builder.EmitPushByteArray([]byte(method))
+	builder.EmitPushByteArray(ccntmractAddress[:])
+	builder.EmitPushInteger(new(big.Int).SetInt64(int64(version)))
+	builder.Emit(neovm.SYSCALL)
+	builder.EmitPushByteArray([]byte(svrneovm.NATIVE_INVOKE_NAME))
+	return builder.ToArray(), nil
+}
+
+//BuildNeoVMInvokeCode build NeoVM Invoke code for params
+func BuildNeoVMInvokeCode(smartCcntmractAddress common.Address, params []interface{}) ([]byte, error) {
+	builder := neovm.NewParamsBuilder(new(bytes.Buffer))
+	err := BuildNeoVMParam(builder, params)
+	if err != nil {
+		return nil, err
+	}
+	args := builder.ToArray()
+
+	crt := &cstates.Ccntmract{
+		Address: smartCcntmractAddress,
+		Args:    args,
+	}
+	crtBuf := bytes.NewBuffer(nil)
+	err = crt.Serialize(crtBuf)
+	if err != nil {
+		return nil, fmt.Errorf("Serialize ccntmract error:%s", err)
+	}
+
+	buf := bytes.NewBuffer(nil)
+	buf.Write(append([]byte{0x67}, crtBuf.Bytes()[:]...))
+	return buf.Bytes(), nil
+}
+
+//buildNeoVMParamInter build neovm invoke param code
+func BuildNeoVMParam(builder *neovm.ParamsBuilder, smartCcntmractParams []interface{}) error {
+	//VM load params in reverse order
+	for i := len(smartCcntmractParams) - 1; i >= 0; i-- {
+		switch v := smartCcntmractParams[i].(type) {
+		case bool:
+			builder.EmitPushBool(v)
+		case byte:
+			builder.EmitPushInteger(big.NewInt(int64(v)))
+		case int:
+			builder.EmitPushInteger(big.NewInt(int64(v)))
+		case uint:
+			builder.EmitPushInteger(big.NewInt(int64(v)))
+		case int32:
+			builder.EmitPushInteger(big.NewInt(int64(v)))
+		case uint32:
+			builder.EmitPushInteger(big.NewInt(int64(v)))
+		case int64:
+			builder.EmitPushInteger(big.NewInt(int64(v)))
+		case common.Fixed64:
+			builder.EmitPushInteger(big.NewInt(int64(v.GetData())))
+		case uint64:
+			val := big.NewInt(0)
+			builder.EmitPushInteger(val.SetUint64(uint64(v)))
+		case string:
+			builder.EmitPushByteArray([]byte(v))
+		case *big.Int:
+			builder.EmitPushInteger(v)
+		case []byte:
+			builder.EmitPushByteArray(v)
+		case common.Address:
+			builder.EmitPushByteArray(v[:])
+		case common.Uint256:
+			builder.EmitPushByteArray(v.ToArray())
+		case []interface{}:
+			err := BuildNeoVMParam(builder, v)
+			if err != nil {
+				return err
+			}
+			builder.EmitPushInteger(big.NewInt(int64(len(v))))
+			builder.Emit(neovm.PACK)
+		default:
+			object := reflect.ValueOf(v)
+			kind := object.Kind().String()
+			if kind == "ptr" {
+				object = object.Elem()
+				kind = object.Kind().String()
+			}
+			switch kind {
+			case "slice":
+				ps := make([]interface{}, 0)
+				for i := 0; i < object.Len(); i++ {
+					ps = append(ps, object.Index(i).Interface())
+				}
+				err := BuildNeoVMParam(builder, []interface{}{ps})
+				if err != nil {
+					return err
+				}
+			case "struct":
+				builder.EmitPushInteger(big.NewInt(0))
+				builder.Emit(neovm.NEWSTRUCT)
+				builder.Emit(neovm.TOALTSTACK)
+				for i := 0; i < object.NumField(); i++ {
+					field := object.Field(i)
+					err := BuildNeoVMParam(builder, []interface{}{field.Interface()})
+					if err != nil {
+						return err
+					}
+					builder.Emit(neovm.DUPFROMALTSTACK)
+					builder.Emit(neovm.SWAP)
+					builder.Emit(neovm.APPEND)
+				}
+				builder.Emit(neovm.FROMALTSTACK)
+			default:
+				return fmt.Errorf("unsupported param:%s", v)
+			}
+		}
+	}
+	return nil
 }
