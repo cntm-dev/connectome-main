@@ -19,10 +19,13 @@
 package common
 
 import (
+	"errors"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 )
+
+var ErrNotFound = errors.New("not found")
 
 //Store iterator for iterate store
 type StoreIterator interface {

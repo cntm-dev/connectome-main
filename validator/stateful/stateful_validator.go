@@ -19,8 +19,6 @@
 package stateful
 
 import (
-	"reflect"
-
 	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/ledger"
@@ -28,6 +26,7 @@ import (
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/validator/db"
 	vatypes "github.com/cntmio/cntmology/validator/types"
+	"reflect"
 )
 
 // Validator is an interface for tx validation actor

@@ -21,9 +21,6 @@ package dbft
 import (
 	"bytes"
 	"fmt"
-	"reflect"
-	"time"
-
 	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
@@ -39,6 +36,8 @@ import (
 	"github.com/cntmio/cntmology/events/message"
 	p2pmsg "github.com/cntmio/cntmology/p2pserver/message/types"
 	"github.com/cntmio/cntmology/validator/increment"
+	"reflect"
+	"time"
 )
 
 type DbftService struct {

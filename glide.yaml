@@ -1,5 +1,9 @@
 package: github.com/cntmio/cntmology
 import:
+- package: github.com/cntmio/cntmology-eventbus
+  version: v0.9
+- package: github.com/cntmio/cntmology-crypto
+  version: v0.9
 - package: github.com/howeyc/gopass
 - package: github.com/gorilla/websocket
   version: v1.2.0

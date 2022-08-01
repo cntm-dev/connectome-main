@@ -22,7 +22,7 @@
 克隆cntmology仓库到 **$GOPATH/src/github.com/cntmio** 目录
 
 ```shell
-$ git clone --recursive https://github.com/cntmio/cntmology.git
+$ git clone https://github.com/cntmio/cntmology.git
 ```
 或者
 ```shell

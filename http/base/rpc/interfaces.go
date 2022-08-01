@@ -21,12 +21,9 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
-	"fmt"
-
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
@@ -401,11 +398,8 @@ func GetBlockHeightByTxHash(params []interface{}) map[string]interface{} {
 		if err != nil {
 			return responsePack(berr.INVALID_PARAMS, "")
 		}
-		height, tx, err := bactor.GetTxnWithHeightByTxHash(hash)
+		height, _, err := bactor.GetTxnWithHeightByTxHash(hash)
 		if err != nil {
-			return responsePack(berr.INVALID_PARAMS, "")
-		}
-		if tx == nil {
 			return responsePack(berr.INVALID_PARAMS, "")
 		}
 		return responseSuccess(height)
@@ -413,21 +407,6 @@ func GetBlockHeightByTxHash(params []interface{}) map[string]interface{} {
 		return responsePack(berr.INVALID_PARAMS, "")
 	}
 	return responsePack(berr.INVALID_PARAMS, "")
-}
-
-func getStoreUint64Value(ccntmractAddress, accountAddress common.Address) (uint64, error) {
-	data, err := bactor.GetStorageItem(ccntmractAddress, accountAddress[:])
-	if err != nil {
-		return 0, fmt.Errorf("GetOntBalanceOf GetStorageItem cntm address:%s error:%s", accountAddress.ToBase58(), err)
-	}
-	if len(data) == 0 {
-		return 0, nil
-	}
-	value, err := serialization.ReadUint64(bytes.NewBuffer(data))
-	if err != nil {
-		return 0, fmt.Errorf("serialization.ReadUint64:%x error:%s", data, err)
-	}
-	return value, err
 }
 
 func GetBalance(params []interface{}) map[string]interface{} {
@@ -444,8 +423,7 @@ func GetBalance(params []interface{}) map[string]interface{} {
 	}
 	rsp, err := bcomn.GetBalance(address)
 	if err != nil {
-		log.Errorf("GetBalance address:%s error:%s", addrBase58, err)
-		return responsePack(berr.INTERNAL_ERROR, "")
+		return responsePack(berr.INVALID_PARAMS, "")
 	}
 	return responseSuccess(rsp)
 }

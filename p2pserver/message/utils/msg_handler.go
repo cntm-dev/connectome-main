@@ -22,11 +22,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"errors"
-	"net"
-	"strconv"
-	"strings"
-	"time"
-
 	evtActor "github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
@@ -38,6 +33,10 @@ import (
 	"github.com/cntmio/cntmology/p2pserver/message/msg_pack"
 	msgTypes "github.com/cntmio/cntmology/p2pserver/message/types"
 	"github.com/cntmio/cntmology/p2pserver/net/protocol"
+	"net"
+	"strconv"
+	"strings"
+	"time"
 )
 
 // AddrReqHandle hadnles the neighbor address request from peer
