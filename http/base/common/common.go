@@ -32,7 +32,6 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	svrneovm "github.com/cntmio/cntmology/smartccntmract/service/neovm"
-	cstates "github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/vm/neovm"
 	"math/big"
 	"reflect"
@@ -434,21 +433,9 @@ func BuildNeoVMInvokeCode(smartCcntmractAddress common.Address, params []interfa
 	if err != nil {
 		return nil, err
 	}
-	args := builder.ToArray()
-
-	crt := &cstates.Ccntmract{
-		Address: smartCcntmractAddress,
-		Args:    args,
-	}
-	crtBuf := bytes.NewBuffer(nil)
-	err = crt.Serialize(crtBuf)
-	if err != nil {
-		return nil, fmt.Errorf("Serialize ccntmract error:%s", err)
-	}
-
-	buf := bytes.NewBuffer(nil)
-	buf.Write(append([]byte{0x67}, crtBuf.Bytes()[:]...))
-	return buf.Bytes(), nil
+	args := append(builder.ToArray(), 0x67)
+	args = append(args, common.ToArrayReverse(smartCcntmractAddress[:])...)
+	return args, nil
 }
 
 //buildNeoVMParamInter build neovm invoke param code

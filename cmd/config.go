@@ -27,6 +27,7 @@ import (
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/governance"
 	"github.com/urfave/cli"
 )
@@ -61,11 +62,17 @@ func setGenesis(ctx *cli.Ccntmext, cfg *config.GenesisConfig) error {
 		return nil
 	}
 
-	genesisFile := ctx.GlobalString(utils.GetFlagName(utils.ConfigFlag))
+	if !ctx.IsSet(utils.GetFlagName(utils.ConfigFlag)) {
+		//Using Polaris config
+		return nil
+	}
 
+	genesisFile := ctx.GlobalString(utils.GetFlagName(utils.ConfigFlag))
 	if !common.FileExisted(genesisFile) {
 		return nil
 	}
+
+	log.Infof("Load genesis config:%s", genesisFile)
 	data, err := ioutil.ReadFile(genesisFile)
 	if err != nil {
 		return fmt.Errorf("ioutil.ReadFile:%s error:%s", genesisFile, err)
