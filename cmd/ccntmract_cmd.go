@@ -45,6 +45,7 @@ var (
 				Usage:     "Deploy a smart ccntmract to cntmolgoy",
 				ArgsUsage: " ",
 				Flags: []cli.Flag{
+					utils.RPCPortFlag,
 					utils.TransactionGasPriceFlag,
 					utils.TransactionGasLimitFlag,
 					utils.CcntmractStorageFlag,
@@ -64,6 +65,7 @@ var (
 				Usage:     "Invoke smart ccntmract",
 				ArgsUsage: " ",
 				Flags: []cli.Flag{
+					utils.RPCPortFlag,
 					utils.TransactionGasPriceFlag,
 					utils.TransactionGasLimitFlag,
 					utils.CcntmractAddrFlag,
@@ -81,6 +83,7 @@ var (
 				Usage:     "Invoke smart ccntmract by code",
 				ArgsUsage: " ",
 				Flags: []cli.Flag{
+					utils.RPCPortFlag,
 					utils.CcntmractCodeFileFlag,
 					utils.TransactionGasPriceFlag,
 					utils.TransactionGasLimitFlag,
@@ -94,6 +97,7 @@ var (
 )
 
 func deployCcntmract(ctx *cli.Ccntmext) error {
+	SetRpcPort(ctx)
 	if !ctx.IsSet(utils.GetFlagName(utils.CcntmractCodeFileFlag)) ||
 		!ctx.IsSet(utils.GetFlagName(utils.CcntmractNameFlag)) {
 		fmt.Errorf("Missing code or name argument\n")
@@ -141,6 +145,7 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 }
 
 func invokeCodeCcntmract(ctx *cli.Ccntmext) error {
+	SetRpcPort(ctx)
 	if !ctx.IsSet(utils.GetFlagName(utils.CcntmractCodeFileFlag)) {
 		fmt.Printf("Missing code or name argument\n")
 		cli.ShowSubcommandHelp(ctx)
@@ -217,6 +222,7 @@ func invokeCodeCcntmract(ctx *cli.Ccntmext) error {
 }
 
 func invokeCcntmract(ctx *cli.Ccntmext) error {
+	SetRpcPort(ctx)
 	if !ctx.IsSet(utils.GetFlagName(utils.CcntmractAddrFlag)) {
 		fmt.Printf("Missing ccntmract address argument.\n")
 		cli.ShowSubcommandHelp(ctx)

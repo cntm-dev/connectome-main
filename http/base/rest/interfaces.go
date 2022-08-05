@@ -20,18 +20,18 @@ package rest
 
 import (
 	"bytes"
-	"strconv"
-
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/payload"
+	scom "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
 	bactor "github.com/cntmio/cntmology/http/base/actor"
 	bcomn "github.com/cntmio/cntmology/http/base/common"
 	berr "github.com/cntmio/cntmology/http/base/error"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
+	"strconv"
 )
 
 const TLS_PORT int = 443
@@ -279,6 +279,9 @@ func GetSmartCodeEventTxsByHeight(cmd map[string]interface{}) map[string]interfa
 	index := uint32(height)
 	eventInfos, err := bactor.GetEventNotifyByHeight(index)
 	if err != nil {
+		if scom.ErrNotFound == err {
+			return ResponsePack(berr.SUCCESS)
+		}
 		return ResponsePack(berr.INVALID_PARAMS)
 	}
 	eInfos := make([]*bcomn.ExecuteNotify, 0, len(eventInfos))

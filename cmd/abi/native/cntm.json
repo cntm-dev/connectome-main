@@ -10,11 +10,11 @@
       "name": "transfer",
       "parameters": [
         {
-          "name": "transfers",
+          "name": "states",
           "type": "Array",
           "subType": [
             {
-              "name": "",
+              "name": "state",
               "type": "Struct",
               "subType": [
                 {
@@ -110,7 +110,11 @@
       "name": "allowance",
       "parameters": [
         {
-          "name": "account",
+          "name": "from",
+          "type": "Address"
+        },
+        {
+          "name": "to",
           "type": "Address"
         }
       ],
