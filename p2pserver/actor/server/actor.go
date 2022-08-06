@@ -21,7 +21,6 @@ package server
 import (
 	"reflect"
 
-	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/p2pserver"
@@ -85,8 +84,6 @@ func (this *P2PActor) Receive(ctx actor.Ccntmext) {
 		this.handleGetRelayStateReq(ctx, msg)
 	case *GetNodeTypeReq:
 		this.handleGetNodeTypeReq(ctx, msg)
-	case *TransmitConsensusMsgReq:
-		this.handleTransmitConsensusMsgReq(ctx, msg)
 	case *common.AppendPeerID:
 		this.server.OnAddNode(msg.ID)
 	case *common.RemovePeerID:
@@ -233,14 +230,5 @@ func (this *P2PActor) handleGetNodeTypeReq(ctx actor.Ccntmext, req *GetNodeTypeR
 			NodeType: ret,
 		}
 		ctx.Sender().Request(resp, ctx.Self())
-	}
-}
-
-//handle vbft msg request
-func (this *P2PActor) handleTransmitConsensusMsgReq(ctx actor.Ccntmext, req *TransmitConsensusMsgReq) {
-	for _, peer := range this.server.GetNetWork().GetNeighbors() {
-		if keypair.ComparePublicKey(req.Target, peer.GetPubKey()) {
-			this.server.Send(peer, req.Msg, true)
-		}
 	}
 }

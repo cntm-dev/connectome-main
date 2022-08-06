@@ -33,7 +33,6 @@ import (
 	"time"
 
 	evtActor "github.com/cntmio/cntmology-eventbus/actor"
-	"github.com/cntmio/cntmology/account"
 	comm "github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
@@ -69,8 +68,8 @@ type ReconnectAddrs struct {
 }
 
 //NewServer return a new p2pserver according to the pubkey
-func NewServer(acc *account.Account) *P2PServer {
-	n := netserver.NewNetServer(acc.PubKey())
+func NewServer() *P2PServer {
+	n := netserver.NewNetServer()
 
 	p := &P2PServer{
 		network: n,

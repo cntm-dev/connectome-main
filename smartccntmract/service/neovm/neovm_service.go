@@ -78,6 +78,8 @@ var (
 		STORAGE_PUT_NAME:                     {Execute: StoragePut},
 		STORAGE_DELETE_NAME:                  {Execute: StorageDelete},
 		STORAGE_GETCcntmEXT_NAME:              {Execute: StorageGetCcntmext},
+		STORAGE_GETREADONLYCcntmEXT_NAME:      {Execute: StorageGetReadOnlyCcntmext},
+		STORAGECcntmEXT_ASREADONLY_NAME:       {Execute: StorageCcntmextAsReadOnly},
 		GETSCRIPTCcntmAINER_NAME:              {Execute: GetCodeCcntmainer},
 		GETEXECUTINGSCRIPTHASH_NAME:          {Execute: GetExecutingAddress},
 		GETCALLINGSCRIPTHASH_NAME:            {Execute: GetCallingAddress},

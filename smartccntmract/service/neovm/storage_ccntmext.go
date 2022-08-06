@@ -19,22 +19,40 @@
 package neovm
 
 import (
+	"fmt"
 	"github.com/cntmio/cntmology/common"
+	vm "github.com/cntmio/cntmology/vm/neovm"
 )
 
 // StorageCcntmext store smart ccntmract address
 type StorageCcntmext struct {
-	address common.Address
+	Address    common.Address
+	IsReadOnly bool
 }
 
 // NewStorageCcntmext return a new smart ccntmract storage ccntmext
 func NewStorageCcntmext(address common.Address) *StorageCcntmext {
 	var storageCcntmext StorageCcntmext
-	storageCcntmext.address = address
+	storageCcntmext.Address = address
+	storageCcntmext.IsReadOnly = false
 	return &storageCcntmext
 }
 
 // ToArray return address byte array
 func (this *StorageCcntmext) ToArray() []byte {
-	return this.address[:]
+	return this.Address[:]
+}
+
+func StorageCcntmextAsReadOnly(service *NeoVmService, engine *vm.ExecutionEngine) error {
+	data := vm.PopInteropInterface(engine)
+	ccntmext, ok := data.(*StorageCcntmext)
+	if !ok {
+		return fmt.Errorf("%s", "pop storage ccntmext type invalid")
+	}
+	if !ccntmext.IsReadOnly {
+		ccntmext = NewStorageCcntmext(ccntmext.Address)
+		ccntmext.IsReadOnly = true
+	}
+	vm.PushData(engine, ccntmext)
+	return nil
 }

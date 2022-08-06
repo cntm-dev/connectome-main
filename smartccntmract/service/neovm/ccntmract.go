@@ -109,7 +109,7 @@ func CcntmractGetStorageCcntmext(service *NeoVmService, engine *vm.ExecutionEngi
 	if address != service.CcntmextRef.CurrentCcntmext().CcntmractAddress {
 		return errors.NewErr("[GetStorageCcntmext] CodeHash not equal!")
 	}
-	vm.PushData(engine, &StorageCcntmext{address: address})
+	vm.PushData(engine, NewStorageCcntmext(address))
 	return nil
 }
 

@@ -21,6 +21,7 @@ package neovm
 import (
 	"bytes"
 
+	"fmt"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/states"
 	scommon "github.com/cntmio/cntmology/core/store/common"
@@ -34,6 +35,9 @@ func StoragePut(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StoragePut] get pop ccntmext error!")
 	}
+	if !ccntmext.IsReadOnly {
+		return fmt.Errorf("%s", "[StoragePut] storage read only!")
+	}
 	if err := checkStorageCcntmext(service, ccntmext); err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StoragePut] check ccntmext error!")
 	}
@@ -44,7 +48,7 @@ func StoragePut(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	}
 
 	value := vm.PopByteArray(engine)
-	service.CloneCache.Add(scommon.ST_STORAGE, getStorageKey(ccntmext.address, key), &states.StorageItem{Value: value})
+	service.CloneCache.Add(scommon.ST_STORAGE, getStorageKey(ccntmext.Address, key), &states.StorageItem{Value: value})
 	return nil
 }
 
@@ -54,11 +58,14 @@ func StorageDelete(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StorageDelete] get pop ccntmext error!")
 	}
+	if !ccntmext.IsReadOnly {
+		return fmt.Errorf("%s", "[StorageDelete] storage read only!")
+	}
 	if err := checkStorageCcntmext(service, ccntmext); err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StorageDelete] check ccntmext error!")
 	}
 
-	service.CloneCache.Delete(scommon.ST_STORAGE, getStorageKey(ccntmext.address, vm.PopByteArray(engine)))
+	service.CloneCache.Delete(scommon.ST_STORAGE, getStorageKey(ccntmext.Address, vm.PopByteArray(engine)))
 
 	return nil
 }
@@ -70,7 +77,7 @@ func StorageGet(service *NeoVmService, engine *vm.ExecutionEngine) error {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StorageGet] get pop ccntmext error!")
 	}
 
-	item, err := service.CloneCache.Get(scommon.ST_STORAGE, getStorageKey(ccntmext.address, vm.PopByteArray(engine)))
+	item, err := service.CloneCache.Get(scommon.ST_STORAGE, getStorageKey(ccntmext.Address, vm.PopByteArray(engine)))
 	if err != nil {
 		return err
 	}
@@ -89,8 +96,15 @@ func StorageGetCcntmext(service *NeoVmService, engine *vm.ExecutionEngine) error
 	return nil
 }
 
+func StorageGetReadOnlyCcntmext(service *NeoVmService, engine *vm.ExecutionEngine) error {
+	ccntmext := NewStorageCcntmext(service.CcntmextRef.CurrentCcntmext().CcntmractAddress)
+	ccntmext.IsReadOnly = true
+	vm.PushData(engine, ccntmext)
+	return nil
+}
+
 func checkStorageCcntmext(service *NeoVmService, ccntmext *StorageCcntmext) error {
-	item, err := service.CloneCache.Get(scommon.ST_CcntmRACT, ccntmext.address[:])
+	item, err := service.CloneCache.Get(scommon.ST_CcntmRACT, ccntmext.Address[:])
 	if err != nil || item == nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CheckStorageCcntmext] get ccntmext fail!")
 	}
