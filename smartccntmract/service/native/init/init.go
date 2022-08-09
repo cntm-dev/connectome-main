@@ -20,7 +20,11 @@ package init
 
 import (
 	"bytes"
+	"math"
+	"math/big"
+
 	"github.com/cntmio/cntmology/common"
+	invoke "github.com/cntmio/cntmology/core/utils"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/auth"
 	params "github.com/cntmio/cntmology/smartccntmract/service/native/global_params"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/governance"
@@ -28,7 +32,8 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntmid"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
-	"github.com/cntmio/cntmology/smartccntmract/states"
+	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
+	vm "github.com/cntmio/cntmology/vm/neovm"
 )
 
 var (
@@ -45,8 +50,16 @@ func init() {
 }
 
 func InitBytes(addr common.Address, method string) []byte {
-	init := states.Ccntmract{Address: addr, Method: method}
 	bf := new(bytes.Buffer)
-	init.Serialize(bf)
+	builder := vm.NewParamsBuilder(bf)
+	builder.EmitPushByteArray([]byte{})
+	builder.EmitPushByteArray([]byte(method))
+	builder.EmitPushByteArray(addr[:])
+	builder.EmitPushInteger(big.NewInt(0))
+	builder.Emit(vm.SYSCALL)
+	builder.EmitPushByteArray([]byte(neovm.NATIVE_INVOKE_NAME))
+
+	tx := invoke.NewInvokeTransaction(builder.ToArray())
+	tx.GasLimit = math.MaxUint64
 	return bf.Bytes()
 }

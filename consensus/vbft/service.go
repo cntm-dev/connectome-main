@@ -2039,13 +2039,7 @@ func (self *Server) msgSendLoop() {
 
 //creategovernaceTransaction invoke governance native ccntmract commit_pos
 func (self *Server) creategovernaceTransaction(blkNum uint32) *types.Transaction {
-	init := states.Ccntmract{
-		Address: nutils.GovernanceCcntmractAddress,
-		Method:  gover.COMMIT_DPOS,
-	}
-	bf := new(bytes.Buffer)
-	init.Serialize(bf)
-	tx := utils.NewInvokeTransaction(bf.Bytes())
+	tx := utils.BuildNativeTransaction(nutils.GovernanceCcntmractAddress, gover.COMMIT_DPOS, []byte{})
 	tx.Nonce = blkNum
 	return tx
 }
