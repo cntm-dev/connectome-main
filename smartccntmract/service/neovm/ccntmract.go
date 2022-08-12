@@ -19,11 +19,10 @@
 package neovm
 
 import (
-	"bytes"
+	"fmt"
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/payload"
-	"github.com/cntmio/cntmology/core/states"
 	scommon "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
@@ -56,13 +55,19 @@ func CcntmractMigrate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if err := isCcntmractExist(service, ccntmractAddress); err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractMigrate] ccntmract invalid!")
 	}
+	ccntmext := service.CcntmextRef.CurrentCcntmext()
 
 	service.CloneCache.Add(scommon.ST_CcntmRACT, ccntmractAddress[:], ccntmract)
-	if err := storeMigration(service, ccntmractAddress); err != nil {
+	items, err := storeMigration(service, ccntmext.CcntmractAddress, ccntmractAddress)
+	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractMigrate] ccntmract store migration error!")
 	}
+	service.CloneCache.Delete(scommon.ST_CcntmRACT, ccntmext.CcntmractAddress[:])
+	for _, v := range items {
+		service.CloneCache.Delete(scommon.ST_STORAGE, []byte(v.Key))
+	}
 	vm.PushData(engine, ccntmract)
-	return CcntmractDestory(service, engine)
+	return nil
 }
 
 // CcntmractDestory destroy a ccntmract
@@ -164,28 +169,18 @@ func isCcntmractExist(service *NeoVmService, ccntmractAddress common.Address) er
 	item, err := service.CloneCache.Get(scommon.ST_CcntmRACT, ccntmractAddress[:])
 
 	if err != nil || item != nil {
-		return errors.NewErr("[Ccntmract] Get ccntmract error or ccntmract exist!")
+		return fmt.Errorf("[Ccntmract] Get ccntmract %x error or ccntmract exist!", ccntmractAddress)
 	}
 	return nil
 }
 
-func storeMigration(service *NeoVmService, ccntmractAddress common.Address) error {
-	stateValues, err := service.CloneCache.Store.Find(scommon.ST_CcntmRACT, ccntmractAddress[:])
+func storeMigration(service *NeoVmService, oldAddr common.Address, newAddr common.Address) ([]*scommon.StateItem, error) {
+	stateValues, err := service.CloneCache.Store.Find(scommon.ST_STORAGE, oldAddr[:])
 	if err != nil {
-		return errors.NewDetailErr(err, errors.ErrNoCode, "[Ccntmract] Find error!")
+		return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[Ccntmract] Find error!")
 	}
 	for _, v := range stateValues {
-		key := new(states.StorageKey)
-		bf := bytes.NewBuffer([]byte(v.Key))
-		if err := key.Deserialize(bf); err != nil {
-			return errors.NewErr("[Ccntmract] Key deserialize error!")
-		}
-		key = &states.StorageKey{CodeHash: ccntmractAddress, Key: key.Key}
-		b := new(bytes.Buffer)
-		if _, err := key.Serialize(b); err != nil {
-			return errors.NewErr("[Ccntmract] Key Serialize error!")
-		}
-		service.CloneCache.Add(scommon.ST_STORAGE, key.ToArray(), v.Value)
+		service.CloneCache.Add(scommon.ST_STORAGE, getStorageKey(newAddr, []byte(v.Key)[20:]), v.Value)
 	}
-	return nil
+	return stateValues, nil
 }

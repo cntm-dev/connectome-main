@@ -48,10 +48,10 @@ func TestCcntmractState(t *testing.T) {
 		Description: "",
 	}
 
-	codeHash := types.AddressFromVmCode(testCode)
+	address := types.AddressFromVmCode(testCode)
 	err = batch.TryGetOrAdd(
 		scommon.ST_CcntmRACT,
-		codeHash[:],
+		address[:],
 		deploy)
 	if err != nil {
 		t.Errorf("TryGetOrAdd ccntmract error %s", err)
@@ -68,7 +68,7 @@ func TestCcntmractState(t *testing.T) {
 		t.Errorf("testStateStore.CommitTo error %s", err)
 		return
 	}
-	ccntmractState1, err := testStateStore.GetCcntmractState(codeHash)
+	ccntmractState1, err := testStateStore.GetCcntmractState(address)
 	if err != nil {
 		t.Errorf("GetCcntmractState error %s", err)
 		return

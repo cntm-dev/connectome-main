@@ -329,7 +329,7 @@ func (self *StateStore) getCcntmractStateKey(ccntmractHash common.Address) ([]by
 func (self *StateStore) getStorageKey(key *states.StorageKey) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 	buf.WriteByte(byte(scom.ST_STORAGE))
-	buf.Write(key.CodeHash[:])
+	buf.Write(key.CcntmractAddress[:])
 	buf.Write(key.Key)
 	return buf.Bytes(), nil
 }

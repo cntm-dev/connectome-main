@@ -74,7 +74,7 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, stateBa
 		cache.Commit()
 	}
 
-	log.Infof("deploy ccntmract address:%x", address.ToHexString())
+	log.Infof("deploy ccntmract address:%s", address.ToHexString())
 	// store ccntmract message
 	err = stateBatch.TryGetOrAdd(scommon.ST_CcntmRACT, address[:], deploy)
 	if err != nil {

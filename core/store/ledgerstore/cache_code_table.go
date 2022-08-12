@@ -29,10 +29,10 @@ type CacheCodeTable struct {
 	store scom.StateStore
 }
 
-func (table *CacheCodeTable) GetCode(codeHash []byte) ([]byte, error) {
-	value, _ := table.store.TryGet(scom.ST_CcntmRACT, codeHash)
+func (table *CacheCodeTable) GetCode(address []byte) ([]byte, error) {
+	value, _ := table.store.TryGet(scom.ST_CcntmRACT, address)
 	if value == nil {
-		return nil, fmt.Errorf("[GetCode] TryGet ccntmract error! codeHash:%x", codeHash)
+		return nil, fmt.Errorf("[GetCode] TryGet ccntmract error! address:%x", address)
 	}
 
 	return value.Value.(*payload.DeployCode).Code, nil

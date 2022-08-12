@@ -77,10 +77,10 @@ var (
 	CcntmRACT_DESTROY_NAME           = "System.Ccntmract.Destroy"
 	CcntmRACT_GETSCRIPT_NAME         = "Ontology.Ccntmract.GetScript"
 
-	STORAGE_GET_NAME                = "Neo.Storage.Get"
-	STORAGE_PUT_NAME                = "Neo.Storage.Put"
-	STORAGE_DELETE_NAME             = "Neo.Storage.Delete"
-	STORAGE_GETCcntmEXT_NAME         = "Neo.Storage.GetCcntmext"
+	STORAGE_GET_NAME                = "System.Storage.Get"
+	STORAGE_PUT_NAME                = "System.Storage.Put"
+	STORAGE_DELETE_NAME             = "System.Storage.Delete"
+	STORAGE_GETCcntmEXT_NAME         = "System.Storage.GetCcntmext"
 	STORAGE_GETREADONLYCcntmEXT_NAME = "System.Storage.GetReadOnlyCcntmext"
 
 	STORAGECcntmEXT_ASREADONLY_NAME = "System.StorageCcntmext.AsReadOnly"
