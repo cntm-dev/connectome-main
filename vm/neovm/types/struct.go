@@ -38,7 +38,10 @@ func (this *Struct) Equals(other StackItems) bool {
 		return false
 	}
 	a1 := this._array
-	a2 := other.GetStruct()
+	a2, err := other.GetStruct()
+	if err != nil {
+		return false
+	}
 	l1 := len(a1)
 	l2 := len(a2)
 	if l1 != l2 {
@@ -52,28 +55,28 @@ func (this *Struct) Equals(other StackItems) bool {
 	return true
 }
 
-func (this *Struct) GetBigInteger() *big.Int {
-	return big.NewInt(0)
+func (this *Struct) GetBigInteger() (*big.Int, error) {
+	return nil, fmt.Errorf("%s", "Not support struct to integer")
 }
 
-func (this *Struct) GetBoolean() bool {
-	return true
+func (this *Struct) GetBoolean() (bool, error) {
+	return false, fmt.Errorf("%s", "Not support struct to boolean")
 }
 
-func (this *Struct) GetByteArray() []byte {
-	return nil
+func (this *Struct) GetByteArray() ([]byte, error) {
+	return nil, fmt.Errorf("%s", "Not support struct to byte array")
 }
 
-func (this *Struct) GetInterface() interfaces.Interop {
-	return nil
+func (this *Struct) GetInterface() (interfaces.Interop, error) {
+	return nil, fmt.Errorf("%s", "Not support struct to interface")
 }
 
-func (s *Struct) GetArray() []StackItems {
-	return s._array
+func (s *Struct) GetArray() ([]StackItems, error) {
+	return s._array, nil
 }
 
-func (s *Struct) GetStruct() []StackItems {
-	return s._array
+func (s *Struct) GetStruct() ([]StackItems, error) {
+	return s._array, nil
 }
 
 func (s *Struct) Clone() StackItems {
@@ -88,10 +91,14 @@ func (s *Struct) Clone() StackItems {
 	return &Struct{arr}
 }
 
-func (this *Struct) GetMap() map[StackItems]StackItems {
-	return nil
+func (this *Struct) GetMap() (map[StackItems]StackItems, error) {
+	return nil, fmt.Errorf("%s", "Not support struct to map")
 }
 
 func (this *Struct) Add(item StackItems) {
 	this._array = append(this._array, item)
+}
+
+func (this *Struct) Count() int {
+	return len(this._array)
 }

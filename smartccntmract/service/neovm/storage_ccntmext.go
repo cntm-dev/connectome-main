@@ -44,7 +44,10 @@ func (this *StorageCcntmext) ToArray() []byte {
 }
 
 func StorageCcntmextAsReadOnly(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	data := vm.PopInteropInterface(engine)
+	data, err := vm.PopInteropInterface(engine)
+	if err != nil {
+		return err
+	}
 	ccntmext, ok := data.(*StorageCcntmext)
 	if !ok {
 		return fmt.Errorf("%s", "pop storage ccntmext type invalid")

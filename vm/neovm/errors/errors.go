@@ -45,4 +45,5 @@ var (
 	ERR_ENTRY_CcntmEXT_NIL        = errors.New("entry ccntmext is nil")
 	ERR_APPEND_NOT_ARRAY         = errors.New("append not array")
 	ERR_NOT_SUPPORT_TYPE         = errors.New("not a supported type")
+	ERR_MAP_NOT_EXIST            = errors.New("map not ccntmain key")
 )

@@ -42,12 +42,18 @@ func StoragePut(service *NeoVmService, engine *vm.ExecutionEngine) error {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StoragePut] check ccntmext error!")
 	}
 
-	key := vm.PopByteArray(engine)
+	key, err := vm.PopByteArray(engine)
+	if err != nil {
+		return err
+	}
 	if len(key) > 1024 {
 		return errors.NewErr("[StoragePut] Storage key to lcntm")
 	}
 
-	value := vm.PopByteArray(engine)
+	value, err := vm.PopByteArray(engine)
+	if err != nil {
+		return err
+	}
 	service.CloneCache.Add(scommon.ST_STORAGE, getStorageKey(ccntmext.Address, key), &states.StorageItem{Value: value})
 	return nil
 }
@@ -64,8 +70,11 @@ func StorageDelete(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if err := checkStorageCcntmext(service, ccntmext); err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StorageDelete] check ccntmext error!")
 	}
-
-	service.CloneCache.Delete(scommon.ST_STORAGE, getStorageKey(ccntmext.Address, vm.PopByteArray(engine)))
+	ba, err := vm.PopByteArray(engine)
+	if err != nil {
+		return err
+	}
+	service.CloneCache.Delete(scommon.ST_STORAGE, getStorageKey(ccntmext.Address, ba))
 
 	return nil
 }
@@ -76,8 +85,11 @@ func StorageGet(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StorageGet] get pop ccntmext error!")
 	}
-
-	item, err := service.CloneCache.Get(scommon.ST_STORAGE, getStorageKey(ccntmext.Address, vm.PopByteArray(engine)))
+	ba, err := vm.PopByteArray(engine)
+	if err != nil {
+		return err
+	}
+	item, err := service.CloneCache.Get(scommon.ST_STORAGE, getStorageKey(ccntmext.Address, ba))
 	if err != nil {
 		return err
 	}
@@ -115,7 +127,10 @@ func getCcntmext(engine *vm.ExecutionEngine) (*StorageCcntmext, error) {
 	if vm.EvaluationStackCount(engine) < 2 {
 		return nil, errors.NewErr("[Ccntmext] Too few input parameters ")
 	}
-	opInterface := vm.PopInteropInterface(engine)
+	opInterface, err := vm.PopInteropInterface(engine)
+	if err != nil {
+		return nil, err
+	}
 	if opInterface == nil {
 		return nil, errors.NewErr("[Ccntmext] Get storageCcntmext nil")
 	}

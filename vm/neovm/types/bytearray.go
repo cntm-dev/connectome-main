@@ -38,7 +38,10 @@ func (this *ByteArray) Equals(other StackItems) bool {
 		return false
 	}
 	a1 := this.value
-	a2 := other.GetByteArray()
+	a2, err := other.GetByteArray()
+	if err != nil {
+		return false
+	}
 	l1 := len(a1)
 	l2 := len(a2)
 	if l1 != l2 {
@@ -52,35 +55,35 @@ func (this *ByteArray) Equals(other StackItems) bool {
 	return true
 }
 
-func (this *ByteArray) GetBigInteger() *big.Int {
-	return common.BigIntFromNeoBytes(this.value)
+func (this *ByteArray) GetBigInteger() (*big.Int, error) {
+	return common.BigIntFromNeoBytes(this.value), nil
 }
 
-func (this *ByteArray) GetBoolean() bool {
+func (this *ByteArray) GetBoolean() (bool, error) {
 	for _, b := range this.value {
 		if b != 0 {
-			return true
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
-func (this *ByteArray) GetByteArray() []byte {
-	return this.value
+func (this *ByteArray) GetByteArray() ([]byte, error) {
+	return this.value, nil
 }
 
-func (this *ByteArray) GetInterface() interfaces.Interop {
-	return nil
+func (this *ByteArray) GetInterface() (interfaces.Interop, error) {
+	return nil, fmt.Errorf("%s", "Not support byte array to interface")
 }
 
-func (this *ByteArray) GetArray() []StackItems {
-	return nil
+func (this *ByteArray) GetArray() ([]StackItems, error) {
+	return nil, fmt.Errorf("%s", "Not support byte array to array")
 }
 
-func (this *ByteArray) GetStruct() []StackItems {
-	return nil
+func (this *ByteArray) GetStruct() ([]StackItems, error) {
+	return nil, fmt.Errorf("%s", "Not support byte array to struct")
 }
 
-func (this *ByteArray) GetMap() map[StackItems]StackItems {
-	return nil
+func (this *ByteArray) GetMap() (map[StackItems]StackItems, error) {
+	return nil, fmt.Errorf("%s", "Not support byte array to map")
 }

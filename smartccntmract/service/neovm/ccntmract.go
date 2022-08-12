@@ -98,7 +98,10 @@ func CcntmractGetStorageCcntmext(service *NeoVmService, engine *vm.ExecutionEngi
 	if vm.EvaluationStackCount(engine) < 1 {
 		return errors.NewErr("[GetStorageCcntmext] Too few input parameter!")
 	}
-	opInterface := vm.PopInteropInterface(engine)
+	opInterface, err := vm.PopInteropInterface(engine)
+	if err != nil {
+		return err
+	}
 	if opInterface == nil {
 		return errors.NewErr("[GetStorageCcntmext] Pop data nil!")
 	}
@@ -120,7 +123,11 @@ func CcntmractGetStorageCcntmext(service *NeoVmService, engine *vm.ExecutionEngi
 
 // CcntmractGetCode put ccntmract to vm stack
 func CcntmractGetCode(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	vm.PushData(engine, vm.PopInteropInterface(engine).(*payload.DeployCode).Code)
+	i, err := vm.PopInteropInterface(engine)
+	if err != nil {
+		return err
+	}
+	vm.PushData(engine, i.(*payload.DeployCode).Code)
 	return nil
 }
 
@@ -128,28 +135,49 @@ func isCcntmractParamValid(engine *vm.ExecutionEngine) (*payload.DeployCode, err
 	if vm.EvaluationStackCount(engine) < 7 {
 		return nil, errors.NewErr("[Ccntmract] Too few input parameters")
 	}
-	code := vm.PopByteArray(engine)
+	code, err := vm.PopByteArray(engine)
+	if err != nil {
+		return nil, err
+	}
 	if len(code) > 1024*1024 {
 		return nil, errors.NewErr("[Ccntmract] Code too lcntm!")
 	}
-	needStorage := vm.PopBoolean(engine)
-	name := vm.PopByteArray(engine)
+	needStorage, err := vm.PopBoolean(engine)
+	if err != nil {
+		return nil, err
+	}
+	name, err := vm.PopByteArray(engine)
+	if err != nil {
+		return nil, err
+	}
 	if len(name) > 252 {
 		return nil, errors.NewErr("[Ccntmract] Name too lcntm!")
 	}
-	version := vm.PopByteArray(engine)
+	version, err := vm.PopByteArray(engine)
+	if err != nil {
+		return nil, err
+	}
 	if len(version) > 252 {
 		return nil, errors.NewErr("[Ccntmract] Version too lcntm!")
 	}
-	author := vm.PopByteArray(engine)
+	author, err := vm.PopByteArray(engine)
+	if err != nil {
+		return nil, err
+	}
 	if len(author) > 252 {
 		return nil, errors.NewErr("[Ccntmract] Author too lcntm!")
 	}
-	email := vm.PopByteArray(engine)
+	email, err := vm.PopByteArray(engine)
+	if err != nil {
+		return nil, err
+	}
 	if len(email) > 252 {
 		return nil, errors.NewErr("[Ccntmract] Email too lcntm!")
 	}
-	desc := vm.PopByteArray(engine)
+	desc, err := vm.PopByteArray(engine)
+	if err != nil {
+		return nil, err
+	}
 	if len(desc) > 65536 {
 		return nil, errors.NewErr("[Ccntmract] Desc too lcntm!")
 	}
