@@ -34,25 +34,7 @@ func NewStruct(value []StackItems) *Struct {
 }
 
 func (this *Struct) Equals(other StackItems) bool {
-	if _, ok := other.(*Struct); !ok {
-		return false
-	}
-	a1 := this._array
-	a2, err := other.GetStruct()
-	if err != nil {
-		return false
-	}
-	l1 := len(a1)
-	l2 := len(a2)
-	if l1 != l2 {
-		return false
-	}
-	for i := 0; i < l1; i++ {
-		if !a1[i].Equals(a2[i]) {
-			return false
-		}
-	}
-	return true
+	return reflect.DeepEqual(this, other)
 }
 
 func (this *Struct) GetBigInteger() (*big.Int, error) {
@@ -60,7 +42,7 @@ func (this *Struct) GetBigInteger() (*big.Int, error) {
 }
 
 func (this *Struct) GetBoolean() (bool, error) {
-	return false, fmt.Errorf("%s", "Not support struct to boolean")
+	return true, nil
 }
 
 func (this *Struct) GetByteArray() ([]byte, error) {
