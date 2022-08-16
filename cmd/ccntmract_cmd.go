@@ -37,7 +37,7 @@ var (
 		Action:      cli.ShowSubcommandHelp,
 		Usage:       "Deploy or invoke smart ccntmract",
 		ArgsUsage:   " ",
-		Description: `Deploy or invoke smart ccntmract`,
+		Description: `Smart ccntmract operations support the deployment of NeoVM smart ccntmract, and the pre-execution and execution of NeoVM smart ccntmract.`,
 		Subcommands: []cli.Command{
 			{
 				Action:    deployCcntmract,

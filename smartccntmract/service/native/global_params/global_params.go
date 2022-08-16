@@ -70,9 +70,14 @@ func RegisterParamCcntmract(native *native.NativeService) {
 }
 
 func ParamInit(native *native.NativeService) ([]byte, error) {
+	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
+	storageAdmin, _ := GetStorageRole(native, generateAdminKey(ccntmract, false))
+	storageOperator, _ := GetStorageRole(native, generateAdminKey(ccntmract, false))
+	if storageAdmin != nil || storageOperator != nil {
+		return utils.BYTE_FALSE, errors.NewErr("init param, admin or operator has already existed!")
+	}
 	paramCache = new(ParamCache)
 	paramCache.Params = make([]*Param, 0)
-	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
 	initParams := new(Params)
 	args, err := serialization.ReadVarBytes(bytes.NewBuffer(native.Input))
 	if err != nil {

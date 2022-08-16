@@ -21,14 +21,12 @@ package config
 import (
 	"encoding/hex"
 	"fmt"
-	"io"
-	"sort"
-
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/errors"
+	"io"
 )
 
 const (
@@ -530,7 +528,6 @@ func (this *OntologyConfig) GetBookkeepers() ([]keypair.PublicKey, error) {
 		return nil, fmt.Errorf("Does not support %s consensus", this.Genesis.ConsensusType)
 	}
 
-	sort.Strings(bookKeepers)
 	pubKeys := make([]keypair.PublicKey, 0, len(bookKeepers))
 	for _, key := range bookKeepers {
 		pubKey, err := hex.DecodeString(key)
@@ -540,6 +537,7 @@ func (this *OntologyConfig) GetBookkeepers() ([]keypair.PublicKey, error) {
 		}
 		pubKeys = append(pubKeys, k)
 	}
+	keypair.SortPublicKeys(pubKeys)
 	return pubKeys, nil
 }
 

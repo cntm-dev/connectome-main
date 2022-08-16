@@ -32,7 +32,7 @@ import (
 var AssetCommand = cli.Command{
 	Name:        "asset",
 	Usage:       "Handle assets",
-	Description: `asset ccntmrol`,
+	Description: "Asset management commands can check account balance, cntm/cntm transfers, extract cntms, and view unbound cntms, and so on.",
 	Subcommands: []cli.Command{
 		{
 			Action:      transfer,

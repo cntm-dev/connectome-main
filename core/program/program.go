@@ -22,15 +22,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"math"
-	"math/big"
-	"sort"
-
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/vm/neovm"
+	"math"
+	"math/big"
 )
 
 type ProgramBuilder struct {
@@ -95,13 +93,13 @@ func ProgramFromMultiPubKey(pubkeys []keypair.PublicKey, m int) ([]byte, error) 
 		return nil, errors.New("wrcntm multi-sig param")
 	}
 
-	list := keypair.NewPublicList(pubkeys)
-	sort.Sort(list)
+	pubkeys = keypair.SortPublicKeys(pubkeys)
 
 	builder := ProgramBuilder{}
 	builder.PushNum(uint16(m))
-	for _, pubkey := range list {
-		builder.PushBytes(pubkey)
+	for _, pubkey := range pubkeys {
+		key := keypair.SerializePublicKey(pubkey)
+		builder.PushBytes(key)
 	}
 
 	builder.PushNum(uint16(len(pubkeys)))

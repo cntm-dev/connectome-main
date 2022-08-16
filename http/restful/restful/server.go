@@ -70,6 +70,7 @@ const (
 	GET_UNBOUNDcntm        = "/api/v1/unboundcntm/:addr"
 	GET_MEMPOOL_TXCOUNT   = "/api/v1/mempool/txcount"
 	GET_MEMPOOL_TXSTATE   = "/api/v1/mempool/txstate/:hash"
+	GET_VERSION           = "/api/v1/version"
 
 	POST_RAW_TX = "/api/v1/transaction"
 )
@@ -141,6 +142,7 @@ func (this *restServer) registryMethod() {
 		GET_UNBOUNDcntm:        {name: "getunboundcntm", handler: rest.GetUnboundOng},
 		GET_MEMPOOL_TXCOUNT:   {name: "getmempooltxcount", handler: rest.GetMemPoolTxCount},
 		GET_MEMPOOL_TXSTATE:   {name: "getmempooltxstate", handler: rest.GetMemPoolTxState},
+		GET_VERSION:           {name: "getversion", handler: rest.GetNodeVersion},
 	}
 
 	postMethodMap := map[string]Action{
