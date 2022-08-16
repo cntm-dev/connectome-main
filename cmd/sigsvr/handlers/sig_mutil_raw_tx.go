@@ -25,7 +25,7 @@ import (
 	"sort"
 
 	"github.com/cntmio/cntmology-crypto/keypair"
-	clisvrcom "github.com/cntmio/cntmology/cmd/server/common"
+	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
 	cliutil "github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/constants"

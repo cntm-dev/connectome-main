@@ -20,35 +20,50 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/cntmio/cntmology/account"
-	clisvrcom "github.com/cntmio/cntmology/cmd/server/common"
+	"github.com/cntmio/cntmology/cmd/abi"
+	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
+	"github.com/cntmio/cntmology/common"
+	nutils "github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"testing"
 )
 
-func TestSigTransferTransaction(t *testing.T) {
-	acc := account.NewAccount("")
-	defAcc := clisvrcom.DefAccount
-	sigReq := &SigTransferTransactionReq{
-		GasLimit: 0,
+func TestSigNativeInvokeTx(t *testing.T) {
+	addr1 := common.Address([20]byte{1})
+	address1 := addr1.ToBase58()
+	addr2 := common.Address([20]byte{2})
+	address2 := addr2.ToBase58()
+	invokeReq := &SigNativeInvokeTxReq{
 		GasPrice: 0,
-		Asset:    "cntm",
-		From:     defAcc.Address.ToBase58(),
-		To:       acc.Address.ToBase58(),
-		Amount:   10,
+		GasLimit: 40000,
+		Address:  nutils.OntCcntmractAddress.ToHexString(),
+		Method:   "transfer",
+		Version:  0,
+		Params: []interface{}{
+			[]interface{}{
+				[]interface{}{
+					address1,
+					address2,
+					"10000000000",
+				},
+			},
+		},
 	}
-	data, err := json.Marshal(sigReq)
+	data, err := json.Marshal(invokeReq)
 	if err != nil {
-		t.Errorf("json.Marshal SigTransferTransactionReq error:%s", err)
+		t.Errorf("json.Marshal SigNativeInvokeTxReq error:%s", err)
+		return
 	}
 	req := &clisvrcom.CliRpcRequest{
 		Qid:    "t",
-		Method: "sigtransfertx",
+		Method: "signativeinvoketx",
 		Params: data,
 	}
 	rsp := &clisvrcom.CliRpcResponse{}
-	SigTransferTransaction(req, rsp)
+	abi.DefAbiMgr.Path = "../../abi"
+	abi.DefAbiMgr.Init()
+	SigNativeInvokeTx(req, rsp)
 	if rsp.ErrorCode != 0 {
-		t.Errorf("SigTransferTransaction failed. ErrorCode:%d", rsp.ErrorCode)
+		t.Errorf("SigNativeInvokeTx failed. ErrorCode:%d ErrorInfo:%s", rsp.ErrorCode, rsp.ErrorInfo)
 		return
 	}
 }

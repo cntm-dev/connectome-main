@@ -89,7 +89,7 @@ Transaction field description
 | getmerkleproof | tx_hash | return merkle_proof |  |
 | getgasprice |  | return gasprice |  |
 | getallowance | asset, from, to | return allowance |  |
-| getunclaimcntm | address | return unclaimcntm |  |
+| getunboundcntm | address | return getunboundcntm |  |
 | getblocktxsbyheight | height | return tx hashes |  |
 
 ### 1. getbestblockhash
@@ -1064,9 +1064,9 @@ Response:
 }
 ```
 
-#### 21. getunclaimcntm
+#### 21. getunboundcntm
 
-return unclaimcntm.
+return unboundcntm.
 
 
 #### Example
@@ -1076,7 +1076,7 @@ Request:
 ```
 {
   "jsonrpc": "2.0",
-  "method": "getunclaimcntm",
+  "method": "getunboundcntm",
   "params": ["address"],
   "id": 1
 }

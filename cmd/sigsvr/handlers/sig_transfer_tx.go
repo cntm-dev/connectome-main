@@ -22,71 +22,55 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/cntmio/cntmology-crypto/keypair"
-	clisvrcom "github.com/cntmio/cntmology/cmd/server/common"
+	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
 	cliutil "github.com/cntmio/cntmology/cmd/utils"
-	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/core/types"
 )
 
-type SigRawTransactionReq struct {
-	RawTx string `json:"raw_tx"`
+type SigTransferTransactionReq struct {
+	GasPrice uint64 `json:"gas_price"`
+	GasLimit uint64 `json:"gas_limit"`
+	Asset    string `json:"asset"`
+	From     string `json:"from"`
+	To       string `json:"to"`
+	Amount   uint64 `json:"amount"`
 }
 
-type SigRawTransactionRsp struct {
+type SinTransferTransactionRsp struct {
 	SignedTx string `json:"signed_tx"`
 }
 
-func SigRawTransaction(req *clisvrcom.CliRpcRequest, resp *clisvrcom.CliRpcResponse) {
-	rawReq := &SigRawTransactionReq{}
+func SigTransferTransaction(req *clisvrcom.CliRpcRequest, resp *clisvrcom.CliRpcResponse) {
+	rawReq := &SigTransferTransactionReq{}
 	err := json.Unmarshal(req.Params, rawReq)
 	if err != nil {
 		resp.ErrorCode = clisvrcom.CLIERR_INVALID_PARAMS
 		return
 	}
-	rawTxData, err := hex.DecodeString(rawReq.RawTx)
+	transferTx, err := cliutil.TransferTx(rawReq.GasPrice, rawReq.GasLimit, rawReq.Asset, rawReq.From, rawReq.To, rawReq.Amount)
 	if err != nil {
-		log.Infof("Cli Qid:%s SigRawTransaction hex.DecodeString error:%s", req.Qid, err)
 		resp.ErrorCode = clisvrcom.CLIERR_INVALID_PARAMS
 		return
 	}
-	rawTx := &types.Transaction{}
-	err = rawTx.Deserialize(bytes.NewBuffer(rawTxData))
-	if err != nil {
-		log.Infof("Cli Qid:%s SigRawTransaction tx Deserialize error:%s", req.Qid, err)
-		resp.ErrorCode = clisvrcom.CLIERR_INVALID_TX
-		return
-	}
 	signer := clisvrcom.DefAccount
-	var emptyAddress = common.Address{}
-	if rawTx.Payer == emptyAddress {
-		rawTx.Payer = signer.Address
+	if signer == nil {
+		resp.ErrorCode = clisvrcom.CLIERR_ACCOUNT_UNLOCK
+		return
 	}
-
-	txHash := rawTx.Hash()
-	sigData, err := cliutil.Sign(txHash.ToArray(), signer)
+	err = cliutil.SignTransaction(signer, transferTx)
 	if err != nil {
-		log.Infof("Cli Qid:%s SigRawTransaction Sign error:%s", req.Qid, err)
+		log.Infof("Cli Qid:%s SigTransferTransaction SignTransaction error:%s", req.Qid, err)
 		resp.ErrorCode = clisvrcom.CLIERR_INTERNAL_ERR
 		return
 	}
-	if len(rawTx.Sigs) == 0 {
-		rawTx.Sigs = make([]*types.Sig, 0)
-	}
-	rawTx.Sigs = append(rawTx.Sigs, &types.Sig{
-		PubKeys: []keypair.PublicKey{signer.PublicKey},
-		M:       1,
-		SigData: [][]byte{sigData},
-	})
 	buf := bytes.NewBuffer(nil)
-	err = rawTx.Serialize(buf)
+	err = transferTx.Serialize(buf)
 	if err != nil {
-		log.Infof("Cli Qid:%s SigRawTransaction tx Serialize error:%s", req.Qid, err)
+		log.Infof("Cli Qid:%s SigTransferTransaction tx Serialize error:%s", req.Qid, err)
 		resp.ErrorCode = clisvrcom.CLIERR_INTERNAL_ERR
 		return
 	}
-	resp.Result = &SigRawTransactionRsp{
+	resp.Result = &SinTransferTransactionRsp{
 		SignedTx: hex.EncodeToString(buf.Bytes()),
 	}
 }

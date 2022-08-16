@@ -16,12 +16,12 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package server
+package sigsvr
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cntmio/cntmology/cmd/server/common"
+	"github.com/cntmio/cntmology/cmd/sigsvr/common"
 	"github.com/cntmio/cntmology/common/log"
 	"io/ioutil"
 	"net/http"

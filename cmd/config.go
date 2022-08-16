@@ -44,7 +44,6 @@ func SetOntologyConfig(ctx *cli.Ccntmext) (*config.OntologyConfig, error) {
 	setRpcConfig(ctx, cfg.Rpc)
 	setRestfulConfig(ctx, cfg.Restful)
 	setWebSocketConfig(ctx, cfg.Ws)
-	setCliConfig(ctx, cfg.Cli)
 	if cfg.Genesis.ConsensusType == config.CONSENSUS_TYPE_SOLO {
 		cfg.Ws.EnableHttpWs = true
 		cfg.Restful.EnableHttpRestful = true
@@ -175,11 +174,6 @@ func setRestfulConfig(ctx *cli.Ccntmext, cfg *config.RestfulConfig) {
 func setWebSocketConfig(ctx *cli.Ccntmext, cfg *config.WebSocketConfig) {
 	cfg.EnableHttpWs = ctx.GlobalBool(utils.GetFlagName(utils.WsEnabledFlag))
 	cfg.HttpWsPort = ctx.GlobalUint(utils.GetFlagName(utils.WsPortFlag))
-}
-
-func setCliConfig(ctx *cli.Ccntmext, cfg *config.CliConfig) {
-	cfg.EnableCliRpcServer = ctx.GlobalBool(utils.GetFlagName(utils.CliEnableRpcFlag))
-	cfg.CliRpcPort = ctx.GlobalUint(utils.GetFlagName(utils.CliRpcPortFlag))
 }
 
 func SetRpcPort(ctx *cli.Ccntmext) {

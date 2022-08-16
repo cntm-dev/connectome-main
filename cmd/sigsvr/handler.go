@@ -16,9 +16,9 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package server
+package sigsvr
 
-import "github.com/cntmio/cntmology/cmd/server/handlers"
+import "github.com/cntmio/cntmology/cmd/sigsvr/handlers"
 
 func init() {
 	DefCliRpcSvr.RegHandler("sigrawtx", handlers.SigRawTransaction)

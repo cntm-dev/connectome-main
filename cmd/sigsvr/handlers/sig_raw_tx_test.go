@@ -23,7 +23,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"github.com/cntmio/cntmology/account"
-	clisvrcom "github.com/cntmio/cntmology/cmd/server/common"
+	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common/log"
 	"os"

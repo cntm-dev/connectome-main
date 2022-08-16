@@ -67,7 +67,7 @@ const (
 	GET_MERKLE_PROOF      = "/api/v1/merkleproof/:hash"
 	GET_GAS_PRICE         = "/api/v1/gasprice"
 	GET_ALLOWANCE         = "/api/v1/allowance/:asset/:from/:to"
-	GET_UNCLAIMcntm        = "/api/v1/unclaimcntm/:addr"
+	GET_UNBOUNDcntm        = "/api/v1/unboundcntm/:addr"
 	GET_MEMPOOL_TXCOUNT   = "/api/v1/mempool/txcount"
 	GET_MEMPOOL_TXSTATE   = "/api/v1/mempool/txstate/:hash"
 
@@ -138,7 +138,7 @@ func (this *restServer) registryMethod() {
 		GET_ALLOWANCE:         {name: "getallowance", handler: rest.GetAllowance},
 		GET_MERKLE_PROOF:      {name: "getmerkleproof", handler: rest.GetMerkleProof},
 		GET_GAS_PRICE:         {name: "getgasprice", handler: rest.GetGasPrice},
-		GET_UNCLAIMcntm:        {name: "getunclaimcntm", handler: rest.GetUnclaimOng},
+		GET_UNBOUNDcntm:        {name: "getunboundcntm", handler: rest.GetUnboundOng},
 		GET_MEMPOOL_TXCOUNT:   {name: "getmempooltxcount", handler: rest.GetMemPoolTxCount},
 		GET_MEMPOOL_TXSTATE:   {name: "getmempooltxstate", handler: rest.GetMemPoolTxState},
 	}
@@ -177,8 +177,8 @@ func (this *restServer) getPath(url string) string {
 		return GET_MERKLE_PROOF
 	} else if strings.Ccntmains(url, strings.TrimRight(GET_ALLOWANCE, ":asset/:from/:to")) {
 		return GET_ALLOWANCE
-	} else if strings.Ccntmains(url, strings.TrimRight(GET_UNCLAIMcntm, ":addr")) {
-		return GET_UNCLAIMcntm
+	} else if strings.Ccntmains(url, strings.TrimRight(GET_UNBOUNDcntm, ":addr")) {
+		return GET_UNBOUNDcntm
 	} else if strings.Ccntmains(url, strings.TrimRight(GET_MEMPOOL_TXSTATE, ":hash")) {
 		return GET_MEMPOOL_TXSTATE
 	}
@@ -218,7 +218,7 @@ func (this *restServer) getParams(r *http.Request, url string, req map[string]in
 	case GET_ALLOWANCE:
 		req["Asset"] = getParam(r, "asset")
 		req["From"], req["To"] = getParam(r, "from"), getParam(r, "to")
-	case GET_UNCLAIMcntm:
+	case GET_UNBOUNDcntm:
 		req["Addr"] = getParam(r, "addr")
 	case GET_MEMPOOL_TXSTATE:
 		req["Hash"] = getParam(r, "hash")

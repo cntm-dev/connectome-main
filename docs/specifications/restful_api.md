@@ -25,7 +25,7 @@ Restful Api List
 | get_merkle_proof | GET /api/v1/merkleproof/:hash|
 | get_gasprice | GET /api/v1/gasprice|
 | get_allowance | GET /api/v1/allowance/:asset/:from/:to |
-| get_unclaimcntm | GET /api/v1/unclaimcntm/:addr |
+| get_unboundcntm | GET /api/v1/unboundcntm/:addr |
 | get_mempooltxcount | GET /api/v1/mempool/txcount |
 | get_mempooltxstate | GET /api/v1/mempool/txstate/:hash |
 | post_raw_tx | post /api/v1/transaction?preExec=0 |
@@ -809,22 +809,22 @@ curl -i http://localhost:20334/api/v1/allowance/:asset/:from/:to
 }
 ```
 
-### 18 get_unclaimcntm
+### 18 get_unboundcntm
 
-Get unclaimcntm
+Get unboundcntm
 
 GET
 ```
-/api/v1/unclaimcntm
+/api/v1/unboundcntm
 ```
 #### Request Example:
 ```
-curl -i http://localhost:20334/api/v1/unclaimcntm/:addr
+curl -i http://localhost:20334/api/v1/unboundcntm/:addr
 ```
 #### Response
 ```
 {
-    "Action": "getunclaimcntm",
+    "Action": "getunboundcntm",
     "Desc": "SUCCESS",
     "Error": 0,
     "Result": "204957950400000",

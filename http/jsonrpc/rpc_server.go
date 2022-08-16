@@ -57,7 +57,7 @@ func StartRPCServer() error {
 	rpc.HandleFunc("getmerkleproof", rpc.GetMerkleProof)
 	rpc.HandleFunc("getblocktxsbyheight", rpc.GetBlockTxsByHeight)
 	rpc.HandleFunc("getgasprice", rpc.GetGasPrice)
-	rpc.HandleFunc("getunclaimcntm", rpc.GetUnclaimOng)
+	rpc.HandleFunc("getunboundcntm", rpc.GetUnboundOng)
 
 	err := http.ListenAndServe(":"+strconv.Itoa(int(cfg.DefConfig.Rpc.HttpJsonPort)), nil)
 	if err != nil {

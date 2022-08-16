@@ -23,7 +23,7 @@ import (
 	"encoding/json"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/account"
-	clisvrcom "github.com/cntmio/cntmology/cmd/server/common"
+	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/core/types"
 	"testing"

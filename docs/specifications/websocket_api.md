@@ -616,8 +616,8 @@ Get a list of transaction  with smartccntmract event based on height
                       "CcntmractAddress": "ff00000000000000000000000000000000000001",
                       "States": [
                             "transfer",
-                            "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb",
-                            "TA4WVfUB1ipHL8s3PRSYgeV1HhAU3KcKTq",
+                            "A9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb",
+                            "AA4WVfUB1ipHL8s3PRSYgeV1HhAU3KcKTq",
                             1000000000
                          ]
                      }
@@ -746,8 +746,8 @@ get allowance
 {
     "Action": "getallowance",
     "Asset": "cntm",
-    "From" :  "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb",
-    "To"   :  "TA4WVfUB1ipHL8s3PRSYgeV1HhAU3KcKTq",
+    "From" :  "A9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb",
+    "To"   :  "AA4WVfUB1ipHL8s3PRSYgeV1HhAU3KcKTq",
     "Version": "1.0.0"
 }
 ```
@@ -762,21 +762,21 @@ get allowance
 }
 ```
 
-### 22. Get unclaimcntm
-get unclaimcntm
+### 22. Get unboundcntm
+get unboundcntm
 
 #### Request Example:
 ```
 {
-    "Action": "getunclaimcntm",
-    "Addr": "cntm",
+    "Action": "getunboundcntm",
+    "Addr": "ANH5bHrrt111XwNEnuPZj6u95Dd6u7G4D6",
     "Version": "1.0.0"
 }
 ```
 #### Response
 ```
 {
-    "Action": "getunclaimcntm",
+    "Action": "getunboundcntm",
     "Desc": "SUCCESS",
     "Error": 0,
     "Result": "204957950400000",

@@ -26,7 +26,7 @@ import (
 	"strings"
 )
 
-const DefAbiPath = "./cmd/abi"
+const DefAbiPath = "./abi"
 
 var DefAbiMgr = NewAbiMgr(DefAbiPath)
 
@@ -81,5 +81,6 @@ func (this *AbiMgr) loadNativeAbi() {
 			ccntminue
 		}
 		this.nativeAbis[nativeAbi.Address] = nativeAbi
+		log.Infof("Native ccntmract name:%s address:%s abi load success", fileName, nativeAbi.Address)
 	}
 }
