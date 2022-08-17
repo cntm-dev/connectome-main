@@ -43,6 +43,7 @@ type SmartCcntmract struct {
 	Config        *Config
 	Notifications []*event.NotifyEventInfo // all execute smart ccntmract event notify info
 	Gas           uint64
+	ExecStep      int
 }
 
 // Config describe smart ccntmract need parameters configuration
@@ -91,6 +92,14 @@ func (this *SmartCcntmract) PopCcntmext() {
 // PushNotifications push smart ccntmract event info
 func (this *SmartCcntmract) PushNotifications(notifications []*event.NotifyEventInfo) {
 	this.Notifications = append(this.Notifications, notifications...)
+}
+
+func (this *SmartCcntmract) CheckExecStep() bool {
+	if this.ExecStep >= neovm.VM_STEP_LIMIT {
+		return false
+	}
+	this.ExecStep += 1
+	return true
 }
 
 func (this *SmartCcntmract) CheckUseGas(gas uint64) bool {

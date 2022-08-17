@@ -121,7 +121,7 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 	}
 
 	name := ctx.String(utils.GetFlagName(utils.CcntmractNameFlag))
-	version := ctx.Int(utils.GetFlagName(utils.CcntmractVersionFlag))
+	version := ctx.String(utils.GetFlagName(utils.CcntmractVersionFlag))
 	author := ctx.String(utils.GetFlagName(utils.CcntmractAuthorFlag))
 	email := ctx.String(utils.GetFlagName(utils.CcntmractEmailFlag))
 	desc := ctx.String(utils.GetFlagName(utils.CcntmractDescFlag))
@@ -252,11 +252,11 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 			return fmt.Errorf("Ccntmract invoke failed\n")
 		}
 		fmt.Printf("Ccntmract invoke successfully\n")
-		fmt.Printf("Gas consumed:%d\n", preResult.Gas)
+		fmt.Printf("  Gaslimit:%d\n", preResult.Gas)
 
 		rawReturnTypes := ctx.String(utils.GetFlagName(utils.CcntmranctReturnTypeFlag))
 		if rawReturnTypes == "" {
-			fmt.Printf("Return:%s (raw value)\n", preResult.Result)
+			fmt.Printf("  Return:%s (raw value)\n", preResult.Result)
 			return nil
 		}
 		values, err := utils.ParseReturnValue(preResult.Result, rawReturnTypes)
@@ -265,11 +265,11 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 		}
 		switch len(values) {
 		case 0:
-			fmt.Printf("Return: nil\n")
+			fmt.Printf("  Return: nil\n")
 		case 1:
-			fmt.Printf("Return:%+v\n", values[0])
+			fmt.Printf("  Return:%+v\n", values[0])
 		default:
-			fmt.Printf("Return:%+v\n", values)
+			fmt.Printf("  Return:%+v\n", values)
 		}
 		return nil
 	}
@@ -285,7 +285,7 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 		return fmt.Errorf("Invoke NeoVM ccntmract error:%s", err)
 	}
 
-	fmt.Printf("TxHash:%s\n", txHash)
+	fmt.Printf("  TxHash:%s\n", txHash)
 	fmt.Printf("\nTip:\n")
 	fmt.Printf("  Using './cntmology info status %s' to query transaction status\n", txHash)
 	return nil

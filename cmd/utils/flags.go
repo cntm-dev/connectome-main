@@ -281,7 +281,7 @@ var (
 		Name:  "name",
 		Usage: "Specifies ccntmract name to `<name>`",
 	}
-	CcntmractVersionFlag = cli.IntFlag{
+	CcntmractVersionFlag = cli.StringFlag{
 		Name:  "version",
 		Usage: "Specifies ccntmract version to `<ver>`",
 	}
