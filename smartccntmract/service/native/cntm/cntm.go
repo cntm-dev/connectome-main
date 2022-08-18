@@ -24,11 +24,10 @@ import (
 	"math/big"
 
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/common/serialization"
 	scommon "github.com/cntmio/cntmology/core/store/common"
-	ctypes "github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
@@ -57,10 +56,6 @@ func RegisterOntCcntmract(native *native.NativeService) {
 }
 
 func OntInit(native *native.NativeService) ([]byte, error) {
-	bookkeepers, err := config.DefConfig.GetBookkeepers()
-	if err != nil {
-		return utils.BYTE_FALSE, fmt.Errorf("GetBookkeepers error:%s", err)
-	}
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
 	amount, err := utils.GetStorageUInt64(native, GenTotalSupplyKey(ccntmract))
 	if err != nil {
@@ -71,13 +66,42 @@ func OntInit(native *native.NativeService) ([]byte, error) {
 		return utils.BYTE_FALSE, errors.NewErr("Init cntm has been completed!")
 	}
 
-	assign := constants.cntm_TOTAL_SUPPLY / uint64(len(bookkeepers))
-	item := utils.GenUInt64StorageItem(assign)
-	for _, v := range bookkeepers {
-		address := ctypes.AddressFromPubKey(v)
-		balanceKey := GenBalanceKey(ccntmract, address)
+	distribute := make(map[common.Address]uint64)
+	buf, err := serialization.ReadVarBytes(bytes.NewBuffer(native.Input))
+	if err != nil {
+		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "serialization.ReadVarBytes, ccntmract params deserialize error!")
+	}
+	input := bytes.NewBuffer(buf)
+	num, err := utils.ReadVarUint(input)
+	if err != nil {
+		return utils.BYTE_FALSE, fmt.Errorf("read number error:%v", err)
+	}
+	sum := uint64(0)
+	overflow := false
+	for i := uint64(0); i < num; i++ {
+		addr, err := utils.ReadAddress(input)
+		if err != nil {
+			return utils.BYTE_FALSE, fmt.Errorf("read address error:%v", err)
+		}
+		value, err := utils.ReadVarUint(input)
+		if err != nil {
+			return utils.BYTE_FALSE, fmt.Errorf("read value error:%v", err)
+		}
+		sum, overflow = common.SafeAdd(sum, value)
+		if overflow {
+			return utils.BYTE_FALSE, errors.NewErr("wrcntm config. overflow detected")
+		}
+		distribute[addr] += value
+	}
+	if sum != constants.cntm_TOTAL_SUPPLY {
+		return utils.BYTE_FALSE, fmt.Errorf("wrcntm config. total supply %d != %d", sum, constants.cntm_TOTAL_SUPPLY)
+	}
+
+	for addr, val := range distribute {
+		balanceKey := GenBalanceKey(ccntmract, addr)
+		item := utils.GenUInt64StorageItem(val)
 		native.CloneCache.Add(scommon.ST_STORAGE, balanceKey, item)
-		AddNotifications(native, ccntmract, &State{To: address, Value: assign})
+		AddNotifications(native, ccntmract, &State{To: addr, Value: val})
 	}
 	native.CloneCache.Add(scommon.ST_STORAGE, GenTotalSupplyKey(ccntmract), utils.GenUInt64StorageItem(constants.cntm_TOTAL_SUPPLY))
 
