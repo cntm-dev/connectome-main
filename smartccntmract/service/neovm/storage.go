@@ -31,6 +31,9 @@ import (
 
 // StoragePut put smart ccntmract storage item to cache
 func StoragePut(service *NeoVmService, engine *vm.ExecutionEngine) error {
+	if vm.EvaluationStackCount(engine) < 3 {
+		return errors.NewErr("[Ccntmext] Too few input parameters ")
+	}
 	ccntmext, err := getCcntmext(engine)
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StoragePut] get pop ccntmext error!")
@@ -60,6 +63,9 @@ func StoragePut(service *NeoVmService, engine *vm.ExecutionEngine) error {
 
 // StorageDelete delete smart ccntmract storage item from cache
 func StorageDelete(service *NeoVmService, engine *vm.ExecutionEngine) error {
+	if vm.EvaluationStackCount(engine) < 2 {
+		return errors.NewErr("[Ccntmext] Too few input parameters ")
+	}
 	ccntmext, err := getCcntmext(engine)
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StorageDelete] get pop ccntmext error!")
@@ -81,6 +87,9 @@ func StorageDelete(service *NeoVmService, engine *vm.ExecutionEngine) error {
 
 // StorageGet push smart ccntmract storage item from cache to vm stack
 func StorageGet(service *NeoVmService, engine *vm.ExecutionEngine) error {
+	if vm.EvaluationStackCount(engine) < 2 {
+		return errors.NewErr("[Ccntmext] Too few input parameters ")
+	}
 	ccntmext, err := getCcntmext(engine)
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StorageGet] get pop ccntmext error!")
@@ -124,9 +133,6 @@ func checkStorageCcntmext(service *NeoVmService, ccntmext *StorageCcntmext) erro
 }
 
 func getCcntmext(engine *vm.ExecutionEngine) (*StorageCcntmext, error) {
-	if vm.EvaluationStackCount(engine) < 2 {
-		return nil, errors.NewErr("[Ccntmext] Too few input parameters ")
-	}
 	opInterface, err := vm.PopInteropInterface(engine)
 	if err != nil {
 		return nil, err

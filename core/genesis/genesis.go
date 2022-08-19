@@ -34,6 +34,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/governance"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	nutils "github.com/cntmio/cntmology/smartccntmract/service/native/utils"
+	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 )
 
 const (
@@ -178,6 +179,9 @@ func newParamInit() *types.Transaction {
 	params := new(global_params.Params)
 	for k, v := range INIT_PARAM {
 		params.SetParam(&global_params.Param{k, v})
+	}
+	for k, v := range neovm.GAS_TABLE {
+		params.SetParam(&global_params.Param{k, string(v)})
 	}
 	bf := new(bytes.Buffer)
 	params.Serialize(bf)

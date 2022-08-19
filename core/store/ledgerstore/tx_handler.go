@@ -22,6 +22,7 @@ import (
 	"bytes"
 	"fmt"
 	"math"
+	"strconv"
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
@@ -35,6 +36,7 @@ import (
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract"
 	"github.com/cntmio/cntmology/smartccntmract/event"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/global_params"
 	ninit "github.com/cntmio/cntmology/smartccntmract/service/native/init"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
@@ -118,6 +120,7 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 	}
 
 	cache := storage.NewCloneCache(stateBatch)
+
 	//init smart ccntmract info
 	sc := smartccntmract.SmartCcntmract{
 		Config:     config,
@@ -140,8 +143,9 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 	var notifies []*event.NotifyEventInfo
 	if isCharge {
 		totalGas := tx.GasLimit - sc.Gas
-		if totalGas < neovm.TRANSACTION_GAS {
-			totalGas = neovm.TRANSACTION_GAS
+		mixGas := neovm.MIN_TRANSACTION_GAS
+		if totalGas < mixGas {
+			totalGas = mixGas
 		}
 		notifies, err = costGas(tx.Payer, gas, config, sc.CloneCache, store)
 		if err != nil {
@@ -210,6 +214,47 @@ func costGas(payer common.Address, gas uint64, config *smartccntmract.Config,
 		return nil, err
 	}
 	return sc.Notifications, nil
+}
+
+func refreshGlobalParam(config *smartccntmract.Config, cache *storage.CloneCache, store store.LedgerStore) error {
+	bf := new(bytes.Buffer)
+	if err := utils.WriteVarUint(bf, uint64(len(neovm.GAS_TABLE_KEYS))); err != nil {
+		return fmt.Errorf("write gas_table_keys length error:%s", err)
+	}
+	for _, value := range neovm.GAS_TABLE_KEYS {
+		if err := serialization.WriteString(bf, value); err != nil {
+			return fmt.Errorf("serialize param name error:%s", value)
+		}
+	}
+
+	sc := smartccntmract.SmartCcntmract{
+		Config:     config,
+		CloneCache: cache,
+		Store:      store,
+		Gas:        math.MaxUint64,
+	}
+
+	service, _ := sc.NewNativeService()
+	result, err := service.NativeCall(utils.ParamCcntmractAddress, "getGlobalParam", bf.Bytes())
+	if err != nil {
+		return err
+	}
+	params := new(global_params.Params)
+	if err := params.Deserialize(bytes.NewBuffer(result.([]byte))); err != nil {
+		fmt.Errorf("deserialize global params error:%s", err)
+	}
+
+	for k, _ := range neovm.GAS_TABLE {
+		n, ps := params.GetParam(k)
+		if n != -1 && ps.Value != "" {
+			pu, err := strconv.ParseUint(ps.Value, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse uint %v", err)
+			}
+			neovm.GAS_TABLE[k] = pu
+		}
+	}
+	return nil
 }
 
 func getBalance(stateBatch *statestore.StateBatch, address, ccntmract common.Address) (uint64, error) {

@@ -488,6 +488,18 @@ func (this *LedgerStoreImp) saveBlockToStateStore(block *types.Block) error {
 
 	stateBatch := this.stateStore.NewStateBatch()
 
+	if block.Header.Height != 0 {
+		config := &smartccntmract.Config{
+			Time:   block.Header.Timestamp,
+			Height: block.Header.Height,
+			Tx:     &types.Transaction{},
+		}
+
+		if err := refreshGlobalParam(config, storage.NewCloneCache(this.stateStore.NewStateBatch()), this); err != nil {
+			return err
+		}
+	}
+
 	for _, tx := range block.Transactions {
 		err := this.handleTransaction(stateBatch, block, tx)
 		if err != nil {
@@ -790,8 +802,9 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.
 		return nil, err
 	}
 	gasCost := math.MaxUint64 - sc.Gas
-	if gasCost < neovm.TRANSACTION_GAS {
-		gasCost = neovm.TRANSACTION_GAS
+	mixGas := neovm.MIN_TRANSACTION_GAS
+	if gasCost < mixGas {
+		gasCost = mixGas
 	}
 	if err != nil {
 		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_FAIL, Gas: gasCost, Result: nil}, err
