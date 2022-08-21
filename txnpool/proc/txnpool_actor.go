@@ -26,8 +26,11 @@ import (
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/core/ledger"
 	tx "github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/events/message"
+	hComm "github.com/cntmio/cntmology/http/base/common"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	tc "github.com/cntmio/cntmology/txnpool/common"
 	"github.com/cntmio/cntmology/validator/types"
@@ -55,6 +58,17 @@ func NewVerifyRspActor(s *TXPoolServer) *VerifyRspActor {
 	return a
 }
 
+// isBalanceEnough checks if the tranactor has enough to cover gas cost
+func isBalanceEnough(address common.Address, gas uint64) bool {
+	balance, err := hComm.GetCcntmractBalance(0, utils.OngCcntmractAddress, address)
+	if err != nil {
+		log.Debugf("failed to get ccntmract balance %s err %v",
+			address.ToHexString(), err)
+		return false
+	}
+	return balance >= gas
+}
+
 // TxnActor: Handle the low priority msg from P2P and API
 type TxActor struct {
 	server *TXPoolServer
@@ -64,6 +78,10 @@ type TxActor struct {
 func (ta *TxActor) handleTransaction(sender tc.SenderType, self *actor.PID,
 	txn *tx.Transaction) {
 	ta.server.increaseStats(tc.RcvStats)
+	if len(txn.ToArray()) > tc.MAX_TX_SIZE {
+		log.Debugf("handleTransaction: reject a transaction due to size over 1M")
+		return
+	}
 
 	if ta.server.getTransaction(txn.Hash()) != nil {
 		log.Debugf("handleTransaction: transaction %x already in the txn pool",
@@ -76,7 +94,6 @@ func (ta *TxActor) handleTransaction(sender tc.SenderType, self *actor.PID,
 
 		ta.server.increaseStats(tc.FailureStats)
 	} else {
-
 		if _, overflow := common.SafeMul(txn.GasLimit, txn.GasPrice); overflow {
 			log.Debugf("handleTransaction: gasLimit %v, gasPrice %v overflow",
 				txn.GasLimit, txn.GasPrice)
@@ -96,6 +113,29 @@ func (ta *TxActor) handleTransaction(sender tc.SenderType, self *actor.PID,
 			return
 		}
 
+		if ta.server.preExec {
+			result, err := ledger.DefLedger.PreExecuteCcntmract(txn)
+			if err != nil {
+				log.Debugf("handleTransaction: failed to preExecuteCcntmract tx %x err %v",
+					txn.Hash(), err)
+			}
+			if txn.GasLimit < result.Gas {
+				log.Debugf("handleTransaction: transaction's gasLimit %d is less than preExec gasLimit %d",
+					txn.GasLimit, result.Gas)
+				return
+			}
+			gas, overflow := common.SafeMul(txn.GasPrice, result.Gas)
+			if overflow {
+				log.Debugf("handleTransaction: gasPrice %d preExec gasLimit %d overflow",
+					txn.GasPrice, result.Gas)
+				return
+			}
+			if !isBalanceEnough(txn.Payer, gas) {
+				log.Debugf("handleTransaction: transactor %s has no balance enough to cover gas cost %d",
+					txn.Payer.ToHexString(), gas)
+				return
+			}
+		}
 		<-ta.server.slots
 		ta.server.assignTxToWorker(txn, sender)
 	}

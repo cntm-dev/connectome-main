@@ -26,6 +26,7 @@ import (
 
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/program"
@@ -209,6 +210,10 @@ func (tx *Transaction) Deserialize(r io.Reader) error {
 	length, err := serialization.ReadVarUint(r, 0)
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[Deserialize], Transaction sigs length deserialize error.")
+	}
+
+	if length > constants.TX_MAX_SIG_SIZE {
+		return fmt.Errorf("transaction signature number %d execced %d", length, constants.TX_MAX_SIG_SIZE)
 	}
 
 	for i := 0; i < int(length); i++ {

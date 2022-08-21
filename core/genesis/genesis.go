@@ -19,10 +19,11 @@
 package genesis
 
 import (
+	"bytes"
 	"fmt"
+	"strconv"
 	"time"
 
-	"bytes"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
@@ -178,19 +179,17 @@ func newUtilityInit() *types.Transaction {
 func newParamInit() *types.Transaction {
 	params := new(global_params.Params)
 	for k, v := range INIT_PARAM {
-		params.SetParam(&global_params.Param{k, v})
+		params.SetParam(global_params.Param{k, v})
 	}
 	for k, v := range neovm.GAS_TABLE {
-		params.SetParam(&global_params.Param{k, string(v)})
+		params.SetParam(global_params.Param{k, strconv.FormatUint(v, 10)})
 	}
 	bf := new(bytes.Buffer)
 	params.Serialize(bf)
 
-	admin := new(global_params.Role)
 	bookkeepers, _ := config.DefConfig.GetBookkeepers()
 	address := types.AddressFromPubKey(bookkeepers[0])
-	copy((*admin)[:], address[:])
-	admin.Serialize(bf)
+	nutils.WriteAddress(bf, address)
 	return utils.BuildNativeTransaction(nutils.ParamCcntmractAddress, global_params.INIT_NAME, bf.Bytes())
 }
 
