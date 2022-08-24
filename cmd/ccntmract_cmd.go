@@ -55,6 +55,7 @@ var (
 					utils.CcntmractAuthorFlag,
 					utils.CcntmractEmailFlag,
 					utils.CcntmractDescFlag,
+					utils.CcntmractPrepareDeployFlag,
 					utils.WalletFileFlag,
 					utils.AccountAddressFlag,
 				},
@@ -72,7 +73,7 @@ var (
 					utils.CcntmractParamsFlag,
 					utils.CcntmractVersionFlag,
 					utils.CcntmractPrepareInvokeFlag,
-					utils.CcntmranctReturnTypeFlag,
+					utils.CcntmractReturnTypeFlag,
 					utils.WalletFileFlag,
 					utils.AccountAddressFlag,
 				},
@@ -105,11 +106,6 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 		return nil
 	}
 
-	signer, err := cmdcom.GetAccount(ctx)
-	if err != nil {
-		return fmt.Errorf("Get signer account error:%s", err)
-	}
-
 	store := ctx.Bool(utils.GetFlagName(utils.CcntmractStorageFlag))
 	codeFile := ctx.String(utils.GetFlagName(utils.CcntmractCodeFileFlag))
 	if "" == codeFile {
@@ -129,6 +125,24 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 	gasPrice := ctx.Uint64(utils.GetFlagName(utils.TransactionGasPriceFlag))
 	gasLimit := ctx.Uint64(utils.GetFlagName(utils.TransactionGasLimitFlag))
 	cversion := fmt.Sprintf("%s", version)
+
+	if ctx.IsSet(utils.GetFlagName(utils.CcntmractPrepareDeployFlag)) {
+		preResult, err := utils.PrepareDeployCcntmract(store, code, name, cversion, author, email, desc)
+		if err != nil {
+			return fmt.Errorf("PrepareDeployCcntmract error:%s", err)
+		}
+		if preResult.State == 0 {
+			return fmt.Errorf("Ccntmract pre-deploy failed\n")
+		}
+		fmt.Printf("Ccntmract pre-deploy successfully\n")
+		fmt.Printf("Gas consumed:%d\n", preResult.Gas)
+		return nil
+	}
+
+	signer, err := cmdcom.GetAccount(ctx)
+	if err != nil {
+		return fmt.Errorf("Get signer account error:%s", err)
+	}
 
 	txHash, err := utils.DeployCcntmract(gasPrice, gasLimit, signer, store, code, name, cversion, author, email, desc)
 	if err != nil {
@@ -151,10 +165,7 @@ func invokeCodeCcntmract(ctx *cli.Ccntmext) error {
 		cli.ShowSubcommandHelp(ctx)
 		return nil
 	}
-	signer, err := cmdcom.GetAccount(ctx)
-	if err != nil {
-		return fmt.Errorf("Get signer account error:%s", err)
-	}
+
 	codeFile := ctx.String(utils.GetFlagName(utils.CcntmractCodeFileFlag))
 	if "" == codeFile {
 		return fmt.Errorf("Please specific code file")
@@ -175,12 +186,12 @@ func invokeCodeCcntmract(ctx *cli.Ccntmext) error {
 			return fmt.Errorf("PrepareInvokeCodeNeoVMCcntmract error:%s", err)
 		}
 		if preResult.State == 0 {
-			return fmt.Errorf("Ccntmract invoke failed\n")
+			return fmt.Errorf("Ccntmract pre-invoke failed\n")
 		}
-		fmt.Printf("Ccntmract invoke successfully\n")
+		fmt.Printf("Ccntmract pre-invoke successfully\n")
 		fmt.Printf("Gas consumed:%d\n", preResult.Gas)
 
-		rawReturnTypes := ctx.String(utils.GetFlagName(utils.CcntmranctReturnTypeFlag))
+		rawReturnTypes := ctx.String(utils.GetFlagName(utils.CcntmractReturnTypeFlag))
 		if rawReturnTypes == "" {
 			fmt.Printf("Return:%s (raw value)\n", preResult.Result)
 			return nil
@@ -206,6 +217,12 @@ func invokeCodeCcntmract(ctx *cli.Ccntmext) error {
 	if err != nil {
 		return err
 	}
+
+	signer, err := cmdcom.GetAccount(ctx)
+	if err != nil {
+		return fmt.Errorf("Get signer account error:%s", err)
+	}
+
 	err = utils.SignTransaction(signer, invokeTx)
 	if err != nil {
 		return fmt.Errorf("SignTransaction error:%s", err)
@@ -254,7 +271,7 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 		fmt.Printf("Ccntmract invoke successfully\n")
 		fmt.Printf("  Gaslimit:%d\n", preResult.Gas)
 
-		rawReturnTypes := ctx.String(utils.GetFlagName(utils.CcntmranctReturnTypeFlag))
+		rawReturnTypes := ctx.String(utils.GetFlagName(utils.CcntmractReturnTypeFlag))
 		if rawReturnTypes == "" {
 			fmt.Printf("  Return:%s (raw value)\n", preResult.Result)
 			return nil

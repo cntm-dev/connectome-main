@@ -226,7 +226,7 @@ func (this *NeoVmService) Invoke() (interface{}, error) {
 
 // SystemCall provide register service for smart ccntmract to interaction with blockchain
 func (this *NeoVmService) SystemCall(engine *vm.ExecutionEngine) error {
-	serviceName := engine.Ccntmext.OpReader.ReadVarString()
+	serviceName := engine.Ccntmext.OpReader.ReadVarString(vm.MAX_BYTEARRAY_SIZE)
 	service, ok := ServiceMap[serviceName]
 	if !ok {
 		return errors.NewErr(fmt.Sprintf("[SystemCall] service not support: %s", serviceName))

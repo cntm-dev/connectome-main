@@ -309,11 +309,15 @@ var (
 		Name:  "params",
 		Usage: "Invoke ccntmract parameters list. use comma ',' to split params, and must add type prefix to params. Param type support bytearray(hexstring), string, integer, boolean,For example: string:foo,int:0,bool:true; If parameter is an object array, enclose array with '[]'. For example:  string:foo,[int:0,bool:true]",
 	}
+	CcntmractPrepareDeployFlag = cli.BoolFlag{
+		Name:  "prepare,p",
+		Usage: "Prepare deploy ccntmract without commit to ledger",
+	}
 	CcntmractPrepareInvokeFlag = cli.BoolFlag{
 		Name:  "prepare,p",
 		Usage: "Prepare invoke ccntmract without commit to ledger",
 	}
-	CcntmranctReturnTypeFlag = cli.StringFlag{
+	CcntmractReturnTypeFlag = cli.StringFlag{
 		Name:  "return",
 		Usage: "Return type of ccntmract.Return type support bytearray(hexstring), string, integer, boolean. If return type is object array, enclose array with '[]'. For example [string,int,bool,string]. Only prepare invoke need this flag.",
 	}
@@ -415,6 +419,12 @@ var (
 		Name:  "speed",
 		Usage: "Export block speed, `<h|m|l>` h for high speed, m for middle speed and l for low speed",
 		Value: "m",
+	}
+
+	//PreExecute switcher
+	PreExecEnableFlag = cli.BoolFlag{
+		Name:  "preexec",
+		Usage: "Enable preExecute in tx pool",
 	}
 
 	NonOptionFlag = cli.StringFlag{

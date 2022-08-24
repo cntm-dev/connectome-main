@@ -122,6 +122,7 @@ var AppHelpFlagGroups = []flagGroup{
 		Flags: []cli.Flag{
 			utils.GasPriceFlag,
 			utils.GasLimitFlag,
+			utils.PreExecEnableFlag,
 		},
 	},
 	{
@@ -167,6 +168,23 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.EnableTestModeFlag,
 			utils.TestModeGenBlockTimeFlag,
 			utils.ClearTestModeDataFlag,
+		},
+	},
+	{
+		Name: "CcntmRACT",
+		Flags: []cli.Flag{
+			utils.CcntmractPrepareDeployFlag,
+			utils.CcntmractAddrFlag,
+			utils.CcntmractAuthorFlag,
+			utils.CcntmractCodeFileFlag,
+			utils.CcntmractDescFlag,
+			utils.CcntmractEmailFlag,
+			utils.CcntmractNameFlag,
+			utils.CcntmractVersionFlag,
+			utils.CcntmractStorageFlag,
+			utils.CcntmractPrepareInvokeFlag,
+			utils.CcntmractParamsFlag,
+			utils.CcntmractReturnTypeFlag,
 		},
 	},
 	{
