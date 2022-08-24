@@ -24,7 +24,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
@@ -49,6 +51,7 @@ func initCcntmractAdmin(native *native.NativeService, ccntmractAddr common.Addre
 	}
 	if admin != nil {
 		//admin is already set, just return
+		log.Debugf("admin of ccntmract %s is already set", ccntmractAddr.ToHexString())
 		return false, nil
 	}
 	err = putCcntmractAdmin(native, ccntmractAddr, cntmID)
@@ -62,23 +65,26 @@ func InitCcntmractAdmin(native *native.NativeService) ([]byte, error) {
 	param := new(InitCcntmractAdminParam)
 	rd := bytes.NewReader(native.Input)
 	if err := param.Deserialize(rd); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[initCcntmractAdmin] deserialize param failed: %v", err)
 	}
 	cxt := native.CcntmextRef.CallingCcntmext()
 	if cxt == nil {
-		return nil, errors.NewErr("no calling ccntmext")
+		return nil, fmt.Errorf("[initCcntmractAdmin] no calling ccntmext")
 	}
 	invokeAddr := cxt.CcntmractAddress
 
+	if !account.VerifyID(string(param.AdminOntID)) {
+		return nil, fmt.Errorf("[initCcntmractAdmin] invalid param: adminOntID is %x", param.AdminOntID)
+	}
 	ret, err := initCcntmractAdmin(native, invokeAddr, param.AdminOntID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[initCcntmractAdmin] init failed: %v", err)
 	}
 	if !ret {
 		return utils.BYTE_FALSE, nil
 	}
 
-	msg := []interface{}{"initCcntmractAdmin", invokeAddr.ToHexString(), param.AdminOntID}
+	msg := []interface{}{"initCcntmractAdmin", invokeAddr.ToHexString(), string(param.AdminOntID)}
 	pushEvent(native, msg)
 	return utils.BYTE_TRUE, nil
 }
@@ -86,17 +92,19 @@ func InitCcntmractAdmin(native *native.NativeService) ([]byte, error) {
 func transfer(native *native.NativeService, ccntmractAddr common.Address, newAdminOntID []byte, keyNo uint64) (bool, error) {
 	admin, err := getCcntmractAdmin(native, ccntmractAddr)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("getCcntmractAdmin failed: %v", err)
 	}
 	if admin == nil {
+		log.Debugf("admin of ccntmract %s is not set", ccntmractAddr.ToHexString())
 		return false, nil
 	}
 
 	ret, err := verifySig(native, admin, keyNo)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("verifySig failed: %v", err)
 	}
 	if !ret {
+		log.Debugf("verify Admin's signature failed: admin=%s, keyNo=%d", string(admin), keyNo)
 		return false, nil
 	}
 
@@ -111,17 +119,22 @@ func Transfer(native *native.NativeService) ([]byte, error) {
 	rd := bytes.NewReader(native.Input)
 	err := param.Deserialize(rd)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[transfer] deserialize param failed: %v", err)
 	}
 
+	if !account.VerifyID(string(param.NewAdminOntID)) {
+		return nil, fmt.Errorf("[transfer] invalid param: newAdminOntID is %x", param.NewAdminOntID)
+	}
 	//prepare event msg
 	ccntmract := param.CcntmractAddr.ToHexString()
-
 	failState := []interface{}{"transfer", ccntmract, false}
 	sucState := []interface{}{"transfer", ccntmract, true}
 
 	//call transfer func
 	ret, err := transfer(native, param.CcntmractAddr, param.NewAdminOntID, param.KeyNo)
+	if err != nil {
+		return nil, fmt.Errorf("[transfer] transfer failed: %v", err)
+	}
 	if ret {
 		pushEvent(native, sucState)
 		return utils.BYTE_TRUE, nil
@@ -136,7 +149,7 @@ func AssignFuncsToRole(native *native.NativeService) ([]byte, error) {
 	param := new(FuncsToRoleParam)
 	rd := bytes.NewReader(native.Input)
 	if err := param.Deserialize(rd); err != nil {
-		return nil, fmt.Errorf("deserialize param failed, caused by %v", err)
+		return nil, fmt.Errorf("[assignFuncsToRole] deserialize param failed: %v", err)
 	}
 
 	//prepare event msg
@@ -145,33 +158,39 @@ func AssignFuncsToRole(native *native.NativeService) ([]byte, error) {
 	sucState := []interface{}{"assignFuncsToRole", ccntmract, true}
 
 	if param.Role == nil {
-		pushEvent(native, failState)
-		return utils.BYTE_FALSE, nil
+		return nil, fmt.Errorf("[assignFuncsToRole] invalid param: role is nil")
 	}
 
 	//check the caller's permission
 	admin, err := getCcntmractAdmin(native, param.CcntmractAddr)
 	if err != nil {
-		return nil, fmt.Errorf("get ccntmract admin failed, caused by %v", err)
+		return nil, fmt.Errorf("[assignFuncsToRole] getCcntmractAdmin failed: %v", err)
 	}
 	if admin == nil { //admin has not been set
-		pushEvent(native, failState)
-		return utils.BYTE_FALSE, nil
+		return nil, fmt.Errorf("[assignFuncsToRole] admin of ccntmract %s has not been set",
+			param.CcntmractAddr.ToHexString())
 	}
 	if bytes.Compare(admin, param.AdminOntID) != 0 {
+		log.Debugf("[assignFuncsToRole] invalid param: adminOntID doesn't match %s != %s",
+			string(param.AdminOntID), string(admin))
 		pushEvent(native, failState)
 		return utils.BYTE_FALSE, nil
 	}
 	ret, err := verifySig(native, param.AdminOntID, param.KeyNo)
 	if err != nil {
-		return nil, fmt.Errorf("verify admin's signature failed, caused by %v", err)
+		return nil, fmt.Errorf("[assignFuncsToRole] verify admin's signature failed: %v", err)
 	}
 	if !ret {
+		log.Debugf("[assignFuncsToRole] verifySig return false: adminOntID=%s, keyNo=%d",
+			string(admin), param.KeyNo)
 		pushEvent(native, failState)
 		return utils.BYTE_FALSE, nil
 	}
 
 	funcs, err := getRoleFunc(native, param.CcntmractAddr, param.Role)
+	if err != nil {
+		return nil, fmt.Errorf("[assignFuncsToRole] getRoleFunc failed: %v", err)
+	}
 	if funcs != nil {
 		funcNames := append(funcs.funcNames, param.FuncNames...)
 		funcs.funcNames = stringSliceUniq(funcNames)
@@ -181,7 +200,7 @@ func AssignFuncsToRole(native *native.NativeService) ([]byte, error) {
 	}
 	err = putRoleFunc(native, param.CcntmractAddr, param.Role, funcs)
 	if err != nil {
-		return utils.BYTE_FALSE, err
+		return nil, fmt.Errorf("[assignFuncsToRole] putRoleFunc failed: %v", err)
 	}
 
 	pushEvent(native, sucState)
@@ -192,19 +211,23 @@ func assignToRole(native *native.NativeService, param *OntIDsToRoleParam) (bool,
 	//check admin's permission
 	admin, err := getCcntmractAdmin(native, param.CcntmractAddr)
 	if err != nil {
-		return false, fmt.Errorf("get ccntmract admin failed, caused by %v", err)
+		return false, fmt.Errorf("getCcntmractAdmin failed: %v", err)
 	}
 	if admin == nil {
-		return false, nil
+		return false, fmt.Errorf("admin of ccntmract %s is not set", param.CcntmractAddr.ToHexString())
 	}
 	if bytes.Compare(admin, param.AdminOntID) != 0 {
+		log.Debugf("param's adminOntID doesn't match: %s != %s", string(param.AdminOntID),
+			string(admin))
 		return false, nil
 	}
 	valid, err := verifySig(native, param.AdminOntID, param.KeyNo)
 	if err != nil {
-		return false, fmt.Errorf("verify admin's signature failed, caused by %v", err)
+		return false, fmt.Errorf("verify admin's signature failed: %v", err)
 	}
 	if !valid {
+		log.Debugf("[assignOntIDsToRole] verifySig return false: adminOntID=%s, keyNo=%d",
+			string(admin), param.KeyNo)
 		return false, nil
 	}
 
@@ -220,7 +243,7 @@ func assignToRole(native *native.NativeService, param *OntIDsToRoleParam) (bool,
 		}
 		tokens, err := getOntIDToken(native, param.CcntmractAddr, p)
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("getOntIDToken failed: %v", err)
 		}
 		if tokens == nil {
 			tokens = new(roleTokens)
@@ -229,7 +252,8 @@ func assignToRole(native *native.NativeService, param *OntIDsToRoleParam) (bool,
 		} else {
 			ret, err := hasRole(native, param.CcntmractAddr, p, param.Role)
 			if err != nil {
-				return false, err
+				return false, fmt.Errorf("check if %s has role %s failed: %v", string(p),
+					string(param.Role), err)
 			}
 			if !ret {
 				tokens.tokens = append(tokens.tokens, token)
@@ -250,15 +274,22 @@ func AssignOntIDsToRole(native *native.NativeService) ([]byte, error) {
 	param := new(OntIDsToRoleParam)
 	rd := bytes.NewReader(native.Input)
 	if err := param.Deserialize(rd); err != nil {
-		return nil, fmt.Errorf("deserialize failed, caused by %v", err)
+		return nil, fmt.Errorf("[assignOntIDsToRole] deserialize param failed: %v", err)
 	}
+
 	if param.Role == nil {
-		return nil, errors.NewErr("role is null")
+		return nil, fmt.Errorf("[assignOntIDsToRole] invalid param: role is nil")
+	}
+	for i, cntmID := range param.Persons {
+		if !account.VerifyID(string(cntmID)) {
+			return nil, fmt.Errorf("[assignOntIDsToRole] invalid param: param.Persons[%d]=%s",
+				i, string(cntmID))
+		}
 	}
 
 	ret, err := assignToRole(native, param)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[assignOntIDsToRole] failed: %v", err)
 	}
 
 	ccntmract := param.CcntmractAddr.ToHexString()
@@ -338,23 +369,29 @@ func delegate(native *native.NativeService, ccntmractAddr common.Address, from [
 	//check input param
 	expireTime := uint32(time.Now().Unix())
 	if period+expireTime < period {
-		return false, nil //invalid period param, causing overflow
+		//invalid period param, causing overflow
+		return false, fmt.Errorf("[delegate] invalid param: overflow, period=%d", period)
 	}
 	expireTime = expireTime + period
 
 	//check from's permission
 	ret, err := verifySig(native, from, keyNo)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("verify %s's signature failed: %v", string(from), err)
 	}
 	if !ret {
+		log.Debugf("verifySig return false: from=%s, keyNo=%d", string(from), keyNo)
 		return false, nil
+	}
+
+	if !account.VerifyID(string(to)) {
+		return false, fmt.Errorf("can not pass OntID validity test: to=%s", string(to))
 	}
 
 	//get from's auth token
 	fromToken, err := getAuthToken(native, ccntmractAddr, from, role)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("getAuthToken of %s failed: %v", string(from), err)
 	}
 	if fromToken == nil {
 		fromHasRole = false
@@ -368,7 +405,7 @@ func delegate(native *native.NativeService, ccntmractAddr common.Address, from [
 	//get to's auth token
 	toToken, err := getAuthToken(native, ccntmractAddr, to, role)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("getAuthToken of %s failed: %v", string(to), err)
 	}
 	if toToken == nil {
 		toHasRole = false
@@ -376,6 +413,8 @@ func delegate(native *native.NativeService, ccntmractAddr common.Address, from [
 		toHasRole = true
 	}
 	if !fromHasRole || toHasRole {
+		log.Debugf("%s doesn't have role %s or %s already has role %s", string(from), string(role),
+			string(to), string(role))
 		return false, nil
 	}
 
@@ -384,7 +423,7 @@ func delegate(native *native.NativeService, ccntmractAddr common.Address, from [
 		if level < fromLevel && level > 0 && expireTime < fromExpireTime {
 			status, err := getDelegateStatus(native, ccntmractAddr, to)
 			if err != nil {
-				return false, err
+				return false, fmt.Errorf("getDelegateStatus failed: %v", err)
 			}
 			if status == nil {
 				status = new(Status)
@@ -411,7 +450,7 @@ func delegate(native *native.NativeService, ccntmractAddr common.Address, from [
 			}
 			err = putDelegateStatus(native, ccntmractAddr, to, status)
 			if err != nil {
-				return false, err
+				return false, fmt.Errorf("putDelegateStatus failed: %v", err)
 			}
 			return true, nil
 		}
@@ -426,10 +465,10 @@ func Delegate(native *native.NativeService) ([]byte, error) {
 	rd := bytes.NewReader(native.Input)
 	err := param.Deserialize(rd)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[delegate] deserialize param failed: %v", err)
 	}
 	if param.Period > 1<<32 || param.Level > 1<<8 {
-		return nil, fmt.Errorf("period or level is too large")
+		return nil, fmt.Errorf("[delegate] period or level is too large")
 	}
 
 	//prepare event msg
@@ -441,7 +480,7 @@ func Delegate(native *native.NativeService) ([]byte, error) {
 	ret, err := delegate(native, param.CcntmractAddr, param.From, param.To, param.Role,
 		uint32(param.Period), uint8(param.Level), param.KeyNo)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[delegate] failed: %v", err)
 	}
 	if ret {
 		pushEvent(native, sucState)
@@ -457,25 +496,27 @@ func withdraw(native *native.NativeService, ccntmractAddr common.Address, initia
 	//check from's permission
 	ret, err := verifySig(native, initiator, keyNo)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("verifySig failed: %v", err)
 	}
 	if !ret {
-		return false, err
+		log.Debugf("verifySig return false: initiator=%s, keyNo=%d", string(initiator), keyNo)
+		return false, nil
 	}
 
 	//code below only works in the case that initiator's level is 2
 	//TODO: remove the above limitation
 	initToken, err := getAuthToken(native, ccntmractAddr, initiator, role)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("getAuthToken failed: %v", err)
 	}
 	if initToken == nil {
 		//initiator does not have the right to withdraw
+		log.Debugf("[withdraw] initiator %s does not have the right to withdraw", string(initiator))
 		return false, nil
 	}
 	status, err := getDelegateStatus(native, ccntmractAddr, delegate)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("getDelegateStatus failed: %v", err)
 	}
 	if status == nil {
 		return false, nil
@@ -501,7 +542,7 @@ func Withdraw(native *native.NativeService) ([]byte, error) {
 	rd := bytes.NewReader(native.Input)
 	err := param.Deserialize(rd)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[withdraw] deserialize param failed: %v", err)
 	}
 
 	//prepare event msg
@@ -512,7 +553,7 @@ func Withdraw(native *native.NativeService) ([]byte, error) {
 	//call the withdraw func
 	ret, err := withdraw(native, param.CcntmractAddr, param.Initiator, param.Delegate, param.Role, param.KeyNo)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[withdraw] withdraw failed: %v", err)
 	}
 	if ret {
 		pushEvent(native, sucState)
@@ -523,32 +564,27 @@ func Withdraw(native *native.NativeService) ([]byte, error) {
 	}
 }
 
-/*
- *  VerifyToken(ccntmractAddr []byte, caller []byte, fn string, keyNo uint64) (bool, error)
- *  @caller the cntm ID of the caller
- *  @fn the name of the func to call
- *  @tokenSig the signature on the message
- */
 func verifyToken(native *native.NativeService, ccntmractAddr common.Address, caller []byte, fn string, keyNo uint64) (bool, error) {
 	//check caller's identity
 	ret, err := verifySig(native, caller, keyNo)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("verifySig failed: %v", err)
 	}
 	if !ret {
+		log.Debugf("verifySig return false: caller=%s, keyNo=%d", string(caller), keyNo)
 		return false, nil
 	}
 
 	//check if caller has the permanent auth token
 	tokens, err := getOntIDToken(native, ccntmractAddr, caller)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("getOntIDToken failed: %v", err)
 	}
 	if tokens != nil {
 		for _, token := range tokens.tokens {
 			funcs, err := getRoleFunc(native, ccntmractAddr, token.role)
 			if err != nil {
-				return false, err
+				return false, fmt.Errorf("getRoleFunc failed: %v", err)
 			}
 			if funcs == nil || token.expireTime < native.Time {
 				ccntminue
@@ -563,13 +599,13 @@ func verifyToken(native *native.NativeService, ccntmractAddr common.Address, cal
 
 	status, err := getDelegateStatus(native, ccntmractAddr, caller)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("getDelegateStatus failed: %v", err)
 	}
 	if status != nil {
 		for _, s := range status.status {
 			funcs, err := getRoleFunc(native, ccntmractAddr, s.role)
 			if err != nil {
-				return false, err
+				return false, fmt.Errorf("getRoleFunc failed: %v", err)
 			}
 			if funcs == nil || s.expireTime < native.Time {
 				ccntminue
@@ -590,7 +626,7 @@ func VerifyToken(native *native.NativeService) ([]byte, error) {
 	rd := bytes.NewReader(native.Input)
 	err := param.Deserialize(rd)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[verifyToken] deserialize param failed: %v", err)
 	}
 
 	ccntmract := param.CcntmractAddr.ToHexString()
@@ -599,7 +635,7 @@ func VerifyToken(native *native.NativeService) ([]byte, error) {
 
 	ret, err := verifyToken(native, param.CcntmractAddr, param.Caller, param.Fn, param.KeyNo)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[verifyToken] verifyToken failed: %v", err)
 	}
 	if !ret {
 		pushEvent(native, failState)

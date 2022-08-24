@@ -29,7 +29,7 @@ import (
 
 const (
 	DEFAULT_EXPORT_FILE = "./blocks.dat"
-	DEFAULT_ABI_PATH    = "../abi"
+	DEFAULT_ABI_PATH    = "./abi"
 )
 
 var (
@@ -263,6 +263,10 @@ var (
 	AccountMultiPubKeyFlag = cli.StringFlag{
 		Name:  "pubkey",
 		Usage: fmt.Sprintf("Pub key list of multi address, split pub key with `,`. Number of pub key must > 0 and <= %d", constants.MULTI_SIG_MAX_PUBKEY_SIZE),
+	}
+	IdentityFlag = cli.BoolFlag{
+		Name:  "cntmid",
+		Usage: "create an cntm ID instead of account",
 	}
 
 	//SmartCcntmract setting
