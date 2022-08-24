@@ -84,6 +84,8 @@ func (this *P2PActor) Receive(ctx actor.Ccntmext) {
 		this.handleGetRelayStateReq(ctx, msg)
 	case *GetNodeTypeReq:
 		this.handleGetNodeTypeReq(ctx, msg)
+	case *TransmitConsensusMsgReq:
+		this.handleTransmitConsensusMsgReq(ctx, msg)
 	case *common.AppendPeerID:
 		this.server.OnAddNode(msg.ID)
 	case *common.RemovePeerID:
@@ -230,5 +232,14 @@ func (this *P2PActor) handleGetNodeTypeReq(ctx actor.Ccntmext, req *GetNodeTypeR
 			NodeType: ret,
 		}
 		ctx.Sender().Request(resp, ctx.Self())
+	}
+}
+
+func (this *P2PActor) handleTransmitConsensusMsgReq(ctx actor.Ccntmext, req *TransmitConsensusMsgReq) {
+	peer := this.server.GetNetWork().GetPeer(req.Target)
+	if peer != nil {
+		this.server.Send(peer, req.Msg, true)
+	} else {
+		log.Errorf("handleTransmit consensus msg failed:%d", req.Target)
 	}
 }

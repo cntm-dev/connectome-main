@@ -22,7 +22,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
@@ -73,7 +72,7 @@ func (self *P2PActor) Broadcast(msg interface{}) {
 	self.P2P.Tell(msg)
 }
 
-func (self *P2PActor) Transmit(target keypair.PublicKey, msg ptypes.Message) {
+func (self *P2PActor) Transmit(target uint64, msg ptypes.Message) {
 	self.P2P.Tell(&netActor.TransmitConsensusMsgReq{
 		Target: target,
 		Msg:    msg,
