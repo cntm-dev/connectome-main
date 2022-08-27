@@ -16,19 +16,23 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package types
+package common
 
 import (
-	"testing"
-
+	"bytes"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-func TestSelfArray(t *testing.T) {
-	a := NewArray(nil)
-	b := NewArray([]StackItems{a})
-	a.Add(b)
+func TestLimitedWriter_Write(t *testing.T) {
+	bf := bytes.NewBuffer(nil)
+	writer := NewLimitedWriter(bf, 5)
+	_, err := writer.Write([]byte{1, 2, 3})
+	assert.Nil(t, err)
+	assert.Equal(t, bf.Bytes(), []byte{1, 2, 3})
+	_, err = writer.Write([]byte{4, 5})
+	assert.Nil(t, err)
 
-	equ := a.Equals(b)
-	assert.False(t, equ)
+	_, err = writer.Write([]byte{6})
+	assert.Equal(t, err, ErrWriteExceedLimitedCount)
 }

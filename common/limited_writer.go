@@ -16,19 +16,38 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package types
+package common
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"errors"
+	"io"
 )
 
-func TestSelfArray(t *testing.T) {
-	a := NewArray(nil)
-	b := NewArray([]StackItems{a})
-	a.Add(b)
+var ErrWriteExceedLimitedCount = errors.New("writer exceed limited count")
 
-	equ := a.Equals(b)
-	assert.False(t, equ)
+type LimitedWriter struct {
+	count  uint64
+	max    uint64
+	writer io.Writer
+}
+
+func NewLimitedWriter(w io.Writer, max uint64) *LimitedWriter {
+	return &LimitedWriter{
+		writer: w,
+		max:    max,
+	}
+}
+
+func (self *LimitedWriter) Write(buf []byte) (int, error) {
+	if self.count+uint64(len(buf)) > self.max {
+		return 0, ErrWriteExceedLimitedCount
+	}
+	n, err := self.writer.Write(buf)
+	self.count += uint64(n)
+	return n, err
+}
+
+// Count function return counted bytes
+func (self *LimitedWriter) Count() uint64 {
+	return self.count
 }
