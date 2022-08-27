@@ -39,12 +39,13 @@ $ glide install
 Build the source code with make.
 
 ```
-$ make
+$ make all
 ```
 
 After building the source code sucessfully, you should see two executable programs:
 
 - `cntmology`: the node program/command line program for node ccntmrol
+- `tools/sigsvr`: (optional)Ontology Signature Server - sigsvr is a rpc server for signing transactions for some special requirement.detail docs can be reference at [link](./docs/specifications/sigsvr.md)
 
 ### get from release
 You can download at [release page](https://github.com/cntmio/cntmology/releases).
