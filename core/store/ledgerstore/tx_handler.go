@@ -52,8 +52,9 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, stateBa
 	txHash := tx.Hash()
 	address := types.AddressFromVmCode(deploy.Code)
 	var (
-		notifies []*event.NotifyEventInfo
-		err      error
+		notifies    []*event.NotifyEventInfo
+		gasConsumed uint64
+		err         error
 	)
 
 	if tx.GasPrice != 0 {
@@ -88,7 +89,8 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, stateBa
 				return err
 			}
 		}
-		notifies, err = costGas(tx.Payer, gasLimit*tx.GasPrice, config, cache, store)
+		gasConsumed = gasLimit * tx.GasPrice
+		notifies, err = costGas(tx.Payer, gasConsumed, config, cache, store)
 		if err != nil {
 			return err
 		}
@@ -102,7 +104,7 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, stateBa
 		return err
 	}
 
-	SaveNotify(eventStore, txHash, notifies, true)
+	SaveNotify(eventStore, txHash, notifies, gasConsumed, true)
 	return nil
 }
 
@@ -208,22 +210,22 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 
 	}
 
-	SaveNotify(eventStore, txHash, append(sc.Notifications, notifies...), true)
+	SaveNotify(eventStore, txHash, append(sc.Notifications, notifies...), gas, true)
 	sc.CloneCache.Commit()
 	return nil
 }
 
-func SaveNotify(eventStore scommon.EventStore, txHash common.Uint256, notifies []*event.NotifyEventInfo, execSucc bool) error {
+func SaveNotify(eventStore scommon.EventStore, txHash common.Uint256, notifies []*event.NotifyEventInfo, gasConsumed uint64, execSucc bool) error {
 	if !config.DefConfig.Common.EnableEventLog {
 		return nil
 	}
 	var notifyInfo *event.ExecuteNotify
 	if execSucc {
 		notifyInfo = &event.ExecuteNotify{TxHash: txHash,
-			State: event.CcntmRACT_STATE_SUCCESS, Notify: notifies}
+			State: event.CcntmRACT_STATE_SUCCESS, GasConsumed: gasConsumed, Notify: notifies}
 	} else {
 		notifyInfo = &event.ExecuteNotify{TxHash: txHash,
-			State: event.CcntmRACT_STATE_FAIL, Notify: notifies}
+			State: event.CcntmRACT_STATE_FAIL, GasConsumed: gasConsumed, Notify: notifies}
 	}
 	if err := eventStore.SaveEventNotifyByTx(txHash, notifyInfo); err != nil {
 		return fmt.Errorf("SaveEventNotifyByTx error %s", err)
@@ -298,24 +300,19 @@ func refreshGlobalParam(config *smartccntmract.Config, cache *storage.CloneCache
 	if err := params.Deserialize(bytes.NewBuffer(result.([]byte))); err != nil {
 		return fmt.Errorf("deserialize global params error:%s", err)
 	}
-	cnt := 0
 	neovm.GAS_TABLE.Range(func(key, value interface{}) bool {
 		n, ps := params.GetParam(key.(string))
 		if n != -1 && ps.Value != "" {
 			pu, err := strconv.ParseUint(ps.Value, 10, 64)
 			if err != nil {
-				return false
+				log.Errorf("[refreshGlobalParam] failed to parse uint %v\n", ps.Value)
+			} else {
+				neovm.GAS_TABLE.Store(key, pu)
+
 			}
-			neovm.GAS_TABLE.Store(key, pu)
 		}
-		cnt += 1
 		return true
 	})
-
-	if cnt != len(neovm.GAS_TABLE_KEYS) {
-		return errors.NewErr("[refreshGlobalParam] failed to parse uint")
-	}
-
 	return nil
 }
 
@@ -347,7 +344,7 @@ func costInvalidGas(address common.Address, gas uint64, config *smartccntmract.C
 		return err
 	}
 	cache.Commit()
-	SaveNotify(eventStore, txHash, notifies, false)
+	SaveNotify(eventStore, txHash, notifies, gas, false)
 	return nil
 }
 
