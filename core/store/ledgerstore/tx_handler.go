@@ -22,6 +22,7 @@ import (
 	"bytes"
 	"fmt"
 	"math"
+	"math/big"
 	"strconv"
 
 	"github.com/cntmio/cntmology/common"
@@ -33,6 +34,7 @@ import (
 	scommon "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/core/store/statestore"
 	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/global_params"
@@ -41,7 +43,6 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
-	"math/big"
 )
 
 //HandleDeployTransaction deal with smart ccntmract deploy transaction
@@ -63,7 +64,17 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, stateBa
 			Tx:     tx,
 		}
 		cache := storage.NewCloneCache(stateBatch)
-		gasLimit := neovm.GAS_TABLE[neovm.CcntmRACT_CREATE_NAME] + calcGasByCodeLen(len(deploy.Code), neovm.GAS_TABLE[neovm.UINT_DEPLOY_CODE_LEN_NAME])
+		createGas, ok := neovm.GAS_TABLE.Load(neovm.CcntmRACT_CREATE_NAME)
+		if !ok {
+			return errors.NewErr("[HandleDeployTransaction] get CcntmRACT_CREATE_NAME gas failed")
+		}
+
+		deployGas, ok := neovm.GAS_TABLE.Load(neovm.UINT_DEPLOY_CODE_LEN_NAME)
+		if !ok {
+			return errors.NewErr("[HandleDeployTransaction] get UINT_DEPLOY_CODE_LEN_NAME gas failed")
+		}
+
+		gasLimit := createGas.(uint64) + calcGasByCodeLen(len(deploy.Code), deployGas.(uint64))
 		balance, err := isBalanceSufficient(tx.Payer, cache, config, store, gasLimit*tx.GasPrice)
 		if err != nil {
 			if err := costInvalidGas(tx.Payer, balance, config, stateBatch, store, eventStore, txHash); err != nil {
@@ -121,7 +132,12 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, stateBa
 	)
 	cache := storage.NewCloneCache(stateBatch)
 	if isCharge {
-		codeLenGas = calcGasByCodeLen(len(invoke.Code), neovm.GAS_TABLE[neovm.UINT_INVOKE_CODE_LEN_NAME])
+		deployGas, ok := neovm.GAS_TABLE.Load(neovm.UINT_INVOKE_CODE_LEN_NAME)
+		if !ok {
+			return errors.NewErr("[HandleInvokeTransaction] get UINT_INVOKE_CODE_LEN_NAME gas failed")
+		}
+
+		codeLenGas = calcGasByCodeLen(len(invoke.Code), deployGas.(uint64))
 		balance, err := isBalanceSufficient(tx.Payer, cache, config, store, gasLimit*tx.GasPrice)
 		if err != nil {
 			if err := costInvalidGas(tx.Payer, balance, config, stateBatch, store, eventStore, txHash); err != nil {
@@ -282,17 +298,24 @@ func refreshGlobalParam(config *smartccntmract.Config, cache *storage.CloneCache
 	if err := params.Deserialize(bytes.NewBuffer(result.([]byte))); err != nil {
 		return fmt.Errorf("deserialize global params error:%s", err)
 	}
-
-	for k, _ := range neovm.GAS_TABLE {
-		n, ps := params.GetParam(k)
+	cnt := 0
+	neovm.GAS_TABLE.Range(func(key, value interface{}) bool {
+		n, ps := params.GetParam(key.(string))
 		if n != -1 && ps.Value != "" {
 			pu, err := strconv.ParseUint(ps.Value, 10, 64)
 			if err != nil {
-				return fmt.Errorf("failed to parse uint %v", err)
+				return false
 			}
-			neovm.GAS_TABLE[k] = pu
+			neovm.GAS_TABLE.Store(key, pu)
 		}
+		cnt += 1
+		return true
+	})
+
+	if cnt != len(neovm.GAS_TABLE_KEYS) {
+		return errors.NewErr("[refreshGlobalParam] failed to parse uint")
 	}
+
 	return nil
 }
 

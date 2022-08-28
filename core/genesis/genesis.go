@@ -156,11 +156,17 @@ func deployOntIDCcntmract() *types.Transaction {
 
 func newGoverningInit() *types.Transaction {
 	bookkeepers, _ := config.DefConfig.GetBookkeepers()
-	m := (5*len(bookkeepers) + 6) / 7
 
-	addr, err := types.AddressFromMultiPubKeys(bookkeepers, m)
-	if err != nil {
-		panic(fmt.Sprint("wrcntm bookkeeper config, caused by", err))
+	var addr common.Address
+	if len(bookkeepers) == 1 {
+		addr = types.AddressFromPubKey(bookkeepers[0])
+	} else {
+		m := (5*len(bookkeepers) + 6) / 7
+		temp, err := types.AddressFromMultiPubKeys(bookkeepers, m)
+		if err != nil {
+			panic(fmt.Sprint("wrcntm bookkeeper config, caused by", err))
+		}
+		addr = temp
 	}
 
 	distribute := []struct {
@@ -188,10 +194,13 @@ func newParamInit() *types.Transaction {
 	for k, _ := range INIT_PARAM {
 		s = append(s, k)
 	}
-	for k, v := range neovm.GAS_TABLE {
-		INIT_PARAM[k] = strconv.FormatUint(v, 10)
-		s = append(s, k)
-	}
+
+	neovm.GAS_TABLE.Range(func(key, value interface{}) bool {
+		INIT_PARAM[key.(string)] = strconv.FormatUint(value.(uint64), 10)
+		s = append(s, key.(string))
+		return true
+	})
+
 	sort.Strings(s)
 	for _, v := range s {
 		params.SetParam(global_params.Param{Key: v, Value: INIT_PARAM[v]})
@@ -200,10 +209,16 @@ func newParamInit() *types.Transaction {
 	params.Serialize(bf)
 
 	bookkeepers, _ := config.DefConfig.GetBookkeepers()
-	m := (5*len(bookkeepers) + 6) / 7
-	addr, err := types.AddressFromMultiPubKeys(bookkeepers, m)
-	if err != nil {
-		panic(fmt.Sprint("wrcntm bookkeeper config, caused by", err))
+	var addr common.Address
+	if len(bookkeepers) == 1 {
+		addr = types.AddressFromPubKey(bookkeepers[0])
+	} else {
+		m := (5*len(bookkeepers) + 6) / 7
+		temp, err := types.AddressFromMultiPubKeys(bookkeepers, m)
+		if err != nil {
+			panic(fmt.Sprint("wrcntm bookkeeper config, caused by", err))
+		}
+		addr = temp
 	}
 	nutils.WriteAddress(bf, addr)
 

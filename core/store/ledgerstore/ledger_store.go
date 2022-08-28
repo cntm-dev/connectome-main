@@ -772,7 +772,7 @@ func (this *LedgerStoreImp) GetEventNotifyByBlock(height uint32) ([]*event.Execu
 func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.PreExecResult, error) {
 	header, err := this.GetHeaderByHeight(this.GetCurrentBlockHeight())
 	if err != nil {
-		return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[PreExecuteCcntmract] Get current block error!")
+		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_FAIL, Gas: neovm.MIN_TRANSACTION_GAS, Result: nil}, err
 	}
 
 	config := &smartccntmract.Config{
@@ -784,14 +784,11 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.
 	cache := storage.NewCloneCache(this.stateStore.NewStateBatch())
 	preGas, err := this.getPreGas(config, cache)
 	if err != nil {
-		return nil, err
+		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_FAIL, Gas: neovm.MIN_TRANSACTION_GAS, Result: nil}, err
 	}
 
 	if tx.TxType == types.Invoke {
-		invoke, ok := tx.Payload.(*payload.InvokeCode)
-		if !ok {
-			return nil, errors.NewErr("transaction payload not invokeCode!")
-		}
+		invoke := tx.Payload.(*payload.InvokeCode)
 
 		sc := smartccntmract.SmartCcntmract{
 			Config:     config,
@@ -801,13 +798,10 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.
 		}
 
 		//start the smart ccntmract executive function
-		engine, err := sc.NewExecuteEngine(invoke.Code)
-		if err != nil {
-			return nil, err
-		}
+		engine, _ := sc.NewExecuteEngine(invoke.Code)
 		result, err := engine.Invoke()
 		if err != nil {
-			return nil, err
+			return &sstate.PreExecResult{State: event.CcntmRACT_STATE_FAIL, Gas: neovm.MIN_TRANSACTION_GAS, Result: nil}, err
 		}
 		gasCost := math.MaxUint64 - sc.Gas
 		mixGas := neovm.MIN_TRANSACTION_GAS
@@ -816,11 +810,7 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.
 		}
 		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_SUCCESS, Gas: gasCost, Result: scommon.ConvertNeoVmTypeHexString(result)}, nil
 	} else if tx.TxType == types.Deploy {
-		deploy, ok := tx.Payload.(*payload.DeployCode)
-		if !ok {
-			return nil, errors.NewErr("transaction payload not deployCode!")
-		}
-
+		deploy := tx.Payload.(*payload.DeployCode)
 		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_SUCCESS, Gas: preGas[neovm.CcntmRACT_CREATE_NAME] + calcGasByCodeLen(len(deploy.Code), preGas[neovm.UINT_DEPLOY_CODE_LEN_NAME]), Result: nil}, nil
 	} else {
 		return nil, errors.NewErr("transaction type error")
