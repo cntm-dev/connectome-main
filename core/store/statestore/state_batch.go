@@ -168,7 +168,7 @@ func (self *StateBatch) setStateObject(prefix byte, key []byte, value states.Sta
 	self.memoryStore.Put(prefix, key, value, state)
 }
 
-func (self *StateBatch) setError(err error) {
+func (self *StateBatch) SetError(err error) {
 	if self.dbErr == nil {
 		self.dbErr = err
 	}

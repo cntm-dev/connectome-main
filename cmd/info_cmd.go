@@ -140,7 +140,9 @@ func txStatus(ctx *cli.Ccntmext) error {
 	if err != nil {
 		return fmt.Errorf("GetSmartCcntmractEvent error:%s", err)
 	}
-
+	if string(evtInfos) == "null" {
+		return fmt.Errorf("Cannot find event notify by TxHash:%s", txHash)
+	}
 	fmt.Printf("Transaction states:\n")
 	var out bytes.Buffer
 	err = json.Indent(&out, evtInfos, "", "   ")

@@ -23,8 +23,8 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/common/serialization"
 	scom "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/core/store/leveldbstore"
@@ -126,7 +126,8 @@ func (this *EventStore) GetEventNotifyByBlock(height uint32) ([]*event.ExecuteNo
 		}
 		evtNotify, err := this.GetEventNotifyByTx(txHash)
 		if err != nil {
-			return nil, fmt.Errorf("getEventNotifyByTx by txhash:%x error:%s", txHash, err)
+			log.Errorf("getEventNotifyByTx Height:%d by txhash:%s error:%s", height, txHash.ToHexString(), err)
+			ccntminue
 		}
 		evtNotifies = append(evtNotifies, evtNotify)
 	}
