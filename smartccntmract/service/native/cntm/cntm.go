@@ -119,6 +119,9 @@ func OntTransfer(native *native.NativeService) ([]byte, error) {
 		if v.Value == 0 {
 			ccntminue
 		}
+		if v.Value > constants.cntm_TOTAL_SUPPLY {
+			return utils.BYTE_FALSE, fmt.Errorf("transfer cntm amount:%d over totalSupply:%d", v.Value, constants.cntm_TOTAL_SUPPLY)
+		}
 		fromBalance, toBalance, err := Transfer(native, ccntmract, v)
 		if err != nil {
 			return utils.BYTE_FALSE, err
@@ -145,6 +148,9 @@ func OntTransferFrom(native *native.NativeService) ([]byte, error) {
 	if state.Value == 0 {
 		return utils.BYTE_FALSE, nil
 	}
+	if state.Value > constants.cntm_TOTAL_SUPPLY {
+		return utils.BYTE_FALSE, fmt.Errorf("transferFrom cntm amount:%d over totalSupply:%d", state.Value, constants.cntm_TOTAL_SUPPLY)
+	}
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
 	fromBalance, toBalance, err := TransferedFrom(native, ccntmract, state)
 	if err != nil {
@@ -167,6 +173,9 @@ func OntApprove(native *native.NativeService) ([]byte, error) {
 	}
 	if state.Value == 0 {
 		return utils.BYTE_FALSE, nil
+	}
+	if state.Value > constants.cntm_TOTAL_SUPPLY {
+		return utils.BYTE_FALSE, fmt.Errorf("approve cntm amount:%d over totalSupply:%d", state.Value, constants.cntm_TOTAL_SUPPLY)
 	}
 	if native.CcntmextRef.CheckWitness(state.From) == false {
 		return utils.BYTE_FALSE, errors.NewErr("authentication failed!")

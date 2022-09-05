@@ -150,8 +150,9 @@ func fromTransfer(native *native.NativeService, fromKey []byte, value uint64) (u
 		return 0, err
 	}
 	if fromBalance < value {
-		return 0, fmt.Errorf("[Transfer] balance insufficient. ccntmract:%s, account:%x,balance:%d, transfer amount:%d",
-			native.CcntmextRef.CurrentCcntmext().CcntmractAddress.ToHexString(), fromKey, fromBalance, value)
+		addr, _ := common.AddressParseFromBytes(fromKey[20:])
+		return 0, fmt.Errorf("[Transfer] balance insufficient. ccntmract:%s, account:%s,balance:%d, transfer amount:%d",
+			native.CcntmextRef.CurrentCcntmext().CcntmractAddress.ToHexString(), addr.ToBase58(), fromBalance, value)
 	} else if fromBalance == value {
 		native.CloneCache.Delete(scommon.ST_STORAGE, fromKey)
 	} else {
