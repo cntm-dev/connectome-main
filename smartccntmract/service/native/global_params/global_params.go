@@ -120,6 +120,7 @@ func AcceptAdmin(native *native.NativeService) ([]byte, error) {
 	// modify admin in database
 	native.CloneCache.Add(scommon.ST_STORAGE, generateAdminKey(ccntmract, false), getRoleStorageItem(destinationAdmin))
 
+	NotifyRoleChange(native, ccntmract, ACCEPT_ADMIN_NAME, destinationAdmin)
 	return utils.BYTE_TRUE, nil
 }
 
@@ -138,6 +139,8 @@ func TransferAdmin(native *native.NativeService) ([]byte, error) {
 	}
 	native.CloneCache.Add(scommon.ST_STORAGE, generateAdminKey(ccntmract, true),
 		getRoleStorageItem(destinationAdmin))
+
+	NotifyTransferAdmin(native, ccntmract, TRANSFER_ADMIN_NAME, admin, destinationAdmin)
 	return utils.BYTE_TRUE, nil
 }
 
@@ -155,6 +158,8 @@ func SetOperator(native *native.NativeService) ([]byte, error) {
 		return utils.BYTE_FALSE, errors.NewErr("set operator, deserialize operator failed!")
 	}
 	native.CloneCache.Add(scommon.ST_STORAGE, GenerateOperatorKey(ccntmract), getRoleStorageItem(destinationOperator))
+
+	NotifyRoleChange(native, ccntmract, SET_OPERATOR, destinationOperator)
 	return utils.BYTE_TRUE, nil
 }
 
@@ -182,6 +187,8 @@ func SetGlobalParam(native *native.NativeService) ([]byte, error) {
 	}
 	native.CloneCache.Add(scommon.ST_STORAGE, generateParamKey(ccntmract, PREPARE_VALUE),
 		getParamStorageItem(storageParams))
+
+	NotifyParamChange(native, ccntmract, SET_GLOBAL_PARAM_NAME, params)
 	return utils.BYTE_TRUE, nil
 }
 
@@ -252,6 +259,8 @@ func CreateSnapshot(native *native.NativeService) ([]byte, error) {
 	native.CloneCache.Add(scommon.ST_STORAGE, generateParamKey(ccntmract, CURRENT_VALUE), getParamStorageItem(prepareParam))
 	// clear memory cache
 	clearCache()
+
+	NotifyParamChange(native, ccntmract, CREATE_SNAPSHOT_NAME, prepareParam)
 	return utils.BYTE_TRUE, nil
 }
 

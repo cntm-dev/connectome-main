@@ -40,7 +40,7 @@ func registerCandidate(native *native.NativeService, flag string) error {
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
 
 	//check auth of OntID
-	err := appCallVerifyToken(native, ccntmract, params.Caller, REGISTER_CANDIDATE, params.KeyNo)
+	err := appCallVerifyToken(native, ccntmract, params.Caller, REGISTER_CANDIDATE, uint64(params.KeyNo))
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "appCallVerifyToken, verifyToken failed!")
 	}
@@ -90,7 +90,7 @@ func registerCandidate(native *native.NativeService, flag string) error {
 	peerPoolItem := &PeerPoolItem{
 		PeerPubkey: params.PeerPubkey,
 		Address:    params.Address,
-		InitPos:    params.InitPos,
+		InitPos:    uint64(params.InitPos),
 		Status:     RegisterCandidateStatus,
 	}
 	peerPoolMap.PeerPoolMap[params.PeerPubkey] = peerPoolItem
@@ -108,7 +108,7 @@ func registerCandidate(native *native.NativeService, flag string) error {
 	switch flag {
 	case "transfer":
 		//cntm transfer
-		err = appCallTransferOnt(native, params.Address, utils.GovernanceCcntmractAddress, params.InitPos)
+		err = appCallTransferOnt(native, params.Address, utils.GovernanceCcntmractAddress, uint64(params.InitPos))
 		if err != nil {
 			return errors.NewDetailErr(err, errors.ErrNoCode, "appCallTransferOnt, cntm transfer error!")
 		}
@@ -120,7 +120,7 @@ func registerCandidate(native *native.NativeService, flag string) error {
 		}
 	case "transferFrom":
 		//cntm transfer from
-		err = appCallTransferFromOnt(native, utils.GovernanceCcntmractAddress, params.Address, utils.GovernanceCcntmractAddress, params.InitPos)
+		err = appCallTransferFromOnt(native, utils.GovernanceCcntmractAddress, params.Address, utils.GovernanceCcntmractAddress, uint64(params.InitPos))
 		if err != nil {
 			return errors.NewDetailErr(err, errors.ErrNoCode, "appCallTransferFromOnt, cntm transfer error!")
 		}
@@ -133,7 +133,7 @@ func registerCandidate(native *native.NativeService, flag string) error {
 	}
 
 	//update total stake
-	err = depositTotalStake(native, ccntmract, params.Address, params.InitPos)
+	err = depositTotalStake(native, ccntmract, params.Address, uint64(params.InitPos))
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "depositTotalStake, depositTotalStake error!")
 	}
@@ -143,7 +143,7 @@ func registerCandidate(native *native.NativeService, flag string) error {
 func voteForPeer(native *native.NativeService, flag string) error {
 	params := &VoteForPeerParam{
 		PeerPubkeyList: make([]string, 0),
-		PosList:        make([]uint64, 0),
+		PosList:        make([]uint32, 0),
 	}
 	if err := params.Deserialize(bytes.NewBuffer(native.Input)); err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "deserialize, ccntmract params deserialize error!")
@@ -192,10 +192,10 @@ func voteForPeer(native *native.NativeService, flag string) error {
 		if err != nil {
 			return errors.NewDetailErr(err, errors.ErrNoCode, "getVoteInfo, get voteInfo error!")
 		}
-		voteInfo.NewPos = voteInfo.NewPos + pos
-		total = total + pos
-		peerPoolItem.TotalPos = peerPoolItem.TotalPos + pos
-		if peerPoolItem.TotalPos > globalParam.PosLimit*peerPoolItem.InitPos {
+		voteInfo.NewPos = voteInfo.NewPos + uint64(pos)
+		total = total + uint64(pos)
+		peerPoolItem.TotalPos = peerPoolItem.TotalPos + uint64(pos)
+		if peerPoolItem.TotalPos > uint64(globalParam.PosLimit)*peerPoolItem.InitPos {
 			return errors.NewErr("voteForPeer, pos of this peer is full!")
 		}
 
@@ -326,7 +326,7 @@ func blackQuit(native *native.NativeService, ccntmract common.Address, peerPoolI
 		}
 		total := voteInfo.ConsensusPos + voteInfo.FreezePos + voteInfo.NewPos + voteInfo.WithdrawPos +
 			voteInfo.WithdrawFreezePos + voteInfo.WithdrawUnfreezePos
-		penalty := (globalParam.Penalty*total + 99) / 100
+		penalty := (uint64(globalParam.Penalty)*total + 99) / 100
 		voteInfo.WithdrawUnfreezePos = total - penalty
 		voteInfo.ConsensusPos = 0
 		voteInfo.FreezePos = 0
@@ -823,7 +823,7 @@ func executeSplit(native *native.NativeService, ccntmract common.Address, peerPo
 	avg := sum / uint64(config.K)
 	var sumS uint64
 	for i := 0; i < int(config.K); i++ {
-		peersCandidate[i].S, err = splitCurve(native, ccntmract, peersCandidate[i].Stake, avg, globalParam.Yita)
+		peersCandidate[i].S, err = splitCurve(native, ccntmract, peersCandidate[i].Stake, avg, uint64(globalParam.Yita))
 		if err != nil {
 			return errors.NewDetailErr(err, errors.ErrNoCode, "splitCurve, calculate splitCurve error!")
 		}
@@ -835,7 +835,7 @@ func executeSplit(native *native.NativeService, ccntmract common.Address, peerPo
 
 	//fee split of consensus peer
 	for i := int(config.K) - 1; i >= 0; i-- {
-		nodeAmount := balance * globalParam.A / 100 * peersCandidate[i].S / sumS
+		nodeAmount := balance * uint64(globalParam.A) / 100 * peersCandidate[i].S / sumS
 		address := peersCandidate[i].Address
 		err = appCallTransferOng(native, utils.GovernanceCcntmractAddress, address, nodeAmount)
 		if err != nil {
@@ -853,7 +853,7 @@ func executeSplit(native *native.NativeService, ccntmract common.Address, peerPo
 		return nil
 	}
 	for i := int(config.K); i < len(peersCandidate); i++ {
-		nodeAmount := balance * globalParam.B / 100 * peersCandidate[i].Stake / sum
+		nodeAmount := balance * uint64(globalParam.B) / 100 * peersCandidate[i].Stake / sum
 		address := peersCandidate[i].Address
 		err = appCallTransferOng(native, utils.GovernanceCcntmractAddress, address, nodeAmount)
 		if err != nil {
