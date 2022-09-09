@@ -384,8 +384,8 @@ func GetBlockTransactions(block *types.Block) interface{} {
 }
 
 //NewNativeInvokeTransaction return native ccntmract invoke transaction
-func NewNativeInvokeTransaction(gasPirce, gasLimit uint64, ccntmractAddress common.Address, verison byte, method string, params []interface{}) (*types.Transaction, error) {
-	invokeCode, err := BuildNativeInvokeCode(ccntmractAddress, verison, method, params)
+func NewNativeInvokeTransaction(gasPirce, gasLimit uint64, ccntmractAddress common.Address, version byte, method string, params []interface{}) (*types.Transaction, error) {
+	invokeCode, err := BuildNativeInvokeCode(ccntmractAddress, version, method, params)
 	if err != nil {
 		return nil, err
 	}
