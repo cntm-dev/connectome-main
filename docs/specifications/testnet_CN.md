@@ -13,16 +13,25 @@
 ### 选择网络
 cntmology的运行支持以下3钟方式
 
+* 主网同步节点部署
 * 连接到公开测试网(Polaris)
 * 单机部署
 * 多机部署
 
-#### 连接到公开测试网(Polaris)
+#### 主网同步节点部署
 
 直接启动Ontology，不需要钱包文件，也不需要配置文件
 
    ```
-	./cntmology
+	./cntmology --networkid 1
+   ```
+
+#### 公开测试网Polaris同步节点部署
+
+直接启动Ontology，不需要钱包文件，也不需要配置文件
+
+   ```
+	./cntmology --networkid 2
    ```
 
 #### 单机部署配置
@@ -158,7 +167,7 @@ cntmology的运行支持以下3钟方式
 ### cntm转账调用示例
   - asset: 资产类型["cntm"|"cntm"] - from: 转出地址； - to: 转入地址； - amount: 资产转移数量；
 ```shell
-  ./cntmology asset transfer --amount=500 --from  AYiToLDT2yZuNs3PZieXcdTpyC5VWQmfaN  --to AeoBhZtS8AmGp3Zt4LxvCqhdU4eSGiK44M  --password=xxx
+  ./cntmology asset transfer --amount=500 --from  AYiToLDT2yZuNs3PZieXcdTpyC5VWQmfaN  --to AeoBhZtS8AmGp3Zt4LxvCqhdU4eSGiK44M
 ```
 如果成功调用会返回如下event:
 ```
