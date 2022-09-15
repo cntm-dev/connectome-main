@@ -16,7 +16,7 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Package proc privides functions for handle messages from
+// Package proc provides functions for handle messages from
 // consensus/ledger/net/http/validators
 package proc
 
