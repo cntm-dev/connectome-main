@@ -535,8 +535,7 @@ raw：可选参数，默认值为零，不设置时为默认值。当值为1时�
     "Error": 0,
     "Result": {
         "cntm": "2500",
-        "cntm": "0",
-        "cntm_appove": "0"
+        "cntm": "0"
     },
     "Version": "1.0.0"
 }

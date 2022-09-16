@@ -16,6 +16,7 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// Package localrpc privides a function to start local rpc server
 package localrpc
 
 import (

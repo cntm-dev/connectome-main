@@ -16,6 +16,7 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// Package common privides functions for http handler call
 package common
 
 import (
@@ -24,22 +25,28 @@ import (
 	"fmt"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
 	bactor "github.com/cntmio/cntmology/http/base/actor"
 	"github.com/cntmio/cntmology/smartccntmract/event"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/global_params"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	svrneovm "github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	"github.com/cntmio/cntmology/vm/neovm"
 	"math/big"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
 
 const MAX_SEARCH_HEIGHT uint32 = 100
+
+var DisableLocalPreExec = false
 
 type BalanceOfRsp struct {
 	Ont string `json:"cntm"`
@@ -104,6 +111,7 @@ type Transactions struct {
 	Attributes []TxAttributeInfo
 	Sigs       []Sig
 	Hash       string
+	Height     uint32
 }
 
 type BlockHead struct {
@@ -520,4 +528,89 @@ func BuildNeoVMParam(builder *neovm.ParamsBuilder, smartCcntmractParams []interf
 		}
 	}
 	return nil
+}
+
+func PreExecCheck(txn *types.Transaction) error {
+	if _, overflow := common.SafeMul(txn.GasLimit, txn.GasPrice); overflow {
+		return fmt.Errorf("Tx GasPrice %d and gasLimit %d safeMul overflow",
+			txn.GasPrice, txn.GasLimit)
+	}
+	if txn.TxType == types.Deploy && txn.GasLimit < svrneovm.CcntmRACT_CREATE_GAS {
+		return fmt.Errorf("Deploy tx gasLimit should >= %d",
+			svrneovm.CcntmRACT_CREATE_GAS)
+	}
+	gasLimitConfig := config.DefConfig.Common.GasLimit
+	gasPriceConfig := getGasPriceConfig()
+	if txn.GasLimit < gasLimitConfig || txn.GasPrice < gasPriceConfig {
+		return fmt.Errorf("Should gasLimit >= %d and gasPrice >= %d",
+			gasLimitConfig, gasPriceConfig)
+	}
+	result, err := ledger.DefLedger.PreExecuteCcntmract(txn)
+	if err != nil {
+		return fmt.Errorf("PreExecuteCcntmract fail")
+	}
+	if txn.GasLimit < result.Gas {
+		return fmt.Errorf("GasLimit should >= %d", result.Gas)
+	}
+	gas, overflow := common.SafeMul(txn.GasPrice, result.Gas)
+	if overflow {
+		return fmt.Errorf("PreExec gasPrice %d and gasLimit %d safeMul overflow",
+			txn.GasPrice, result.Gas)
+	}
+	balance, err := GetCcntmractBalance(0, utils.OngCcntmractAddress, txn.Payer)
+	if err != nil {
+		return err
+	}
+	if balance < gas {
+		return fmt.Errorf("Balance not enough to cover gas cost %d", gas)
+	}
+	return nil
+}
+
+// getGlobalGasPrice returns a global gas price
+func getGlobalGasPrice() (uint64, error) {
+	tx, err := NewNativeInvokeTransaction(0, 0, utils.ParamCcntmractAddress, 0, "getGlobalParam", []interface{}{[]interface{}{"gasPrice"}})
+	if err != nil {
+		return 0, fmt.Errorf("NewNativeInvokeTransaction error:%s", err)
+	}
+	result, err := ledger.DefLedger.PreExecuteCcntmract(tx)
+	if err != nil {
+		return 0, fmt.Errorf("PreExecuteCcntmract failed %v", err)
+	}
+
+	queriedParams := new(global_params.Params)
+	data, err := hex.DecodeString(result.Result.(string))
+	if err != nil {
+		return 0, fmt.Errorf("decode result error %v", err)
+	}
+
+	err = queriedParams.Deserialize(bytes.NewBuffer([]byte(data)))
+	if err != nil {
+		return 0, fmt.Errorf("deserialize result error %v", err)
+	}
+	_, param := queriedParams.GetParam("gasPrice")
+	if param.Value == "" {
+		return 0, fmt.Errorf("failed to get param for gasPrice")
+	}
+
+	gasPrice, err := strconv.ParseUint(param.Value, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse uint %v", err)
+	}
+
+	return gasPrice, nil
+}
+
+// getGasPriceConfig returns the bigger one between global and cmd configured
+func getGasPriceConfig() uint64 {
+	globalGasPrice, err := getGlobalGasPrice()
+	if err != nil {
+		log.Info(err)
+		return 0
+	}
+
+	if globalGasPrice < config.DefConfig.Common.GasPrice {
+		return config.DefConfig.Common.GasPrice
+	}
+	return globalGasPrice
 }

@@ -255,7 +255,7 @@ func (this *NeoVmService) getCcntmract(address []byte) ([]byte, error) {
 	if err != nil {
 		return nil, errors.NewErr("[getCcntmract] Get ccntmract ccntmext error!")
 	}
-	log.Infof("invoke ccntmract address:%x", scommon.ToArrayReverse(address))
+	log.Debugf("invoke ccntmract address:%x", scommon.ToArrayReverse(address))
 	if item == nil {
 		return nil, CcntmRACT_NOT_EXIST
 	}

@@ -16,6 +16,7 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// Package jsonrpc privides a function to start json rpc server
 package jsonrpc
 
 import (

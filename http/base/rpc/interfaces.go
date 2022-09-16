@@ -34,6 +34,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 )
 
+//get generate block time
 func GetGenerateBlockTime(params []interface{}) map[string]interface{} {
 	var genBlockTime interface{}
 	if config.DefConfig.Genesis.ConsensusType == config.CONSENSUS_TYPE_DBFT {
@@ -46,11 +47,13 @@ func GetGenerateBlockTime(params []interface{}) map[string]interface{} {
 	return responseSuccess(genBlockTime)
 }
 
+//get best block hash
 func GetBestBlockHash(params []interface{}) map[string]interface{} {
 	hash := bactor.CurrentBlockHash()
 	return responseSuccess(hash.ToHexString())
 }
 
+// get block by height or hash
 // Input JSON string examples for getblock method as following:
 //   {"jsonrpc": "2.0", "method": "getblock", "params": [1], "id": 0}
 //   {"jsonrpc": "2.0", "method": "getblock", "params": ["aabbcc.."], "id": 0}
@@ -418,6 +421,7 @@ func GetBlockHeightByTxHash(params []interface{}) map[string]interface{} {
 	return responsePack(berr.INVALID_PARAMS, "")
 }
 
+//get balance of address
 func GetBalance(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return responsePack(berr.INVALID_PARAMS, "")

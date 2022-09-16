@@ -891,8 +891,7 @@ Response:
    "jsonrpc":"2.0",
    "result":{
         "cntm": "2500",
-        "cntm": "0",
-        "cntm_appove": "0"
+        "cntm": "0"
        }
 }
 ```

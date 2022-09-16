@@ -29,6 +29,7 @@ type EventActor struct {
 	smartCodeEvt          func(v interface{})
 }
 
+//receive from subscribed actor
 func (t *EventActor) Receive(c actor.Ccntmext) {
 	switch msg := c.Message().(type) {
 	case *message.SaveBlockCompleteMsg:
@@ -39,6 +40,7 @@ func (t *EventActor) Receive(c actor.Ccntmext) {
 	}
 }
 
+//Subscribe save block complete and smartccntmract Event
 func SubscribeEvent(topic string, handler func(v interface{})) {
 	var props = actor.FromProducer(func() actor.Actor {
 		if topic == message.TOPIC_SAVE_BLOCK_COMPLETE {

@@ -450,8 +450,7 @@ curl -i http://localhost:20334/api/v1/balance/TA5uYzLU2vBvvfCMxyV2sdzc9kPqJzGZWq
     "Error": 0,
     "Result": {
         "cntm": "2500",
-        "cntm": "0",
-        "cntm_appove": "0"
+        "cntm": "0"
     },
     "Version": "1.0.0"
 }
