@@ -47,6 +47,13 @@ func GetNodeVersion(cmd map[string]interface{}) map[string]interface{} {
 	return resp
 }
 
+// get networkid
+func GetNetworkId(cmd map[string]interface{}) map[string]interface{} {
+	resp := ResponsePack(berr.SUCCESS)
+	resp["Result"] = config.DefConfig.P2PNode.NetworkId
+	return resp
+}
+
 //get generate block time
 func GetGenerateBlockTime(cmd map[string]interface{}) map[string]interface{} {
 	resp := ResponsePack(berr.SUCCESS)
@@ -277,19 +284,12 @@ func SendRawTransaction(cmd map[string]interface{}) map[string]interface{} {
 			}
 			return resp
 		}
-		//prepare execution check
-		if !bcomn.DisableLocalPreExec {
-			err := bcomn.PreExecCheck(&txn)
-			if err != nil {
-				resp["Result"] = err.Error()
-				return ResponsePack(berr.PRE_EXEC_ERROR)
-			}
-		}
 	}
 	var hash common.Uint256
 	hash = txn.Hash()
-	if errCode := bcomn.VerifyAndSendTx(&txn); errCode != cntmErrors.ErrNoError {
+	if errCode, desc := bcomn.SendTxToPool(&txn); errCode != cntmErrors.ErrNoError {
 		resp["Error"] = int64(errCode)
+		resp["Result"] = desc
 		return resp
 	}
 	resp["Result"] = hash.ToHexString()

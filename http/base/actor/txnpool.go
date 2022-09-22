@@ -33,6 +33,7 @@ import (
 
 var txnPid *actor.PID
 var txnPoolPid *actor.PID
+var DisableSyncVerifyTx = false
 
 func SetTxPid(actr *actor.PID) {
 	txnPid = actr
@@ -42,13 +43,19 @@ func SetTxnPoolPid(actr *actor.PID) {
 }
 
 //append transaction to pool to txpool actor
-func AppendTxToPool(txn *types.Transaction) cntmErrors.ErrCode {
-	txReq := &tcomn.TxReq{
-		Tx:     txn,
-		Sender: tcomn.HttpSender,
+func AppendTxToPool(txn *types.Transaction) (cntmErrors.ErrCode, string) {
+	if DisableSyncVerifyTx {
+		txReq := &tcomn.TxReq{txn, tcomn.HttpSender, nil}
+		txnPid.Tell(txReq)
+		return cntmErrors.ErrNoError, ""
 	}
+	ch := make(chan *tcomn.TxResult, 1)
+	txReq := &tcomn.TxReq{txn, tcomn.HttpSender, ch}
 	txnPid.Tell(txReq)
-	return cntmErrors.ErrNoError
+	if msg, ok := <-ch; ok {
+		return msg.Err, msg.Desc
+	}
+	return cntmErrors.ErrUnknown, ""
 }
 
 //GetTxsFromPool from txpool actor

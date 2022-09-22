@@ -36,7 +36,7 @@ import (
 func VerifyTransaction(tx *types.Transaction) cntmErrors.ErrCode {
 	if err := checkTransactionSignatures(tx); err != nil {
 		log.Info("transaction verify error:", err)
-		return cntmErrors.ErrTransactionCcntmracts
+		return cntmErrors.ErrVerifySignature
 	}
 
 	if err := checkTransactionPayload(tx); err != nil {

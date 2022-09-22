@@ -23,14 +23,15 @@ import (
 	"encoding/binary"
 	"fmt"
 
+	comm "github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/p2pserver/common"
 )
 
 type HeadersReq struct {
 	Len       uint8
-	HashStart [common.HASH_LEN]byte
-	HashEnd   [common.HASH_LEN]byte
+	HashStart comm.Uint256
+	HashEnd   comm.Uint256
 }
 
 //Serialize message payload
