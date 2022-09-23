@@ -23,6 +23,7 @@ import (
 	"github.com/cntmio/cntmology/account"
 	cmdcom "github.com/cntmio/cntmology/cmd/common"
 	"github.com/cntmio/cntmology/cmd/utils"
+	"github.com/cntmio/cntmology/common/config"
 	nutils "github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/urfave/cli"
 	"strconv"
@@ -177,6 +178,14 @@ func transfer(ctx *cli.Ccntmext) error {
 	gasPrice := ctx.Uint64(utils.TransactionGasPriceFlag.Name)
 	gasLimit := ctx.Uint64(utils.TransactionGasLimitFlag.Name)
 
+	networkId, err := utils.GetNetworkId()
+	if err != nil {
+		return err
+	}
+	if networkId == config.NETWORK_ID_SOLO_NET {
+		gasPrice = 0
+	}
+
 	var signer *account.Account
 	signer, err = cmdcom.GetAccount(ctx, fromAddr)
 	if err != nil {
@@ -308,6 +317,13 @@ func approve(ctx *cli.Ccntmext) error {
 
 	gasPrice := ctx.Uint64(utils.TransactionGasPriceFlag.Name)
 	gasLimit := ctx.Uint64(utils.TransactionGasLimitFlag.Name)
+	networkId, err := utils.GetNetworkId()
+	if err != nil {
+		return err
+	}
+	if networkId == config.NETWORK_ID_SOLO_NET {
+		gasPrice = 0
+	}
 
 	var signer *account.Account
 	signer, err = cmdcom.GetAccount(ctx, fromAddr)
@@ -390,6 +406,13 @@ func transferFrom(ctx *cli.Ccntmext) error {
 
 	gasPrice := ctx.Uint64(utils.TransactionGasPriceFlag.Name)
 	gasLimit := ctx.Uint64(utils.TransactionGasLimitFlag.Name)
+	networkId, err := utils.GetNetworkId()
+	if err != nil {
+		return err
+	}
+	if networkId == config.NETWORK_ID_SOLO_NET {
+		gasPrice = 0
+	}
 
 	txHash, err := utils.TransferFrom(gasPrice, gasLimit, signer, asset, sendAddr, fromAddr, toAddr, amount)
 	if err != nil {
@@ -470,6 +493,13 @@ func withdrawOng(ctx *cli.Ccntmext) error {
 
 	gasPrice := ctx.Uint64(utils.TransactionGasPriceFlag.Name)
 	gasLimit := ctx.Uint64(utils.TransactionGasLimitFlag.Name)
+	networkId, err := utils.GetNetworkId()
+	if err != nil {
+		return err
+	}
+	if networkId == config.NETWORK_ID_SOLO_NET {
+		gasPrice = 0
+	}
 
 	txHash, err := utils.TransferFrom(gasPrice, gasLimit, signer, "cntm", accAddr, fromAddr, accAddr, amount)
 	if err != nil {
