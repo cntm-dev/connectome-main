@@ -87,7 +87,8 @@ $ make all
 * `tools/sigsvr`: (可选)签名服务 - sigsvr是一个签名服务的server以满足一些特殊的需求。详细的文档可以在[这里](./docs/specifications/sigsvr_CN.md)参考
 
 ### 从release获取
-You can download at [release page](https://github.com/cntmio/cntmology/releases).
+- 你可以通过命令 ` curl https://dev.cntm.io/cntmology_install | sh ` 获取最新的cntmology版本
+- 你也可以从[下载页面](https://github.com/cntmio/cntmology/releases)获取.
 
 ## 服务器部署
 ### 选择网络
@@ -272,7 +273,7 @@ cntmology的运行支持以下4种方式
 
 ### cntm转账调用示例
    - from: 转出地址； - to: 转入地址； - amount: 资产转移数量；
-   from参数可以不指定，如果不指定则使用默认账户。
+      from参数可以不指定，如果不指定则使用默认账户。
 
 ```shell
   ./cntmology asset transfer  --to=TA4Xe9j8VbU4m3T1zEa1uRiMTauiAT88op --amount=10
