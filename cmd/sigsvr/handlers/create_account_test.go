@@ -18,39 +18,31 @@
 package handlers
 
 import (
-	"encoding/hex"
-	"encoding/json"
 	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
 	"testing"
 )
 
-func TestSigData(t *testing.T) {
-	defAcc, err := testWallet.GetDefaultAccount(pwd)
-	if err != nil {
-		t.Errorf("GetDefaultAccount error:%s", err)
-		return
-	}
-
-	rawData := []byte("HelloWorld")
-	rawReq := &SigDataReq{
-		RawData: hex.EncodeToString(rawData),
-	}
-	data, err := json.Marshal(rawReq)
-	if err != nil {
-		t.Errorf("json.Marshal SigDataReq error:%s", err)
-		return
-	}
+func TestCreateAccount(t *testing.T) {
+	walletStore := clisvrcom.DefWalletStore
 	req := &clisvrcom.CliRpcRequest{
-		Qid:     "t",
-		Method:  "sigdata",
-		Params:  data,
-		Account: defAcc.Address.ToBase58(),
-		Pwd:     string(pwd),
+		Qid:    "t",
+		Method: "createaccount",
+		Pwd:    string(pwd),
 	}
 	resp := &clisvrcom.CliRpcResponse{}
-	SigData(req, resp)
+	CreateAccount(req, resp)
 	if resp.ErrorCode != 0 {
-		t.Errorf("SigData failed. ErrorCode:%d", resp.ErrorCode)
+		t.Errorf("CreateAccount failed. ErrorCode:%d", resp.ErrorCode)
+		return
+	}
+	createRsp, ok := resp.Result.(*CreateAccountRsp)
+	if !ok {
+		t.Errorf("CreateAccount resp asset to CreateAccountRsp failed")
+		return
+	}
+	_, err := walletStore.GetAccountByAddress(createRsp.Account, pwd)
+	if err != nil {
+		t.Errorf("Test CreateAccount failed GetAccountByAddress error:%s", err)
 		return
 	}
 }

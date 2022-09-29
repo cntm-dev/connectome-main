@@ -18,39 +18,42 @@
 package handlers
 
 import (
-	"encoding/hex"
 	"encoding/json"
+	"github.com/cntmio/cntmology/account"
 	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
+	"os"
 	"testing"
 )
 
-func TestSigData(t *testing.T) {
-	defAcc, err := testWallet.GetDefaultAccount(pwd)
-	if err != nil {
-		t.Errorf("GetDefaultAccount error:%s", err)
+func TestExportWallet(t *testing.T) {
+	exportReq := &ExportAccountReq{}
+	data, _ := json.Marshal(exportReq)
+	req := &clisvrcom.CliRpcRequest{
+		Qid:    "t",
+		Method: "exportaccount",
+		Pwd:    string(pwd),
+		Params: data,
+	}
+	resp := &clisvrcom.CliRpcResponse{}
+	ExportAccount(req, resp)
+	if resp.ErrorCode != 0 {
+		t.Errorf("ExportAccount failed. ErrorCode:%d", resp.ErrorCode)
+		return
+	}
+	exportRsp, ok := resp.Result.(*ExportAccountResp)
+	if !ok {
+		t.Errorf("TestExportWallet resp asset to ExportAccountResp failed")
 		return
 	}
 
-	rawData := []byte("HelloWorld")
-	rawReq := &SigDataReq{
-		RawData: hex.EncodeToString(rawData),
-	}
-	data, err := json.Marshal(rawReq)
+	wallet, err := account.Open(exportRsp.WalletFile)
 	if err != nil {
-		t.Errorf("json.Marshal SigDataReq error:%s", err)
+		t.Errorf("TestExportWallet failed, OpenWallet error:%s", err)
 		return
 	}
-	req := &clisvrcom.CliRpcRequest{
-		Qid:     "t",
-		Method:  "sigdata",
-		Params:  data,
-		Account: defAcc.Address.ToBase58(),
-		Pwd:     string(pwd),
-	}
-	resp := &clisvrcom.CliRpcResponse{}
-	SigData(req, resp)
-	if resp.ErrorCode != 0 {
-		t.Errorf("SigData failed. ErrorCode:%d", resp.ErrorCode)
+	if wallet.GetAccountNum() != exportRsp.AccountNumber {
+		t.Errorf("TestExportWallet failed, account number %d != %d", wallet.GetAccountNum(), exportRsp.AccountNumber)
 		return
 	}
+	os.Remove(exportRsp.WalletFile)
 }
