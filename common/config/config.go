@@ -29,6 +29,7 @@ import (
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/constants"
+	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/errors"
 )
@@ -48,7 +49,7 @@ const (
 	CONSENSUS_TYPE_SOLO = "solo"
 	CONSENSUS_TYPE_VBFT = "vbft"
 
-	DEFAULT_LOG_LEVEL                       = 2
+	DEFAULT_LOG_LEVEL                       = log.InfoLog
 	DEFAULT_MAX_LOG_SIZE                    = 100 //MByte
 	DEFAULT_NODE_PORT                       = uint(20338)
 	DEFAULT_CONSENSUS_PORT                  = uint(20339)
