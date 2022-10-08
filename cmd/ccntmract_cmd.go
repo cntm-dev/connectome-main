@@ -243,7 +243,12 @@ func invokeCodeCcntmract(ctx *cli.Ccntmext) error {
 	if err != nil {
 		return fmt.Errorf("SignTransaction error:%s", err)
 	}
-	txHash, err := utils.SendRawTransaction(invokeTx)
+	tx, err := invokeTx.IntoImmutable()
+	if err != nil {
+		return err
+	}
+
+	txHash, err := utils.SendRawTransaction(tx)
 	if err != nil {
 		return fmt.Errorf("SendTransaction error:%s", err)
 	}

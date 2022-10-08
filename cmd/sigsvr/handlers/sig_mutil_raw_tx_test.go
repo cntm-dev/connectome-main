@@ -18,14 +18,15 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology-crypto/signature"
 	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
 	"github.com/cntmio/cntmology/cmd/utils"
+	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/types"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -60,15 +61,14 @@ func TestSigMutilRawTransaction(t *testing.T) {
 		t.Errorf("TransferTx error:%s", err)
 		return
 	}
-	buf := bytes.NewBuffer(nil)
-	err = tx.Serialize(buf)
-	if err != nil {
-		t.Errorf("tx.Serialize error:%s", err)
-		return
-	}
+	immut, err := tx.IntoImmutable()
+	assert.Nil(t, err)
+	sink := common.ZeroCopySink{}
+	err = immut.Serialization(&sink)
+	assert.Nil(t, err)
 
 	rawReq := &SigMutilRawTransactionReq{
-		RawTx:   hex.EncodeToString(buf.Bytes()),
+		RawTx:   hex.EncodeToString(sink.Bytes()),
 		M:       m,
 		PubKeys: []string{acc1.PubKey, acc2.PubKey},
 	}

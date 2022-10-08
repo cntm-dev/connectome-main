@@ -19,13 +19,10 @@
 package proc
 
 import (
-	"bytes"
-	"encoding/hex"
 	"testing"
 	"time"
 
 	"github.com/cntmio/cntmology-eventbus/actor"
-	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
@@ -52,17 +49,13 @@ func init() {
 		Code: code,
 	}
 
-	txn = &types.Transaction{
-		Version: 0,
+	mutable := &types.MutableTransaction{
 		TxType:  types.Invoke,
+		Nonce:   uint32(time.Now().Unix()),
 		Payload: invokeCodePayload,
 	}
 
-	tempStr := "3369930accc1ddd067245e8edadcd9bea207ba5e1753ac18a51df77a343bfe92"
-	hex, _ := hex.DecodeString(tempStr)
-	var hash common.Uint256
-	hash.Deserialize(bytes.NewReader(hex))
-	txn.SetHash(hash)
+	txn, _ = mutable.IntoImmutable()
 
 	sender = tc.NilSender
 }

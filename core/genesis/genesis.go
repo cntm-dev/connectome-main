@@ -117,41 +117,49 @@ func BuildGenesisBlock(defaultBookkeeper []keypair.PublicKey, genesisConfig *con
 	return genesisBlock, nil
 }
 
+func checkConvert(tx *types.MutableTransaction) *types.Transaction {
+	txn, err := tx.IntoImmutable()
+	if err != nil {
+		panic(err)
+	}
+	return txn
+}
+
 func newGoverningToken() *types.Transaction {
 	tx := utils.NewDeployTransaction(nutils.OntCcntmractAddress[:], "cntm", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", true)
-	return tx
+	return checkConvert(tx)
 }
 
 func newUtilityToken() *types.Transaction {
 	tx := utils.NewDeployTransaction(nutils.OngCcntmractAddress[:], "cntm", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", true)
-	return tx
+	return checkConvert(tx)
 }
 
 func newParamCcntmract() *types.Transaction {
 	tx := utils.NewDeployTransaction(nutils.ParamCcntmractAddress[:],
 		"ParamConfig", "1.0", "Ontology Team", "ccntmact@cntm.io",
 		"Chain Global Environment Variables Manager ", true)
-	return tx
+	return checkConvert(tx)
 }
 
 func newConfig() *types.Transaction {
 	tx := utils.NewDeployTransaction(nutils.GovernanceCcntmractAddress[:], "CONFIG", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network Consensus Config", true)
-	return tx
+	return checkConvert(tx)
 }
 
 func deployAuthCcntmract() *types.Transaction {
 	tx := utils.NewDeployTransaction(nutils.AuthCcntmractAddress[:], "AuthCcntmract", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network Authorization Ccntmract", true)
-	return tx
+	return checkConvert(tx)
 }
 
 func deployOntIDCcntmract() *types.Transaction {
 	tx := utils.NewDeployTransaction(nutils.OntIDCcntmractAddress[:], "OID", "1.0",
 		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm ID", true)
-	return tx
+	return checkConvert(tx)
 }
 
 func newGoverningInit() *types.Transaction {
@@ -181,17 +189,19 @@ func newGoverningInit() *types.Transaction {
 		nutils.WriteVarUint(args, part.value)
 	}
 
-	return utils.BuildNativeTransaction(nutils.OntCcntmractAddress, cntm.INIT_NAME, args.Bytes())
+	tx := utils.BuildNativeTransaction(nutils.OntCcntmractAddress, cntm.INIT_NAME, args.Bytes())
+	return checkConvert(tx)
 }
 
 func newUtilityInit() *types.Transaction {
-	return utils.BuildNativeTransaction(nutils.OngCcntmractAddress, cntm.INIT_NAME, []byte{})
+	tx := utils.BuildNativeTransaction(nutils.OngCcntmractAddress, cntm.INIT_NAME, []byte{})
+	return checkConvert(tx)
 }
 
 func newParamInit() *types.Transaction {
 	params := new(global_params.Params)
 	var s []string
-	for k, _ := range INIT_PARAM {
+	for k := range INIT_PARAM {
 		s = append(s, k)
 	}
 
@@ -222,9 +232,11 @@ func newParamInit() *types.Transaction {
 	}
 	nutils.WriteAddress(bf, addr)
 
-	return utils.BuildNativeTransaction(nutils.ParamCcntmractAddress, global_params.INIT_NAME, bf.Bytes())
+	tx := utils.BuildNativeTransaction(nutils.ParamCcntmractAddress, global_params.INIT_NAME, bf.Bytes())
+	return checkConvert(tx)
 }
 
 func newGoverConfigInit(config []byte) *types.Transaction {
-	return utils.BuildNativeTransaction(nutils.GovernanceCcntmractAddress, governance.INIT_CONFIG, config)
+	tx := utils.BuildNativeTransaction(nutils.GovernanceCcntmractAddress, governance.INIT_CONFIG, config)
+	return checkConvert(tx)
 }

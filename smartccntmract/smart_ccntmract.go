@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/store"
 	ctypes "github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
@@ -163,7 +164,11 @@ func (this *SmartCcntmract) CheckWitness(address common.Address) bool {
 }
 
 func (this *SmartCcntmract) checkAccountAddress(address common.Address) bool {
-	addresses := this.Config.Tx.GetSignatureAddresses()
+	addresses, err := this.Config.Tx.GetSignatureAddresses()
+	if err != nil {
+		log.Errorf("get signature address error:%v", err)
+		return false
+	}
 	for _, v := range addresses {
 		if v == address {
 			return true

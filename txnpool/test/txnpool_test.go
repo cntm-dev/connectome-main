@@ -19,18 +19,16 @@
 package txnpool
 
 import (
-	"bytes"
-	"encoding/hex"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/cntmio/cntmology-eventbus/actor"
-	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/ledger"
+	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	tc "github.com/cntmio/cntmology/txnpool/common"
 	tp "github.com/cntmio/cntmology/txnpool/proc"
@@ -47,15 +45,13 @@ func init() {
 	log.Init(log.PATH, log.Stdout)
 	topic = "TXN"
 
-	tx = &types.Transaction{
-		Version: 0,
+	mutable := &types.MutableTransaction{
+		TxType:  types.Invoke,
+		Nonce:   uint32(time.Now().Unix()),
+		Payload: &payload.InvokeCode{Code: []byte{}},
 	}
 
-	tempStr := "3369930accc1ddd067245e8edadcd9bea207ba5e1753ac18a51df77a343bfe92"
-	hex, _ := hex.DecodeString(tempStr)
-	var hash common.Uint256
-	hash.Deserialize(bytes.NewReader(hex))
-	tx.SetHash(hash)
+	tx, _ = mutable.IntoImmutable()
 }
 
 func startActor(obj interface{}) *actor.PID {

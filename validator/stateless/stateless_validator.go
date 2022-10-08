@@ -67,7 +67,7 @@ func (self *validator) Receive(ccntmext actor.Ccntmext) {
 	case *vatypes.CheckTx:
 		log.Debugf("stateless-validator receive tx %x", msg.Tx.Hash())
 		sender := ccntmext.Sender()
-		errCode := validation.VerifyTransaction(&msg.Tx)
+		errCode := validation.VerifyTransaction(msg.Tx)
 
 		response := &vatypes.CheckResponse{
 			WorkerId: msg.WorkerId,
