@@ -20,11 +20,9 @@ package init
 
 import (
 	"bytes"
-	"math"
 	"math/big"
 
 	"github.com/cntmio/cntmology/common"
-	invoke "github.com/cntmio/cntmology/core/utils"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/auth"
 	params "github.com/cntmio/cntmology/smartccntmract/service/native/global_params"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/governance"
@@ -59,7 +57,5 @@ func InitBytes(addr common.Address, method string) []byte {
 	builder.Emit(vm.SYSCALL)
 	builder.EmitPushByteArray([]byte(neovm.NATIVE_INVOKE_NAME))
 
-	tx := invoke.NewInvokeTransaction(builder.ToArray())
-	tx.GasLimit = math.MaxUint64
-	return bf.Bytes()
+	return builder.ToArray()
 }

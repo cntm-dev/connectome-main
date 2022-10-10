@@ -25,7 +25,6 @@ import (
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
-	ser "github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/core/vote"
@@ -95,12 +94,8 @@ func (ctx *ConsensusCcntmext) MakeChangeView() *msg.ConsensusPayload {
 }
 
 func (ctx *ConsensusCcntmext) MakeHeader() *types.Block {
-	log.Debug()
-	if ctx.Transactions == nil {
-		return nil
-	}
 	if ctx.header == nil {
-		txHash := []common.Uint256{}
+		txHash := make([]common.Uint256, 0, len(ctx.Transactions))
 		for _, t := range ctx.Transactions {
 			txHash = append(txHash, t.Hash())
 		}
@@ -127,13 +122,15 @@ func (ctx *ConsensusCcntmext) MakeHeader() *types.Block {
 func (ctx *ConsensusCcntmext) MakePayload(message ConsensusMessage) *msg.ConsensusPayload {
 	log.Debug()
 	message.ConsensusMessageData().ViewNumber = ctx.ViewNumber
+	sink := common.NewZeroCopySink(nil)
+	message.Serialization(sink)
 	return &msg.ConsensusPayload{
 		Version:         CcntmextVersion,
 		PrevHash:        ctx.PrevHash,
 		Height:          ctx.Height,
 		BookkeeperIndex: uint16(ctx.BookkeeperIndex),
 		Timestamp:       ctx.Timestamp,
-		Data:            ser.ToArray(message),
+		Data:            sink.Bytes(),
 		Owner:           ctx.Owner,
 	}
 }
