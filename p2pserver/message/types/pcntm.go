@@ -19,11 +19,9 @@
 package types
 
 import (
-	"bytes"
-	"fmt"
+	"io"
 
-	"github.com/cntmio/cntmology/common/serialization"
-	"github.com/cntmio/cntmology/errors"
+	comm "github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/p2pserver/common"
 )
 
@@ -32,14 +30,9 @@ type Pcntm struct {
 }
 
 //Serialize message payload
-func (this Pcntm) Serialization() ([]byte, error) {
-	p := bytes.NewBuffer(nil)
-	err := serialization.WriteUint64(p, this.Height)
-	if err != nil {
-		return nil, errors.NewDetailErr(err, errors.ErrNetPackFail, fmt.Sprintf("write error. Height:%v", this.Height))
-	}
-
-	return p.Bytes(), nil
+func (this Pcntm) Serialization(sink *comm.ZeroCopySink) error {
+	sink.WriteUint64(this.Height)
+	return nil
 }
 
 func (this Pcntm) CmdType() string {
@@ -47,13 +40,12 @@ func (this Pcntm) CmdType() string {
 }
 
 //Deserialize message payload
-func (this *Pcntm) Deserialization(p []byte) error {
-	buf := bytes.NewBuffer(p)
-	height, err := serialization.ReadUint64(buf)
-	if err != nil {
-		return errors.NewDetailErr(err, errors.ErrNetUnPackFail, fmt.Sprintf("read Height error. buf:%v", buf))
+func (this *Pcntm) Deserialization(source *comm.ZeroCopySource) error {
+	var eof bool
+	this.Height, eof = source.NextUint64()
+	if eof {
+		return io.ErrUnexpectedEOF
 	}
 
-	this.Height = height
 	return nil
 }

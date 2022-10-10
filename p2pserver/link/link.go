@@ -20,12 +20,12 @@ package link
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"fmt"
 	"net"
 	"time"
 
+	comm "github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/p2pserver/common"
 	"github.com/cntmio/cntmology/p2pserver/message/types"
@@ -166,14 +166,15 @@ func (this *Link) Tx(msg types.Message) error {
 	if conn == nil {
 		return errors.New("[p2p]tx link invalid")
 	}
-	buf := bytes.NewBuffer(nil)
-	err := types.WriteMessage(buf, msg)
+
+	sink := comm.NewZeroCopySink(nil)
+	err := types.WriteMessage(sink, msg)
 	if err != nil {
 		log.Debugf("[p2p]error serialize messge ", err.Error())
 		return err
 	}
 
-	payload := buf.Bytes()
+	payload := sink.Bytes()
 	nByteCnt := len(payload)
 	log.Tracef("[p2p]TX buf length: %d\n", nByteCnt)
 

@@ -67,6 +67,8 @@ var ErrMap = map[int64]string{
 	INTERNAL_ERROR:                           "INTERNAL ERROR",
 	SMARTCODE_ERROR:                          "SMARTCODE EXEC ERROR",
 	PRE_EXEC_ERROR:                           "SMARTCODE PREPARE EXEC ERROR",
+	int64(cntmErrors.ErrNoCode):               "INTERNAL ERROR, ErrNoCode",
+	int64(cntmErrors.ErrUnknown):              "INTERNAL ERROR, ErrUnknown",
 	int64(cntmErrors.ErrDuplicatedTx):         "INTERNAL ERROR, ErrDuplicatedTx",
 	int64(cntmErrors.ErrDuplicateInput):       "INTERNAL ERROR, ErrDuplicateInput",
 	int64(cntmErrors.ErrAssetPrecision):       "INTERNAL ERROR, ErrAssetPrecision",

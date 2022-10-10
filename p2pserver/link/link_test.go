@@ -26,7 +26,7 @@ import (
 
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/account"
-	common2 "github.com/cntmio/cntmology/common"
+	comm "github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/payload"
 	ct "github.com/cntmio/cntmology/core/types"
@@ -95,7 +95,7 @@ func TestNewLink(t *testing.T) {
 	msg := &mt.MsgPayload{
 		Id:      cliLink.id,
 		Addr:    cliLink.addr,
-		Payload: &mt.NotFound{common2.UINT256_EMPTY},
+		Payload: &mt.NotFound{comm.UINT256_EMPTY},
 	}
 	go func() {
 		time.Sleep(5000000)

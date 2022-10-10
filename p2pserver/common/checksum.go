@@ -15,42 +15,39 @@
  * You should have received a copy of the GNU Lesser General Public License
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-package types
+package common
 
 import (
-	"io"
-
-	"github.com/cntmio/cntmology/common"
-	comm "github.com/cntmio/cntmology/p2pserver/common"
+	"crypto/sha256"
+	"hash"
 )
 
-type DataReq struct {
-	DataType common.InventoryType
-	Hash     common.Uint256
+// checksum implement hash.Hash interface and io.Writer
+type checksum struct {
+	hash.Hash
 }
 
-//Serialize message payload
-func (this DataReq) Serialization(sink *common.ZeroCopySink) error {
-	sink.WriteByte(byte(this.DataType))
-	sink.WriteHash(this.Hash)
-
-	return nil
+func (self *checksum) Size() int {
+	return CHECKSUM_LEN
 }
 
-func (this *DataReq) CmdType() string {
-	return comm.GET_DATA_TYPE
+func (self *checksum) Sum(b []byte) []byte {
+	temp := self.Hash.Sum(nil)
+	h := sha256.Sum256(temp)
+
+	return append(b, h[:CHECKSUM_LEN]...)
 }
 
-//Deserialize message payload
-func (this *DataReq) Deserialization(source *common.ZeroCopySource) error {
-	ty, eof := source.NextByte()
-	this.DataType = common.InventoryType(ty)
+func NewChecksum() hash.Hash {
+	return &checksum{sha256.New()}
+}
 
-	this.Hash, eof = source.NextHash()
-	if eof {
-		return io.ErrUnexpectedEOF
-	}
+func Checksum(data []byte) [CHECKSUM_LEN]byte {
+	var checksum [CHECKSUM_LEN]byte
+	t := sha256.Sum256(data)
+	s := sha256.Sum256(t[:])
 
-	return nil
+	copy(checksum[:], s[:])
+
+	return checksum
 }

@@ -15,42 +15,20 @@
  * You should have received a copy of the GNU Lesser General Public License
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-package types
+package common
 
 import (
-	"io"
-
-	"github.com/cntmio/cntmology/common"
-	comm "github.com/cntmio/cntmology/p2pserver/common"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-type DataReq struct {
-	DataType common.InventoryType
-	Hash     common.Uint256
-}
+func TestChecksum(t *testing.T) {
+	data := []byte{1, 2, 3}
+	cs := Checksum(data)
 
-//Serialize message payload
-func (this DataReq) Serialization(sink *common.ZeroCopySink) error {
-	sink.WriteByte(byte(this.DataType))
-	sink.WriteHash(this.Hash)
+	writer := NewChecksum()
+	writer.Write(data)
+	checksum2 := writer.Sum(nil)
+	assert.Equal(t, cs[:], checksum2)
 
-	return nil
-}
-
-func (this *DataReq) CmdType() string {
-	return comm.GET_DATA_TYPE
-}
-
-//Deserialize message payload
-func (this *DataReq) Deserialization(source *common.ZeroCopySource) error {
-	ty, eof := source.NextByte()
-	this.DataType = common.InventoryType(ty)
-
-	this.Hash, eof = source.NextHash()
-	if eof {
-		return io.ErrUnexpectedEOF
-	}
-
-	return nil
 }

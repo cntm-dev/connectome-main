@@ -49,6 +49,11 @@ func AppendTxToPool(txn *types.Transaction) (cntmErrors.ErrCode, string) {
 		txnPid.Tell(txReq)
 		return cntmErrors.ErrNoError, ""
 	}
+	//add Pre Execute Ccntmract
+	_, err := PreExecuteCcntmract(txn)
+	if err != nil {
+		return cntmErrors.ErrUnknown, err.Error()
+	}
 	ch := make(chan *tcomn.TxResult, 1)
 	txReq := &tcomn.TxReq{txn, tcomn.HttpSender, ch}
 	txnPid.Tell(txReq)
