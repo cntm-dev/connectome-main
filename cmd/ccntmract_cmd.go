@@ -43,7 +43,7 @@ var (
 			{
 				Action:    deployCcntmract,
 				Name:      "deploy",
-				Usage:     "Deploy a smart ccntmract to cntmolgoy",
+				Usage:     "Deploy a smart ccntmract to cntmology",
 				ArgsUsage: " ",
 				Flags: []cli.Flag{
 					utils.RPCPortFlag,
@@ -62,10 +62,26 @@ var (
 				},
 			},
 			{
-				Action:    invokeCcntmract,
-				Name:      "invoke",
-				Usage:     "Invoke smart ccntmract",
-				ArgsUsage: " ",
+				Action: invokeCcntmract,
+				Name:   "invoke",
+				Usage:  "Invoke smart ccntmract",
+				ArgsUsage: `NeoVM ccntmract support bytearray(need encode to hex string), string, integer, boolean parameter type.
+
+  Parameter 
+     Ccntmract parameters separate with comma ',' to split params. and must add type prefix to params.
+     For example:string:foo,int:0,bool:true 
+     If parameter is an object array, enclose array with '[]'. 
+     For example: string:foo,[int:0,bool:true]
+
+  Note that if string ccntmain some special char like :,[,] and so one, please use '/' char to escape. 
+  For example: string:did/:ed1e25c9dccae0c694ee892231407afa20b76008
+
+  Return type
+     When invoke ccntmract with --prepare flag, you need specifies return type by --return flag, to decode the return value.
+     Return type support bytearray(encoded to hex string), string, integer, boolean. 
+     If return type is object array, enclose array with '[]'. 
+     For example: [string,int,bool,string]
+`,
 				Flags: []cli.Flag{
 					utils.RPCPortFlag,
 					utils.TransactionGasPriceFlag,
@@ -81,7 +97,7 @@ var (
 			},
 			{
 				Action:    invokeCodeCcntmract,
-				Name:      "invokeCode",
+				Name:      "invokecode",
 				Usage:     "Invoke smart ccntmract by code",
 				ArgsUsage: " ",
 				Flags: []cli.Flag{
@@ -102,7 +118,7 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 	SetRpcPort(ctx)
 	if !ctx.IsSet(utils.GetFlagName(utils.CcntmractCodeFileFlag)) ||
 		!ctx.IsSet(utils.GetFlagName(utils.CcntmractNameFlag)) {
-		fmt.Errorf("Missing code or name argument\n")
+		PrintErrorMsg("Missing %s or %s argument.", utils.CcntmractCodeFileFlag.Name, utils.CcntmractNameFlag.Name)
 		cli.ShowSubcommandHelp(ctx)
 		return nil
 	}
@@ -110,11 +126,11 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 	store := ctx.Bool(utils.GetFlagName(utils.CcntmractStorageFlag))
 	codeFile := ctx.String(utils.GetFlagName(utils.CcntmractCodeFileFlag))
 	if "" == codeFile {
-		return fmt.Errorf("Please specific code file")
+		return fmt.Errorf("please specific code file")
 	}
 	codeStr, err := ioutil.ReadFile(codeFile)
 	if err != nil {
-		return fmt.Errorf("Read code:%s error:%s", codeFile, err)
+		return fmt.Errorf("read code:%s error:%s", codeFile, err)
 	}
 
 	name := ctx.String(utils.GetFlagName(utils.CcntmractNameFlag))
@@ -141,16 +157,16 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 			return fmt.Errorf("PrepareDeployCcntmract error:%s", err)
 		}
 		if preResult.State == 0 {
-			return fmt.Errorf("Ccntmract pre-deploy failed\n")
+			return fmt.Errorf("ccntmract pre-deploy failed")
 		}
-		fmt.Printf("Ccntmract pre-deploy successfully\n")
-		fmt.Printf("Gas consumed:%d\n", preResult.Gas)
+		PrintInfoMsg("Ccntmract pre-deploy successfully.")
+		PrintInfoMsg("Gas consumed:%d.", preResult.Gas)
 		return nil
 	}
 
 	signer, err := cmdcom.GetAccount(ctx)
 	if err != nil {
-		return fmt.Errorf("Get signer account error:%s", err)
+		return fmt.Errorf("get signer account error:%s", err)
 	}
 
 	txHash, err := utils.DeployCcntmract(gasPrice, gasLimit, signer, store, code, name, cversion, author, email, desc)
@@ -159,34 +175,34 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 	}
 	c, _ := common.HexToBytes(code)
 	address := types.AddressFromVmCode(c)
-	fmt.Printf("Deploy ccntmract:\n")
-	fmt.Printf("  Ccntmract Address:%s\n", address.ToHexString())
-	fmt.Printf("  TxHash:%s\n", txHash)
-	fmt.Printf("\nTip:\n")
-	fmt.Printf("  Using './cntmology info status %s' to query transaction status\n", txHash)
+	PrintInfoMsg("Deploy ccntmract:")
+	PrintInfoMsg("  Ccntmract Address:%s", address.ToHexString())
+	PrintInfoMsg("  TxHash:%s", txHash)
+	PrintInfoMsg("\nTip:")
+	PrintInfoMsg("  Using './cntmology info status %s' to query transaction status.", txHash)
 	return nil
 }
 
 func invokeCodeCcntmract(ctx *cli.Ccntmext) error {
 	SetRpcPort(ctx)
 	if !ctx.IsSet(utils.GetFlagName(utils.CcntmractCodeFileFlag)) {
-		fmt.Printf("Missing code or name argument\n")
+		PrintErrorMsg("Missing %s or %s argument.", utils.CcntmractCodeFileFlag.Name, utils.CcntmractNameFlag.Name)
 		cli.ShowSubcommandHelp(ctx)
 		return nil
 	}
 
 	codeFile := ctx.String(utils.GetFlagName(utils.CcntmractCodeFileFlag))
 	if "" == codeFile {
-		return fmt.Errorf("Please specific code file")
+		return fmt.Errorf("please specific code file")
 	}
 	codeStr, err := ioutil.ReadFile(codeFile)
 	if err != nil {
-		return fmt.Errorf("Read code:%s error:%s", codeFile, err)
+		return fmt.Errorf("read code:%s error:%s", codeFile, err)
 	}
 	code := strings.TrimSpace(string(codeStr))
 	c, err := common.HexToBytes(code)
 	if err != nil {
-		return fmt.Errorf("hex to bytes error:%s", err)
+		return fmt.Errorf("ccntmrace code convert hex to bytes error:%s", err)
 	}
 
 	if ctx.IsSet(utils.GetFlagName(utils.CcntmractPrepareInvokeFlag)) {
@@ -195,14 +211,14 @@ func invokeCodeCcntmract(ctx *cli.Ccntmext) error {
 			return fmt.Errorf("PrepareInvokeCodeNeoVMCcntmract error:%s", err)
 		}
 		if preResult.State == 0 {
-			return fmt.Errorf("Ccntmract pre-invoke failed\n")
+			return fmt.Errorf("ccntmract pre-invoke failed")
 		}
-		fmt.Printf("Ccntmract pre-invoke successfully\n")
-		fmt.Printf("Gas consumed:%d\n", preResult.Gas)
+		PrintInfoMsg("Ccntmract pre-invoke successfully")
+		PrintInfoMsg("  Gas limit:%d", preResult.Gas)
 
 		rawReturnTypes := ctx.String(utils.GetFlagName(utils.CcntmractReturnTypeFlag))
 		if rawReturnTypes == "" {
-			fmt.Printf("Return:%s (raw value)\n", preResult.Result)
+			PrintInfoMsg("Return:%s (raw value)", preResult.Result)
 			return nil
 		}
 		values, err := utils.ParseReturnValue(preResult.Result, rawReturnTypes)
@@ -211,11 +227,11 @@ func invokeCodeCcntmract(ctx *cli.Ccntmext) error {
 		}
 		switch len(values) {
 		case 0:
-			fmt.Printf("Return: nil\n")
+			PrintInfoMsg("Return: nil")
 		case 1:
-			fmt.Printf("Return:%+v\n", values[0])
+			PrintInfoMsg("Return:%+v", values[0])
 		default:
-			fmt.Printf("Return:%+v\n", values)
+			PrintInfoMsg("Return:%+v", values)
 		}
 		return nil
 	}
@@ -236,7 +252,7 @@ func invokeCodeCcntmract(ctx *cli.Ccntmext) error {
 
 	signer, err := cmdcom.GetAccount(ctx)
 	if err != nil {
-		return fmt.Errorf("Get signer account error:%s", err)
+		return fmt.Errorf("get signer account error:%s", err)
 	}
 
 	err = utils.SignTransaction(signer, invokeTx)
@@ -253,23 +269,23 @@ func invokeCodeCcntmract(ctx *cli.Ccntmext) error {
 		return fmt.Errorf("SendTransaction error:%s", err)
 	}
 
-	fmt.Printf("TxHash:%s\n", txHash)
-	fmt.Printf("\nTip:\n")
-	fmt.Printf("  Using './cntmology info status %s' to query transaction status\n", txHash)
+	PrintInfoMsg("TxHash:%s", txHash)
+	PrintInfoMsg("\nTip:")
+	PrintInfoMsg("  Using './cntmology info status %s' to query transaction status.", txHash)
 	return nil
 }
 
 func invokeCcntmract(ctx *cli.Ccntmext) error {
 	SetRpcPort(ctx)
 	if !ctx.IsSet(utils.GetFlagName(utils.CcntmractAddrFlag)) {
-		fmt.Printf("Missing ccntmract address argument.\n")
+		PrintErrorMsg("Missing %s argument.", utils.CcntmractAddrFlag.Name)
 		cli.ShowSubcommandHelp(ctx)
 		return nil
 	}
 	ccntmractAddrStr := ctx.String(utils.GetFlagName(utils.CcntmractAddrFlag))
 	ccntmractAddr, err := common.AddressFromHexString(ccntmractAddrStr)
 	if err != nil {
-		return fmt.Errorf("Invalid ccntmract address error:%s", err)
+		return fmt.Errorf("invalid ccntmract address error:%s", err)
 	}
 
 	paramsStr := ctx.String(utils.GetFlagName(utils.CcntmractParamsFlag))
@@ -279,7 +295,7 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 	}
 
 	paramData, _ := json.Marshal(params)
-	fmt.Printf("Invoke:%x Params:%s\n", ccntmractAddr[:], paramData)
+	PrintInfoMsg("Invoke:%x Params:%s", ccntmractAddr[:], paramData)
 
 	if ctx.IsSet(utils.GetFlagName(utils.CcntmractPrepareInvokeFlag)) {
 		preResult, err := utils.PrepareInvokeNeoVMCcntmract(ccntmractAddr, params)
@@ -287,14 +303,14 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 			return fmt.Errorf("PrepareInvokeNeoVMSmartCcntmact error:%s", err)
 		}
 		if preResult.State == 0 {
-			return fmt.Errorf("Ccntmract invoke failed\n")
+			return fmt.Errorf("ccntmract invoke failed")
 		}
-		fmt.Printf("Ccntmract invoke successfully\n")
-		fmt.Printf("  Gaslimit:%d\n", preResult.Gas)
+		PrintInfoMsg("Ccntmract invoke successfully")
+		PrintInfoMsg("  Gas limit:%d", preResult.Gas)
 
 		rawReturnTypes := ctx.String(utils.GetFlagName(utils.CcntmractReturnTypeFlag))
 		if rawReturnTypes == "" {
-			fmt.Printf("  Return:%s (raw value)\n", preResult.Result)
+			PrintInfoMsg("  Return:%s (raw value)", preResult.Result)
 			return nil
 		}
 		values, err := utils.ParseReturnValue(preResult.Result, rawReturnTypes)
@@ -303,17 +319,17 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 		}
 		switch len(values) {
 		case 0:
-			fmt.Printf("  Return: nil\n")
+			PrintInfoMsg("  Return: nil")
 		case 1:
-			fmt.Printf("  Return:%+v\n", values[0])
+			PrintInfoMsg("  Return:%+v", values[0])
 		default:
-			fmt.Printf("  Return:%+v\n", values)
+			PrintInfoMsg("  Return:%+v", values)
 		}
 		return nil
 	}
 	signer, err := cmdcom.GetAccount(ctx)
 	if err != nil {
-		return fmt.Errorf("Get signer account error:%s", err)
+		return fmt.Errorf("get signer account error:%s", err)
 	}
 	gasPrice := ctx.Uint64(utils.GetFlagName(utils.TransactionGasPriceFlag))
 	gasLimit := ctx.Uint64(utils.GetFlagName(utils.TransactionGasLimitFlag))
@@ -327,11 +343,11 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 
 	txHash, err := utils.InvokeNeoVMCcntmract(gasPrice, gasLimit, signer, ccntmractAddr, params)
 	if err != nil {
-		return fmt.Errorf("Invoke NeoVM ccntmract error:%s", err)
+		return fmt.Errorf("invoke NeoVM ccntmract error:%s", err)
 	}
 
-	fmt.Printf("  TxHash:%s\n", txHash)
-	fmt.Printf("\nTip:\n")
-	fmt.Printf("  Using './cntmology info status %s' to query transaction status\n", txHash)
+	PrintInfoMsg("  TxHash:%s", txHash)
+	PrintInfoMsg("\nTips:")
+	PrintInfoMsg("  Using './cntmology info status %s' to query transaction status.", txHash)
 	return nil
 }

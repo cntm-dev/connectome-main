@@ -18,7 +18,7 @@
 package main
 
 import (
-	"fmt"
+	"github.com/cntmio/cntmology/cmd"
 	"github.com/cntmio/cntmology/cmd/abi"
 	cmdsvr "github.com/cntmio/cntmology/cmd/sigsvr"
 	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
@@ -105,7 +105,7 @@ func startSigSvr(ctx *cli.Ccntmext) {
 
 func main() {
 	if err := setupSigSvr().Run(os.Args); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		cmd.PrintErrorMsg(err.Error())
 		os.Exit(1)
 	}
 }

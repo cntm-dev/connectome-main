@@ -101,7 +101,11 @@ func RuntimeDeserialize(service *NeoVmService, engine *vm.ExecutionEngine) error
 func RuntimeNotify(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	item := vm.PopStackItem(engine)
 	ccntmext := service.CcntmextRef.CurrentCcntmext()
-	service.Notifications = append(service.Notifications, &event.NotifyEventInfo{CcntmractAddress: ccntmext.CcntmractAddress, States: scommon.ConvertNeoVmTypeHexString(item)})
+	states, err := scommon.ConvertNeoVmTypeHexString(item)
+	if err != nil {
+		return err
+	}
+	service.Notifications = append(service.Notifications, &event.NotifyEventInfo{CcntmractAddress: ccntmext.CcntmractAddress, States: states})
 	return nil
 }
 

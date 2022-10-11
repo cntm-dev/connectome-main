@@ -85,11 +85,11 @@ func CheckAssetAmount(asset string, amount uint64) error {
 	switch strings.ToLower(asset) {
 	case "cntm":
 		if amount > constants.cntm_TOTAL_SUPPLY {
-			return fmt.Errorf("Amount:%d larger than cntm total supply:%d", amount, constants.cntm_TOTAL_SUPPLY)
+			return fmt.Errorf("amount:%d larger than cntm total supply:%d", amount, constants.cntm_TOTAL_SUPPLY)
 		}
 	case "cntm":
 		if amount > constants.cntm_TOTAL_SUPPLY {
-			return fmt.Errorf("Amount:%d larger than cntm total supply:%d", amount, constants.cntm_TOTAL_SUPPLY)
+			return fmt.Errorf("amount:%d larger than cntm total supply:%d", amount, constants.cntm_TOTAL_SUPPLY)
 		}
 	default:
 		return fmt.Errorf("unknown asset:%s", asset)
