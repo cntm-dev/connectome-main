@@ -40,6 +40,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
 	cstates "github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/vm/wasmvm/exec"
+	"math/rand"
 	"sort"
 	"strconv"
 	"strings"
@@ -57,6 +58,10 @@ const (
 	ASSET_cntm = "cntm"
 	ASSET_cntm = "cntm"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 //Return balance of address in base58 code
 func GetBalance(address string) (*httpcom.BalanceOfRsp, error) {
@@ -201,18 +206,8 @@ func ApproveTx(gasPrice, gasLimit uint64, asset string, from, to string, amount 
 	if err != nil {
 		return nil, fmt.Errorf("build invoke code error:%s", err)
 	}
-	invokePayload := &payload.InvokeCode{
-		Code: invokeCode,
-	}
-	tx := &types.MutableTransaction{
-		GasPrice: gasPrice,
-		GasLimit: gasLimit,
-		TxType:   types.Invoke,
-		Nonce:    uint32(time.Now().Unix()),
-		Payload:  invokePayload,
-		Sigs:     make([]types.Sig, 0, 0),
-	}
-	return tx, nil
+	mutableTx := NewInvokeTransaction(gasPrice, gasLimit, invokeCode)
+	return mutableTx, nil
 }
 
 func TransferTx(gasPrice, gasLimit uint64, asset, from, to string, amount uint64) (*types.MutableTransaction, error) {
@@ -246,18 +241,8 @@ func TransferTx(gasPrice, gasLimit uint64, asset, from, to string, amount uint64
 	if err != nil {
 		return nil, fmt.Errorf("build invoke code error:%s", err)
 	}
-	invokePayload := &payload.InvokeCode{
-		Code: invokeCode,
-	}
-	tx := &types.MutableTransaction{
-		GasPrice: gasPrice,
-		GasLimit: gasLimit,
-		TxType:   types.Invoke,
-		Nonce:    uint32(time.Now().Unix()),
-		Payload:  invokePayload,
-		Sigs:     make([]types.Sig, 0, 0),
-	}
-	return tx, nil
+	mutableTx := NewInvokeTransaction(gasPrice, gasLimit, invokeCode)
+	return mutableTx, nil
 }
 
 func TransferFromTx(gasPrice, gasLimit uint64, asset, sender, from, to string, amount uint64) (*types.MutableTransaction, error) {
@@ -295,18 +280,24 @@ func TransferFromTx(gasPrice, gasLimit uint64, asset, sender, from, to string, a
 	if err != nil {
 		return nil, fmt.Errorf("build invoke code error:%s", err)
 	}
+	mutableTx := NewInvokeTransaction(gasPrice, gasLimit, invokeCode)
+	return mutableTx, nil
+}
+
+//NewInvokeTransaction return smart ccntmract invoke transaction
+func NewInvokeTransaction(gasPrice, gasLimit uint64, invokeCode []byte) *types.MutableTransaction {
 	invokePayload := &payload.InvokeCode{
 		Code: invokeCode,
 	}
-	mutable := &types.MutableTransaction{
+	tx := &types.MutableTransaction{
 		GasPrice: gasPrice,
 		GasLimit: gasLimit,
 		TxType:   types.Invoke,
-		Nonce:    uint32(time.Now().Unix()),
+		Nonce:    rand.Uint32(),
 		Payload:  invokePayload,
 		Sigs:     make([]types.Sig, 0, 0),
 	}
-	return mutable, nil
+	return tx
 }
 
 func SignTransaction(signer *account.Account, tx *types.MutableTransaction) error {

@@ -11,13 +11,23 @@ English | [中文](README_CN.md)
 
 Welcome to Ontology's source code repository!
 
-Ontology is dedicated to creating a modularized, freely configurable, interoperable cross-chain, high-performance, and horizcntmally scalable blockchain infrastructure system. Ontology makes deploying and invoking decentralized applications easier.
+Ontology is dedicated to develop a high-performance blockchain infrastructure which is customizable to different business requirements. 
 
-The code is currently alpha quality, but it is in the process of rapid development. The master code may be unstable; stable versions can be downloaded in the release page.
+Prerequisites for getting started with development on the Ontology networks are:
 
-The public test network is described below. We sincerely welcome and hope more developers join Ontology.
+- Mainstream coding and development experience
+- Understanding of your business scenario/requirements
+- NO need for previous Blockchain Engineer experience
 
-## Features
+The Ontology core tech team, the community and the ecosystem can all support you in development. MainNet, TestNet, SmartX and a Docker imange for Ontology, SmartX and Ontology Explorer combined makes it easy to start.
+
+Ontology makes getting started easier!
+
+The code is currently Alpha phase of the release life cycle, but rapidly under development for Beta. The master code may be unstable, but stable versions can be found under the [release page](https://github.com/cntmio/cntmology/releases).
+
+We sincerely welcome developers to Ontology.
+
+## Features 
 
 - Scalable lightweight universal smart ccntmract
 - Scalable WASM ccntmract support
@@ -59,10 +69,11 @@ The requirements to build Ontology are:
 - Golang supported operating system
 
 ## Get Ontology
+
 ### Get from release
 - You can download latest cntmology binary file with ` curl https://dev.cntm.io/cntmology_install | sh `.
 
-- You can download other version at [release page](https://github.com/cntmio/cntmology/releases).
+- You can download other versions at [release page](https://github.com/cntmio/cntmology/releases).
 
 ### Get from source code
 
@@ -91,29 +102,37 @@ $ make all
 After building the source code sucessfully, you should see two executable programs:
 
 - `cntmology`: the node program/command line program for node ccntmrol
-- `tools/sigsvr`: (optional)Ontology Signature Server - sigsvr is a rpc server for signing transactions for some special requirement.detail docs can be reference at [link](./docs/specifications/sigsvr.md)
+- `tools/sigsvr`: (optional) Ontology Signature Server - sigsvr is a rpc server for signing transactions for some special requirements. Detailed docs can be found at [link](https://github.com/cntmio/documentation/blob/master/docs/pages/doc_en/Ontology/sigsvr_en.md)
 
 ## Run cntmology
 
-### Mainnet sync node
+You can run Ontology in four different modes:
 
-Run cntmology straightly
+1) MainNet (./cntmology)
+2) TestNet (./cntmology --networkid 2)
+3) Testmode (./cntmology --testmode)
+4) Docker
+
+E.g. for Windows (64-bit), use command promt and cd to the dirctory where you installed the Ontology release, then type `start cntmology-windows-amd64.exe --networkid 2`. This will sync to TestNet and you can explore further by the help command `cntmology-windows-amd64.exe --networkid 2 help`.
+
+### MainNet sync node
+
+Run cntmology directly
 
    ```
 	./cntmology
    ```
-Then you can connect to cntmology mainnet.
+Then you can connect to cntmology MainNet.
 
-### Public test network Polaris sync node
+### Public test network Polaris sync node (TestNet)
 
-Run cntmology straightly
+Run cntmology directly
 
    ```
 	./cntmology --networkid 2
    ```
    
-Then you can connect to cntmology public test network.
-
+Then you can connect to cntmology TestNet
 
 ### Testmode
 
@@ -136,15 +155,15 @@ Here's a example of single-host configuration:
 
 ### Run in docker
 
-Please ensure there are docker environment in your machine.
+Please ensure there is a docker environment in your machine.
 
 1. make docker image
 
-    - In the root directory of source code，run`make docker`, it will make cntmology image in docker.
+    - In the root directory of source code, run `make docker`, it will make cntmology image in docker.
 
 2. run cntmology image
 
-    - Use command `docker run cntmio/cntmology`to run cntmology；
+    - Use command `docker run cntmio/cntmology` to run cntmology；
 
     - If you need to allow interactive keyboard input while the image is running, you can use the `docker run -ti cntmio/cntmology` command to start the image;
 
@@ -169,17 +188,17 @@ Transfer cntm
   Amount:10
   TxHash:437bff5dee9a1894ad421d55b8c70a2b7f34c574de0225046531e32faa1f94ce
 ```
-TxHash is the transfer transaction hash, we can query transfer result by txhash.
-Because of generate block time, the transfer transaction will not execute befer at least generate one block.
+TxHash is the transfer transaction hash, and we can query a transfer result by the TxHash.
+Due to block time, the transfer transaction will not be executed before the block is generated and added.
 
 If you want to transfer cntm, just add --asset=cntm flag.
 
-Note that cntm hasn't decimal, and cntm has 9 decimal.
+Note that cntm is an integer and has no decimals, whereas cntm has 9 decimals. For detailed info please read [Everything you need to know about cntm](https://medium.com/cntmologynetwork/everything-you-need-to-know-about-cntm-582ed216b870)
 
 ```shell
 ./cntmology asset transfer --from=ARVVxBPGySL56CvSSWfjRVVyZYpNZ7zp48 --to=ARVVxBPGySL56CvSSWfjRVVyZYpNZ7zp48 --amount=95.479777254 --asset=cntm
 ```
-If transfer asset successd, the result will show as follow:
+If transfer of the asset succeed, the result will show as follow:
 
 ```shell
 Transfer cntm
@@ -189,7 +208,7 @@ Transfer cntm
   TxHash:e4245d83607e6644c360b6007045017b5c5d89d9f0f5a9c3b37801018f789cc3
 ```
 
-Note that all the place that use address of account, can use index or label of account. Index is the sequence number of account in the wallet, and the index start from 1. Label is the unique alias of account in wallet.
+Please note, when you use the address of an account, you can use index or label of the account instead. Index is the sequence number of a particular account in the wallet. The index starts from 1, and the label is the unique alias of an account in the wallet.
 
 ```shell
 ./cntmology asset transfer --from=1 --to=2 --amount=10
@@ -204,10 +223,10 @@ Note that all the place that use address of account, can use index or label of a
 For Example:
 
 ```shell
-./cntmology asset status --hash=10dede8b57ce0b272b4d51ab282aaf0988a4005e980d25bd49685005cc76ba7f
+./cntmology info status 10dede8b57ce0b272b4d51ab282aaf0988a4005e980d25bd49685005cc76ba7f
 ```
 
-result：
+Result:
 
 ```shell
 Transaction:transfer success
@@ -240,11 +259,11 @@ BalanceOf:ARVVxBPGySL56CvSSWfjRVVyZYpNZ7zp48
   cntm:28165900
 ```
 
-Further examples you can reference at [documentation](https://cntmio.github.io/documentation/)
+For further examples, please refer to [CLI user guide](https://cntmio.github.io/documentation/cli_user_guide_en.html)
 
 ## Ccntmributions
 
-Please open a pull request with a signed commit. We appreciate your help! You can also send your code as emails to the developer mailing list. You're welcome to join the Ontology mailing list or developer forum.
+Please open a pull request with a signed commit. We appreciate your help! You can also send your code as email to the developer mailing list. You're welcome to join the Ontology mailing list or developer forum.
 
 Please provide detailed submission information when you want to ccntmribute code for this project. The format is as follows:
 

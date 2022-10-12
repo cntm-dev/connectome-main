@@ -96,6 +96,7 @@ There are some description of parameter used in rpc:
 | [getunboundcntm](#19-getunboundcntm) | address | return unbound cntm |  |
 | [getblocktxsbyheight](#20-getblocktxsbyheight) | height | return transaction hashes |  |
 | [getnetworkid](#21-getnetworkid) |  | Get the network id |  |
+| [getgrantcntm](#22-getgrantcntm) |  | Get grant cntm |  |
 
 ### 1. getbestblockhash
 
@@ -1066,6 +1067,35 @@ Response:
   "jsonrpc": "2.0",
   "id": 3,
   "result": 1
+}
+```
+
+#### 22. getgrantcntm
+
+get grant cntm.
+
+#### Example
+
+Request:
+
+```
+{
+  "jsonrpc": "2.0",
+  "method": "getgrantcntm",
+  "params": ["AKDFapcoUhewN9Kaj6XhHusurfHzUiZqUA"],
+  "id": 3
+}
+```
+
+Response:
+
+```
+{
+  "desc":"SUCCESS",
+  "error":0,
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": 4995625
 }
 ```
 

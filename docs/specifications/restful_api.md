@@ -46,7 +46,7 @@ This document describes the restful api format for the http/https used in the On
 | [get_version](#20-get_version) |  GET /api/v1/version | return the version of cntmology |
 | [post_raw_tx](#21-post_raw_tx) | post /api/v1/transaction?preExec=0 | send transaction to cntmology network |
 | [get_networkid](#22-get_networkid) |  GET /api/v1/networkid | return the networkid |
-
+| [get_grantcntm](#23-get_grantcntm) |  GET /api/v1/grantcntm/:addr | get grant cntm |
 
 ### 1 get_conn_count
 
@@ -846,6 +846,29 @@ curl -i http://localhost:20334/api/v1/networkid
     "Error": 0,
     "Version": "1.0.0",
     "Result": 1
+}
+```
+
+### 23 get_grantcntm
+
+get grant cntm.
+
+GET
+```
+/api/v1/grantcntm/:addr
+```
+#### Request Example:
+```
+curl -i http://localhost:20334/api/v1/grantcntm/AKDFapcoUhewN9Kaj6XhHusurfHzUiZqUA
+```
+#### Response
+```
+{
+    "Action": "getgrantcntm",
+    "Desc": "SUCCESS",
+    "Error": 0,
+    "Version": "1.0.0",
+    "Result": 4995625
 }
 ```
 

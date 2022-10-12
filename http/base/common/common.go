@@ -25,12 +25,16 @@ import (
 	"fmt"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/common/serialization"
+	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
 	bactor "github.com/cntmio/cntmology/http/base/actor"
 	"github.com/cntmio/cntmology/smartccntmract/event"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	svrneovm "github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	"github.com/cntmio/cntmology/vm/neovm"
@@ -270,6 +274,24 @@ func GetBalance(address common.Address) (*BalanceOfRsp, error) {
 		Ont: fmt.Sprintf("%d", cntm),
 		Ong: fmt.Sprintf("%d", cntm),
 	}, nil
+}
+
+func GetGrantOng(addr common.Address) (string, error) {
+	key := append([]byte(cntm.UNBOUND_TIME_OFFSET), addr[:]...)
+	value, err := ledger.DefLedger.GetStorageItem(utils.OntCcntmractAddress, key)
+	if err != nil {
+		value = []byte{0, 0, 0, 0}
+	}
+	v, err := serialization.ReadUint32(bytes.NewBuffer(value))
+	if err != nil {
+		return fmt.Sprintf("%v", 0), err
+	}
+	cntm, err := GetCcntmractBalance(0, utils.OntCcntmractAddress, addr)
+	if err != nil {
+		return fmt.Sprintf("%v", 0), err
+	}
+	boundcntm := utils.CalcUnbindOng(cntm, v, uint32(time.Now().Unix())-constants.GENESIS_BLOCK_TIMESTAMP)
+	return fmt.Sprintf("%v", boundcntm), nil
 }
 
 func GetAllowance(asset string, from, to common.Address) (string, error) {
