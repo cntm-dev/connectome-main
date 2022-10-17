@@ -34,6 +34,7 @@ import (
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/signature"
 	"github.com/cntmio/cntmology/core/states"
+	scommon "github.com/cntmio/cntmology/core/store/common"
 	gov "github.com/cntmio/cntmology/smartccntmract/service/native/governance"
 	nutils "github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 )
@@ -126,28 +127,65 @@ func verifyVrf(pk keypair.PublicKey, blkNum uint32, prevVrf, newVrf, proof []byt
 	return nil
 }
 func GetVbftConfigInfo() (*config.VBFTConfig, error) {
+	//get governance view
+	goveranceview, err := GetGovernanceView()
+	if err != nil {
+		return nil, err
+	}
+
+	//get preConfig
 	storageKey := &states.StorageKey{
 		CcntmractAddress: nutils.GovernanceCcntmractAddress,
-		Key:             append([]byte(gov.VBFT_CONFIG)),
+		Key:             append([]byte(gov.PRE_CONFIG)),
 	}
+	preCfg := new(gov.PreConfig)
 	data, err := ledger.DefLedger.GetStorageItem(storageKey.CcntmractAddress, storageKey.Key)
-	if err != nil {
+	if err != nil && err != scommon.ErrNotFound {
 		return nil, err
 	}
-	cfg := new(gov.Configuration)
-	err = cfg.Deserialize(bytes.NewBuffer(data))
-	if err != nil {
-		return nil, err
+	if data != nil {
+		err = preCfg.Deserialize(bytes.NewBuffer(data))
+		if err != nil {
+			return nil, err
+		}
 	}
-	chainconfig := &config.VBFTConfig{
-		N:                    uint32(cfg.N),
-		C:                    uint32(cfg.C),
-		K:                    uint32(cfg.K),
-		L:                    uint32(cfg.L),
-		BlockMsgDelay:        uint32(cfg.BlockMsgDelay),
-		HashMsgDelay:         uint32(cfg.HashMsgDelay),
-		PeerHandshakeTimeout: uint32(cfg.PeerHandshakeTimeout),
-		MaxBlockChangeView:   uint32(cfg.MaxBlockChangeView),
+
+	chainconfig := new(config.VBFTConfig)
+	if preCfg.SetView == goveranceview.View {
+		chainconfig = &config.VBFTConfig{
+			N:                    uint32(preCfg.Configuration.N),
+			C:                    uint32(preCfg.Configuration.C),
+			K:                    uint32(preCfg.Configuration.K),
+			L:                    uint32(preCfg.Configuration.L),
+			BlockMsgDelay:        uint32(preCfg.Configuration.BlockMsgDelay),
+			HashMsgDelay:         uint32(preCfg.Configuration.HashMsgDelay),
+			PeerHandshakeTimeout: uint32(preCfg.Configuration.PeerHandshakeTimeout),
+			MaxBlockChangeView:   uint32(preCfg.Configuration.MaxBlockChangeView),
+		}
+	} else {
+		storageKey := &states.StorageKey{
+			CcntmractAddress: nutils.GovernanceCcntmractAddress,
+			Key:             append([]byte(gov.VBFT_CONFIG)),
+		}
+		data, err := ledger.DefLedger.GetStorageItem(storageKey.CcntmractAddress, storageKey.Key)
+		if err != nil {
+			return nil, err
+		}
+		cfg := new(gov.Configuration)
+		err = cfg.Deserialize(bytes.NewBuffer(data))
+		if err != nil {
+			return nil, err
+		}
+		chainconfig = &config.VBFTConfig{
+			N:                    uint32(cfg.N),
+			C:                    uint32(cfg.C),
+			K:                    uint32(cfg.K),
+			L:                    uint32(cfg.L),
+			BlockMsgDelay:        uint32(cfg.BlockMsgDelay),
+			HashMsgDelay:         uint32(cfg.HashMsgDelay),
+			PeerHandshakeTimeout: uint32(cfg.PeerHandshakeTimeout),
+			MaxBlockChangeView:   uint32(cfg.MaxBlockChangeView),
+		}
 	}
 	return chainconfig, nil
 }

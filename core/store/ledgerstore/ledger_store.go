@@ -52,6 +52,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	sstate "github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
+	"time"
 )
 
 const (
@@ -844,15 +845,11 @@ func (this *LedgerStoreImp) GetEventNotifyByBlock(height uint32) ([]*event.Execu
 
 //PreExecuteCcntmract return the result of smart ccntmract execution without commit to store
 func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.PreExecResult, error) {
-	header, err := this.GetHeaderByHeight(this.GetCurrentBlockHeight())
 	stf := &sstate.PreExecResult{State: event.CcntmRACT_STATE_FAIL, Gas: neovm.MIN_TRANSACTION_GAS, Result: nil}
-	if err != nil {
-		return stf, err
-	}
 
 	config := &smartccntmract.Config{
-		Time:   header.Timestamp,
-		Height: header.Height,
+		Time:   uint32(time.Now().Unix()),
+		Height: this.GetCurrentBlockHeight() + 1,
 		Tx:     tx,
 	}
 
