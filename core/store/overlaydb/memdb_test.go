@@ -15,31 +15,23 @@
  * You should have received a copy of the GNU Lesser General Public License
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
-package states
+
+package overlaydb
 
 import (
-	"bytes"
+	"github.com/stretchr/testify/assert"
 	"testing"
-
-	"github.com/cntmio/cntmology/common"
 )
 
-func TestCcntmract_Serialize_Deserialize(t *testing.T) {
-	addr := common.AddressFromVmCode([]byte{1})
-
-	c := &Ccntmract{
-		Version: 0,
-		Address: addr,
-		Method:  "init",
-		Args:    []byte{2},
-	}
-	bf := new(bytes.Buffer)
-	if err := c.Serialize(bf); err != nil {
-		t.Fatalf("Ccntmract serialize error: %v", err)
-	}
-
-	v := new(Ccntmract)
-	if err := v.Deserialize(bf); err != nil {
-		t.Fatalf("Ccntmract deserialize error: %v", err)
-	}
+func TestIter(t *testing.T) {
+	db := NewMemDB(0)
+	db.Put([]byte("aaa"), []byte("bbb"))
+	iter := db.NewIterator(nil)
+	assert.Equal(t, iter.First(), true)
+	assert.Equal(t, iter.Last(), true)
+	db.Delete([]byte("aaa"))
+	assert.Equal(t, iter.First(), true)
+	assert.Equal(t, len(iter.Value()), 0)
+	assert.Equal(t, iter.Last(), true)
+	assert.Equal(t, len(iter.Value()), 0)
 }

@@ -25,10 +25,8 @@ import (
 	"github.com/cntmio/cntmology-crypto/keypair"
 	scommon "github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/signature"
 	"github.com/cntmio/cntmology/core/store"
-	"github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
@@ -116,7 +114,7 @@ type Service struct {
 // NeoVmService is a struct for smart ccntmract provide interop service
 type NeoVmService struct {
 	Store         store.LedgerStore
-	CloneCache    *storage.CloneCache
+	CacheDB       *storage.CacheDB
 	CcntmextRef    ccntmext.CcntmextRef
 	Notifications []*event.NotifyEventInfo
 	Code          []byte
@@ -131,7 +129,7 @@ func (this *NeoVmService) Invoke() (interface{}, error) {
 	if len(this.Code) == 0 {
 		return nil, ERR_EXECUTE_CODE
 	}
-	this.CcntmextRef.PushCcntmext(&ccntmext.Ccntmext{CcntmractAddress: types.AddressFromVmCode(this.Code), Code: this.Code})
+	this.CcntmextRef.PushCcntmext(&ccntmext.Ccntmext{CcntmractAddress: scommon.AddressFromVmCode(this.Code), Code: this.Code})
 	this.Engine.PushCcntmext(vm.NewExecutionCcntmext(this.Engine, this.Code))
 	for {
 		//check the execution step count
@@ -213,7 +211,11 @@ func (this *NeoVmService) Invoke() (interface{}, error) {
 					return nil, fmt.Errorf("[Appcall] pop ccntmract address len != 20:%x", address)
 				}
 			}
-			code, err := this.getCcntmract(address)
+			addr, err := scommon.AddressParseFromBytes(address)
+			if err != nil {
+				return nil, err
+			}
+			code, err := this.getCcntmract(addr)
 			if err != nil {
 				return nil, err
 			}
@@ -271,20 +273,16 @@ func (this *NeoVmService) SystemCall(engine *vm.ExecutionEngine) error {
 	return nil
 }
 
-func (this *NeoVmService) getCcntmract(address []byte) ([]byte, error) {
-	item, err := this.CloneCache.Store.TryGet(common.ST_CcntmRACT, address)
+func (this *NeoVmService) getCcntmract(address scommon.Address) ([]byte, error) {
+	dep, err := this.CacheDB.GetCcntmract(address)
 	if err != nil {
 		return nil, errors.NewErr("[getCcntmract] Get ccntmract ccntmext error!")
 	}
-	log.Debugf("invoke ccntmract address:%x", scommon.ToArrayReverse(address))
-	if item == nil {
+	log.Debugf("invoke ccntmract address:%s", address.ToHexString())
+	if dep == nil {
 		return nil, CcntmRACT_NOT_EXIST
 	}
-	ccntmract, ok := item.Value.(*payload.DeployCode)
-	if !ok {
-		return nil, DEPLOYCODE_TYPE_ERROR
-	}
-	return ccntmract.Code, nil
+	return dep.Code, nil
 }
 
 func checkStackSize(engine *vm.ExecutionEngine) bool {

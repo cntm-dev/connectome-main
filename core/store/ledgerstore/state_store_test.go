@@ -23,11 +23,11 @@ import (
 
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/account"
+	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/states"
 	scommon "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/core/store/statestore"
-	"github.com/cntmio/cntmology/core/types"
 )
 
 func TestCcntmractState(t *testing.T) {
@@ -48,7 +48,7 @@ func TestCcntmractState(t *testing.T) {
 		Description: "",
 	}
 
-	address := types.AddressFromVmCode(testCode)
+	address := common.AddressFromVmCode(testCode)
 	err = batch.TryGetOrAdd(
 		scommon.ST_CcntmRACT,
 		address[:],

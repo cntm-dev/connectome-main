@@ -23,8 +23,6 @@ import (
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/payload"
-	scommon "github.com/cntmio/cntmology/core/store/common"
-	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
 	vm "github.com/cntmio/cntmology/vm/neovm"
 )
@@ -35,12 +33,16 @@ func CcntmractCreate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractCreate] ccntmract parameters invalid!")
 	}
-	ccntmractAddress := types.AddressFromVmCode(ccntmract.Code)
-	state, err := service.CloneCache.GetOrAdd(scommon.ST_CcntmRACT, ccntmractAddress[:], ccntmract)
+	ccntmractAddress := ccntmract.Address()
+	dep, err := service.CacheDB.GetCcntmract(ccntmractAddress)
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractCreate] GetOrAdd error!")
 	}
-	vm.PushData(engine, state)
+	if dep == nil {
+		service.CacheDB.PutCcntmract(ccntmract)
+		dep = ccntmract
+	}
+	vm.PushData(engine, dep)
 	return nil
 }
 
@@ -50,22 +52,31 @@ func CcntmractMigrate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractMigrate] ccntmract parameters invalid!")
 	}
-	ccntmractAddress := types.AddressFromVmCode(ccntmract.Code)
+	newAddr := ccntmract.Address()
 
-	if err := isCcntmractExist(service, ccntmractAddress); err != nil {
+	if err := isCcntmractExist(service, newAddr); err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractMigrate] ccntmract invalid!")
 	}
 	ccntmext := service.CcntmextRef.CurrentCcntmext()
+	oldAddr := ccntmext.CcntmractAddress
 
-	service.CloneCache.Add(scommon.ST_CcntmRACT, ccntmractAddress[:], ccntmract)
-	items, err := storeMigration(service, ccntmext.CcntmractAddress, ccntmractAddress)
-	if err != nil {
-		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractMigrate] ccntmract store migration error!")
+	service.CacheDB.PutCcntmract(ccntmract)
+	service.CacheDB.DeleteCcntmract(oldAddr)
+
+	iter := service.CacheDB.NewIterator(oldAddr[:])
+	for has := iter.First(); has; has = iter.Next() {
+		key := iter.Key()
+		val := iter.Value()
+
+		newKey := genStorageKey(newAddr, key[20:])
+		service.CacheDB.Put(newKey, val)
+		service.CacheDB.Delete(key)
 	}
-	service.CloneCache.Delete(scommon.ST_CcntmRACT, ccntmext.CcntmractAddress[:])
-	for _, v := range items {
-		service.CloneCache.Delete(scommon.ST_STORAGE, []byte(v.Key))
+	iter.Release()
+	if err := iter.Error(); err != nil {
+		return err
 	}
+
 	vm.PushData(engine, ccntmract)
 	return nil
 }
@@ -109,8 +120,8 @@ func CcntmractGetStorageCcntmext(service *NeoVmService, engine *vm.ExecutionEngi
 	if !ok {
 		return errors.NewErr("[GetStorageCcntmext] Pop data not ccntmract!")
 	}
-	address := types.AddressFromVmCode(ccntmractState.Code)
-	item, err := service.CloneCache.Store.TryGet(scommon.ST_CcntmRACT, address[:])
+	address := ccntmractState.Address()
+	item, err := service.CacheDB.GetCcntmract(address)
 	if err != nil || item == nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[GetStorageCcntmext] Get StorageCcntmext nil")
 	}
@@ -194,21 +205,10 @@ func isCcntmractParamValid(engine *vm.ExecutionEngine) (*payload.DeployCode, err
 }
 
 func isCcntmractExist(service *NeoVmService, ccntmractAddress common.Address) error {
-	item, err := service.CloneCache.Get(scommon.ST_CcntmRACT, ccntmractAddress[:])
+	item, err := service.CacheDB.GetCcntmract(ccntmractAddress)
 
 	if err != nil || item != nil {
 		return fmt.Errorf("[Ccntmract] Get ccntmract %x error or ccntmract exist!", ccntmractAddress)
 	}
 	return nil
-}
-
-func storeMigration(service *NeoVmService, oldAddr common.Address, newAddr common.Address) ([]*scommon.StateItem, error) {
-	stateValues, err := service.CloneCache.Store.Find(scommon.ST_STORAGE, oldAddr[:])
-	if err != nil {
-		return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[Ccntmract] Find error!")
-	}
-	for _, v := range stateValues {
-		service.CloneCache.Add(scommon.ST_STORAGE, getStorageKey(newAddr, []byte(v.Key)[20:]), v.Value)
-	}
-	return stateValues, nil
 }

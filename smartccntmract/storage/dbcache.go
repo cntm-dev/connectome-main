@@ -33,7 +33,7 @@ type StateItem struct {
 
 type Memory map[string]*StateItem
 
-// CloneCache is smart ccntmract execute cache, it ccntmain transaction cache and block cache
+// CacheDB is smart ccntmract execute cache, it ccntmain transaction cache and block cache
 // When smart ccntmract execute finish, need to commit transaction cache to block cache
 type CloneCache struct {
 	Memory Memory

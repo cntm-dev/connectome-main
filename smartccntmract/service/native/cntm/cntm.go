@@ -101,10 +101,10 @@ func OntInit(native *native.NativeService) ([]byte, error) {
 	for addr, val := range distribute {
 		balanceKey := GenBalanceKey(ccntmract, addr)
 		item := utils.GenUInt64StorageItem(val)
-		native.CloneCache.Add(scommon.ST_STORAGE, balanceKey, item)
+		native.CacheDB.Put(balanceKey, item.ToArray())
 		AddNotifications(native, ccntmract, &State{To: addr, Value: val})
 	}
-	native.CloneCache.Add(scommon.ST_STORAGE, GenTotalSupplyKey(ccntmract), utils.GenUInt64StorageItem(constants.cntm_TOTAL_SUPPLY))
+	native.CacheDB.Put(GenTotalSupplyKey(ccntmract), utils.GenUInt64StorageItem(constants.cntm_TOTAL_SUPPLY).ToArray())
 
 	return utils.BYTE_TRUE, nil
 }
@@ -181,7 +181,7 @@ func OntApprove(native *native.NativeService) ([]byte, error) {
 		return utils.BYTE_FALSE, errors.NewErr("authentication failed!")
 	}
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-	native.CloneCache.Add(scommon.ST_STORAGE, GenApproveKey(ccntmract, state.From, state.To), utils.GenUInt64StorageItem(state.Value))
+	native.CacheDB.Put(GenApproveKey(ccntmract, state.From, state.To), utils.GenUInt64StorageItem(state.Value).ToArray())
 	return utils.BYTE_TRUE, nil
 }
 
@@ -268,7 +268,7 @@ func grantOng(native *native.NativeService, ccntmract, address common.Address, b
 		}
 	}
 
-	native.CloneCache.Add(scommon.ST_STORAGE, genAddressUnboundOffsetKey(ccntmract, address), utils.GenUInt32StorageItem(endOffset))
+	native.CacheDB.Put(genAddressUnboundOffsetKey(ccntmract, address), utils.GenUInt32StorageItem(endOffset).ToArray())
 	return nil
 }
 

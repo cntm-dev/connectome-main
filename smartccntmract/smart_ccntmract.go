@@ -38,9 +38,9 @@ const (
 
 // SmartCcntmract describe smart ccntmract execute engine
 type SmartCcntmract struct {
-	Ccntmexts      []*ccntmext.Ccntmext  // all execute smart ccntmract ccntmext
-	CloneCache    *storage.CloneCache // state cache
-	Store         store.LedgerStore   // ledger store
+	Ccntmexts      []*ccntmext.Ccntmext // all execute smart ccntmract ccntmext
+	CacheDB       *storage.CacheDB   // state cache
+	Store         store.LedgerStore  // ledger store
 	Config        *Config
 	Notifications []*event.NotifyEventInfo // all execute smart ccntmract event notify info
 	Gas           uint64
@@ -126,7 +126,7 @@ func (this *SmartCcntmract) NewExecuteEngine(code []byte) (ccntmext.Engine, erro
 	}
 	service := &neovm.NeoVmService{
 		Store:      this.Store,
-		CloneCache: this.CloneCache,
+		CacheDB:    this.CacheDB,
 		CcntmextRef: this,
 		Code:       code,
 		Tx:         this.Config.Tx,
@@ -142,7 +142,7 @@ func (this *SmartCcntmract) NewNativeService() (*native.NativeService, error) {
 		return nil, fmt.Errorf("%s", "engine over max limit!")
 	}
 	service := &native.NativeService{
-		CloneCache: this.CloneCache,
+		CacheDB:    this.CacheDB,
 		CcntmextRef: this,
 		Tx:         this.Config.Tx,
 		Time:       this.Config.Time,

@@ -19,12 +19,9 @@
 package neovm
 
 import (
-	"bytes"
-
 	"fmt"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/states"
-	scommon "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/errors"
 	vm "github.com/cntmio/cntmology/vm/neovm"
 )
@@ -57,7 +54,8 @@ func StoragePut(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if err != nil {
 		return err
 	}
-	service.CloneCache.Add(scommon.ST_STORAGE, getStorageKey(ccntmext.Address, key), &states.StorageItem{Value: value})
+
+	service.CacheDB.Put(genStorageKey(ccntmext.Address, key), states.GenRawStorageItem(value))
 	return nil
 }
 
@@ -80,7 +78,7 @@ func StorageDelete(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if err != nil {
 		return err
 	}
-	service.CloneCache.Delete(scommon.ST_STORAGE, getStorageKey(ccntmext.Address, ba))
+	service.CacheDB.Delete(genStorageKey(ccntmext.Address, ba))
 
 	return nil
 }
@@ -98,15 +96,20 @@ func StorageGet(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if err != nil {
 		return err
 	}
-	item, err := service.CloneCache.Get(scommon.ST_STORAGE, getStorageKey(ccntmext.Address, ba))
+
+	raw, err := service.CacheDB.Get(genStorageKey(ccntmext.Address, ba))
 	if err != nil {
 		return err
 	}
 
-	if item == nil {
+	if len(raw) == 0 {
 		vm.PushData(engine, []byte{})
 	} else {
-		vm.PushData(engine, item.(*states.StorageItem).Value)
+		value, err := states.GetValueFromRawStorageItem(raw)
+		if err != nil {
+			return err
+		}
+		vm.PushData(engine, value)
 	}
 	return nil
 }
@@ -125,7 +128,7 @@ func StorageGetReadOnlyCcntmext(service *NeoVmService, engine *vm.ExecutionEngin
 }
 
 func checkStorageCcntmext(service *NeoVmService, ccntmext *StorageCcntmext) error {
-	item, err := service.CloneCache.Get(scommon.ST_CcntmRACT, ccntmext.Address[:])
+	item, err := service.CacheDB.GetCcntmract(ccntmext.Address)
 	if err != nil || item == nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CheckStorageCcntmext] get ccntmext fail!")
 	}
@@ -147,9 +150,9 @@ func getCcntmext(engine *vm.ExecutionEngine) (*StorageCcntmext, error) {
 	return ccntmext, nil
 }
 
-func getStorageKey(address common.Address, key []byte) []byte {
-	buf := bytes.NewBuffer(nil)
-	buf.Write(address[:])
-	buf.Write(key)
-	return buf.Bytes()
+func genStorageKey(address common.Address, key []byte) []byte {
+	res := make([]byte, 0, len(address[:])+len(key))
+	res = append(res, address[:]...)
+	res = append(res, key...)
+	return res
 }

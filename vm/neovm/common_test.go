@@ -15,46 +15,33 @@
  * You should have received a copy of the GNU Lesser General Public License
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-package leveldbstore
+package neovm
 
 import (
-	"github.com/syndtr/goleveldb/leveldb/iterator"
+	"crypto/sha256"
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/ripemd160"
+	"io"
+	"testing"
 )
 
-//Iterator of leveldb. Warp struct of leveldb iterator
-type Iterator struct {
-	iter iterator.Iterator
-}
+func TestHash(t *testing.T) {
+	engine := NewExecutionEngine()
+	engine.OpCode = HASH160
 
-func (it *Iterator) Next() bool {
-	return it.iter.Next()
-}
+	data := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+	hd160 := Hash(data, engine)
 
-func (it *Iterator) Prev() bool {
-	return it.iter.Prev()
-}
+	temp := sha256.Sum256(data)
+	md := ripemd160.New()
+	io.WriteString(md, string(temp[:]))
+	assert.Equal(t, hd160, md.Sum(nil))
 
-func (it *Iterator) First() bool {
-	return it.iter.First()
-}
+	temp1 := sha256.Sum256(data)
+	data1 := sha256.Sum256(temp1[:])
 
-func (it *Iterator) Last() bool {
-	return it.iter.Last()
-}
+	engine.OpCode = HASH256
+	hd256 := Hash(data, engine)
 
-func (it *Iterator) Seek(key []byte) bool {
-	return it.iter.Seek(key)
-}
-
-func (it *Iterator) Key() []byte {
-	return it.iter.Key()
-}
-
-func (it *Iterator) Value() []byte {
-	return it.iter.Value()
-}
-
-func (it *Iterator) Release() {
-	it.iter.Release()
+	assert.Equal(t, data1[:], hd256)
 }

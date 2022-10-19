@@ -21,23 +21,22 @@ package actor
 
 import (
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 )
 
 func updateNativeSCAddr(hash common.Address) common.Address {
 	if hash == utils.OntCcntmractAddress {
-		hash = types.AddressFromVmCode(utils.OntCcntmractAddress[:])
+		hash = common.AddressFromVmCode(utils.OntCcntmractAddress[:])
 	} else if hash == utils.OngCcntmractAddress {
-		hash = types.AddressFromVmCode(utils.OngCcntmractAddress[:])
+		hash = common.AddressFromVmCode(utils.OngCcntmractAddress[:])
 	} else if hash == utils.OntIDCcntmractAddress {
-		hash = types.AddressFromVmCode(utils.OntIDCcntmractAddress[:])
+		hash = common.AddressFromVmCode(utils.OntIDCcntmractAddress[:])
 	} else if hash == utils.ParamCcntmractAddress {
-		hash = types.AddressFromVmCode(utils.ParamCcntmractAddress[:])
+		hash = common.AddressFromVmCode(utils.ParamCcntmractAddress[:])
 	} else if hash == utils.AuthCcntmractAddress {
-		hash = types.AddressFromVmCode(utils.AuthCcntmractAddress[:])
+		hash = common.AddressFromVmCode(utils.AuthCcntmractAddress[:])
 	} else if hash == utils.GovernanceCcntmractAddress {
-		hash = types.AddressFromVmCode(utils.GovernanceCcntmractAddress[:])
+		hash = common.AddressFromVmCode(utils.GovernanceCcntmractAddress[:])
 	}
 	return hash
 }

@@ -25,7 +25,6 @@ import (
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
-	"github.com/cntmio/cntmology/core/types"
 	httpcom "github.com/cntmio/cntmology/http/base/common"
 	"github.com/urfave/cli"
 	"io/ioutil"
@@ -174,7 +173,7 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 		return fmt.Errorf("DeployCcntmract error:%s", err)
 	}
 	c, _ := common.HexToBytes(code)
-	address := types.AddressFromVmCode(c)
+	address := common.AddressFromVmCode(c)
 	PrintInfoMsg("Deploy ccntmract:")
 	PrintInfoMsg("  Ccntmract Address:%s", address.ToHexString())
 	PrintInfoMsg("  TxHash:%s", txHash)

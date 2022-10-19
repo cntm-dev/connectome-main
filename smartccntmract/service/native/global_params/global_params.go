@@ -24,7 +24,6 @@ import (
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/serialization"
-	scommon "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
@@ -76,16 +75,16 @@ func ParamInit(native *native.NativeService) ([]byte, error) {
 	if err := initParams.Deserialize(argsBuffer); err != nil {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "init param, deserialize params failed!")
 	}
-	native.CloneCache.Add(scommon.ST_STORAGE, generateParamKey(ccntmract, CURRENT_VALUE), getParamStorageItem(initParams))
-	native.CloneCache.Add(scommon.ST_STORAGE, generateParamKey(ccntmract, PREPARE_VALUE), getParamStorageItem(initParams))
+	native.CacheDB.Put(generateParamKey(ccntmract, CURRENT_VALUE), getParamStorageItem(initParams).ToArray())
+	native.CacheDB.Put(generateParamKey(ccntmract, PREPARE_VALUE), getParamStorageItem(initParams).ToArray())
 
 	var admin common.Address
 	if admin, err = utils.ReadAddress(argsBuffer); err != nil {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "init param, deserialize admin failed!")
 	}
-	native.CloneCache.Add(scommon.ST_STORAGE, generateAdminKey(ccntmract, false), getRoleStorageItem(admin))
+	native.CacheDB.Put(generateAdminKey(ccntmract, false), getRoleStorageItem(admin).ToArray())
 	operator := admin
-	native.CloneCache.Add(scommon.ST_STORAGE, GenerateOperatorKey(ccntmract), getRoleStorageItem(operator))
+	native.CacheDB.Put(GenerateOperatorKey(ccntmract), getRoleStorageItem(operator).ToArray())
 	return utils.BYTE_TRUE, nil
 }
 
@@ -104,9 +103,9 @@ func AcceptAdmin(native *native.NativeService) ([]byte, error) {
 		return utils.BYTE_FALSE, fmt.Errorf("accept admin, destination account hasn't been approved, caused by %v", err)
 	}
 	// delete transfer admin item
-	native.CloneCache.Delete(scommon.ST_STORAGE, generateAdminKey(ccntmract, true))
+	native.CacheDB.Delete(generateAdminKey(ccntmract, true))
 	// modify admin in database
-	native.CloneCache.Add(scommon.ST_STORAGE, generateAdminKey(ccntmract, false), getRoleStorageItem(destinationAdmin))
+	native.CacheDB.Put(generateAdminKey(ccntmract, false), getRoleStorageItem(destinationAdmin).ToArray())
 
 	NotifyRoleChange(native, ccntmract, ACCEPT_ADMIN_NAME, destinationAdmin)
 	return utils.BYTE_TRUE, nil
@@ -125,8 +124,8 @@ func TransferAdmin(native *native.NativeService) ([]byte, error) {
 	if err != nil {
 		return utils.BYTE_FALSE, errors.NewErr("transfer admin, deserialize admin failed!")
 	}
-	native.CloneCache.Add(scommon.ST_STORAGE, generateAdminKey(ccntmract, true),
-		getRoleStorageItem(destinationAdmin))
+	native.CacheDB.Put(generateAdminKey(ccntmract, true),
+		getRoleStorageItem(destinationAdmin).ToArray())
 
 	NotifyTransferAdmin(native, ccntmract, TRANSFER_ADMIN_NAME, admin, destinationAdmin)
 	return utils.BYTE_TRUE, nil
@@ -145,7 +144,7 @@ func SetOperator(native *native.NativeService) ([]byte, error) {
 	if err != nil {
 		return utils.BYTE_FALSE, errors.NewErr("set operator, deserialize operator failed!")
 	}
-	native.CloneCache.Add(scommon.ST_STORAGE, GenerateOperatorKey(ccntmract), getRoleStorageItem(destinationOperator))
+	native.CacheDB.Put(GenerateOperatorKey(ccntmract), getRoleStorageItem(destinationOperator).ToArray())
 
 	NotifyRoleChange(native, ccntmract, SET_OPERATOR, destinationOperator)
 	return utils.BYTE_TRUE, nil
@@ -177,8 +176,8 @@ func SetGlobalParam(native *native.NativeService) ([]byte, error) {
 	for _, param := range params {
 		storageParams.SetParam(param)
 	}
-	native.CloneCache.Add(scommon.ST_STORAGE, generateParamKey(ccntmract, PREPARE_VALUE),
-		getParamStorageItem(storageParams))
+	native.CacheDB.Put(generateParamKey(ccntmract, PREPARE_VALUE),
+		getParamStorageItem(storageParams).ToArray())
 
 	NotifyParamChange(native, ccntmract, SET_GLOBAL_PARAM_NAME, params)
 	return utils.BYTE_TRUE, nil
@@ -237,7 +236,7 @@ func CreateSnapshot(native *native.NativeService) ([]byte, error) {
 		return utils.BYTE_FALSE, errors.NewErr("create snapshot, prepare param doesn't exist!")
 	}
 	// set prepare value to current value, make it effective
-	native.CloneCache.Add(scommon.ST_STORAGE, generateParamKey(ccntmract, CURRENT_VALUE), getParamStorageItem(prepareParam))
+	native.CacheDB.Put(generateParamKey(ccntmract, CURRENT_VALUE), getParamStorageItem(prepareParam).ToArray())
 
 	NotifyParamChange(native, ccntmract, CREATE_SNAPSHOT_NAME, prepareParam)
 	return utils.BYTE_TRUE, nil

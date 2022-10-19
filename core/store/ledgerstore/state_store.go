@@ -28,6 +28,7 @@ import (
 	"github.com/cntmio/cntmology/core/states"
 	scom "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/core/store/leveldbstore"
+	"github.com/cntmio/cntmology/core/store/overlaydb"
 	"github.com/cntmio/cntmology/core/store/statestore"
 	"github.com/cntmio/cntmology/merkle"
 )
@@ -148,6 +149,10 @@ func (self *StateStore) GetMerkleProof(proofHeight, rootHeight uint32) ([]common
 //NewStateBatch return state commit bathe. Usually using in smart ccntmract execution
 func (self *StateStore) NewStateBatch() *statestore.StateBatch {
 	return statestore.NewStateStoreBatch(statestore.NewMemDatabase(), self.store)
+}
+
+func (self *StateStore) NewOverlayDB() *overlaydb.OverlayDB {
+	return overlaydb.NewOverlayDB(self.store)
 }
 
 //CommitTo commit state batch to state store
@@ -350,6 +355,10 @@ func (self *StateStore) ClearAll() error {
 		self.store.BatchDelete(iter.Key())
 	}
 	iter.Release()
+	if err := iter.Error(); err != nil {
+		self.store.NewBatch() // reset the batch
+		return err
+	}
 	return self.store.BatchCommit()
 }
 

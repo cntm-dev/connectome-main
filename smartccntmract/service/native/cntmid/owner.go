@@ -26,7 +26,6 @@ import (
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/core/states"
-	"github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 )
@@ -91,7 +90,7 @@ func putAllPk(srvc *native.NativeService, key []byte, val []*owner) error {
 	}
 	var v states.StorageItem
 	v.Value = buf.Bytes()
-	srvc.CloneCache.Add(common.ST_STORAGE, key, &v)
+	srvc.CacheDB.Put(key, v.ToArray())
 	return nil
 }
 

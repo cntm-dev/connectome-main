@@ -27,7 +27,6 @@ import (
 	"reflect"
 
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/vm/neovm/interfaces"
 	"github.com/cntmio/cntmology/vm/wasmvm/memory"
@@ -392,7 +391,7 @@ func (e *ExecutionEngine) call(caller common.Address,
 		vm.Caller = caller
 
 		vm.VMCode = code
-		vm.CcntmractAddress = types.AddressFromVmCode(code)
+		vm.CcntmractAddress = common.AddressFromVmCode(code)
 
 		entry, ok := m.Export.Entries[methodName]
 

@@ -26,7 +26,6 @@ import (
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/serialization"
 	cstates "github.com/cntmio/cntmology/core/states"
-	scommon "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
@@ -137,9 +136,9 @@ func fromApprove(native *native.NativeService, fromApproveKey []byte, value uint
 	if approveValue < value {
 		return fmt.Errorf("[TransferFrom] approve balance insufficient! have %d, got %d", approveValue, value)
 	} else if approveValue == value {
-		native.CloneCache.Delete(scommon.ST_STORAGE, fromApproveKey)
+		native.CacheDB.Delete(fromApproveKey)
 	} else {
-		native.CloneCache.Add(scommon.ST_STORAGE, fromApproveKey, utils.GenUInt64StorageItem(approveValue-value))
+		native.CacheDB.Put(fromApproveKey, utils.GenUInt64StorageItem(approveValue-value).ToArray())
 	}
 	return nil
 }
@@ -154,9 +153,9 @@ func fromTransfer(native *native.NativeService, fromKey []byte, value uint64) (u
 		return 0, fmt.Errorf("[Transfer] balance insufficient. ccntmract:%s, account:%s,balance:%d, transfer amount:%d",
 			native.CcntmextRef.CurrentCcntmext().CcntmractAddress.ToHexString(), addr.ToBase58(), fromBalance, value)
 	} else if fromBalance == value {
-		native.CloneCache.Delete(scommon.ST_STORAGE, fromKey)
+		native.CacheDB.Delete(fromKey)
 	} else {
-		native.CloneCache.Add(scommon.ST_STORAGE, fromKey, utils.GenUInt64StorageItem(fromBalance-value))
+		native.CacheDB.Put(fromKey, utils.GenUInt64StorageItem(fromBalance-value).ToArray())
 	}
 	return fromBalance, nil
 }
@@ -166,7 +165,7 @@ func toTransfer(native *native.NativeService, toKey []byte, value uint64) (uint6
 	if err != nil {
 		return 0, err
 	}
-	native.CloneCache.Add(scommon.ST_STORAGE, toKey, GetToUInt64StorageItem(toBalance, value))
+	native.CacheDB.Put(toKey, GetToUInt64StorageItem(toBalance, value).ToArray())
 	return toBalance, nil
 }
 
