@@ -19,8 +19,13 @@
 package neovm
 
 import (
+	"bytes"
+	"math/big"
 	"testing"
 
+	"errors"
+	"github.com/cntmio/cntmology/account"
+	"github.com/cntmio/cntmology/vm/neovm"
 	"github.com/cntmio/cntmology/vm/neovm/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -32,6 +37,23 @@ func TestRuntimeSerialize(t *testing.T) {
 
 	_, err := SerializeStackItem(a)
 	assert.NotNil(t, err)
+}
+
+func TestRuntimeDeserializeBigInteger(t *testing.T) {
+	i := big.NewInt(123)
+	a := types.NewInteger(i)
+
+	b, err := SerializeStackItem(a)
+	assert.Nil(t, err)
+
+	item, err := DeserializeStackItem(bytes.NewReader(b))
+	assert.Nil(t, err)
+
+	result, err := item.GetBigInteger()
+	assert.Nil(t, err)
+
+	assert.Equal(t, result, i)
+
 }
 
 func TestArrayRef(t *testing.T) {
@@ -103,4 +125,53 @@ func TestStructRef(t *testing.T) {
 	map8.Add(ba1, map7)
 
 	assert.False(t, CircularRefAndDepthDetection(map8))
+}
+
+func TestRuntimeBase58ToAddress(t *testing.T) {
+	vm := neovm.NewExecutionEngine()
+
+	acc := account.NewAccount("")
+	addr := acc.Address
+	base58 := acc.Address.ToBase58()
+
+	err := RuntimeBase58ToAddress(nil, vm)
+
+	if assert.Error(t, err) {
+		assert.Equal(t, errors.New("[RuntimeBase58ToAddress] Too few input parameters"), err)
+	}
+
+	vm.EvaluationStack.Push(types.NewByteArray([]byte(base58)))
+
+	err = RuntimeBase58ToAddress(nil, vm)
+
+	assert.NoError(t, err)
+
+	result, err := vm.EvaluationStack.Pop().GetByteArray()
+	assert.NoError(t, err)
+	assert.Equal(t, addr[:], result)
+}
+
+func TestRuntimeAddressToBase58(t *testing.T) {
+	vm := neovm.NewExecutionEngine()
+
+	acc := account.NewAccount("")
+	addr := acc.Address
+	base58 := acc.Address.ToBase58()
+
+	err := RuntimeAddressToBase58(nil, vm)
+
+	if assert.Error(t, err) {
+		assert.Equal(t, errors.New("[RuntimeAddressToBase58] Too few input parameters"), err)
+	}
+
+	vm.EvaluationStack.Push(types.NewByteArray(addr[:]))
+
+	err = RuntimeAddressToBase58(nil, vm)
+
+	assert.NoError(t, err)
+
+	result, err := vm.EvaluationStack.Pop().GetByteArray()
+
+	assert.NoError(t, err)
+	assert.Equal(t, base58, string(result))
 }

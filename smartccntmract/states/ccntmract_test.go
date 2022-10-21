@@ -27,7 +27,7 @@ import (
 func TestCcntmract_Serialize_Deserialize(t *testing.T) {
 	addr := common.AddressFromVmCode([]byte{1})
 
-	c := &Ccntmract{
+	c := &CcntmractInvokeParam{
 		Version: 0,
 		Address: addr,
 		Method:  "init",
@@ -35,11 +35,11 @@ func TestCcntmract_Serialize_Deserialize(t *testing.T) {
 	}
 	bf := new(bytes.Buffer)
 	if err := c.Serialize(bf); err != nil {
-		t.Fatalf("Ccntmract serialize error: %v", err)
+		t.Fatalf("CcntmractInvokeParam serialize error: %v", err)
 	}
 
-	v := new(Ccntmract)
+	v := new(CcntmractInvokeParam)
 	if err := v.Deserialize(bf); err != nil {
-		t.Fatalf("Ccntmract deserialize error: %v", err)
+		t.Fatalf("CcntmractInvokeParam deserialize error: %v", err)
 	}
 }

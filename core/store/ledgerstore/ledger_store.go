@@ -24,10 +24,10 @@ import (
 	"math"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
-
-	"strconv"
+	"time"
 
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
@@ -52,7 +52,6 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	sstate "github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
-	"time"
 )
 
 const (
@@ -846,12 +845,14 @@ func (this *LedgerStoreImp) GetEventNotifyByBlock(height uint32) ([]*event.Execu
 
 //PreExecuteCcntmract return the result of smart ccntmract execution without commit to store
 func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.PreExecResult, error) {
+	height := this.GetCurrentBlockHeight()
 	stf := &sstate.PreExecResult{State: event.CcntmRACT_STATE_FAIL, Gas: neovm.MIN_TRANSACTION_GAS, Result: nil}
 
 	config := &smartccntmract.Config{
-		Time:   uint32(time.Now().Unix()),
-		Height: this.GetCurrentBlockHeight() + 1,
-		Tx:     tx,
+		Time:       uint32(time.Now().Unix()),
+		Height:     height + 1,
+		Tx:         tx,
+		RandomHash: this.GetBlockHash(height),
 	}
 
 	overlay := this.stateStore.NewOverlayDB()

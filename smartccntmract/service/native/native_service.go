@@ -51,11 +51,12 @@ type NativeService struct {
 	CacheDB       *storage.CacheDB
 	ServiceMap    map[string]Handler
 	Notifications []*event.NotifyEventInfo
-	Code          []byte
+	InvokeParam   sstates.CcntmractInvokeParam
 	Input         []byte
 	Tx            *types.Transaction
 	Height        uint32
 	Time          uint32
+	RandomHash    common.Uint256
 	CcntmextRef    ccntmext.CcntmextRef
 }
 

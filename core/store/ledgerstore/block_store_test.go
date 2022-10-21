@@ -379,7 +379,7 @@ func invokeSmartCcntmractTx(gasPrice,
 	ccntmractAddress common.Address,
 	method string,
 	args []byte) (*types.Transaction, error) {
-	crt := &cstates.Ccntmract{
+	crt := &cstates.CcntmractInvokeParam{
 		Version: cversion,
 		Address: ccntmractAddress,
 		Method:  method,

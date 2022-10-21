@@ -888,7 +888,7 @@ func buildWasmCcntmractParam(params []interface{}, paramType wasmvm.ParamType) (
 
 //BuildWasmVMInvokeCode return wasn vm invoke code
 func BuildWasmVMInvokeCode(smartcodeAddress common.Address, methodName string, paramType wasmvm.ParamType, version byte, params []interface{}) ([]byte, error) {
-	ccntmract := &cstates.Ccntmract{}
+	ccntmract := &cstates.CcntmractInvokeParam{}
 	ccntmract.Address = smartcodeAddress
 	ccntmract.Method = methodName
 	ccntmract.Version = version

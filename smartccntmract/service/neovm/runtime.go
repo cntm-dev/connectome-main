@@ -21,7 +21,6 @@ package neovm
 import (
 	"bytes"
 	"io"
-	"math/big"
 	"reflect"
 	"sort"
 
@@ -126,17 +125,52 @@ func RuntimeGetTrigger(service *NeoVmService, engine *vm.ExecutionEngine) error 
 	return nil
 }
 
+func RuntimeBase58ToAddress(service *NeoVmService, engine *vm.ExecutionEngine) error {
+	if vm.EvaluationStackCount(engine) < 1 {
+		return errors.NewErr("[RuntimeBase58ToAddress] Too few input parameters")
+	}
+	item, err := vm.PopByteArray(engine)
+	if err != nil {
+		return err
+	}
+	address, err := common.AddressFromBase58(string(item))
+	if err != nil {
+		return err
+	}
+	vm.PushData(engine, address[:])
+	return nil
+}
+
+func RuntimeAddressToBase58(service *NeoVmService, engine *vm.ExecutionEngine) error {
+	if vm.EvaluationStackCount(engine) < 1 {
+		return errors.NewErr("[RuntimeAddressToBase58] Too few input parameters")
+	}
+	item, err := vm.PopByteArray(engine)
+	if err != nil {
+		return err
+	}
+	address, err := common.AddressParseFromBytes(item)
+	if err != nil {
+		return err
+	}
+	vm.PushData(engine, []byte(address.ToBase58()))
+	return nil
+}
+
+func RuntimeGetRandomHash(service *NeoVmService, engine *vm.ExecutionEngine) error {
+	vm.PushData(engine, service.RandomHash.ToArray())
+	return nil
+}
+
 func SerializeStackItem(item vmtypes.StackItems) ([]byte, error) {
 	if CircularRefAndDepthDetection(item) {
 		return nil, errors.NewErr("runtime serialize: can not serialize circular reference data")
 	}
-
 	bf := new(bytes.Buffer)
 	err := serializeStackItem(item, common.NewLimitedWriter(bf, uint64(vm.MAX_BYTEARRAY_SIZE)))
 	if err != nil {
 		return nil, err
 	}
-
 	return bf.Bytes(), nil
 }
 
@@ -275,8 +309,7 @@ func DeserializeStackItem(r io.Reader) (items vmtypes.StackItems, err error) {
 		if err != nil {
 			return nil, errors.NewErr("Deserialize stackItems Integer error: " + err.Error())
 		}
-		return vmtypes.NewInteger(new(big.Int).SetBytes(b)), nil
-
+		return vmtypes.NewInteger(vmtypes.BigIntFromBytes(b)), nil
 	case vmtypes.ArrayType, vmtypes.StructType:
 		count, err := serialization.ReadVarUint(r, 0)
 		if err != nil {

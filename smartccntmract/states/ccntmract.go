@@ -31,7 +31,7 @@ import (
 // Param Address: invoke on blockchain smart ccntmract by address
 // Param Method: invoke smart ccntmract method, default ""
 // Param Args: invoke smart ccntmract arguments
-type Ccntmract struct {
+type CcntmractInvokeParam struct {
 	Version byte
 	Address common.Address
 	Method  string

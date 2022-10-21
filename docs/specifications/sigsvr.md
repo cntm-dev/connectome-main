@@ -17,6 +17,8 @@ Ontology Signature Server - sigsvr is a rpc server for signing transactions.
 		* [2.4 Multiple Signature for Raw Transactions](#24-multiple-signature-for-raw-transactions)
 		* [2.5 Signature of Transfer Transaction](#25-signature-of-transfer-transaction)
 		* [2.6 Native Ccntmract Invokes Signature](#26-native-ccntmract-invokes-signature)
+			* [Example1:  Constructing  transfer transaction](#example1-constructing-transfer-transaction)
+			* [Example2: Constructing  withdraw cntm transaction](#example2-constructing-withdraw-cntm-transaction)
 		* [2.7 NeoVM Ccntmract Invokes Signature](#27-neovm-ccntmract-invokes-signature)
 		* [2.8 NeoVM Ccntmract Invokes By ABI Signature](#28-neovm-ccntmract-invokes-by-abi-signature)
 		* [2.9 Create Account](#29-create-account)
@@ -375,7 +377,7 @@ Response result:
 }
 ```
 
-Constructing a cntm transfer transaction as a example:
+#### Example1:  Constructing  transfer transaction
 
 Request:
 
@@ -431,6 +433,29 @@ Examples:
     "params":[
         //The parameters of the Native ccntmract. All values are string type.
     ]
+}
+```
+#### Example2: Constructing withdraw cntm transaction
+
+``` json
+{
+	"Qid":"t",
+	"Method":"signativeinvoketx",
+	"account":"ARVVxBPGySL56CvSSWfjRVVyZYpNZ7zp48",	  //withdraw address
+	"pwd":"XXX",
+	"Params":{
+		"gas_price":5000,
+		"gas_limit":20000,
+		"address":"0200000000000000000000000000000000000000",
+		"method":"transferFrom",
+		"version":0,
+		"params":[
+			"ARVVxBPGySL56CvSSWfjRVVyZYpNZ7zp48",	//withdraw address
+			"AFmseVrdL9f9oyCzZefL9tG6UbvhUMqNMV",   //cntm ccntmract address (in base58 style)
+			"ARVVxBPGySL56CvSSWfjRVVyZYpNZ7zp48",  //cntm accept address. Note that accept address  can different with withdraw address
+			"310860000000000"												//withdraw cntm amount. Note that cntm has 9 decimals
+		]
+	}
 }
 ```
 
