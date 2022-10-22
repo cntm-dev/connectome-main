@@ -127,6 +127,7 @@ type NeoVmService struct {
 	Height        uint32
 	RandomHash    scommon.Uint256
 	Engine        *vm.ExecutionEngine
+	PreExec       bool
 }
 
 // Invoke a smart ccntmract
@@ -138,7 +139,7 @@ func (this *NeoVmService) Invoke() (interface{}, error) {
 	this.Engine.PushCcntmext(vm.NewExecutionCcntmext(this.Engine, this.Code))
 	for {
 		//check the execution step count
-		if !this.CcntmextRef.CheckExecStep() {
+		if this.PreExec && !this.CcntmextRef.CheckExecStep() {
 			return nil, VM_EXEC_STEP_EXCEED
 		}
 		if len(this.Engine.Ccntmexts) == 0 || this.Engine.Ccntmext == nil {

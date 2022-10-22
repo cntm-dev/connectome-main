@@ -856,6 +856,7 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.
 			Store:   this,
 			CacheDB: cache,
 			Gas:     math.MaxUint64 - calcGasByCodeLen(len(invoke.Code), preGas[neovm.UINT_INVOKE_CODE_LEN_NAME]),
+			PreExec: true,
 		}
 
 		//start the smart ccntmract executive function

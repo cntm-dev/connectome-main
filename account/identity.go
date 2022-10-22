@@ -111,7 +111,7 @@ type Identity struct {
 
 type Ccntmroller struct {
 	ID     string `json:"id"`
-	Public string `json:"publicKey,omitemtpy"`
+	Public string `json:"publicKey,omitempty"`
 	keypair.ProtectedKey
 }
 
