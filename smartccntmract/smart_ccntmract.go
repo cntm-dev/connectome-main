@@ -50,10 +50,10 @@ type SmartCcntmract struct {
 
 // Config describe smart ccntmract need parameters configuration
 type Config struct {
-	Time       uint32              // current block timestamp
-	Height     uint32              // current block height
-	RandomHash common.Uint256      // current block hash
-	Tx         *ctypes.Transaction // current transaction
+	Time      uint32              // current block timestamp
+	Height    uint32              // current block height
+	BlockHash common.Uint256      // current block hash
+	Tx        *ctypes.Transaction // current transaction
 }
 
 // PushCcntmext push current ccntmext to smart ccntmract
@@ -134,7 +134,7 @@ func (this *SmartCcntmract) NewExecuteEngine(code []byte) (ccntmext.Engine, erro
 		Tx:         this.Config.Tx,
 		Time:       this.Config.Time,
 		Height:     this.Config.Height,
-		RandomHash: this.Config.RandomHash,
+		BlockHash:  this.Config.BlockHash,
 		Engine:     vm.NewExecutionEngine(),
 		PreExec:    this.PreExec,
 	}
@@ -151,7 +151,7 @@ func (this *SmartCcntmract) NewNativeService() (*native.NativeService, error) {
 		Tx:         this.Config.Tx,
 		Time:       this.Config.Time,
 		Height:     this.Config.Height,
-		RandomHash: this.Config.RandomHash,
+		BlockHash:  this.Config.BlockHash,
 		ServiceMap: make(map[string]native.Handler),
 	}
 	return service, nil
