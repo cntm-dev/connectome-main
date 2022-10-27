@@ -74,7 +74,7 @@ func (this *BlockCache) GetBlock(blockHash common.Uint256) *types.Block {
 	return block.(*types.Block)
 }
 
-//CcntmainBlock retuen whether block is in cache
+//CcntmainBlock return whether block is in cache
 func (this *BlockCache) CcntmainBlock(blockHash common.Uint256) bool {
 	return this.blockCache.Ccntmains(string(blockHash.ToArray()))
 }

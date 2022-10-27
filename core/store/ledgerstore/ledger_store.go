@@ -567,8 +567,10 @@ func (this *LedgerStoreImp) saveBlockToStateStore(block *types.Block) error {
 		}
 	}
 
+	cache := storage.NewCacheDB(overlay)
 	for _, tx := range block.Transactions {
-		err := this.handleTransaction(overlay, block, tx)
+		cache.Reset()
+		err := this.handleTransaction(overlay, cache, block, tx)
 		if err != nil {
 			return fmt.Errorf("handleTransaction error %s", err)
 		}
