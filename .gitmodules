@@ -1,3 +1,0 @@
-[submodule "vendor/github.com/cntmio/cntmology-crypto"]
-	path = vendor/github.com/cntmio/cntmology-crypto
-	url = https://github.com/cntmio/cntmology-crypto

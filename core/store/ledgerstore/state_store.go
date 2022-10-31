@@ -20,7 +20,9 @@ package ledgerstore
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"os"
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/serialization"
@@ -31,6 +33,8 @@ import (
 	"github.com/cntmio/cntmology/core/store/overlaydb"
 	"github.com/cntmio/cntmology/core/store/statestore"
 	"github.com/cntmio/cntmology/merkle"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/cntmid"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 )
 
 var (
@@ -365,4 +369,53 @@ func (self *StateStore) ClearAll() error {
 //Close state store
 func (self *StateStore) Close() error {
 	return self.store.Close()
+}
+
+func CheckStorage(dir string) error {
+	path := dir + string(os.PathSeparator) + DBDirState
+	db, err := leveldbstore.NewLevelDBStore(path)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	prefix := append([]byte{byte(scom.ST_STORAGE)}, utils.OntIDCcntmractAddress[:]...) //prefix of new storage key
+	flag := append(prefix, cntmid.FIELD_VERSION)
+	val, err := db.Get(flag)
+	if err == nil {
+		item := &states.StorageItem{}
+		buf := bytes.NewBuffer(val)
+		err := item.Deserialize(buf)
+		if err == nil && item.Value[0] == cntmid.FLAG_VERSION {
+			return nil
+		} else if err == nil {
+			return errors.New("check cntmid storage: invalid version flag")
+		} else {
+			return err
+		}
+	}
+
+	prefix1 := []byte{byte(scom.ST_STORAGE), 0x2a, 0x64, 0x69, 0x64} //prefix of old storage key
+
+	iter := db.NewIterator(prefix1)
+	db.NewBatch()
+	for ok := iter.First(); ok; ok = iter.Next() {
+		key := append(prefix, iter.Key()[1:]...)
+		db.BatchPut(key, iter.Value())
+		db.BatchDelete(iter.Key())
+	}
+	iter.Release()
+	err = iter.Error()
+	if err != nil {
+		return err
+	}
+
+	tag := states.StorageItem{}
+	tag.Value = []byte{cntmid.FLAG_VERSION}
+	buf := bytes.NewBuffer(nil)
+	tag.Serialize(buf)
+	db.BatchPut(flag, buf.Bytes())
+	err = db.BatchCommit()
+
+	return err
 }
