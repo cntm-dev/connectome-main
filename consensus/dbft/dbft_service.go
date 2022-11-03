@@ -63,7 +63,7 @@ func NewDbftService(bkAccount *account.Account, txpool, p2p *actor.PID) (*DbftSe
 		timer:         time.NewTimer(time.Second * 15),
 		started:       false,
 		ledger:        ledger.DefLedger,
-		incrValidator: increment.NewIncrementValidator(10),
+		incrValidator: increment.NewIncrementValidator(20),
 		poolActor:     &actorTypes.TxPoolActor{Pool: txpool},
 		p2p:           &actorTypes.P2PActor{P2P: p2p},
 	}
@@ -227,7 +227,11 @@ func (ds *DbftService) CheckSignatures() error {
 		}
 		if !isExist {
 			// save block
-			err := ds.ledger.AddBlock(block)
+			result, err := ds.ledger.ExecuteBlock(block)
+			if err != nil {
+				return fmt.Errorf("CheckSignatures DefLedgerPid.RequestFuture Height:%d error:%s", block.Header.Height, err)
+			}
+			err = ds.ledger.SubmitBlock(block, result)
 			if err != nil {
 				return fmt.Errorf("CheckSignatures DefLedgerPid.RequestFuture Height:%d error:%s", block.Header.Height, err)
 			}

@@ -24,6 +24,7 @@ import (
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/errors"
+	"github.com/cntmio/cntmology/smartccntmract/event"
 )
 
 // Invoke smart ccntmract struct
@@ -84,4 +85,5 @@ type PreExecResult struct {
 	State  byte
 	Gas    uint64
 	Result interface{}
+	Notify []*event.NotifyEventInfo
 }

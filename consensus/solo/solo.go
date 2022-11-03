@@ -57,7 +57,7 @@ func NewSoloService(bkAccount *account.Account, txpool *actor.PID) (*SoloService
 	service := &SoloService{
 		Account:          bkAccount,
 		poolActor:        &actorTypes.TxPoolActor{Pool: txpool},
-		incrValidator:    increment.NewIncrementValidator(10),
+		incrValidator:    increment.NewIncrementValidator(20),
 		genBlockInterval: time.Duration(config.DefConfig.Genesis.SOLO.GenBlockTime) * time.Second,
 	}
 
@@ -147,7 +147,11 @@ func (self *SoloService) genBlock() error {
 		return fmt.Errorf("makeBlock error %s", err)
 	}
 
-	err = ledger.DefLedger.AddBlock(block)
+	result, err := ledger.DefLedger.ExecuteBlock(block)
+	if err != nil {
+		return fmt.Errorf("genBlock DefLedgerPid.RequestFuture Height:%d error:%s", block.Header.Height, err)
+	}
+	err = ledger.DefLedger.SubmitBlock(block, result)
 	if err != nil {
 		return fmt.Errorf("genBlock DefLedgerPid.RequestFuture Height:%d error:%s", block.Header.Height, err)
 	}
