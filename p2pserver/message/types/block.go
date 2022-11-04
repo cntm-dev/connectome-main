@@ -20,8 +20,6 @@ package types
 
 import (
 	"fmt"
-	"io"
-
 	"github.com/cntmio/cntmology/common"
 	ct "github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
@@ -58,7 +56,8 @@ func (this *Block) Deserialization(source *common.ZeroCopySource) error {
 	eof := false
 	this.MerkleRoot, eof = source.NextHash()
 	if eof {
-		return io.ErrUnexpectedEOF
+		// to accept old node's block
+		this.MerkleRoot = common.UINT256_EMPTY
 	}
 	return nil
 }

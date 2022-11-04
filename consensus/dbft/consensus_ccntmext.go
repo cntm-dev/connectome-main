@@ -100,7 +100,7 @@ func (ctx *ConsensusCcntmext) MakeHeader() *types.Block {
 			txHash = append(txHash, t.Hash())
 		}
 		txRoot := common.ComputeMerkleRoot(txHash)
-		blockRoot := ledger.DefLedger.GetBlockRootWithNewTxRoot(txRoot)
+		blockRoot := ledger.DefLedger.GetBlockRootWithNewTxRoots(ctx.Height, []common.Uint256{txRoot})
 		header := &types.Header{
 			Version:          CcntmextVersion,
 			PrevBlockHash:    ctx.PrevHash,

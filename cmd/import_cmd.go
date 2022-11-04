@@ -21,6 +21,9 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"io"
+	"os"
+
 	"github.com/gosuri/uiprogress"
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common/config"
@@ -30,8 +33,6 @@ import (
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/urfave/cli"
-	"io"
-	"os"
 )
 
 var ImportCommand = cli.Command{
@@ -157,9 +158,13 @@ func importBlocks(ctx *cli.Ccntmext) error {
 		if err != nil {
 			return fmt.Errorf("block height:%d deserialize error:%s", i, err)
 		}
-		err = ledger.DefLedger.AddBlock(block)
+		execResult, err := ledger.DefLedger.ExecuteBlock(block)
 		if err != nil {
-			return fmt.Errorf("add block height:%d error:%s", i, err)
+			return fmt.Errorf("block height:%d ExecuteBlock error:%s", i, err)
+		}
+		err = ledger.DefLedger.SubmitBlock(block, execResult)
+		if err != nil {
+			return fmt.Errorf("SubmitBlock block height:%d error:%s", i, err)
 		}
 		bar.Incr()
 	}

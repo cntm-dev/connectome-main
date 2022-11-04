@@ -57,7 +57,7 @@ type LedgerStore interface {
 	GetTransaction(txHash common.Uint256) (*types.Transaction, uint32, error)
 	IsCcntmainBlock(blockHash common.Uint256) (bool, error)
 	IsCcntmainTransaction(txHash common.Uint256) (bool, error)
-	GetBlockRootWithNewTxRoot(txRoot common.Uint256) common.Uint256
+	GetBlockRootWithNewTxRoots(startHeight uint32, txRoots []common.Uint256) common.Uint256
 	GetMerkleProof(m, n uint32) ([]common.Uint256, error)
 	GetCcntmractState(ccntmractHash common.Address) (*payload.DeployCode, error)
 	GetBookkeeperState() (*states.BookkeeperState, error)
