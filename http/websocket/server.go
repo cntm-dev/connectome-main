@@ -20,7 +20,6 @@
 package websocket
 
 import (
-	"bytes"
 	"github.com/cntmio/cntmology/common"
 	cfg "github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
@@ -108,9 +107,7 @@ func pushBlock(v interface{}) {
 	resp := rest.ResponsePack(Err.SUCCESS)
 	if block, ok := v.(types.Block); ok {
 		resp["Action"] = "sendrawblock"
-		w := bytes.NewBuffer(nil)
-		block.Serialize(w)
-		resp["Result"] = common.ToHexString(w.Bytes())
+		resp["Result"] = common.ToHexString(block.ToArray())
 		ws.BroadcastToSubscribers(nil, websocket.WSTOPIC_RAW_BLOCK, resp)
 
 		resp["Action"] = "sendjsonblock"
