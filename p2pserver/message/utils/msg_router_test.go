@@ -19,25 +19,22 @@
 package utils
 
 import (
-	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/common/log"
-	msgCommon "github.com/cntmio/cntmology/p2pserver/common"
+	"github.com/cntmio/cntmology/p2pserver/message/types"
 	"github.com/cntmio/cntmology/p2pserver/net/netserver"
 	"github.com/cntmio/cntmology/p2pserver/net/protocol"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func testHandler(data *msgCommon.MsgPayload, p2p p2p.P2P, pid *actor.PID, args ...interface{}) error {
+func testHandler(data *types.MsgPayload, p2p p2p.P2P, pid *actor.PID, args ...interface{}) {
 	log.Info("Test handler")
-	return nil
 }
 
 // TestMsgRouter tests a basic function of a message router
 func TestMsgRouter(t *testing.T) {
-	_, pub, _ := keypair.GenerateKeyPair(keypair.PK_ECDSA, keypair.P256)
-	network := netserver.NewNetServer(pub)
+	network := netserver.NewNetServer()
 	msgRouter := NewMsgRouter(network)
 	assert.NotNil(t, msgRouter)
 

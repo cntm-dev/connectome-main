@@ -60,7 +60,7 @@ func TestParseNeovmFunc(t *testing.T) {
 }`
 	ccntmractAbi, err := NewNeovmCcntmractAbi([]byte(testNeovmAbi))
 	if err != nil {
-		t.Error("TestParseNeovmFunc NewNeovmCcntmractAbi error:%s", err)
+		t.Errorf("TestParseNeovmFunc NewNeovmCcntmractAbi error:%s", err)
 		return
 	}
 	funcAbi := ccntmractAbi.GetFunc("Add")
@@ -71,7 +71,7 @@ func TestParseNeovmFunc(t *testing.T) {
 
 	params, err := ParseNeovmFunc([]string{"12", "34"}, funcAbi)
 	if err != nil {
-		t.Error("TestParseNeovmFunc ParseNeovmFunc error:%s", err)
+		t.Errorf("TestParseNeovmFunc ParseNeovmFunc error:%s", err)
 		return
 	}
 	fmt.Printf("TestParseNeovmFunc %v\n", params)

@@ -81,6 +81,13 @@ $ cd $GOPATH/src/github.com/cntmio/cntmology
 $ glide install
 ````
 
+如果项目有新的第三方依赖包，使用glide更新依赖库
+
+````shell
+$ cd $GOPATH/src/github.com/cntmio/cntmology
+$ glide update
+````
+
 用make编译源码
 
 ```shell
