@@ -53,7 +53,7 @@ type Handler struct {
 
 //subscribe event for client
 type subscribe struct {
-	ConstractsFilter      []string `json:"ConstractsFilter"`
+	CcntmractsFilter       []string `json:"CcntmractsFilter"`
 	SubscribeEvent        bool     `json:"SubscribeEvent"`
 	SubscribeJsonBlock    bool     `json:"SubscribeJsonBlock"`
 	SubscribeRawBlock     bool     `json:"SubscribeRawBlock"`
@@ -157,11 +157,11 @@ func (self *WsServer) registryMethod() {
 		if b, ok := cmd["SubscribeBlockTxHashs"].(bool); ok {
 			sub.SubscribeBlockTxHashs = b
 		}
-		if ctsf, ok := cmd["ConstractsFilter"].([]interface{}); ok {
-			sub.ConstractsFilter = []string{}
+		if ctsf, ok := cmd["CcntmractsFilter"].([]interface{}); ok {
+			sub.CcntmractsFilter = []string{}
 			for _, v := range ctsf {
 				if addr, k := v.(string); k {
-					sub.ConstractsFilter = append(sub.ConstractsFilter, addr)
+					sub.CcntmractsFilter = append(sub.CcntmractsFilter, addr)
 				}
 			}
 		}
@@ -395,11 +395,11 @@ func (self *WsServer) PushTxResult(ccntmractAddrs map[string]bool, txHashStr str
 	//avoid twice, will send in BroadcastToSubscribers
 	sub := self.SubscribeMap[sessionId]
 	if sub.SubscribeEvent {
-		if len(sub.ConstractsFilter) == 0 {
+		if len(sub.CcntmractsFilter) == 0 {
 			self.Unlock()
 			return
 		}
-		for _, addr := range sub.ConstractsFilter {
+		for _, addr := range sub.CcntmractsFilter {
 			if ccntmractAddrs[addr] {
 				self.Unlock()
 				return
@@ -430,11 +430,11 @@ func (self *WsServer) BroadcastToSubscribers(ccntmractAddrs map[string]bool, sub
 		} else if sub == WSTOPIC_TXHASHS && v.SubscribeBlockTxHashs {
 			s.Send(data)
 		} else if sub == WSTOPIC_EVENT && v.SubscribeEvent {
-			if len(v.ConstractsFilter) == 0 {
+			if len(v.CcntmractsFilter) == 0 {
 				s.Send(data)
 				ccntminue
 			}
-			for _, addr := range v.ConstractsFilter {
+			for _, addr := range v.CcntmractsFilter {
 				if ccntmractAddrs[addr] {
 					s.Send(data)
 					break

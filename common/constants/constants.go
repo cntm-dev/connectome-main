@@ -32,7 +32,7 @@ var (
 const (
 	cntm_NAME         = "cntm Token"
 	cntm_SYMBOL       = "cntm"
-	cntm_DECIMALS     = 1
+	cntm_DECIMALS     = 0
 	cntm_TOTAL_SUPPLY = uint64(1000000000)
 )
 
