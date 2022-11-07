@@ -33,7 +33,6 @@ import (
 	scom "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/core/store/leveldbstore"
 	"github.com/cntmio/cntmology/core/store/overlaydb"
-	"github.com/cntmio/cntmology/core/store/statestore"
 	"github.com/cntmio/cntmology/merkle"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntmid"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
@@ -230,11 +229,6 @@ func (self *StateStore) AddBlockMerkleTreeRoot(txRoot common.Uint256) error {
 //GetMerkleProof return merkle proof of block
 func (self *StateStore) GetMerkleProof(proofHeight, rootHeight uint32) ([]common.Uint256, error) {
 	return self.merkleTree.InclusionProof(proofHeight, rootHeight+1)
-}
-
-//NewStateBatch return state commit bathe. Usually using in smart ccntmract execution
-func (self *StateStore) NewStateBatch() *statestore.StateBatch {
-	return statestore.NewStateStoreBatch(statestore.NewMemDatabase(), self.store)
 }
 
 func (self *StateStore) NewOverlayDB() *overlaydb.OverlayDB {

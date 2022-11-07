@@ -57,7 +57,6 @@ func TestPackCrash(t *testing.T) {
 		Height: 10,
 		Tx:     &types.Transaction{},
 	}
-	//cache := storage.NewCloneCache(testBatch)
 	sc := smartccntmract.SmartCcntmract{
 		Config:  config,
 		Gas:     200,
