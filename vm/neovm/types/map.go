@@ -21,6 +21,7 @@ package types
 import (
 	"fmt"
 	"math/big"
+	"sort"
 
 	"github.com/cntmio/cntmology/vm/neovm/interfaces"
 )
