@@ -31,7 +31,6 @@ import (
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
-	"github.com/cntmio/cntmology/vm/neovm/types"
 )
 
 const (
@@ -190,7 +189,7 @@ func OntName(native *native.NativeService) ([]byte, error) {
 }
 
 func OntDecimals(native *native.NativeService) ([]byte, error) {
-	return types.BigIntToBytes(big.NewInt(int64(constants.cntm_DECIMALS))), nil
+	return common.BigIntToNeoBytes(big.NewInt(int64(constants.cntm_DECIMALS))), nil
 }
 
 func OntSymbol(native *native.NativeService) ([]byte, error) {
@@ -203,7 +202,7 @@ func OntTotalSupply(native *native.NativeService) ([]byte, error) {
 	if err != nil {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[OntTotalSupply] get totalSupply error!")
 	}
-	return types.BigIntToBytes(big.NewInt(int64(amount))), nil
+	return common.BigIntToNeoBytes(big.NewInt(int64(amount))), nil
 }
 
 func OntBalanceOf(native *native.NativeService) ([]byte, error) {
@@ -235,7 +234,7 @@ func GetBalanceValue(native *native.NativeService, flag byte) ([]byte, error) {
 	if err != nil {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[GetBalanceValue] address parse error!")
 	}
-	return types.BigIntToBytes(big.NewInt(int64(amount))), nil
+	return common.BigIntToNeoBytes(big.NewInt(int64(amount))), nil
 }
 
 func grantOng(native *native.NativeService, ccntmract, address common.Address, balance uint64) error {

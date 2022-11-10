@@ -42,7 +42,6 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
-	ntypes "github.com/cntmio/cntmology/vm/neovm/types"
 )
 
 //HandleDeployTransaction deal with smart ccntmract deploy transaction
@@ -353,7 +352,7 @@ func getBalanceFromNative(config *smartccntmract.Config, cache *storage.CacheDB,
 	if err != nil {
 		return 0, err
 	}
-	return ntypes.BigIntFromBytes(result.([]byte)).Uint64(), nil
+	return common.BigIntFromNeoBytes(result.([]byte)).Uint64(), nil
 }
 
 func costInvalidGas(address common.Address, gas uint64, config *smartccntmract.Config, overlay *overlaydb.OverlayDB,
