@@ -30,7 +30,6 @@ import (
 	ct "github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/p2pserver/common"
 	mt "github.com/cntmio/cntmology/p2pserver/message/types"
-	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -195,6 +194,5 @@ func TestUnpackBufNode(t *testing.T) {
 	}
 
 	sink := comm.NewZeroCopySink(nil)
-	err := mt.WriteMessage(sink, msg)
-	assert.Nil(t, err)
+	mt.WriteMessage(sink, msg)
 }
