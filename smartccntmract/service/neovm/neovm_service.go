@@ -92,13 +92,13 @@ var (
 )
 
 var (
-	ERR_CHECK_STACK_SIZE  = errors.NewErr("[NeoVmService] vm over max stack size!")
-	ERR_EXECUTE_CODE      = errors.NewErr("[NeoVmService] vm execute code invalid!")
-	ERR_GAS_INSUFFICIENT  = errors.NewErr("[NeoVmService] gas insufficient")
-	VM_EXEC_STEP_EXCEED   = errors.NewErr("[NeoVmService] vm execute step exceed!")
-	CcntmRACT_NOT_EXIST    = errors.NewErr("[NeoVmService] Get ccntmract code from db fail")
-	DEPLOYCODE_TYPE_ERROR = errors.NewErr("[NeoVmService] DeployCode type error!")
-	VM_EXEC_FAULT         = errors.NewErr("[NeoVmService] vm execute state fault!")
+	ERR_CHECK_STACK_SIZE  = errors.NewErr("[NeoVmService] vm execution exceeded the max stack size!")
+	ERR_EXECUTE_CODE      = errors.NewErr("[NeoVmService] vm execution code was invalid!")
+	ERR_GAS_INSUFFICIENT  = errors.NewErr("[NeoVmService] insufficient gas for transaction!")
+	VM_EXEC_STEP_EXCEED   = errors.NewErr("[NeoVmService] vm execution exceeded the step limit!")
+	CcntmRACT_NOT_EXIST    = errors.NewErr("[NeoVmService] the given ccntmract does not exist!")
+	DEPLOYCODE_TYPE_ERROR = errors.NewErr("[NeoVmService] deploy code type error!")
+	VM_EXEC_FAULT         = errors.NewErr("[NeoVmService] vm execution encountered a state fault!")
 )
 
 var (
@@ -175,7 +175,7 @@ func (this *NeoVmService) Invoke() (interface{}, error) {
 		switch this.Engine.OpCode {
 		case vm.VERIFY:
 			if vm.EvaluationStackCount(this.Engine) < 3 {
-				return nil, errors.NewErr("[VERIFY] Too few input parameters ")
+				return nil, errors.NewErr("[VERIFY] too few input parameters")
 			}
 			pubKey, err := vm.PopByteArray(this.Engine)
 			if err != nil {
@@ -205,18 +205,18 @@ func (this *NeoVmService) Invoke() (interface{}, error) {
 		case vm.APPCALL:
 			address, err := this.Engine.Ccntmext.OpReader.ReadBytes(20)
 			if err != nil {
-				return nil, fmt.Errorf("[Appcall] read ccntmract address error:%v", err)
+				return nil, fmt.Errorf("[Appcall] read ccntmract address error: %v", err)
 			}
 			if bytes.Compare(address, BYTE_ZERO_20) == 0 {
 				if vm.EvaluationStackCount(this.Engine) < 1 {
-					return nil, fmt.Errorf("[Appcall] Too few input parameters:%d", vm.EvaluationStackCount(this.Engine))
+					return nil, fmt.Errorf("[Appcall] too few input parameters: %d", vm.EvaluationStackCount(this.Engine))
 				}
 				address, err = vm.PopByteArray(this.Engine)
 				if err != nil {
-					return nil, fmt.Errorf("[Appcall] pop ccntmract address error:%v", err)
+					return nil, fmt.Errorf("[Appcall] pop ccntmract address error: %v", err)
 				}
 				if len(address) != 20 {
-					return nil, fmt.Errorf("[Appcall] pop ccntmract address len != 20:%x", address)
+					return nil, fmt.Errorf("[Appcall] pop ccntmract address len != 20: %x", address)
 				}
 			}
 			addr, err := scommon.AddressParseFromBytes(address)
@@ -241,7 +241,7 @@ func (this *NeoVmService) Invoke() (interface{}, error) {
 			}
 		default:
 			if err := this.Engine.StepInto(); err != nil {
-				return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] vm execute error!")
+				return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] vm execution error!")
 			}
 			if this.Engine.State == vm.FAULT {
 				return nil, VM_EXEC_FAULT
@@ -264,11 +264,11 @@ func (this *NeoVmService) SystemCall(engine *vm.ExecutionEngine) error {
 	}
 	service, ok := ServiceMap[serviceName]
 	if !ok {
-		return errors.NewErr(fmt.Sprintf("[SystemCall] service not support: %s", serviceName))
+		return errors.NewErr(fmt.Sprintf("[SystemCall] the given service is not supported: %s", serviceName))
 	}
 	if service.Validator != nil {
 		if err := service.Validator(engine); err != nil {
-			return errors.NewDetailErr(err, errors.ErrNoCode, "[SystemCall] service validator error!")
+			return errors.NewDetailErr(err, errors.ErrNoCode, "[SystemCall] there was a service validator error!")
 		}
 	}
 	price, err := GasPrice(engine, serviceName)
@@ -279,7 +279,7 @@ func (this *NeoVmService) SystemCall(engine *vm.ExecutionEngine) error {
 		return ERR_GAS_INSUFFICIENT
 	}
 	if err := service.Execute(this, engine); err != nil {
-		return errors.NewDetailErr(err, errors.ErrNoCode, "[SystemCall] service execute error!")
+		return errors.NewDetailErr(err, errors.ErrNoCode, "[SystemCall] service execution error!")
 	}
 	return nil
 }
@@ -287,9 +287,9 @@ func (this *NeoVmService) SystemCall(engine *vm.ExecutionEngine) error {
 func (this *NeoVmService) getCcntmract(address scommon.Address) ([]byte, error) {
 	dep, err := this.CacheDB.GetCcntmract(address)
 	if err != nil {
-		return nil, errors.NewErr("[getCcntmract] Get ccntmract ccntmext error!")
+		return nil, errors.NewErr("[getCcntmract] get ccntmract ccntmext error!")
 	}
-	log.Debugf("invoke ccntmract address:%s", address.ToHexString())
+	log.Debugf("invoke ccntmract address: %s", address.ToHexString())
 	if dep == nil {
 		return nil, CcntmRACT_NOT_EXIST
 	}

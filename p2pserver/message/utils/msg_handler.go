@@ -161,6 +161,18 @@ func BlockHandle(data *msgTypes.MsgPayload, p2p p2p.P2P, pid *evtActor.PID, args
 
 	if pid != nil {
 		var block = data.Payload.(*msgTypes.Block)
+		stateHashHeight := config.GetStateHashCheckHeight(config.DefConfig.P2PNode.NetworkId)
+		if block.Blk.Header.Height >= stateHashHeight && block.MerkleRoot == common.UINT256_EMPTY {
+			log.Info("received block msg with empty merkle root")
+			remotePeer := p2p.GetPeer(data.Id)
+			if remotePeer != nil {
+				remotePeer.CloseSync()
+				remotePeer.CloseCons()
+			}
+
+			return
+		}
+
 		input := &msgCommon.AppendBlock{
 			FromID:     data.Id,
 			BlockSize:  data.PayloadSize,
@@ -666,9 +678,9 @@ func DisconnectHandle(data *msgTypes.MsgPayload, p2p p2p.P2P, pid *evtActor.PID,
 }
 
 //get blk hdrs from starthash to stophash
-func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]*types.Header, error) {
+func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]*types.RawHeader, error) {
 	var count uint32 = 0
-	headers := []*types.Header{}
+	headers := []*types.RawHeader{}
 	var startHeight uint32
 	var stopHeight uint32
 	curHeight := ledger.DefLedger.GetCurrentHeaderHeight()
@@ -680,7 +692,7 @@ func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]*t
 				count = curHeight
 			}
 		} else {
-			bkStop, err := ledger.DefLedger.GetHeaderByHash(stopHash)
+			bkStop, err := ledger.DefLedger.GetRawHeaderByHash(stopHash)
 			if err != nil || bkStop == nil {
 				return nil, err
 			}
@@ -691,13 +703,13 @@ func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]*t
 			}
 		}
 	} else {
-		bkStart, err := ledger.DefLedger.GetHeaderByHash(startHash)
+		bkStart, err := ledger.DefLedger.GetRawHeaderByHash(startHash)
 		if err != nil || bkStart == nil {
 			return nil, err
 		}
 		startHeight = bkStart.Height
 		if stopHash != common.UINT256_EMPTY {
-			bkStop, err := ledger.DefLedger.GetHeaderByHash(stopHash)
+			bkStop, err := ledger.DefLedger.GetRawHeaderByHash(stopHash)
 			if err != nil || bkStop == nil {
 				return nil, err
 			}
@@ -726,7 +738,7 @@ func GetHeadersFromHash(startHash common.Uint256, stopHash common.Uint256) ([]*t
 	var i uint32
 	for i = 1; i <= count; i++ {
 		hash := ledger.DefLedger.GetBlockHash(stopHeight + i)
-		hd, err := ledger.DefLedger.GetHeaderByHash(hash)
+		hd, err := ledger.DefLedger.GetRawHeaderByHash(hash)
 		if err != nil {
 			log.Debugf("[p2p]net_server GetBlockWithHeight failed with err=%s, hash=%x,height=%d\n", err.Error(), hash, stopHeight+i)
 			return nil, err
