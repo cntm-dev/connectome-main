@@ -68,10 +68,6 @@ func (this *P2PActor) Receive(ctx actor.Ccntmext) {
 		this.handleGetVersionReq(ctx, msg)
 	case *GetConnectionCntReq:
 		this.handleGetConnectionCntReq(ctx, msg)
-	case *GetSyncPortReq:
-		this.handleGetSyncPortReq(ctx, msg)
-	case *GetConsPortReq:
-		this.handleGetConsPortReq(ctx, msg)
 	case *GetIdReq:
 		this.handleGetIDReq(ctx, msg)
 	case *GetConnectionStateReq:
@@ -113,11 +109,10 @@ func (this *P2PActor) handleStopServerReq(ctx actor.Ccntmext, req *StopServerReq
 
 //get port handler
 func (this *P2PActor) handleGetPortReq(ctx actor.Ccntmext, req *GetPortReq) {
-	syncPort, consPort := this.server.GetPort()
+	syncPort := this.server.GetPort()
 	if ctx.Sender() != nil {
 		resp := &GetPortRsp{
 			SyncPort: syncPort,
-			ConsPort: consPort,
 		}
 		ctx.Sender().Request(resp, ctx.Self())
 	}
@@ -140,30 +135,6 @@ func (this *P2PActor) handleGetConnectionCntReq(ctx actor.Ccntmext, req *GetConn
 	if ctx.Sender() != nil {
 		resp := &GetConnectionCntRsp{
 			Cnt: cnt,
-		}
-		ctx.Sender().Request(resp, ctx.Self())
-	}
-}
-
-//sync port handler
-func (this *P2PActor) handleGetSyncPortReq(ctx actor.Ccntmext, req *GetSyncPortReq) {
-	var syncPort uint16
-	//TODO
-	if ctx.Sender() != nil {
-		resp := &GetSyncPortRsp{
-			SyncPort: syncPort,
-		}
-		ctx.Sender().Request(resp, ctx.Self())
-	}
-}
-
-//consensus port handler
-func (this *P2PActor) handleGetConsPortReq(ctx actor.Ccntmext, req *GetConsPortReq) {
-	var consPort uint16
-	//TODO
-	if ctx.Sender() != nil {
-		resp := &GetConsPortRsp{
-			ConsPort: consPort,
 		}
 		ctx.Sender().Request(resp, ctx.Self())
 	}

@@ -22,7 +22,9 @@ package txnpool
 
 import (
 	"fmt"
+
 	"github.com/cntmio/cntmology-eventbus/actor"
+	"github.com/cntmio/cntmology-eventbus/mailbox"
 	"github.com/cntmio/cntmology/events"
 	"github.com/cntmio/cntmology/events/message"
 	tc "github.com/cntmio/cntmology/txnpool/common"
@@ -35,6 +37,7 @@ func startActor(obj interface{}, id string) (*actor.PID, error) {
 	props := actor.FromProducer(func() actor.Actor {
 		return obj.(actor.Actor)
 	})
+	props.WithMailbox(mailbox.BoundedDropping(tc.MAX_LIMITATION))
 
 	pid, _ := actor.SpawnNamed(props, id)
 	if pid == nil {

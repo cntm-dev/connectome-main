@@ -1,4 +1,6 @@
-/* This file is part of The cntmology library.
+/*
+ * Copyright (C) 2018 The cntmology Authors
+ * This file is part of The cntmology library.
  *
  * The cntmology is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
