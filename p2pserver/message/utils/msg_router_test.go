@@ -19,13 +19,14 @@
 package utils
 
 import (
+	"testing"
+
 	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/p2pserver/message/types"
 	"github.com/cntmio/cntmology/p2pserver/net/netserver"
 	"github.com/cntmio/cntmology/p2pserver/net/protocol"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func testHandler(data *types.MsgPayload, p2p p2p.P2P, pid *actor.PID, args ...interface{}) {

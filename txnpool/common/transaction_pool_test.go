@@ -19,12 +19,13 @@
 package common
 
 import (
+	"testing"
+	"time"
+
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 var (
@@ -32,7 +33,7 @@ var (
 )
 
 func init() {
-	log.Init(log.PATH, log.Stdout)
+	log.InitLog(log.InfoLog, log.Stdout)
 
 	mutable := &types.MutableTransaction{
 		TxType:  types.Invoke,

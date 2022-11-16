@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/cntmio/cntmology-eventbus/actor"
-	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
@@ -40,7 +39,6 @@ var (
 )
 
 func init() {
-	log.Init(log.PATH, log.Stdout)
 	topic = "TXN"
 
 	code := []byte("cntm")
