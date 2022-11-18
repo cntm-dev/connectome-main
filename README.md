@@ -1,57 +1,33 @@
 
-<h1 align="center">Ontology </h1>
-<h4 align="center">Version 1.0 </h4>
+<h1 align="center">Ontology</h1>
+<h4 align="center">Version 1.6.0</h4>
 
 [![GoDoc](https://godoc.org/github.com/cntmio/cntmology?status.svg)](https://godoc.org/github.com/cntmio/cntmology)
 [![Go Report Card](https://goreportcard.com/badge/github.com/cntmio/cntmology)](https://goreportcard.com/report/github.com/cntmio/cntmology)
-[![Travis](https://travis-ci.org/cntmio/cntmology.svg?branch=master)](https://travis-ci.org/cntmio/cntmology)
+[![Travis](https://travis-ci.com/cntmio/cntmology.svg?branch=master)](https://travis-ci.com/cntmio/cntmology)
 [![Discord](https://img.shields.io/discord/102860784329052160.svg)](https://discord.gg/gDkuCAq)
 
 English | [中文](README_CN.md)
 
-Welcome to the official source code repository for Ontology!
+Welcome to the official Go implementation of the [Ontology](https://cntm.io) blockchain!
 
-Ontology is dedicated to developing a high-performance blockchain infrastructure, which is customizable to different business requirements. 
+Ontology is a high-performance public blockchain project and distributed trust collaboration platform. It is highly customizable and suitable for all kinds of business requirements. The Ontology MainNet was launched on June 30th, 2018.
 
-Prerequisites for getting started with development on the Ontology networks are:
+As a public blockchain project, Ontology is currently maintained by both the Ontology core tech team and community members who can all support you in development. There are many available tools for use for development - SDKs, the SmartX IDE, Ontology blockchain explorer and more.
 
-- Mainstream coding and development experience
-- Understanding of your business scenario/requirements
-- No need for previous blockchain engineering experience
+New features are still being rapidly developed, therefore the master branch may be unstable. Stable versions can be found in the [releases section](https://github.com/cntmio/cntmology/releases).
 
-The Ontology core tech team, the community, and the ecosystem can all support you in development. MainNet, TestNet, Docker image for Ontology, SmartX, and Ontology Explorer combined make it easy to start.
-
-Ontology makes getting started easier!
-
-Ontology MainNet has been launched on Jun 30, 2018. <br>
-And new features are still rapidly under development. The master branch may be unstable, but stable versions can be found under the [release page](https://github.com/cntmio/cntmology/releases).
-
-We openly welcome developers to Ontology.
-
-## Features 
-
-- Scalable lightweight universal smart ccntmract
-- Scalable WASM ccntmract support
-- Crosschain interactive protocol (processing)
-- Multiple encryption algorithm support
-- Highly optimized transaction processing speed
-- P2P link layer encryption (optional module)
-- Multiple consensus algorithm support (VBFT/DBFT/RBFT/SBFT/PoW)
-- Quick block generation time
-
-
-## Ccntments
-
-- [Build development environment](#build-development-environment)
-- [Get Ontology](#get-cntmology)
-    - [Get from release](#get-from-release)
-    - [Get from source code](#get-from-source-code)
+- [Features](#features)
+- [Build Development Environment](#build-development-environment)
+- [Download Ontology](#download-cntmology)
+    - [Download Release](#download-release)
+    - [Build from Source Code](#build-from-source-code)
 - [Run Ontology](#run-cntmology)
-    - [MainNet sync node](#mainnet-sync-node)
-    - [Public test network Polaris sync node](#public-test-network-polaris-sync-node)
-    - [Testmode](#testmode)
-    - [Run in docker](#run-in-docker)
-- [Some examples](#some-example)
+    - [MainNet Sync Node](#mainnet-sync-node)
+    - [TestNet Sync Node](#testnet-sync-node)
+    - [Local PrivateNet](#local-privatenet)
+    - [Run with Docker](#run-in-docker)
+- [Examples](#examples)
     - [cntm transfer sample](#cntm-transfer-sample)
     - [Query transfer status sample](#query-transfer-status-sample)
     - [Query account balance sample](#query-account-balance-sample)
@@ -61,24 +37,36 @@ We openly welcome developers to Ontology.
     - [Developer Discord Group](#developer-discord-group)
 - [License](#license)
 
-## Build development environment
+## Features
+
+- Scalable lightweight universal smart ccntmracts
+- Scalable WASM ccntmract support
+- Cross-chain interactive protocol
+- Multiple encryption algorithms supported
+- Highly optimized transaction processing speed
+- P2P link layer encryption (optional module)
+- Multiple consensus algorithms supported (VBFT/DBFT/RBFT/SBFT/PoW)
+- Quick block generation time (1-30 seconds)
+
+
+## Build Development Environment
 The requirements to build Ontology are:
 
-- Golang version 1.9 or later
-- Glide (a third party package management tool)
-- Properly configured Go language environment
-- Golang supported operating system
+- [Golang](https://golang.org/doc/install) version 1.9 or later
+- [Glide](https://glide.sh) (a third party package management tool for Golang)
 
-## Get Ontology
+## Download Ontology
 
-### Get from release
-- You can download the latest Ontology binary file with ` curl https://dev.cntm.io/cntmology_install | sh `.
+### Download Release
+You can download a stable compiled version of the Ontology node software by either:
 
-- You can download other versions at [release page](https://github.com/cntmio/cntmology/releases).
+- Downloading the latest Ontology binary file with `curl https://dev.cntm.io/cntmology_install | sh`.
+- Downloading a specific version from the [release section](https://github.com/cntmio/cntmology/releases).
 
-### Get from source code
+### Build from Source Code
+Alternatively, you can build the Ontology application directly from the source code. Note that the code in the `master` branch may not be stable.
 
-Clone the Ontology repository into the appropriate $GOPATH/src/github.com/cntmio directory.
+1) Clone the Ontology repository into the appropriate `$GOPATH/src/github.com/cntmio` directory:
 
 ```
 $ git clone https://github.com/cntmio/cntmology.git
@@ -87,100 +75,128 @@ or
 ```
 $ go get github.com/cntmio/cntmology
 ```
-Fetch the dependent third party packages with glide.
+
+2) Fetch the dependent third party packages with [Glide](https://glide.sh):
 
 ```
 $ cd $GOPATH/src/github.com/cntmio/cntmology
 $ glide install
 ```
 
-If necessary, update dependent third party packages with glide.
+3) If necessary, update the dependent third party packages with Glide:
 
 ```
 $ cd $GOPATH/src/github.com/cntmio/cntmology
 $ glide update
 ```
 
-Build the source code with make.
+4) Build the source code with make:
 
 ```
 $ make all
 ```
 
-After building the source code sucessfully, you should see two executable programs:
+After building the source code successfully, you should see two executable programs:
 
-- `cntmology`: the node program/command line program for node ccntmrol.
-- `tools/sigsvr`: (optional) Ontology Signature Server - sigsvr is a RPC server for signing transactions for some special requirements. Detailed docs can be found [here](https://github.com/cntmio/documentation/blob/master/docs/pages/doc_en/Ontology/sigsvr_en.md).
+- `cntmology`: The primary Ontology node application and CLI.
+- `tools/sigsvr`: The Ontology Signature Server, `sigsvr` - an RPC server for signing transactions. Detailed documentation can be found [here](https://github.com/cntmio/documentation/blob/master/docs/pages/doc_en/Ontology/sigsvr_en.md).
 
 ## Run Ontology
 
-You can run Ontology in four different modes:
+The Ontology CLI can run nodes for the MainNet, TestNet and local PrivateNet. Check out the [Ontology CLI user guide](https://github.com/cntmio/cntmology/blob/master/docs/specifications/cli_user_guide.md) for a full list of commands.
 
-1) MainNet (./cntmology)
-2) TestNet (./cntmology --networkid 2)
-3) Testmode (./cntmology --testmode)
-4) Docker
+### MainNet Sync Node
 
-E.g. for Windows (64-bit), use command prompt and cd to the dirctory where you installed the Ontology release, then type `start cntmology-windows-amd64.exe --networkid 2`. This will sync to TestNet and you can explore further by the help command `cntmology-windows-amd64.exe --networkid 2 help`.
+You can run an Ontology MainNet node built from the source code with:
 
-### MainNet sync node
+ ``` shell
+./cntmology
+ ```
 
-Run cntmology directly
+ To run it with a macOS release build:
 
-   ```
-	./cntmology
-   ```
-then you can connect to Ontology MainNet.
+ ``` shell
+ ./cntmology-darwin-amd64
+ ```
 
-### Public test network Polaris sync node (TestNet)
+ To run it with a Windows release build:
 
-Run cntmology directly
+ ``` shell
+ start cntmology-windows-amd64.exe
+ ```
 
-   ```
-	./cntmology --networkid 2
-   ```
-   
-Then you can connect to the Ontology TestNet.
+### TestNet Sync Node
 
-### Testmode
+You can run an Ontology TestNet node built from the source code with:
 
-Create a directory on the host and store the following files in the directory:
-- Node program `cntmology`
-- Wallet file `wallet.dat` (`wallet.dat` can be generated by `./cntmology account add -d`)
+ ``` shell
+./cntmology --networkid 2
+ ```
 
-Run command `$ ./cntmology --testmode` can start single-host testnet.
+ To run it with a macOS release build:
 
-Here's a example of a single-host configuration:
+ ``` shell
+ ./cntmology-darwin-amd64 --networkid 2
+ ```
 
-- Directory structure
+ To run it with a Windows release build:
 
-    ```shell
-    $ tree
-    └── cntmology
-        ├── cntmology
-        └── wallet.dat
-    ```
+ ``` shell
+ start cntmology-windows-amd64.exe --networkid 2
+ ```
 
-### Run in docker
+### Local PrivateNet
 
-Please ensure there is a docker environment in your machine.
+The Ontology CLI allows you to run a local PrivateNet on your computer. Before you can run the PrivateNet you will need to create a wallet file. A wallet file named `wallet.dat` can be generated by running
 
-1. Make docker image
+``` shell
+./cntmology account add -d
+```
 
-    - In the root directory of source code, run `make docker`, it will make an Ontology image in docker.
+To start the PrivateNet built from the source code with:
 
-2. Run Ontology image
+``` shell
+./cntmology --testmode
+```
 
-    - Use command `docker run cntmio/cntmology` to run Ontology；
+Here's an example of the directory structure
 
-    - If you need to allow interactive keyboard input while the image is running, you can use the `docker run -ti cntmio/cntmology` command to start the image;
+``` shell
+$ tree
+└── cntmology
+    ├── cntmology
+    └── wallet.dat
+```
 
-    - If you need to keep the data generated by image at runtime, you can refer to the data persistence function of docker (e.g. volume);
+To run it with a macOS release build:
 
-    - If you need to add Ontology parameters, you can add them directly after `docker run cntmio/cntmology` such as `docker run cntmio/cntmology --networkid 2`.
-     The parameters of cntmology command line refer to [here](./docs/specifications/cli_user_guide.md).
+``` shell
+./cntmology-darwin-amd64 --testmode
+```
 
-## Some examples
+To run it with a Windows release build:
+
+``` shell
+start cntmology-windows-amd64.exe --testmode
+```
+
+### Run with Docker
+
+You can run the Ontology node software with Docker.
+
+1. Setup Docker on your computer
+  - You will need the latest version of [Docker Desktop](https://www.docker.com/products/docker-desktop).
+
+2. Make a Docker image
+  - In the root directory of the source code, run `make docker` to make an Ontology image.
+
+3. Run the Ontology image
+  - Run the command `docker run cntmio/cntmology` to start Ontology
+  - Run the command `docker run -ti cntmio/cntmology` to start Ontology and allow interactive keyboard input
+  - If you need to keep the data generated by the image, refer to Docker's data persistence function
+  - You can add arguments to the Ontology command, such as with `docker run cntmio/cntmology --networkid 2`.
+
+## Examples
 
 ### cntm transfer sample
  -- from: transfer from； -- to: transfer to； -- amount: cntm amount；
@@ -271,30 +287,10 @@ For further examples, please refer to the [CLI User Guide](https://cntmio.github
 
 ## Ccntmributions
 
-Please open a pull request with a signed commit. We appreciate your help! You can also send your code as email to the developer mailing list. You're welcome to join the Ontology mailing list or developer forum.
+Ccntmributors to Ontology are very welcome! Before beginning, please take a look at our [ccntmributing guidelines](CcntmRIBUTING.md). You can open an issue by [clicking here](https://github.com/cntmio/cntmology/issues/new).
 
-Please provide a detailed submission information when you want to ccntmribute code for this project. The format is as follows:
-
-Header line: Explain the commit in one line (use the imperative).
-
-Body of commit message is a few lines of text, explaining things in more detail, possibly giving some background about the issue being fixed, etc.
-
-The body of the commit message can be several paragraphs. Please do proper word-wrap and keep columns shorter than 74 characters or so. That way "git log" will show things  nicely even when it is indented.
-
-Make sure you explain your solution and why you are doing what you are doing, as opposed to describing what you are doing. Reviewers and your future self can read the patch, but might not understand why a particular solution was implemented.
-
-Reported-by: whoever-reported-it +
-Signed-off-by: Your Name [youremail@yourhost.com](mailto:youremail@yourhost.com)
-
-## Open source community
-### Site
-
-- <https://cntm.io/>
-
-### Developer Discord Group
-
-- <https://discord.gg/4TQujHj/>
+If you have any issues getting setup, open an issue or reach out in the [Ontology Discord](https://discordapp.com/invite/4TQujHj).
 
 ## License
 
-The Ontology library is licensed under the GNU Lesser General Public License v3.0, read the LICENSE file in the root directory of the project for details.
+The Ontology source code is available under the [LGPL-3.0](LICENSE) license.
