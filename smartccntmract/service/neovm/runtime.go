@@ -27,6 +27,7 @@ import (
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/serialization"
+	"github.com/cntmio/cntmology/core/signature"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
 	scommon "github.com/cntmio/cntmology/smartccntmract/common"
@@ -93,6 +94,55 @@ func RuntimeDeserialize(service *NeoVmService, engine *vm.ExecutionEngine) error
 		return nil
 	}
 	vm.PushData(engine, item)
+	return nil
+}
+
+func RuntimeVerifyMutiSig(service *NeoVmService, engine *vm.ExecutionEngine) error {
+	if vm.EvaluationStackCount(engine) < 4 {
+		return errors.NewErr("[RuntimeVerifyMutiSig] Too few input parameters")
+	}
+	data, err := vm.PopByteArray(engine)
+	if err != nil {
+		return err
+	}
+	arr1, err := vm.PopArray(engine)
+	if err != nil {
+		return err
+	}
+	pks := make([]keypair.PublicKey, 0, len(arr1))
+	for i := 0; i < len(arr1); i++ {
+		value, err := arr1[i].GetByteArray()
+		if err != nil {
+			return err
+		}
+		pk, err := keypair.DeserializePublicKey(value)
+		if err != nil {
+			return err
+		}
+		pks = append(pks, pk)
+	}
+
+	m, err := vm.PopInt(engine)
+	if err != nil {
+		return err
+	}
+	arr2, err := vm.PopArray(engine)
+	if err != nil {
+		return err
+	}
+	signs := make([][]byte, 0, len(arr2))
+	for i := 0; i < len(arr2); i++ {
+		value, err := arr2[i].GetByteArray()
+		if err != nil {
+			return err
+		}
+		signs = append(signs, value)
+	}
+	if err := signature.VerifyMultiSignature(data, pks, m, signs); err != nil {
+		vm.PushData(engine, false)
+	} else {
+		vm.PushData(engine, true)
+	}
 	return nil
 }
 
