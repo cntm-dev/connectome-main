@@ -19,15 +19,14 @@
 package vbft
 
 import (
-	"os"
-	"testing"
-
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/ledger"
+	"os"
+	"testing"
 )
 
 func newTestChainStore(t *testing.T) *ChainStore {
@@ -37,7 +36,7 @@ func newTestChainStore(t *testing.T) *ChainStore {
 	if acct == nil {
 		t.Fatalf("GetDefaultAccount error: acc is nil")
 	}
-
+	os.RemoveAll(config.DEFAULT_DATA_DIR)
 	db, err := ledger.NewLedger(config.DEFAULT_DATA_DIR, 0)
 	if err != nil {
 		t.Fatalf("NewLedger error %s", err)

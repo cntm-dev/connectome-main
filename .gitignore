@@ -16,6 +16,7 @@ GoOnchain.iml
 vendor/*
 !vendor/github.com/cntmio/cntmology-crypto/*
 Chain/*
+Chain
 /config/*
 nodectl
 cntmology
