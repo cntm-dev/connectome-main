@@ -137,7 +137,7 @@ func (this *NeoVmService) Invoke() (interface{}, error) {
 		return nil, ERR_EXECUTE_CODE
 	}
 	this.CcntmextRef.PushCcntmext(&ccntmext.Ccntmext{CcntmractAddress: scommon.AddressFromVmCode(this.Code), Code: this.Code})
-	this.Engine.PushCcntmext(vm.NewExecutionCcntmext(this.Engine, this.Code))
+	this.Engine.PushCcntmext(vm.NewExecutionCcntmext(this.Code))
 	for {
 		//check the execution step count
 		if this.PreExec && !this.CcntmextRef.CheckExecStep() {
