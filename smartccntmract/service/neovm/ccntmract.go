@@ -28,7 +28,7 @@ import (
 )
 
 // CcntmractCreate create a new smart ccntmract on blockchain, and put it to vm stack
-func CcntmractCreate(service *NeoVmService, engine *vm.ExecutionEngine) error {
+func CcntmractCreate(service *NeoVmService, engine *vm.Executor) error {
 	ccntmract, err := isCcntmractParamValid(engine)
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractCreate] ccntmract parameters invalid!")
@@ -42,12 +42,11 @@ func CcntmractCreate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 		service.CacheDB.PutCcntmract(ccntmract)
 		dep = ccntmract
 	}
-	vm.PushData(engine, dep)
-	return nil
+	return engine.EvalStack.PushAsInteropValue(dep)
 }
 
 // CcntmractMigrate migrate old smart ccntmract to a new ccntmract, and destroy old ccntmract
-func CcntmractMigrate(service *NeoVmService, engine *vm.ExecutionEngine) error {
+func CcntmractMigrate(service *NeoVmService, engine *vm.Executor) error {
 	ccntmract, err := isCcntmractParamValid(engine)
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractMigrate] ccntmract parameters invalid!")
@@ -76,13 +75,11 @@ func CcntmractMigrate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if err := iter.Error(); err != nil {
 		return err
 	}
-
-	vm.PushData(engine, ccntmract)
-	return nil
+	return engine.EvalStack.PushAsInteropValue(ccntmract)
 }
 
 // CcntmractDestory destroy a ccntmract
-func CcntmractDestory(service *NeoVmService, engine *vm.ExecutionEngine) error {
+func CcntmractDestory(service *NeoVmService, engine *vm.Executor) error {
 	ccntmext := service.CcntmextRef.CurrentCcntmext()
 	if ccntmext == nil {
 		return errors.NewErr("[CcntmractDestory] current ccntmract ccntmext invalid!")
@@ -105,18 +102,15 @@ func CcntmractDestory(service *NeoVmService, engine *vm.ExecutionEngine) error {
 }
 
 // CcntmractGetStorageCcntmext put ccntmract storage ccntmext to vm stack
-func CcntmractGetStorageCcntmext(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	if vm.EvaluationStackCount(engine) < 1 {
-		return errors.NewErr("[GetStorageCcntmext] Too few input parameter!")
-	}
-	opInterface, err := vm.PopInteropInterface(engine)
+func CcntmractGetStorageCcntmext(service *NeoVmService, engine *vm.Executor) error {
+	opInterface, err := engine.EvalStack.PopAsInteropValue()
 	if err != nil {
 		return err
 	}
-	if opInterface == nil {
+	if opInterface.Data == nil {
 		return errors.NewErr("[GetStorageCcntmext] Pop data nil!")
 	}
-	ccntmractState, ok := opInterface.(*payload.DeployCode)
+	ccntmractState, ok := opInterface.Data.(*payload.DeployCode)
 	if !ok {
 		return errors.NewErr("[GetStorageCcntmext] Pop data not ccntmract!")
 	}
@@ -128,64 +122,65 @@ func CcntmractGetStorageCcntmext(service *NeoVmService, engine *vm.ExecutionEngi
 	if address != service.CcntmextRef.CurrentCcntmext().CcntmractAddress {
 		return errors.NewErr("[GetStorageCcntmext] CodeHash not equal!")
 	}
-	vm.PushData(engine, NewStorageCcntmext(address))
-	return nil
+	return engine.EvalStack.PushAsInteropValue(NewStorageCcntmext(address))
 }
 
 // CcntmractGetCode put ccntmract to vm stack
-func CcntmractGetCode(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	i, err := vm.PopInteropInterface(engine)
+func CcntmractGetCode(service *NeoVmService, engine *vm.Executor) error {
+	i, err := engine.EvalStack.PopAsInteropValue()
 	if err != nil {
 		return err
 	}
-	vm.PushData(engine, i.(*payload.DeployCode).Code)
-	return nil
+	if d, ok := i.Data.(*payload.DeployCode); ok {
+		return engine.EvalStack.PushBytes(d.Code)
+	}
+	return fmt.Errorf("[CcntmractGetCode] Type error ")
 }
 
-func isCcntmractParamValid(engine *vm.ExecutionEngine) (*payload.DeployCode, error) {
-	if vm.EvaluationStackCount(engine) < 7 {
+func isCcntmractParamValid(engine *vm.Executor) (*payload.DeployCode, error) {
+	if engine.EvalStack.Count() < 7 {
 		return nil, errors.NewErr("[Ccntmract] Too few input parameters")
 	}
-	code, err := vm.PopByteArray(engine)
+	code, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return nil, err
 	}
 	if len(code) > 1024*1024 {
 		return nil, errors.NewErr("[Ccntmract] Code too lcntm!")
 	}
-	needStorage, err := vm.PopBoolean(engine)
+	needStorage, err := engine.EvalStack.PopAsBool()
 	if err != nil {
 		return nil, err
 	}
-	name, err := vm.PopByteArray(engine)
+	name, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return nil, err
 	}
 	if len(name) > 252 {
 		return nil, errors.NewErr("[Ccntmract] Name too lcntm!")
 	}
-	version, err := vm.PopByteArray(engine)
+	version, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return nil, err
 	}
 	if len(version) > 252 {
 		return nil, errors.NewErr("[Ccntmract] Version too lcntm!")
 	}
-	author, err := vm.PopByteArray(engine)
+	author, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return nil, err
 	}
 	if len(author) > 252 {
 		return nil, errors.NewErr("[Ccntmract] Author too lcntm!")
 	}
-	email, err := vm.PopByteArray(engine)
+	email, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return nil, err
 	}
 	if len(email) > 252 {
 		return nil, errors.NewErr("[Ccntmract] Email too lcntm!")
 	}
-	desc, err := vm.PopByteArray(engine)
+	desc, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return nil, err
 	}

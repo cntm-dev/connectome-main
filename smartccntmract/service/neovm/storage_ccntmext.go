@@ -43,12 +43,12 @@ func (this *StorageCcntmext) ToArray() []byte {
 	return this.Address[:]
 }
 
-func StorageCcntmextAsReadOnly(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	data, err := vm.PopInteropInterface(engine)
+func StorageCcntmextAsReadOnly(service *NeoVmService, engine *vm.Executor) error {
+	data, err := engine.EvalStack.PopAsInteropValue()
 	if err != nil {
 		return err
 	}
-	ccntmext, ok := data.(*StorageCcntmext)
+	ccntmext, ok := data.Data.(*StorageCcntmext)
 	if !ok {
 		return fmt.Errorf("%s", "pop storage ccntmext type invalid")
 	}
@@ -56,6 +56,5 @@ func StorageCcntmextAsReadOnly(service *NeoVmService, engine *vm.ExecutionEngine
 		ccntmext = NewStorageCcntmext(ccntmext.Address)
 		ccntmext.IsReadOnly = true
 	}
-	vm.PushData(engine, ccntmext)
-	return nil
+	return engine.EvalStack.PushAsInteropValue(ccntmext)
 }

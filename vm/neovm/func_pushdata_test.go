@@ -30,7 +30,7 @@ func TestGetPushData(t *testing.T) {
 	var e ExecutionEngine
 	var iRet int8
 	var ret []byte
-	e.Ccntmext = NewExecutionCcntmext( nil)
+	e.Ccntmext = NewExecutionCcntmext(nil)
 
 	e.OpCode = PUSH0
 	val, err := getPushData(&e)

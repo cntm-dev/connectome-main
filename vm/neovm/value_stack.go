@@ -19,6 +19,7 @@
 package neovm
 
 import (
+	"fmt"
 	"github.com/cntmio/cntmology/vm/neovm/errors"
 	"github.com/cntmio/cntmology/vm/neovm/types"
 )
@@ -96,11 +97,25 @@ func (self *ValueStack) Push(t types.VmValue) error {
 	return nil
 }
 
-func (self *ValueStack) PushMany(vals... types.VmValue) error {
-	if int64(len(self.data) + len(vals)) > self.limit {
+func (self *ValueStack) PushMany(vals ...types.VmValue) error {
+	if int64(len(self.data)+len(vals)) > self.limit {
 		return errors.ERR_OVER_STACK_LEN
 	}
 	self.data = append(self.data, vals...)
+	return nil
+}
+
+func (self *ValueStack) PushAsArray(vals []types.VmValue) error {
+
+	if int64(len(self.data)+1) > self.limit {
+		return errors.ERR_OVER_STACK_LEN
+	}
+	arrayValue := types.NewArrayValue()
+	for _, val := range vals {
+		arrayValue.Append(val)
+	}
+	v := types.VmValueFromArrayVal(arrayValue)
+	self.data = append(self.data, v)
 	return nil
 }
 
@@ -117,6 +132,15 @@ func (self *ValueStack) Pop() (value types.VmValue, err error) {
 
 func (self *ValueStack) PopPair() (left, right types.VmValue, err error) {
 	right, err = self.Pop()
+	if err != nil {
+		return
+	}
+	left, err = self.Pop()
+	return
+}
+
+func (self *ValueStack) PopTriple() (left, middle, right types.VmValue, err error) {
+	middle, right, err = self.PopPair()
 	if err != nil {
 		return
 	}
@@ -146,4 +170,13 @@ func (self *ValueStack) CopyTo(stack *ValueStack) error {
 	}
 	stack.data = append(stack.data, self.data...)
 	return nil
+}
+
+func (self *ValueStack) Dump() string {
+	data := fmt.Sprintf("stack[%d]:\n", len(self.data))
+	for i, item := range self.data {
+		i = len(self.data) - i
+		data += fmt.Sprintf("%d:\t%s\n", i, item.Dump())
+	}
+	return data
 }

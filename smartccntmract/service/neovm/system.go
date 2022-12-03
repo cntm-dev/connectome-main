@@ -24,37 +24,33 @@ import (
 )
 
 // GetCodeCcntmainer push current transaction to vm stack
-func GetCodeCcntmainer(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	vm.PushData(engine, service.Tx)
-	return nil
+func GetCodeCcntmainer(service *NeoVmService, engine *vm.Executor) error {
+	return engine.EvalStack.PushAsInteropValue(service.Tx)
 }
 
 // GetExecutingAddress push current ccntmext to vm stack
-func GetExecutingAddress(service *NeoVmService, engine *vm.ExecutionEngine) error {
+func GetExecutingAddress(service *NeoVmService, engine *vm.Executor) error {
 	ccntmext := service.CcntmextRef.CurrentCcntmext()
 	if ccntmext == nil {
 		return errors.NewErr("Current ccntmext invalid")
 	}
-	vm.PushData(engine, ccntmext.CcntmractAddress[:])
-	return nil
+	return engine.EvalStack.PushBytes(ccntmext.CcntmractAddress[:])
 }
 
 // GetExecutingAddress push previous ccntmext to vm stack
-func GetCallingAddress(service *NeoVmService, engine *vm.ExecutionEngine) error {
+func GetCallingAddress(service *NeoVmService, engine *vm.Executor) error {
 	ccntmext := service.CcntmextRef.CallingCcntmext()
 	if ccntmext == nil {
 		return errors.NewErr("Calling ccntmext invalid")
 	}
-	vm.PushData(engine, ccntmext.CcntmractAddress[:])
-	return nil
+	return engine.EvalStack.PushBytes(ccntmext.CcntmractAddress[:])
 }
 
 // GetExecutingAddress push entry call ccntmext to vm stack
-func GetEntryAddress(service *NeoVmService, engine *vm.ExecutionEngine) error {
+func GetEntryAddress(service *NeoVmService, engine *vm.Executor) error {
 	ccntmext := service.CcntmextRef.EntryCcntmext()
 	if ccntmext == nil {
 		return errors.NewErr("Entry ccntmext invalid")
 	}
-	vm.PushData(engine, ccntmext.CcntmractAddress[:])
-	return nil
+	return engine.EvalStack.PushBytes(ccntmext.CcntmractAddress[:])
 }

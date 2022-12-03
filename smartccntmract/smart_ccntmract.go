@@ -135,7 +135,7 @@ func (this *SmartCcntmract) NewExecuteEngine(code []byte) (ccntmext.Engine, erro
 		Time:       this.Config.Time,
 		Height:     this.Config.Height,
 		BlockHash:  this.Config.BlockHash,
-		Engine:     vm.NewExecutionEngine(),
+		Engine:     vm.NewExecutor(code),
 		PreExec:    this.PreExec,
 	}
 	return service, nil

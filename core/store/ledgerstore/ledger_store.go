@@ -48,7 +48,6 @@ import (
 	"github.com/cntmio/cntmology/events"
 	"github.com/cntmio/cntmology/events/message"
 	"github.com/cntmio/cntmology/smartccntmract"
-	scommon "github.com/cntmio/cntmology/smartccntmract/common"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/global_params"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
@@ -1031,11 +1030,11 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.
 		if gasCost < mixGas {
 			gasCost = mixGas
 		}
-		cv, err := scommon.ConvertNeoVmTypeHexString(result)
+		val, err := result.ConvertNeoVmValueHexString()
 		if err != nil {
 			return stf, err
 		}
-		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_SUCCESS, Gas: gasCost, Result: cv, Notify: sc.Notifications}, nil
+		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_SUCCESS, Gas: gasCost, Result: val}, nil
 	} else if tx.TxType == types.Deploy {
 		deploy := tx.Payload.(*payload.DeployCode)
 		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_SUCCESS, Gas: preGas[neovm.CcntmRACT_CREATE_NAME] + calcGasByCodeLen(len(deploy.Code), preGas[neovm.UINT_DEPLOY_CODE_LEN_NAME]), Result: nil}, nil

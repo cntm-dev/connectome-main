@@ -27,10 +27,7 @@ import (
 )
 
 // StoragePut put smart ccntmract storage item to cache
-func StoragePut(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	if vm.EvaluationStackCount(engine) < 3 {
-		return errors.NewErr("[Ccntmext] Too few input parameters ")
-	}
+func StoragePut(service *NeoVmService, engine *vm.Executor) error {
 	ccntmext, err := getCcntmext(engine)
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StoragePut] get pop ccntmext error!")
@@ -42,7 +39,7 @@ func StoragePut(service *NeoVmService, engine *vm.ExecutionEngine) error {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StoragePut] check ccntmext error!")
 	}
 
-	key, err := vm.PopByteArray(engine)
+	key, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return err
 	}
@@ -50,7 +47,7 @@ func StoragePut(service *NeoVmService, engine *vm.ExecutionEngine) error {
 		return errors.NewErr("[StoragePut] Storage key to lcntm")
 	}
 
-	value, err := vm.PopByteArray(engine)
+	value, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return err
 	}
@@ -60,10 +57,7 @@ func StoragePut(service *NeoVmService, engine *vm.ExecutionEngine) error {
 }
 
 // StorageDelete delete smart ccntmract storage item from cache
-func StorageDelete(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	if vm.EvaluationStackCount(engine) < 2 {
-		return errors.NewErr("[Ccntmext] Too few input parameters ")
-	}
+func StorageDelete(service *NeoVmService, engine *vm.Executor) error {
 	ccntmext, err := getCcntmext(engine)
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StorageDelete] get pop ccntmext error!")
@@ -74,7 +68,7 @@ func StorageDelete(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if err := checkStorageCcntmext(service, ccntmext); err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StorageDelete] check ccntmext error!")
 	}
-	ba, err := vm.PopByteArray(engine)
+	ba, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return err
 	}
@@ -84,15 +78,13 @@ func StorageDelete(service *NeoVmService, engine *vm.ExecutionEngine) error {
 }
 
 // StorageGet push smart ccntmract storage item from cache to vm stack
-func StorageGet(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	if vm.EvaluationStackCount(engine) < 2 {
-		return errors.NewErr("[Ccntmext] Too few input parameters ")
-	}
+func StorageGet(service *NeoVmService, engine *vm.Executor) error {
+
 	ccntmext, err := getCcntmext(engine)
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[StorageGet] get pop ccntmext error!")
 	}
-	ba, err := vm.PopByteArray(engine)
+	ba, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return err
 	}
@@ -103,28 +95,26 @@ func StorageGet(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	}
 
 	if len(raw) == 0 {
-		vm.PushData(engine, []byte{})
+		engine.EvalStack.PushBytes([]byte{})
 	} else {
 		value, err := states.GetValueFromRawStorageItem(raw)
 		if err != nil {
 			return err
 		}
-		vm.PushData(engine, value)
+		engine.EvalStack.PushBytes(value)
 	}
 	return nil
 }
 
 // StorageGetCcntmext push smart ccntmract storage ccntmext to vm stack
-func StorageGetCcntmext(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	vm.PushData(engine, NewStorageCcntmext(service.CcntmextRef.CurrentCcntmext().CcntmractAddress))
-	return nil
+func StorageGetCcntmext(service *NeoVmService, engine *vm.Executor) error {
+	return engine.EvalStack.PushAsInteropValue(NewStorageCcntmext(service.CcntmextRef.CurrentCcntmext().CcntmractAddress))
 }
 
-func StorageGetReadOnlyCcntmext(service *NeoVmService, engine *vm.ExecutionEngine) error {
+func StorageGetReadOnlyCcntmext(service *NeoVmService, engine *vm.Executor) error {
 	ccntmext := NewStorageCcntmext(service.CcntmextRef.CurrentCcntmext().CcntmractAddress)
 	ccntmext.IsReadOnly = true
-	vm.PushData(engine, ccntmext)
-	return nil
+	return engine.EvalStack.PushAsInteropValue(ccntmext)
 }
 
 func checkStorageCcntmext(service *NeoVmService, ccntmext *StorageCcntmext) error {
@@ -135,15 +125,15 @@ func checkStorageCcntmext(service *NeoVmService, ccntmext *StorageCcntmext) erro
 	return nil
 }
 
-func getCcntmext(engine *vm.ExecutionEngine) (*StorageCcntmext, error) {
-	opInterface, err := vm.PopInteropInterface(engine)
+func getCcntmext(engine *vm.Executor) (*StorageCcntmext, error) {
+	opInterface, err := engine.EvalStack.PopAsInteropValue()
 	if err != nil {
 		return nil, err
 	}
-	if opInterface == nil {
+	if opInterface.Data == nil {
 		return nil, errors.NewErr("[Ccntmext] Get storageCcntmext nil")
 	}
-	ccntmext, ok := opInterface.(*StorageCcntmext)
+	ccntmext, ok := opInterface.Data.(*StorageCcntmext)
 	if !ok {
 		return nil, errors.NewErr("[Ccntmext] Get storageCcntmext invalid")
 	}
