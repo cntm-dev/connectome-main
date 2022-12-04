@@ -26,7 +26,7 @@ func TestOpDcall(t *testing.T) {
 	var e ExecutionEngine
 	stack := NewRandAccessStack()
 	e.EvaluationStack = stack
-	ccntmext := NewExecutionCcntmext(&e, []byte{byte(PUSH8), byte(PUSH2), byte(PUSH0), byte(DCALL)})
+	ccntmext := NewExecutionCcntmext([]byte{byte(PUSH8), byte(PUSH2), byte(PUSH0), byte(DCALL)})
 	e.PushCcntmext(ccntmext)
 
 	PushData(&e, 1)
