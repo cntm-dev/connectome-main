@@ -106,9 +106,9 @@ func HeaderGetIndex(service *NeoVmService, engine *vm.Executor) error {
 	} else if h, ok := d.Data.(*types.Header); ok {
 		data = h
 	} else {
-		return fmt.Errorf("[HeaderGetIndex] Wrcntm type!")
+		return fmt.Errorf("[HeaderGetIndex] Wrcntm type")
 	}
-	return engine.EvalStack.PushInt64(int64(data.Height))
+	return engine.EvalStack.PushUint32(data.Height)
 }
 
 // HeaderGetTimestamp put header's timestamp to vm stack
@@ -123,9 +123,9 @@ func HeaderGetTimestamp(service *NeoVmService, engine *vm.Executor) error {
 	} else if h, ok := d.Data.(*types.Header); ok {
 		data = h
 	} else {
-		return errors.NewErr("[HeaderGetTimestamp] Wrcntm type!")
+		return errors.NewErr("[HeaderGetTimestamp] Wrcntm type")
 	}
-	return engine.EvalStack.PushInt64(int64(data.Timestamp))
+	return engine.EvalStack.PushUint32(data.Timestamp)
 }
 
 // HeaderGetConsensusData put header's consensus data to vm stack
@@ -140,9 +140,9 @@ func HeaderGetConsensusData(service *NeoVmService, engine *vm.Executor) error {
 	} else if h, ok := d.Data.(*types.Header); ok {
 		data = h
 	} else {
-		return errors.NewErr("[HeaderGetConsensusData] Wrcntm type!")
+		return errors.NewErr("[HeaderGetConsensusData] Wrcntm type")
 	}
-	return engine.EvalStack.PushInt64(int64(data.ConsensusData))
+	return engine.EvalStack.PushUint64(data.ConsensusData)
 }
 
 // HeaderGetNextConsensus put header's consensus to vm stack
@@ -157,7 +157,7 @@ func HeaderGetNextConsensus(service *NeoVmService, engine *vm.Executor) error {
 	} else if h, ok := d.Data.(*types.Header); ok {
 		data = h
 	} else {
-		return errors.NewErr("[HeaderGetNextConsensus] Wrcntm type!")
+		return errors.NewErr("[HeaderGetNextConsensus] Wrcntm type")
 	}
 	return engine.EvalStack.PushBytes(data.NextBookkeeper[:])
 }

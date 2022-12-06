@@ -23,6 +23,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"github.com/cntmio/cntmology-crypto/keypair"
+	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/signature"
 	"github.com/cntmio/cntmology/vm/neovm/constants"
 	"github.com/cntmio/cntmology/vm/neovm/errors"
@@ -152,8 +153,11 @@ func (self *Executor) ExecuteOp(opcode OpCode, ccntmext *ExecutionCcntmext) (VMS
 	case JMP, JMPIF, JMPIFNOT, CALL:
 		if opcode == CALL {
 			caller := ccntmext.Clone()
-			caller.SetInstructionPointer(int64(caller.GetInstructionPointer() + 2))
-			err := self.PushCcntmext(caller)
+			err := caller.SetInstructionPointer(int64(caller.GetInstructionPointer() + 2))
+			if err != nil {
+				return FAULT, err
+			}
+			err = self.PushCcntmext(caller)
 			if err != nil {
 				return FAULT, err
 			}
@@ -184,7 +188,10 @@ func (self *Executor) ExecuteOp(opcode OpCode, ccntmext *ExecutionCcntmext) (VMS
 		}
 
 		if needJmp {
-			ccntmext.SetInstructionPointer(int64(offset))
+			err := ccntmext.SetInstructionPointer(int64(offset))
+			if err != nil {
+				return FAULT, err
+			}
 		}
 	case DCALL:
 		caller := ccntmext.Clone()
@@ -199,8 +206,13 @@ func (self *Executor) ExecuteOp(opcode OpCode, ccntmext *ExecutionCcntmext) (VMS
 		if target < 0 || target >= int64(len(self.Ccntmext.Code)) {
 			return FAULT, errors.ERR_DCALL_OFFSET_ERROR
 		}
-		self.Ccntmext.SetInstructionPointer(target)
+		err = self.Ccntmext.SetInstructionPointer(target)
+		if err != nil {
+			return FAULT, err
+		}
 	case RET:
+		// omit handle error is ok, if ccntmext stack is empty, self.Ccntmext will be nil
+		// which will be checked outside before the next opcode call
 		self.Ccntmext, _ = self.PopCcntmext()
 	case DUPFROMALTSTACK:
 		val, err := self.AltStack.Peek(0)
@@ -592,17 +604,35 @@ func (self *Executor) ExecuteOp(opcode OpCode, ccntmext *ExecutionCcntmext) (VMS
 		if err != nil {
 			return FAULT, err
 		}
-	case NUMEQUAL, NUMNOTEQUAL, LT, GT, LTE, GTE:
+	case NUMNOTEQUAL, NUMEQUAL:
+		// note : pop as bytes to avoid hard-fork because previous version missing check
+		// whether the params are a valid 32 byte integer
+		left, right, err := self.EvalStack.PopPairAsBytes()
+		if err != nil {
+			return FAULT, err
+		}
+		l := common.BigIntFromNeoBytes(left)
+		r := common.BigIntFromNeoBytes(right)
+		var val bool
+		switch opcode {
+		case NUMEQUAL:
+			val = l.Cmp(r) == 0
+		case NUMNOTEQUAL:
+			val = l.Cmp(r) != 0
+		default:
+			panic("unreachable")
+		}
+		err = self.EvalStack.PushBool(val)
+		if err != nil {
+			return FAULT, err
+		}
+	case LT, GT, LTE, GTE:
 		left, right, err := self.EvalStack.PopPairAsIntVal()
 		if err != nil {
 			return FAULT, err
 		}
 		var val bool
 		switch opcode {
-		case NUMEQUAL:
-			val = left.Cmp(right) == 0
-		case NUMNOTEQUAL:
-			val = left.Cmp(right) != 0
 		case LT:
 			val = left.Cmp(right) < 0
 		case GT:

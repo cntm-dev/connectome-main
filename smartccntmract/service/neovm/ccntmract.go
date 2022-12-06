@@ -39,7 +39,10 @@ func CcntmractCreate(service *NeoVmService, engine *vm.Executor) error {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractCreate] GetOrAdd error!")
 	}
 	if dep == nil {
-		service.CacheDB.PutCcntmract(ccntmract)
+		err := service.CacheDB.PutCcntmract(ccntmract)
+		if err != nil {
+			return err
+		}
 		dep = ccntmract
 	}
 	return engine.EvalStack.PushAsInteropValue(dep)
@@ -59,7 +62,10 @@ func CcntmractMigrate(service *NeoVmService, engine *vm.Executor) error {
 	ccntmext := service.CcntmextRef.CurrentCcntmext()
 	oldAddr := ccntmext.CcntmractAddress
 
-	service.CacheDB.PutCcntmract(ccntmract)
+	err = service.CacheDB.PutCcntmract(ccntmract)
+	if err != nil {
+		return err
+	}
 	service.CacheDB.DeleteCcntmract(oldAddr)
 
 	iter := service.CacheDB.NewIterator(oldAddr[:])
@@ -203,7 +209,7 @@ func isCcntmractExist(service *NeoVmService, ccntmractAddress common.Address) er
 	item, err := service.CacheDB.GetCcntmract(ccntmractAddress)
 
 	if err != nil || item != nil {
-		return fmt.Errorf("[Ccntmract] Get ccntmract %x error or ccntmract exist!", ccntmractAddress)
+		return fmt.Errorf("[Ccntmract] Get ccntmract %x error or ccntmract exist", ccntmractAddress)
 	}
 	return nil
 }

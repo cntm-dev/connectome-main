@@ -42,8 +42,9 @@ func (ec *ExecutionCcntmext) GetInstructionPointer() int {
 	return ec.OpReader.Position()
 }
 
-func (ec *ExecutionCcntmext) SetInstructionPointer(offset int64) {
-	ec.OpReader.Seek(offset, io.SeekStart)
+func (ec *ExecutionCcntmext) SetInstructionPointer(offset int64) error {
+	_, err := ec.OpReader.Seek(offset, io.SeekStart)
+	return err
 }
 
 func (ec *ExecutionCcntmext) NextInstruction() OpCode {
@@ -63,6 +64,6 @@ func (self *ExecutionCcntmext) ReadOpCode() (val OpCode, eof bool) {
 func (ec *ExecutionCcntmext) Clone() *ExecutionCcntmext {
 	executionCcntmext := NewExecutionCcntmext(ec.Code)
 	executionCcntmext.InstructionPointer = ec.InstructionPointer
-	executionCcntmext.SetInstructionPointer(int64(ec.GetInstructionPointer()))
+	_ = executionCcntmext.SetInstructionPointer(int64(ec.GetInstructionPointer()))
 	return executionCcntmext
 }
