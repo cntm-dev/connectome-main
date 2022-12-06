@@ -43,6 +43,7 @@ type SmartCcntmract struct {
 	Store         store.LedgerStore  // ledger store
 	Config        *Config
 	Notifications []*event.NotifyEventInfo // all execute smart ccntmract event notify info
+	GasTable      map[string]uint64
 	Gas           uint64
 	ExecStep      int
 	PreExec       bool
@@ -130,6 +131,7 @@ func (this *SmartCcntmract) NewExecuteEngine(code []byte) (ccntmext.Engine, erro
 		Store:      this.Store,
 		CacheDB:    this.CacheDB,
 		CcntmextRef: this,
+		GasTable:   this.GasTable,
 		Code:       code,
 		Tx:         this.Config.Tx,
 		Time:       this.Config.Time,
