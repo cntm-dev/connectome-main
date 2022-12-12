@@ -1,9 +1,28 @@
+/*
+ * Copyright (C) 2018 The cntmology Authors
+ * This file is part of The cntmology library.
+ *
+ * The cntmology is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The cntmology is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package neovm
 
 import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
+	"math"
 	"math/big"
 	"testing"
 
@@ -155,4 +174,43 @@ func compareFuncBigInt(left, right *big.Int, opcode OpCode) ([]byte, error) {
 	}
 	nb := BigIntZip(left, right, opcode)
 	return common.BigIntToNeoBytes(nb), nil
+}
+
+func TestRsh(t *testing.T) {
+	val := types.IntValFromInt(math.MaxInt64)
+	b := new(big.Int).SetUint64(math.MaxUint64)
+	val2, err := types.IntValFromBigInt(b)
+	assert.Nil(t, err)
+	res, err := val.Rsh(val2)
+	assert.Nil(t, err)
+
+	left := new(big.Int).SetInt64(math.MaxInt64)
+	right := new(big.Int).SetUint64(math.MaxUint64)
+	res2 := BigIntZip(left, right, SHR)
+	res22, err := types.IntValFromBigInt(res2)
+	assert.Nil(t, err)
+	assert.Equal(t, res, res22)
+}
+
+func TestCmp(t *testing.T) {
+	a, _ := new(big.Int).SetString("73786976294838206464", 10)
+	b, _ := new(big.Int).SetString("83786976294838206464", 10)
+	val_a, err := types.IntValFromBigInt(a)
+	assert.Nil(t, err)
+	val_b, err := types.IntValFromBigInt(b)
+	assert.Nil(t, err)
+	assert.True(t, val_a.Cmp(val_b) < 0)
+
+	res, err := types.IntValFromBigInt(big.NewInt(0).Not(a))
+	assert.Nil(t, err)
+	assert.Equal(t, val_a.Not(), res)
+}
+
+func TestIntValFromNeoBytes(t *testing.T) {
+	bs := common.BigIntToNeoBytes(new(big.Int).SetUint64(math.MaxUint64))
+	val, err := types.IntValFromNeoBytes(bs)
+	assert.Nil(t, err)
+	val2, err := types.IntValFromBigInt(new(big.Int).SetUint64(math.MaxUint64))
+	assert.Nil(t, err)
+	assert.Equal(t, val, val2)
 }

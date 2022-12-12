@@ -30,6 +30,7 @@ import (
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/consensus/vbft/config"
+	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/core/utils"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/global_params"
@@ -119,7 +120,7 @@ func BuildGenesisBlock(defaultBookkeeper []keypair.PublicKey, genesisConfig *con
 
 func newGoverningToken() *types.Transaction {
 	mutable := utils.NewDeployTransaction(nutils.OntCcntmractAddress[:], "cntm", "1.0",
-		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", true)
+		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", payload.NEOVM_TYPE)
 	tx, err := mutable.IntoImmutable()
 	if err != nil {
 		panic("construct genesis governing token transaction error ")
@@ -129,7 +130,7 @@ func newGoverningToken() *types.Transaction {
 
 func newUtilityToken() *types.Transaction {
 	mutable := utils.NewDeployTransaction(nutils.OngCcntmractAddress[:], "cntm", "1.0",
-		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", true)
+		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", payload.NEOVM_TYPE)
 	tx, err := mutable.IntoImmutable()
 	if err != nil {
 		panic("construct genesis utility token transaction error ")
@@ -140,7 +141,7 @@ func newUtilityToken() *types.Transaction {
 func newParamCcntmract() *types.Transaction {
 	mutable := utils.NewDeployTransaction(nutils.ParamCcntmractAddress[:],
 		"ParamConfig", "1.0", "Ontology Team", "ccntmact@cntm.io",
-		"Chain Global Environment Variables Manager ", true)
+		"Chain Global Environment Variables Manager ", payload.NEOVM_TYPE)
 	tx, err := mutable.IntoImmutable()
 	if err != nil {
 		panic("construct genesis param transaction error ")
@@ -150,7 +151,7 @@ func newParamCcntmract() *types.Transaction {
 
 func newGovConfigTx() *types.Transaction {
 	mutable := utils.NewDeployTransaction(nutils.GovernanceCcntmractAddress[:], "CONFIG", "1.0",
-		"Ontology Team", "ccntmact@cntm.io", "Ontology Network Consensus Config", true)
+		"Ontology Team", "ccntmact@cntm.io", "Ontology Network Consensus Config", payload.NEOVM_TYPE)
 	tx, err := mutable.IntoImmutable()
 	if err != nil {
 		panic("construct genesis config transaction error ")
@@ -160,7 +161,7 @@ func newGovConfigTx() *types.Transaction {
 
 func deployAuthCcntmract() *types.Transaction {
 	mutable := utils.NewDeployTransaction(nutils.AuthCcntmractAddress[:], "AuthCcntmract", "1.0",
-		"Ontology Team", "ccntmact@cntm.io", "Ontology Network Authorization Ccntmract", true)
+		"Ontology Team", "ccntmact@cntm.io", "Ontology Network Authorization Ccntmract", payload.NEOVM_TYPE)
 	tx, err := mutable.IntoImmutable()
 	if err != nil {
 		panic("construct genesis auth transaction error ")
@@ -170,7 +171,7 @@ func deployAuthCcntmract() *types.Transaction {
 
 func deployOntIDCcntmract() *types.Transaction {
 	mutable := utils.NewDeployTransaction(nutils.OntIDCcntmractAddress[:], "OID", "1.0",
-		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm ID", true)
+		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm ID", payload.NEOVM_TYPE)
 	tx, err := mutable.IntoImmutable()
 	if err != nil {
 		panic("construct genesis cntmid transaction error ")

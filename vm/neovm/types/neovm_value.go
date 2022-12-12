@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2018 The cntmology Authors
+ * This file is part of The cntmology library.
+ *
+ * The cntmology is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The cntmology is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package types
 
 import (
@@ -111,7 +129,13 @@ func VmValueFromIntValue(val IntValue) VmValue {
 
 func (self *VmValue) AsBytes() ([]byte, error) {
 	switch self.valType {
-	case integerType, boolType:
+	case boolType:
+		if self.integer == 0 {
+			return []byte{0}, nil
+		} else {
+			return []byte{1}, nil
+		}
+	case integerType:
 		return common.BigIntToNeoBytes(big.NewInt(self.integer)), nil
 	case bigintType:
 		return common.BigIntToNeoBytes(self.bigInt), nil
@@ -145,7 +169,7 @@ func (self *VmValue) buildParamToNative(sink *common.ZeroCopySink) error {
 			return err
 		}
 		sink.WriteBool(b)
-	case integerType:
+	case integerType, bigintType:
 		bs, err := self.AsBytes()
 		if err != nil {
 			return err
@@ -169,8 +193,10 @@ func (self *VmValue) buildParamToNative(sink *common.ZeroCopySink) error {
 	case mapType:
 		//TODO
 		return errors.ERR_BAD_TYPE
+	case interopType:
+		return errors.ERR_BAD_TYPE
 	default:
-		panic("unreacheable!")
+		panic("unreachable!")
 	}
 	return nil
 }
@@ -227,6 +253,7 @@ func (self *VmValue) convertNeoVmValueHexString(count *int) (interface{}, error)
 		panic("unreacheable!")
 	}
 }
+
 func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
 	t, eof := source.NextByte()
 	if eof {
@@ -481,7 +508,7 @@ func (self *VmValue) AsInt64() (int64, error) {
 	}
 	if val.isbig {
 		if val.bigint.IsInt64() == false {
-			return 0, err
+			return 0, errors.ERR_INTEGER_UNDERFLOW
 		}
 		return val.bigint.Int64(), nil
 	}
@@ -623,6 +650,9 @@ func (self *VmValue) stringify() string {
 	switch self.valType {
 	case boolType, bytearrayType, bigintType, integerType:
 		bs, _ := self.AsBytes()
+		if len(bs) == 0 {
+			bs = []byte{0}
+		}
 		return fmt.Sprintf("bytes(hex:%x)", bs)
 	case arrayType:
 		data := ""
@@ -651,20 +681,21 @@ func (self *VmValue) stringify() string {
 }
 
 //only for debug/testing
-func (self *VmValue) Dump() (string, error) {
+func (self *VmValue) Dump() string {
 	b, err := self.CircularRefAndDepthDetection()
 	if err != nil {
-		return "", fmt.Errorf("error: %v", err)
+		return fmt.Sprintf("error: %v", err)
 	}
 	if b {
-		return "", fmt.Errorf("error: can not serialize circular reference data")
+		return "error: can not serialize circular reference data"
 	}
-	return self.dump(), nil
+	return self.dump()
 }
+
 func (self *VmValue) dump() string {
 	switch self.valType {
 	case boolType:
-		bs, _ := self.AsBytes()
+		bs, _ := self.AsBool()
 		return fmt.Sprintf("bool(%v)", bs)
 	case integerType:
 		return fmt.Sprintf("int(%d)", self.integer)

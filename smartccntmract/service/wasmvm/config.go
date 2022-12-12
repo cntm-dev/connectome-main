@@ -15,26 +15,26 @@
  * You should have received a copy of the GNU Lesser General Public License
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
+package wasmvm
 
-package types
+var (
+	TIME_STAMP_GAS       uint64 = 1
+	BLOCK_HEGHT_GAS      uint64 = 1
+	SELF_ADDRESS_GAS     uint64 = 1
+	CALLER_ADDRESS_GAS   uint64 = 1
+	ENTRY_ADDRESS_GAS    uint64 = 1
+	CHECKWITNESS_GAS     uint64 = 200
+	CALL_CcntmRACT_GAS    uint64 = 10
+	CcntmRACT_CREATE_GAS  uint64 = 20000000
+	CcntmRACT_MIGRATE_GAS uint64 = 20000000
+	NATIVE_INVOKE_GAS    uint64 = 1000
 
-import (
-	"bytes"
-	"github.com/cntmio/cntmology/vm/neovm/interfaces"
+	CURRENT_BLOCK_HASH_GAS uint64 = 100
+	CURRENT_TX_HASH_GAS    uint64 = 100
+
+	STORAGE_GET_GAS          uint64 = 200
+	STORAGE_PUT_GAS          uint64 = 4000
+	STORAGE_DELETE_GAS       uint64 = 100
+	UINT_DEPLOY_CODE_LEN_GAS uint64 = 200000
+	PER_UNIT_CODE_LEN        uint64 = 1024
 )
-
-type InteropValue struct {
-	Data interfaces.Interop
-}
-
-func NewInteropValue(value interfaces.Interop) InteropValue {
-	return InteropValue{Data: value}
-}
-
-func (this *InteropValue) Equals(other InteropValue) bool {
-	// todo: both nil?
-	if this.Data == nil || other.Data == nil {
-		return false
-	}
-	return bytes.Equal(this.Data.ToArray(), other.Data.ToArray())
-}

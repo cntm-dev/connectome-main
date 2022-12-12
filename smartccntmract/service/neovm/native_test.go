@@ -16,25 +16,32 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package types
+package neovm
 
 import (
 	"bytes"
-	"github.com/cntmio/cntmology/vm/neovm/interfaces"
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/vm/neovm/types"
+	"github.com/stretchr/testify/assert"
+	"math"
+	"math/big"
+	"testing"
 )
 
-type InteropValue struct {
-	Data interfaces.Interop
-}
+func TestBuildParamToNative(t *testing.T) {
+	inte := types.NewInteger(new(big.Int).SetUint64(math.MaxUint64))
+	boo := types.NewBoolean(false)
+	bs := types.NewByteArray([]byte("hello"))
+	s := make([]types.StackItems, 0)
+	s = append(s, inte)
+	s = append(s, boo)
+	s = append(s, bs)
+	stru := types.NewStruct(s)
+	arr := types.NewArray(nil)
+	arr.Add(stru)
 
-func NewInteropValue(value interfaces.Interop) InteropValue {
-	return InteropValue{Data: value}
-}
-
-func (this *InteropValue) Equals(other InteropValue) bool {
-	// todo: both nil?
-	if this.Data == nil || other.Data == nil {
-		return false
-	}
-	return bytes.Equal(this.Data.ToArray(), other.Data.ToArray())
+	buff := new(bytes.Buffer)
+	err := BuildParamToNative(buff, arr)
+	assert.Nil(t, err)
+	assert.Equal(t, "010109ffffffffffffffff00000568656c6c6f", common.ToHexString(buff.Bytes()))
 }

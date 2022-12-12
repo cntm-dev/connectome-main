@@ -199,7 +199,7 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.CcntmractEmailFlag,
 			utils.CcntmractNameFlag,
 			utils.CcntmractVersionFlag,
-			utils.CcntmractStorageFlag,
+			utils.CcntmractVmTypeFlag,
 			utils.CcntmractPrepareInvokeFlag,
 			utils.CcntmractParamsFlag,
 			utils.CcntmractReturnTypeFlag,

@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract"
 	"github.com/cntmio/cntmology/vm/neovm"
 	"github.com/stretchr/testify/assert"
@@ -45,7 +46,7 @@ func TestConvertNeoVmTypeHexString(t *testing.T) {
 		Config: config,
 		Gas:    100000,
 	}
-	engine, err := sc.NewExecuteEngine(hex)
+	engine, err := sc.NewExecuteEngine(hex, types.InvokeNeo)
 
 	_, err = engine.Invoke()
 

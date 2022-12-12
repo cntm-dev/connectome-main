@@ -48,7 +48,7 @@ var (
 					utils.RPCPortFlag,
 					utils.TransactionGasPriceFlag,
 					utils.TransactionGasLimitFlag,
-					utils.CcntmractStorageFlag,
+					utils.CcntmractVmTypeFlag,
 					utils.CcntmractCodeFileFlag,
 					utils.CcntmractNameFlag,
 					utils.CcntmractVersionFlag,
@@ -122,7 +122,7 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 		return nil
 	}
 
-	store := ctx.Bool(utils.GetFlagName(utils.CcntmractStorageFlag))
+	vmtype := ctx.Uint(utils.GetFlagName(utils.CcntmractVmTypeFlag))
 	codeFile := ctx.String(utils.GetFlagName(utils.CcntmractCodeFileFlag))
 	if "" == codeFile {
 		return fmt.Errorf("please specific code file")
@@ -151,7 +151,7 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 	cversion := fmt.Sprintf("%s", version)
 
 	if ctx.IsSet(utils.GetFlagName(utils.CcntmractPrepareDeployFlag)) {
-		preResult, err := utils.PrepareDeployCcntmract(store, code, name, cversion, author, email, desc)
+		preResult, err := utils.PrepareDeployCcntmract(byte(vmtype), code, name, cversion, author, email, desc)
 		if err != nil {
 			return fmt.Errorf("PrepareDeployCcntmract error:%s", err)
 		}
@@ -168,7 +168,7 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 		return fmt.Errorf("get signer account error:%s", err)
 	}
 
-	txHash, err := utils.DeployCcntmract(gasPrice, gasLimit, signer, store, code, name, cversion, author, email, desc)
+	txHash, err := utils.DeployCcntmract(gasPrice, gasLimit, signer, byte(vmtype), code, name, cversion, author, email, desc)
 	if err != nil {
 		return fmt.Errorf("DeployCcntmract error:%s", err)
 	}

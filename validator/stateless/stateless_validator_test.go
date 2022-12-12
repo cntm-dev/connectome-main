@@ -19,18 +19,19 @@ package stateless
 
 import (
 	"testing"
+	"time"
 
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/signature"
 	ctypes "github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/core/utils"
 	"github.com/cntmio/cntmology/errors"
 	types2 "github.com/cntmio/cntmology/validator/types"
 	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 func signTransaction(signer *account.Account, tx *ctypes.MutableTransaction) error {
@@ -50,7 +51,7 @@ func TestStatelessValidator(t *testing.T) {
 
 	code := []byte{1, 2, 3}
 
-	mutable := utils.NewDeployTransaction(code, "test", "1", "author", "author@123.com", "test desp", false)
+	mutable := utils.NewDeployTransaction(code, "test", "1", "author", "author@123.com", "test desp", payload.NEOVM_TYPE)
 
 	mutable.Payer = acc.Address
 

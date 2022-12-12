@@ -20,6 +20,7 @@ package ccntmext
 
 import (
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/vm/neovm/types"
 )
@@ -38,7 +39,7 @@ type CcntmextRef interface {
 	PopCcntmext()
 	CheckWitness(address common.Address) bool
 	PushNotifications(notifications []*event.NotifyEventInfo)
-	NewExecuteEngine(code []byte) (Engine, error)
+	NewExecuteEngine(code []byte, txtype types.TransactionType) (Engine, error)
 	CheckUseGas(gas uint64) bool
 	CheckExecStep() bool
 }

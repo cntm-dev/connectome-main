@@ -16,25 +16,35 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package types
+package states
 
 import (
-	"bytes"
-	"github.com/cntmio/cntmology/vm/neovm/interfaces"
+	"io"
+
+	"github.com/cntmio/cntmology/common"
 )
 
-type InteropValue struct {
-	Data interfaces.Interop
+type WasmCcntmractParam struct {
+	Address common.Address
+	Args    []byte
 }
 
-func NewInteropValue(value interfaces.Interop) InteropValue {
-	return InteropValue{Data: value}
+func (this *WasmCcntmractParam) Serialization(sink *common.ZeroCopySink) {
+	sink.WriteAddress(this.Address)
+	sink.WriteVarBytes([]byte(this.Args))
 }
 
-func (this *InteropValue) Equals(other InteropValue) bool {
-	// todo: both nil?
-	if this.Data == nil || other.Data == nil {
-		return false
+// `CcntmractInvokeParam.Args` has reference of `source`
+func (this *WasmCcntmractParam) Deserialization(source *common.ZeroCopySource) error {
+	var irregular, eof bool
+	this.Address, eof = source.NextAddress()
+
+	this.Args, _, irregular, eof = source.NextVarBytes()
+	if irregular {
+		return common.ErrIrregularData
 	}
-	return bytes.Equal(this.Data.ToArray(), other.Data.ToArray())
+	if eof {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }

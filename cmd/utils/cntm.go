@@ -20,7 +20,6 @@ package utils
 
 import (
 	"bytes"
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -29,7 +28,6 @@ import (
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/constants"
-	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/signature"
 	"github.com/cntmio/cntmology/core/types"
@@ -38,9 +36,7 @@ import (
 	rpccommon "github.com/cntmio/cntmology/http/base/common"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
-	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
 	cstates "github.com/cntmio/cntmology/smartccntmract/states"
-	"github.com/cntmio/cntmology/vm/wasmvm/exec"
 	"math/rand"
 	"sort"
 	"strconv"
@@ -293,7 +289,7 @@ func NewInvokeTransaction(gasPrice, gasLimit uint64, invokeCode []byte) *types.M
 	tx := &types.MutableTransaction{
 		GasPrice: gasPrice,
 		GasLimit: gasLimit,
-		TxType:   types.Invoke,
+		TxType:   types.InvokeNeo,
 		Nonce:    rand.Uint32(),
 		Payload:  invokePayload,
 		Sigs:     make([]types.Sig, 0, 0),
@@ -596,7 +592,7 @@ func DeployCcntmract(
 	gasPrice,
 	gasLimit uint64,
 	signer *account.Account,
-	needStorage bool,
+	vmtype byte,
 	code,
 	cname,
 	cversion,
@@ -608,7 +604,7 @@ func DeployCcntmract(
 	if err != nil {
 		return "", fmt.Errorf("hex.DecodeString error:%s", err)
 	}
-	mutable := NewDeployCodeTransaction(gasPrice, gasLimit, c, needStorage, cname, cversion, cauthor, cemail, cdesc)
+	mutable := NewDeployCodeTransaction(gasPrice, gasLimit, c, vmtype, cname, cversion, cauthor, cemail, cdesc)
 
 	err = SignTransaction(signer, mutable)
 	if err != nil {
@@ -626,7 +622,7 @@ func DeployCcntmract(
 }
 
 func PrepareDeployCcntmract(
-	needStorage bool,
+	needStorage byte,
 	code,
 	cname,
 	cversion,
@@ -646,47 +642,6 @@ func PrepareDeployCcntmract(
 	}
 	txData := hex.EncodeToString(buffer.Bytes())
 	return PrepareSendRawTransaction(txData)
-}
-
-func InvokeNativeCcntmract(
-	gasPrice,
-	gasLimit uint64,
-	signer *account.Account,
-	ccntmractAddress common.Address,
-	version byte,
-	method string,
-	params []interface{},
-) (string, error) {
-	tx, err := httpcom.NewNativeInvokeTransaction(gasPrice, gasLimit, ccntmractAddress, version, method, params)
-	if err != nil {
-		return "", err
-	}
-	return InvokeSmartCcntmract(signer, tx)
-}
-
-//Invoke wasm smart ccntmract
-//methodName is wasm ccntmract action name
-//paramType  is Json or Raw format
-//version should be greater than 0 (0 is reserved for test)
-func InvokeWasmVMCcntmract(
-	gasPrice,
-	gasLimit uint64,
-	siger *account.Account,
-	cversion byte, //version of ccntmract
-	ccntmractAddress common.Address,
-	method string,
-	paramType wasmvm.ParamType,
-	params []interface{}) (string, error) {
-
-	invokeCode, err := BuildWasmVMInvokeCode(ccntmractAddress, method, paramType, cversion, params)
-	if err != nil {
-		return "", err
-	}
-	tx, err := httpcom.NewSmartCcntmractTransaction(gasPrice, gasLimit, invokeCode)
-	if err != nil {
-		return "", err
-	}
-	return InvokeSmartCcntmract(siger, tx)
 }
 
 //Invoke neo vm smart ccntmract. if isPreExec is true, the invoke will not really execute
@@ -784,12 +739,12 @@ func PrepareInvokeNativeCcntmract(
 }
 
 //NewDeployCodeTransaction return a smart ccntmract deploy transaction instance
-func NewDeployCodeTransaction(gasPrice, gasLimit uint64, code []byte, needStorage bool,
+func NewDeployCodeTransaction(gasPrice, gasLimit uint64, code []byte, vmType byte,
 	cname, cversion, cauthor, cemail, cdesc string) *types.MutableTransaction {
 
 	deployPayload := &payload.DeployCode{
 		Code:        code,
-		NeedStorage: needStorage,
+		VmType:      vmType,
 		Name:        cname,
 		Version:     cversion,
 		Author:      cauthor,
@@ -806,103 +761,6 @@ func NewDeployCodeTransaction(gasPrice, gasLimit uint64, code []byte, needStorag
 		Sigs:     make([]types.Sig, 0, 0),
 	}
 	return tx
-}
-
-//for wasm vm
-//build param bytes for wasm ccntmract
-func buildWasmCcntmractParam(params []interface{}, paramType wasmvm.ParamType) ([]byte, error) {
-	switch paramType {
-	case wasmvm.Json:
-		args := make([]exec.Param, len(params))
-
-		for i, param := range params {
-			switch param.(type) {
-			case string:
-				arg := exec.Param{Ptype: "string", Pval: param.(string)}
-				args[i] = arg
-			case int:
-				arg := exec.Param{Ptype: "int", Pval: strconv.Itoa(param.(int))}
-				args[i] = arg
-			case int64:
-				arg := exec.Param{Ptype: "int64", Pval: strconv.FormatInt(param.(int64), 10)}
-				args[i] = arg
-			case []int:
-				bf := bytes.NewBuffer(nil)
-				array := param.([]int)
-				for i, tmp := range array {
-					bf.WriteString(strconv.Itoa(tmp))
-					if i != len(array)-1 {
-						bf.WriteString(",")
-					}
-				}
-				arg := exec.Param{Ptype: "int_array", Pval: bf.String()}
-				args[i] = arg
-			case []int64:
-				bf := bytes.NewBuffer(nil)
-				array := param.([]int64)
-				for i, tmp := range array {
-					bf.WriteString(strconv.FormatInt(tmp, 10))
-					if i != len(array)-1 {
-						bf.WriteString(",")
-					}
-				}
-				arg := exec.Param{Ptype: "int_array", Pval: bf.String()}
-				args[i] = arg
-			default:
-				return nil, fmt.Errorf("not a supported type :%v\n", param)
-			}
-		}
-
-		bs, err := json.Marshal(exec.Args{args})
-		if err != nil {
-			return nil, err
-		}
-		return bs, nil
-	case wasmvm.Raw:
-		bf := bytes.NewBuffer(nil)
-		for _, param := range params {
-			switch param.(type) {
-			case string:
-				tmp := bytes.NewBuffer(nil)
-				serialization.WriteString(tmp, param.(string))
-				bf.Write(tmp.Bytes())
-
-			case int:
-				tmpBytes := make([]byte, 4)
-				binary.LittleEndian.PutUint32(tmpBytes, uint32(param.(int)))
-				bf.Write(tmpBytes)
-
-			case int64:
-				tmpBytes := make([]byte, 8)
-				binary.LittleEndian.PutUint64(tmpBytes, uint64(param.(int64)))
-				bf.Write(tmpBytes)
-
-			default:
-				return nil, fmt.Errorf("not a supported type :%v\n", param)
-			}
-		}
-		return bf.Bytes(), nil
-	default:
-		return nil, fmt.Errorf("unsupported type")
-	}
-}
-
-//BuildWasmVMInvokeCode return wasn vm invoke code
-func BuildWasmVMInvokeCode(smartcodeAddress common.Address, methodName string, paramType wasmvm.ParamType, version byte, params []interface{}) ([]byte, error) {
-	ccntmract := &cstates.CcntmractInvokeParam{}
-	ccntmract.Address = smartcodeAddress
-	ccntmract.Method = methodName
-	ccntmract.Version = version
-
-	argbytes, err := buildWasmCcntmractParam(params, paramType)
-
-	if err != nil {
-		return nil, fmt.Errorf("build wasm ccntmract param failed:%s", err)
-	}
-	ccntmract.Args = argbytes
-	bf := bytes.NewBuffer(nil)
-	ccntmract.Serialize(bf)
-	return bf.Bytes(), nil
 }
 
 //ParseNeoVMCcntmractReturnTypeBool return bool value of smart ccntmract execute code.

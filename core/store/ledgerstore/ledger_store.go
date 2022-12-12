@@ -1016,7 +1016,7 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.
 		return stf, err
 	}
 
-	if tx.TxType == types.Invoke {
+	if tx.TxType == types.InvokeNeo || tx.TxType == types.InvokeWasm {
 		invoke := tx.Payload.(*payload.InvokeCode)
 
 		sc := smartccntmract.SmartCcntmract{
@@ -1026,9 +1026,9 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.
 			Gas:     math.MaxUint64 - calcGasByCodeLen(len(invoke.Code), preGas[neovm.UINT_INVOKE_CODE_LEN_NAME]),
 			PreExec: true,
 		}
-
 		//start the smart ccntmract executive function
-		engine, _ := sc.NewExecuteEngine(invoke.Code)
+		engine, _ := sc.NewExecuteEngine(invoke.Code, tx.TxType)
+
 		result, err := engine.Invoke()
 		if err != nil {
 			return stf, err
@@ -1038,11 +1038,18 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.
 		if gasCost < mixGas {
 			gasCost = mixGas
 		}
-		val, err := result.ConvertNeoVmValueHexString()
-		if err != nil {
-			return stf, err
+
+		var cv interface{}
+		if tx.TxType == types.InvokeNeo { //neovm
+			cv, err = result.ConvertNeoVmValueHexString()
+			if err != nil {
+				return stf, err
+			}
+		} else { //wasmvm
+			cv = common.ToHexString(result.([]byte))
 		}
-		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_SUCCESS, Gas: gasCost, Result: val}, nil
+
+		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_SUCCESS, Gas: gasCost, Result: cv, Notify: sc.Notifications}, nil
 	} else if tx.TxType == types.Deploy {
 		deploy := tx.Payload.(*payload.DeployCode)
 		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_SUCCESS, Gas: preGas[neovm.CcntmRACT_CREATE_NAME] + calcGasByCodeLen(len(deploy.Code), preGas[neovm.UINT_DEPLOY_CODE_LEN_NAME]), Result: nil}, nil

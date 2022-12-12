@@ -139,7 +139,7 @@ func CcntmractGetCode(service *NeoVmService, engine *vm.Executor) error {
 	}
 	if d, ok := i.Data.(*payload.DeployCode); ok {
 		return engine.EvalStack.PushBytes(d.Code)
-	}
+}
 	return fmt.Errorf("[CcntmractGetCode] Type error ")
 }
 
@@ -151,10 +151,8 @@ func isCcntmractParamValid(engine *vm.Executor) (*payload.DeployCode, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(code) > 1024*1024 {
-		return nil, errors.NewErr("[Ccntmract] Code too lcntm!")
-	}
-	needStorage, err := engine.EvalStack.PopAsBool()
+
+	vmType, err := engine.EvalStack.PopAsUint32()
 	if err != nil {
 		return nil, err
 	}
@@ -162,46 +160,33 @@ func isCcntmractParamValid(engine *vm.Executor) (*payload.DeployCode, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(name) > 252 {
-		return nil, errors.NewErr("[Ccntmract] Name too lcntm!")
-	}
+
 	version, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return nil, err
 	}
-	if len(version) > 252 {
-		return nil, errors.NewErr("[Ccntmract] Version too lcntm!")
-	}
+
 	author, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return nil, err
 	}
-	if len(author) > 252 {
-		return nil, errors.NewErr("[Ccntmract] Author too lcntm!")
-	}
+
 	email, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return nil, err
 	}
-	if len(email) > 252 {
-		return nil, errors.NewErr("[Ccntmract] Email too lcntm!")
-	}
+
 	desc, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return nil, err
 	}
-	if len(desc) > 65536 {
-		return nil, errors.NewErr("[Ccntmract] Desc too lcntm!")
+
+	ccntmract, err := payload.CreateDeployCode(code, uint32(vmType), name, version, author, email, desc)
+
+	if err != nil {
+		return nil, err
 	}
-	ccntmract := &payload.DeployCode{
-		Code:        code,
-		NeedStorage: needStorage,
-		Name:        string(name),
-		Version:     string(version),
-		Author:      string(author),
-		Email:       string(email),
-		Description: string(desc),
-	}
+
 	return ccntmract, nil
 }
 

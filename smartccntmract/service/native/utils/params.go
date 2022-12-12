@@ -17,7 +17,11 @@
  */
 package utils
 
-import "github.com/cntmio/cntmology/common"
+import (
+	"bytes"
+
+	"github.com/cntmio/cntmology/common"
+)
 
 var (
 	BYTE_FALSE = []byte{0}
@@ -30,3 +34,13 @@ var (
 	AuthCcntmractAddress, _       = common.AddressParseFromBytes([]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06})
 	GovernanceCcntmractAddress, _ = common.AddressParseFromBytes([]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07})
 )
+
+func IsNativeCcntmract(addr common.Address) bool {
+	return bytes.Compare(addr[:], OntCcntmractAddress[:]) == 0 ||
+		bytes.Compare(addr[:], OngCcntmractAddress[:]) == 0 ||
+		bytes.Compare(addr[:], OntIDCcntmractAddress[:]) == 0 ||
+		bytes.Compare(addr[:], ParamCcntmractAddress[:]) == 0 ||
+		bytes.Compare(addr[:], AuthCcntmractAddress[:]) == 0 ||
+		bytes.Compare(addr[:], GovernanceCcntmractAddress[:]) == 0
+
+}

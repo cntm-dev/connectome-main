@@ -20,6 +20,7 @@ package test
 
 import (
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -43,7 +44,7 @@ func TestBuildParamToNative(t *testing.T) {
 		Config: config,
 		Gas:    100000,
 	}
-	engine, err := sc.NewExecuteEngine(hex)
+	engine, err := sc.NewExecuteEngine(hex, types.InvokeNeo)
 
 	_, err = engine.Invoke()
 

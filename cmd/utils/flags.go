@@ -274,9 +274,9 @@ var (
 		Name:  "address",
 		Usage: "Ccntmract `<address>`",
 	}
-	CcntmractStorageFlag = cli.BoolFlag{
-		Name:  "needstore",
-		Usage: "Is need use storage in ccntmract",
+	CcntmractVmTypeFlag = cli.UintFlag{
+		Name:  "vmtype",
+		Usage: "The Ccntmract type: 1 for Neovm ,3 for Wasmvm",
 	}
 	CcntmractCodeFileFlag = cli.StringFlag{
 		Name:  "code",
