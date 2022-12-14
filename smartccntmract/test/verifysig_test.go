@@ -24,6 +24,7 @@ import (
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/signature"
+	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract"
 	svm "github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	"github.com/cntmio/cntmology/vm/neovm"
@@ -78,7 +79,7 @@ func TestVerifySig(t *testing.T) {
 		Config: config,
 		Gas:    100000,
 	}
-	engine, err := sc.NewExecuteEngine(hex)
+	engine, err := sc.NewExecuteEngine(hex, types.InvokeNeo)
 
 	if err != nil {
 		t.Fatal("hex to byte error:", err)

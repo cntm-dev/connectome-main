@@ -189,12 +189,12 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 
 	//init smart ccntmract info
 	sc := smartccntmract.SmartCcntmract{
-		Config:  config,
-		CacheDB: cache,
-		Store:   store,
+		Config:   config,
+		CacheDB:  cache,
+		Store:    store,
 		GasTable: gasTable,
-		Gas:     availableGasLimit - codeLenGasLimit,
-		PreExec: false,
+		Gas:      availableGasLimit - codeLenGasLimit,
+		PreExec:  false,
 	}
 
 	//start the smart ccntmract executive function

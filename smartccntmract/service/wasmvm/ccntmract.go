@@ -25,7 +25,7 @@ import (
 	"github.com/cntmio/cntmology/errors"
 )
 
-func (self *Runtime) CcntmractCreate(proc *exec.Process,
+func CcntmractCreate(proc *exec.Process,
 	codePtr uint32,
 	codeLen uint32,
 	needStorage uint32,
@@ -40,6 +40,7 @@ func (self *Runtime) CcntmractCreate(proc *exec.Process,
 	descPtr uint32,
 	descLen uint32,
 	newAddressPtr uint32) uint32 {
+	self := proc.HostData().(*Runtime)
 
 	if uint32(proc.MemAllocated()) < codeLen+nameLen+verLen+authorLen+emailLen+descLen {
 		panic(errors.NewErr("ccntmract create len is greater than memory size"))
@@ -104,7 +105,7 @@ func (self *Runtime) CcntmractCreate(proc *exec.Process,
 
 }
 
-func (self *Runtime) CcntmractMigrate(proc *exec.Process,
+func CcntmractMigrate(proc *exec.Process,
 	codePtr uint32,
 	codeLen uint32,
 	needStorage uint32,
@@ -119,6 +120,8 @@ func (self *Runtime) CcntmractMigrate(proc *exec.Process,
 	descPtr uint32,
 	descLen uint32,
 	newAddressPtr uint32) uint32 {
+
+	self := proc.HostData().(*Runtime)
 
 	if uint32(proc.MemAllocated()) < codeLen+nameLen+verLen+authorLen+emailLen+descLen {
 		panic(errors.NewErr("ccntmract migrate len is greater than memory size"))
@@ -182,7 +185,7 @@ func (self *Runtime) CcntmractMigrate(proc *exec.Process,
 		key := iter.Key()
 		val := iter.Value()
 
-		newkey := serializeStorageKey(ccntmractAddr, key)
+		newkey := serializeStorageKey(ccntmractAddr, key[20:])
 
 		self.Service.CacheDB.Put(newkey, val)
 		self.Service.CacheDB.Delete(key)
@@ -201,7 +204,8 @@ func (self *Runtime) CcntmractMigrate(proc *exec.Process,
 	return uint32(length)
 }
 
-func (self *Runtime) CcntmractDelete(proc *exec.Process) {
+func CcntmractDelete(proc *exec.Process) {
+	self := proc.HostData().(*Runtime)
 	ccntmractAddress := self.Service.CcntmextRef.CurrentCcntmext().CcntmractAddress
 	iter := self.Service.CacheDB.NewIterator(ccntmractAddress[:])
 

@@ -22,7 +22,6 @@ import (
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract/event"
-	"github.com/cntmio/cntmology/vm/neovm/types"
 )
 
 // CcntmextRef is a interface of smart ccntmext
@@ -45,7 +44,7 @@ type CcntmextRef interface {
 }
 
 type Engine interface {
-	Invoke() (*types.VmValue, error)
+	Invoke() (interface{}, error)
 }
 
 // Ccntmext describe smart ccntmract execute ccntmext struct

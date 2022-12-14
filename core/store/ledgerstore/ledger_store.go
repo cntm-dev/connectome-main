@@ -22,6 +22,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
+	types2 "github.com/cntmio/cntmology/vm/neovm/types"
 	"hash"
 	"math"
 	"os"
@@ -1041,9 +1042,12 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.
 
 		var cv interface{}
 		if tx.TxType == types.InvokeNeo { //neovm
-			cv, err = result.ConvertNeoVmValueHexString()
-			if err != nil {
-				return stf, err
+			if result != nil {
+				val := result.(*types2.VmValue)
+				cv, err = val.ConvertNeoVmValueHexString()
+				if err != nil {
+					return stf, err
+				}
 			}
 		} else { //wasmvm
 			cv = common.ToHexString(result.([]byte))

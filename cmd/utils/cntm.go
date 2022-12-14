@@ -28,6 +28,7 @@ import (
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/constants"
+	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/signature"
 	"github.com/cntmio/cntmology/core/types"
@@ -658,6 +659,20 @@ func InvokeNeoVMCcntmract(
 	return InvokeSmartCcntmract(signer, tx)
 }
 
+//Invoke wasm vm smart ccntmract. if isPreExec is true, the invoke will not really execute
+func InvokeWasmVMCcntmract(
+	gasPrice,
+	gasLimit uint64,
+	signer *account.Account,
+	smartcodeAddress common.Address,
+	params []interface{}) (string, error) {
+	tx, err := httpcom.NewWasmVMInvokeTransaction(gasPrice, gasLimit, smartcodeAddress, params)
+	if err != nil {
+		return "", err
+	}
+	return InvokeSmartCcntmract(signer, tx)
+}
+
 //InvokeSmartCcntmract is low level method to invoke ccntmact.
 func InvokeSmartCcntmract(signer *account.Account, tx *types.MutableTransaction) (string, error) {
 	err := SignTransaction(signer, tx)
@@ -707,6 +722,27 @@ func PrepareInvokeCodeNeoVMCcntmract(code []byte) (*cstates.PreExecResult, error
 	if err != nil {
 		return nil, err
 	}
+	var buffer bytes.Buffer
+	err = tx.Serialize(&buffer)
+	if err != nil {
+		return nil, fmt.Errorf("tx serialize error:%s", err)
+	}
+	txData := hex.EncodeToString(buffer.Bytes())
+	return PrepareSendRawTransaction(txData)
+}
+
+//prepare invoke wasm
+func PrepareInvokeWasmVMCcntmract(ccntmractAddress common.Address, params []interface{}) (*cstates.PreExecResult, error) {
+	mutable, err := httpcom.NewWasmVMInvokeTransaction(0, 0, ccntmractAddress, params)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := mutable.IntoImmutable()
+	if err != nil {
+		return nil, err
+	}
+
 	var buffer bytes.Buffer
 	err = tx.Serialize(&buffer)
 	if err != nil {
@@ -789,4 +825,48 @@ func ParseNeoVMCcntmractReturnTypeString(hexStr string) (string, error) {
 		return "", fmt.Errorf("hex.DecodeString:%s error:%s", hexStr, err)
 	}
 	return string(data), nil
+}
+
+func ParseWasmVMCcntmractReturnTypeByteArray(hexStr string) (string, error) {
+	hexbs, err := common.HexToBytes(hexStr)
+	if err != nil {
+		return "", fmt.Errorf("common.HexToBytes:%s error:%s", hexStr, err)
+	}
+	bf := bytes.NewBuffer(hexbs)
+	bs, err := serialization.ReadVarBytes(bf)
+	if err != nil {
+		return "", fmt.Errorf("ParseWasmVMCcntmractReturnTypeByteArray:%s error:%s", hexStr, err)
+	}
+	return common.ToHexString(bs), nil
+}
+
+//ParseWasmVMCcntmractReturnTypeString return string value of smart ccntmract execute code.
+func ParseWasmVMCcntmractReturnTypeString(hexStr string) (string, error) {
+	hexbs, err := common.HexToBytes(hexStr)
+	if err != nil {
+		return "", fmt.Errorf("common.HexToBytes:%s error:%s", hexStr, err)
+	}
+	bf := bytes.NewBuffer(hexbs)
+	return serialization.ReadString(bf)
+}
+
+//ParseWasmVMCcntmractReturnTypeInteger return integer value of smart ccntmract execute code.
+func ParseWasmVMCcntmractReturnTypeInteger(hexStr string) (int64, error) {
+	hexbs, err := common.HexToBytes(hexStr)
+	if err != nil {
+		return 0, fmt.Errorf("common.HexToBytes:%s error:%s", hexStr, err)
+	}
+	bf := bytes.NewBuffer(hexbs)
+	res, err := serialization.ReadUint64(bf)
+	return int64(res), err
+}
+
+//ParseWasmVMCcntmractReturnTypeBool return bool value of smart ccntmract execute code.
+func ParseWasmVMCcntmractReturnTypeBool(hexStr string) (bool, error) {
+	hexbs, err := common.HexToBytes(hexStr)
+	if err != nil {
+		return false, fmt.Errorf("common.HexToBytes:%s error:%s", hexStr, err)
+	}
+	bf := bytes.NewBuffer(hexbs)
+	return serialization.ReadBool(bf)
 }

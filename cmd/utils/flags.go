@@ -277,6 +277,7 @@ var (
 	CcntmractVmTypeFlag = cli.UintFlag{
 		Name:  "vmtype",
 		Usage: "The Ccntmract type: 1 for Neovm ,3 for Wasmvm",
+		Value: 1,
 	}
 	CcntmractCodeFileFlag = cli.StringFlag{
 		Name:  "code",
@@ -319,7 +320,7 @@ var (
 	}
 	CcntmractReturnTypeFlag = cli.StringFlag{
 		Name:  "return",
-		Usage: "Return `<type>` of ccntmract. bytearray(hexstring), string, integer, boolean",
+		Usage: "Return `<type>` of ccntmract. bytearray(hexstring), string, int, boolean",
 	}
 
 	//information cmd settings

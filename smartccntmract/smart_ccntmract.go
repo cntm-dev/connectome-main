@@ -136,13 +136,13 @@ func (this *SmartCcntmract) NewExecuteEngine(code []byte, txtype ctypes.Transact
 			Store:      this.Store,
 			CacheDB:    this.CacheDB,
 			CcntmextRef: this,
-		GasTable:   this.GasTable,
+			GasTable:   this.GasTable,
 			Code:       code,
 			Tx:         this.Config.Tx,
 			Time:       this.Config.Time,
 			Height:     this.Config.Height,
 			BlockHash:  this.Config.BlockHash,
-		Engine:     vm.NewExecutor(code),
+			Engine:     vm.NewExecutor(code),
 			PreExec:    this.PreExec,
 		}
 	}

@@ -25,7 +25,9 @@ import (
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/core/payload"
 	httpcom "github.com/cntmio/cntmology/http/base/common"
+	"github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/urfave/cli"
 	"io/ioutil"
 	"strings"
@@ -37,7 +39,7 @@ var (
 		Action:      cli.ShowSubcommandHelp,
 		Usage:       "Deploy or invoke smart ccntmract",
 		ArgsUsage:   " ",
-		Description: `Smart ccntmract operations support the deployment of NeoVM smart ccntmract, and the pre-execution and execution of NeoVM smart ccntmract.`,
+		Description: `Smart ccntmract operations support the deployment of NeoVM / WasmVM smart ccntmract, and the pre-execution and execution of NeoVM / WasmVM smart ccntmract.`,
 		Subcommands: []cli.Command{
 			{
 				Action:    deployCcntmract,
@@ -64,7 +66,7 @@ var (
 				Action: invokeCcntmract,
 				Name:   "invoke",
 				Usage:  "Invoke smart ccntmract",
-				ArgsUsage: `NeoVM ccntmract support bytearray(need encode to hex string), string, integer, boolean parameter type.
+				ArgsUsage: `Ontology ccntmract support bytearray(need encode to hex string), string, integer, boolean parameter type.
 
   Parameter 
      Ccntmract parameters separate with comma ',' to split params. and must add type prefix to params.
@@ -86,6 +88,7 @@ var (
 					utils.TransactionGasPriceFlag,
 					utils.TransactionGasLimitFlag,
 					utils.CcntmractAddrFlag,
+					utils.CcntmractVmTypeFlag,
 					utils.CcntmractParamsFlag,
 					utils.CcntmractVersionFlag,
 					utils.CcntmractPrepareInvokeFlag,
@@ -220,7 +223,7 @@ func invokeCodeCcntmract(ctx *cli.Ccntmext) error {
 			PrintInfoMsg("Return:%s (raw value)", preResult.Result)
 			return nil
 		}
-		values, err := utils.ParseReturnValue(preResult.Result, rawReturnTypes)
+		values, err := utils.ParseReturnValue(preResult.Result, rawReturnTypes, payload.NEOVM_TYPE)
 		if err != nil {
 			return fmt.Errorf("parseReturnValue values:%+v types:%s error:%s", values, rawReturnTypes, err)
 		}
@@ -286,7 +289,10 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 	if err != nil {
 		return fmt.Errorf("invalid ccntmract address error:%s", err)
 	}
-
+	vmtype := ctx.Uint(utils.GetFlagName(utils.CcntmractVmTypeFlag))
+	if byte(vmtype) != payload.NEOVM_TYPE && byte(vmtype) != payload.WASMVM_TYPE {
+		return fmt.Errorf("invalid vmtype")
+	}
 	paramsStr := ctx.String(utils.GetFlagName(utils.CcntmractParamsFlag))
 	params, err := utils.ParseParams(paramsStr)
 	if err != nil {
@@ -295,15 +301,24 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 
 	paramData, _ := json.Marshal(params)
 	PrintInfoMsg("Invoke:%x Params:%s", ccntmractAddr[:], paramData)
-
 	if ctx.IsSet(utils.GetFlagName(utils.CcntmractPrepareInvokeFlag)) {
-		preResult, err := utils.PrepareInvokeNeoVMCcntmract(ccntmractAddr, params)
+
+		var preResult *states.PreExecResult
+		if byte(vmtype) == payload.NEOVM_TYPE {
+			preResult, err = utils.PrepareInvokeNeoVMCcntmract(ccntmractAddr, params)
+
+		}
+		if byte(vmtype) == payload.WASMVM_TYPE {
+			preResult, err = utils.PrepareInvokeWasmVMCcntmract(ccntmractAddr, params)
+		}
+
 		if err != nil {
 			return fmt.Errorf("PrepareInvokeNeoVMSmartCcntmact error:%s", err)
 		}
 		if preResult.State == 0 {
 			return fmt.Errorf("ccntmract invoke failed")
 		}
+
 		PrintInfoMsg("Ccntmract invoke successfully")
 		PrintInfoMsg("  Gas limit:%d", preResult.Gas)
 
@@ -312,7 +327,7 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 			PrintInfoMsg("  Return:%s (raw value)", preResult.Result)
 			return nil
 		}
-		values, err := utils.ParseReturnValue(preResult.Result, rawReturnTypes)
+		values, err := utils.ParseReturnValue(preResult.Result, rawReturnTypes, byte(vmtype))
 		if err != nil {
 			return fmt.Errorf("parseReturnValue values:%+v types:%s error:%s", values, rawReturnTypes, err)
 		}
@@ -340,9 +355,18 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 		gasPrice = 0
 	}
 
-	txHash, err := utils.InvokeNeoVMCcntmract(gasPrice, gasLimit, signer, ccntmractAddr, params)
-	if err != nil {
-		return fmt.Errorf("invoke NeoVM ccntmract error:%s", err)
+	var txHash string
+	if byte(vmtype) == payload.NEOVM_TYPE {
+		txHash, err = utils.InvokeNeoVMCcntmract(gasPrice, gasLimit, signer, ccntmractAddr, params)
+		if err != nil {
+			return fmt.Errorf("invoke NeoVM ccntmract error:%s", err)
+		}
+	}
+	if byte(vmtype) == payload.WASMVM_TYPE {
+		txHash, err = utils.InvokeWasmVMCcntmract(gasPrice, gasLimit, signer, ccntmractAddr, params)
+		if err != nil {
+			return fmt.Errorf("invoke NeoVM ccntmract error:%s", err)
+		}
 	}
 
 	PrintInfoMsg("  TxHash:%s", txHash)

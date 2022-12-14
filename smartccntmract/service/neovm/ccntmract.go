@@ -139,7 +139,7 @@ func CcntmractGetCode(service *NeoVmService, engine *vm.Executor) error {
 	}
 	if d, ok := i.Data.(*payload.DeployCode); ok {
 		return engine.EvalStack.PushBytes(d.Code)
-}
+	}
 	return fmt.Errorf("[CcntmractGetCode] Type error ")
 }
 
@@ -152,7 +152,7 @@ func isCcntmractParamValid(engine *vm.Executor) (*payload.DeployCode, error) {
 		return nil, err
 	}
 
-	vmType, err := engine.EvalStack.PopAsUint32()
+	vmType, err := engine.EvalStack.PopAsInt64()
 	if err != nil {
 		return nil, err
 	}
