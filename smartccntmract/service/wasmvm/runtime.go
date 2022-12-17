@@ -34,7 +34,9 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	native2 "github.com/cntmio/cntmology/smartccntmract/service/native"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
+	"github.com/cntmio/cntmology/smartccntmract/service/util"
 	"github.com/cntmio/cntmology/smartccntmract/states"
+	"github.com/cntmio/cntmology/vm/crossvm_codec"
 	neotypes "github.com/cntmio/cntmology/vm/neovm/types"
 )
 
@@ -155,7 +157,12 @@ func Notify(proc *exec.Process, ptr uint32, len uint32) {
 		panic(err)
 	}
 
-	notify := &event.NotifyEventInfo{self.Service.CcntmextRef.CurrentCcntmext().CcntmractAddress, string(bs)}
+	list, err := crossvm_codec.DeserializeInput(bs)
+	if err != nil {
+		panic(err)
+	}
+
+	notify := &event.NotifyEventInfo{self.Service.CcntmextRef.CurrentCcntmext().CcntmractAddress, list}
 	notifys := make([]*event.NotifyEventInfo, 1)
 	notifys[0] = notify
 	self.Service.CcntmextRef.PushNotifications(notifys)
@@ -310,7 +317,13 @@ func CallCcntmract(proc *exec.Process, ccntmractAddr uint32, inputPtr uint32, in
 		result = tmpRes.([]byte)
 
 	case NEOVM_CcntmRACT:
-		neoservice, err := self.Service.CcntmextRef.NewExecuteEngine(inputs, types.InvokeNeo)
+
+		parambytes, err := util.CreateNeoInvokeParam(ccntmractAddress, inputs)
+		if err != nil {
+			panic(err)
+		}
+
+		neoservice, err := self.Service.CcntmextRef.NewExecuteEngine(parambytes, types.InvokeNeo)
 		if err != nil {
 			panic(err)
 		}
@@ -320,15 +333,13 @@ func CallCcntmract(proc *exec.Process, ccntmractAddr uint32, inputPtr uint32, in
 		}
 		if tmp != nil {
 			val := tmp.(*neotypes.VmValue)
-			result, err = val.AsBytes()
+			source := common.NewZeroCopySink([]byte{byte(crossvm_codec.VERSION)})
+
+			err = neotypes.BuildResultFromNeo(*val, source)
 			if err != nil {
-				sink := new(common.ZeroCopySink)
-				err = val.Serialize(sink)
-				if err != nil {
-					panic(err)
-				}
-				result = sink.Bytes()
+				panic(err)
 			}
+			result = source.Bytes()
 		}
 
 	default:

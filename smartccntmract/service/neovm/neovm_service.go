@@ -37,48 +37,49 @@ import (
 var (
 	// Register all service for smart ccntmract execute
 	ServiceMap = map[string]Service{
-		ATTRIBUTE_GETUSAGE_NAME:              {Execute: AttributeGetUsage, Validator: validatorAttribute},
-		ATTRIBUTE_GETDATA_NAME:               {Execute: AttributeGetData, Validator: validatorAttribute},
-		BLOCK_GETTRANSACTIONCOUNT_NAME:       {Execute: BlockGetTransactionCount, Validator: validatorBlock},
-		BLOCK_GETTRANSACTIONS_NAME:           {Execute: BlockGetTransactions, Validator: validatorBlock},
-		BLOCK_GETTRANSACTION_NAME:            {Execute: BlockGetTransaction, Validator: validatorBlockTransaction},
+		ATTRIBUTE_GETUSAGE_NAME:              {Execute: AttributeGetUsage},
+		ATTRIBUTE_GETDATA_NAME:               {Execute: AttributeGetData},
+		BLOCK_GETTRANSACTIONCOUNT_NAME:       {Execute: BlockGetTransactionCount},
+		BLOCK_GETTRANSACTIONS_NAME:           {Execute: BlockGetTransactions},
+		BLOCK_GETTRANSACTION_NAME:            {Execute: BlockGetTransaction},
 		BLOCKCHAIN_GETHEIGHT_NAME:            {Execute: BlockChainGetHeight},
-		BLOCKCHAIN_GETHEADER_NAME:            {Execute: BlockChainGetHeader, Validator: validatorBlockChainHeader},
-		BLOCKCHAIN_GETBLOCK_NAME:             {Execute: BlockChainGetBlock, Validator: validatorBlockChainBlock},
-		BLOCKCHAIN_GETTRANSACTION_NAME:       {Execute: BlockChainGetTransaction, Validator: validatorBlockChainTransaction},
-		BLOCKCHAIN_GETCcntmRACT_NAME:          {Execute: BlockChainGetCcntmract, Validator: validatorBlockChainCcntmract},
+		BLOCKCHAIN_GETHEADER_NAME:            {Execute: BlockChainGetHeader},
+		BLOCKCHAIN_GETBLOCK_NAME:             {Execute: BlockChainGetBlock},
+		BLOCKCHAIN_GETTRANSACTION_NAME:       {Execute: BlockChainGetTransaction},
+		BLOCKCHAIN_GETCcntmRACT_NAME:          {Execute: BlockChainGetCcntmract},
 		BLOCKCHAIN_GETTRANSACTIONHEIGHT_NAME: {Execute: BlockChainGetTransactionHeight},
-		HEADER_GETINDEX_NAME:                 {Execute: HeaderGetIndex, Validator: validatorHeader},
-		HEADER_GETHASH_NAME:                  {Execute: HeaderGetHash, Validator: validatorHeader},
-		HEADER_GETVERSION_NAME:               {Execute: HeaderGetVersion, Validator: validatorHeader},
-		HEADER_GETPREVHASH_NAME:              {Execute: HeaderGetPrevHash, Validator: validatorHeader},
-		HEADER_GETTIMESTAMP_NAME:             {Execute: HeaderGetTimestamp, Validator: validatorHeader},
-		HEADER_GETCONSENSUSDATA_NAME:         {Execute: HeaderGetConsensusData, Validator: validatorHeader},
-		HEADER_GETNEXTCONSENSUS_NAME:         {Execute: HeaderGetNextConsensus, Validator: validatorHeader},
-		HEADER_GETMERKLEROOT_NAME:            {Execute: HeaderGetMerkleRoot, Validator: validatorHeader},
-		TRANSACTION_GETHASH_NAME:             {Execute: TransactionGetHash, Validator: validatorTransaction},
-		TRANSACTION_GETTYPE_NAME:             {Execute: TransactionGetType, Validator: validatorTransaction},
-		TRANSACTION_GETATTRIBUTES_NAME:       {Execute: TransactionGetAttributes, Validator: validatorTransaction},
+		HEADER_GETINDEX_NAME:                 {Execute: HeaderGetIndex},
+		HEADER_GETHASH_NAME:                  {Execute: HeaderGetHash},
+		HEADER_GETVERSION_NAME:               {Execute: HeaderGetVersion},
+		HEADER_GETPREVHASH_NAME:              {Execute: HeaderGetPrevHash},
+		HEADER_GETTIMESTAMP_NAME:             {Execute: HeaderGetTimestamp},
+		HEADER_GETCONSENSUSDATA_NAME:         {Execute: HeaderGetConsensusData},
+		HEADER_GETNEXTCONSENSUS_NAME:         {Execute: HeaderGetNextConsensus},
+		HEADER_GETMERKLEROOT_NAME:            {Execute: HeaderGetMerkleRoot},
+		TRANSACTION_GETHASH_NAME:             {Execute: TransactionGetHash},
+		TRANSACTION_GETTYPE_NAME:             {Execute: TransactionGetType},
+		TRANSACTION_GETATTRIBUTES_NAME:       {Execute: TransactionGetAttributes},
 		CcntmRACT_CREATE_NAME:                 {Execute: CcntmractCreate},
 		CcntmRACT_MIGRATE_NAME:                {Execute: CcntmractMigrate},
 		CcntmRACT_GETSTORAGECcntmEXT_NAME:      {Execute: CcntmractGetStorageCcntmext},
 		CcntmRACT_DESTROY_NAME:                {Execute: CcntmractDestory},
-		CcntmRACT_GETSCRIPT_NAME:              {Execute: CcntmractGetCode, Validator: validatorGetCode},
+		CcntmRACT_GETSCRIPT_NAME:              {Execute: CcntmractGetCode},
 		RUNTIME_GETTIME_NAME:                 {Execute: RuntimeGetTime},
-		RUNTIME_CHECKWITNESS_NAME:            {Execute: RuntimeCheckWitness, Validator: validatorCheckWitness},
-		RUNTIME_NOTIFY_NAME:                  {Execute: RuntimeNotify, Validator: validatorNotify},
-		RUNTIME_LOG_NAME:                     {Execute: RuntimeLog, Validator: validatorLog},
+		RUNTIME_CHECKWITNESS_NAME:            {Execute: RuntimeCheckWitness},
+		RUNTIME_NOTIFY_NAME:                  {Execute: RuntimeNotify},
+		RUNTIME_LOG_NAME:                     {Execute: RuntimeLog},
 		RUNTIME_GETTRIGGER_NAME:              {Execute: RuntimeGetTrigger},
-		RUNTIME_SERIALIZE_NAME:               {Execute: RuntimeSerialize, Validator: validatorSerialize},
-		RUNTIME_DESERIALIZE_NAME:             {Execute: RuntimeDeserialize, Validator: validatorDeserialize},
+		RUNTIME_SERIALIZE_NAME:               {Execute: RuntimeSerialize},
+		RUNTIME_DESERIALIZE_NAME:             {Execute: RuntimeDeserialize},
 		RUNTIME_VERIFYMUTISIG_NAME:           {Execute: RuntimeVerifyMutiSig},
 		NATIVE_INVOKE_NAME:                   {Execute: NativeInvoke},
+		WASM_INVOKE_NAME:                     {Execute: WASMInvoke},
 		STORAGE_GET_NAME:                     {Execute: StorageGet},
 		STORAGE_PUT_NAME:                     {Execute: StoragePut},
 		STORAGE_DELETE_NAME:                  {Execute: StorageDelete},
 		STORAGE_GETCcntmEXT_NAME:              {Execute: StorageGetCcntmext},
 		STORAGE_GETREADONLYCcntmEXT_NAME:      {Execute: StorageGetReadOnlyCcntmext},
-		STORAGECcntmEXT_ASREADONLY_NAME:       {Execute: StorageCcntmextAsReadOnly, Validator: validatorCcntmextAsReadOnly},
+		STORAGECcntmEXT_ASREADONLY_NAME:       {Execute: StorageCcntmextAsReadOnly},
 		GETSCRIPTCcntmAINER_NAME:              {Execute: GetCodeCcntmainer},
 		GETEXECUTINGSCRIPTHASH_NAME:          {Execute: GetExecutingAddress},
 		GETCALLINGSCRIPTHASH_NAME:            {Execute: GetCallingAddress},
@@ -101,13 +102,11 @@ var (
 )
 
 type (
-	Execute   func(service *NeoVmService, engine *vm.Executor) error
-	Validator func(engine *vm.ExecutionEngine) error
+	Execute func(service *NeoVmService, engine *vm.Executor) error
 )
 
 type Service struct {
-	Execute   Execute
-	Validator Validator
+	Execute Execute
 }
 
 // NeoVmService is a struct for smart ccntmract provide interop service
