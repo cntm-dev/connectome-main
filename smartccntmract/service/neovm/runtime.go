@@ -23,6 +23,7 @@ import (
 
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/signature"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
@@ -153,6 +154,7 @@ func RuntimeNotify(service *NeoVmService, engine *vm.Executor) error {
 
 // RuntimeLog push smart ccntmract execute event log to client
 func RuntimeLog(service *NeoVmService, engine *vm.Executor) error {
+	sitem, err := engine.EvalStack.Peek(0)
 	item, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return err
@@ -160,6 +162,9 @@ func RuntimeLog(service *NeoVmService, engine *vm.Executor) error {
 	ccntmext := service.CcntmextRef.CurrentCcntmext()
 	txHash := service.Tx.Hash()
 	event.PushSmartCodeEvent(txHash, 0, event.EVENT_LOG, &event.LogEventArgs{TxHash: txHash, CcntmractAddress: ccntmext.CcntmractAddress, Message: string(item)})
+
+	scv := sitem.Dump()
+	log.Debugf("[NeoCcntmract]Debug:%s\n", scv)
 	return nil
 }
 

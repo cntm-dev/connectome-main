@@ -19,6 +19,7 @@ package wasmvm
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"fmt"
 	"reflect"
 
@@ -72,6 +73,26 @@ func SelfAddress(proc *exec.Process, dst uint32) {
 	self.checkGas(SELF_ADDRESS_GAS)
 	selfaddr := self.Service.CcntmextRef.CurrentCcntmext().CcntmractAddress
 	_, err := proc.WriteAt(selfaddr[:], int64(dst))
+	if err != nil {
+		panic(err)
+	}
+}
+
+func Sha256(proc *exec.Process, src uint32, slen uint32, dst uint32) {
+	self := proc.HostData().(*Runtime)
+	cost := uint64((slen/1024)+1) * SHA256_GAS
+	self.checkGas(cost)
+
+	bs, err := ReadWasmMemory(proc, src, slen)
+	if err != nil {
+		panic(err)
+	}
+
+	sh := sha256.New()
+	sh.Write(bs[:])
+	hash := sh.Sum(nil)
+
+	_, err = proc.WriteAt(hash[:], int64(dst))
 	if err != nil {
 		panic(err)
 	}
@@ -331,6 +352,11 @@ func CallCcntmract(proc *exec.Process, ccntmractAddr uint32, inputPtr uint32, in
 
 func NewHostModule() *wasm.Module {
 	m := wasm.NewModule()
+	paramTypes := make([]wasm.ValueType, 14)
+	for i := 0; i < len(paramTypes); i++ {
+		paramTypes[i] = wasm.ValueTypeI32
+	}
+
 	m.Types = &wasm.SectionTypes{
 		Entries: []wasm.FunctionSig{
 			//func()uint64    [0]
@@ -382,18 +408,20 @@ func NewHostModule() *wasm.Module {
 				ParamTypes:  []wasm.ValueType{wasm.ValueTypeI32, wasm.ValueTypeI32},
 				ReturnTypes: []wasm.ValueType{wasm.ValueTypeI32},
 			},
-			//func(uint32 * 12)uint32   [9]
+			//func(uint32 * 14)uint32   [9]
 			{
-				Form: 0, // value for the 'func' type constructor
-				ParamTypes: []wasm.ValueType{wasm.ValueTypeI32, wasm.ValueTypeI32, wasm.ValueTypeI32, wasm.ValueTypeI32,
-					wasm.ValueTypeI32, wasm.ValueTypeI32, wasm.ValueTypeI32, wasm.ValueTypeI32,
-					wasm.ValueTypeI32, wasm.ValueTypeI32, wasm.ValueTypeI32, wasm.ValueTypeI32,
-					wasm.ValueTypeI32, wasm.ValueTypeI32},
+				Form:        0, // value for the 'func' type constructor
+				ParamTypes:  paramTypes,
 				ReturnTypes: []wasm.ValueType{wasm.ValueTypeI32},
 			},
 			//funct()   [10]
 			{
 				Form: 0, // value for the 'func' type constructor
+			},
+			//func(uint32,uint32,uint32)  [11]
+			{
+				Form:       0, // value for the 'func' type constructor
+				ParamTypes: []wasm.ValueType{wasm.ValueTypeI32, wasm.ValueTypeI32, wasm.ValueTypeI32},
 			},
 		},
 	}
@@ -513,124 +541,134 @@ func NewHostModule() *wasm.Module {
 			Host: reflect.ValueOf(RaiseException),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
+		{ //23
+			Sig:  &m.Types.Entries[11],
+			Host: reflect.ValueOf(Sha256),
+			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
+		},
 	}
 
 	m.Export = &wasm.SectionExports{
 		Entries: map[string]wasm.ExportEntry{
-			"timestamp": {
-				FieldStr: "timestamp",
+			"cntmio_timestamp": {
+				FieldStr: "cntmio_timestamp",
 				Kind:     wasm.ExternalFunction,
 				Index:    0,
 			},
-			"block_height": {
-				FieldStr: "block_height",
+			"cntmio_block_height": {
+				FieldStr: "cntmio_block_height",
 				Kind:     wasm.ExternalFunction,
 				Index:    1,
 			},
-			"input_length": {
-				FieldStr: "input_length",
+			"cntmio_input_length": {
+				FieldStr: "cntmio_input_length",
 				Kind:     wasm.ExternalFunction,
 				Index:    2,
 			},
-			"call_output_length": {
-				FieldStr: "call_output_length",
+			"cntmio_call_output_length": {
+				FieldStr: "cntmio_call_output_length",
 				Kind:     wasm.ExternalFunction,
 				Index:    3,
 			},
-			"self_address": {
-				FieldStr: "self_address",
+			"cntmio_self_address": {
+				FieldStr: "cntmio_self_address",
 				Kind:     wasm.ExternalFunction,
 				Index:    4,
 			},
-			"caller_address": {
-				FieldStr: "caller_address",
+			"cntmio_caller_address": {
+				FieldStr: "cntmio_caller_address",
 				Kind:     wasm.ExternalFunction,
 				Index:    5,
 			},
-			"entry_address": {
-				FieldStr: "entry_address",
+			"cntmio_entry_address": {
+				FieldStr: "cntmio_entry_address",
 				Kind:     wasm.ExternalFunction,
 				Index:    6,
 			},
-			"get_input": {
-				FieldStr: "get_input",
+			"cntmio_get_input": {
+				FieldStr: "cntmio_get_input",
 				Kind:     wasm.ExternalFunction,
 				Index:    7,
 			},
-			"get_call_output": {
-				FieldStr: "get_call_output",
+			"cntmio_get_call_output": {
+				FieldStr: "cntmio_get_call_output",
 				Kind:     wasm.ExternalFunction,
 				Index:    8,
 			},
-			"check_witness": {
-				FieldStr: "check_witness",
+			"cntmio_check_witness": {
+				FieldStr: "cntmio_check_witness",
 				Kind:     wasm.ExternalFunction,
 				Index:    9,
 			},
-			"current_blockhash": {
-				FieldStr: "current_blockhash",
+			"cntmio_current_blockhash": {
+				FieldStr: "cntmio_current_blockhash",
 				Kind:     wasm.ExternalFunction,
 				Index:    10,
 			},
-			"current_txhash": {
-				FieldStr: "current_txhash",
+			"cntmio_current_txhash": {
+				FieldStr: "cntmio_current_txhash",
 				Kind:     wasm.ExternalFunction,
 				Index:    11,
 			},
-			"ret": {
-				FieldStr: "ret",
+			"cntmio_return": {
+				FieldStr: "cntmio_return",
 				Kind:     wasm.ExternalFunction,
 				Index:    12,
 			},
-			"notify": {
-				FieldStr: "notify",
+			"cntmio_notify": {
+				FieldStr: "cntmio_notify",
 				Kind:     wasm.ExternalFunction,
 				Index:    13,
 			},
-			"debug": {
-				FieldStr: "debug",
+			"cntmio_debug": {
+				FieldStr: "cntmio_debug",
 				Kind:     wasm.ExternalFunction,
 				Index:    14,
 			},
-			"call_ccntmract": {
-				FieldStr: "call_ccntmract",
+			"cntmio_call_ccntmract": {
+				FieldStr: "cntmio_call_ccntmract",
 				Kind:     wasm.ExternalFunction,
 				Index:    15,
 			},
-			"storage_read": {
-				FieldStr: "storage_read",
+			"cntmio_storage_read": {
+				FieldStr: "cntmio_storage_read",
 				Kind:     wasm.ExternalFunction,
 				Index:    16,
 			},
-			"storage_write": {
-				FieldStr: "storage_write",
+			"cntmio_storage_write": {
+				FieldStr: "cntmio_storage_write",
 				Kind:     wasm.ExternalFunction,
 				Index:    17,
 			},
-			"storage_delete": {
-				FieldStr: "storage_delete",
+			"cntmio_storage_delete": {
+				FieldStr: "cntmio_storage_delete",
 				Kind:     wasm.ExternalFunction,
 				Index:    18,
 			},
-			"ccntmract_create": {
-				FieldStr: "ccntmract_create",
+			"cntmio_ccntmract_create": {
+				FieldStr: "cntmio_ccntmract_create",
 				Kind:     wasm.ExternalFunction,
 				Index:    19,
 			},
-			"ccntmract_migrate": {
-				FieldStr: "ccntmract_migrate",
+			"cntmio_ccntmract_migrate": {
+				FieldStr: "cntmio_ccntmract_migrate",
 				Kind:     wasm.ExternalFunction,
 				Index:    20,
 			},
-			"ccntmract_delete": {
-				FieldStr: "ccntmract_delete",
+			"cntmio_ccntmract_destroy": {
+				FieldStr: "cntmio_ccntmract_destroy",
 				Kind:     wasm.ExternalFunction,
 				Index:    21,
 			},
-			"panic": {
-				FieldStr: "panic",
+			"cntmio_panic": {
+				FieldStr: "cntmio_panic",
 				Kind:     wasm.ExternalFunction,
 				Index:    22,
+			},
+			"cntmio_sha256": {
+				FieldStr: "cntmio_sha256",
+				Kind:     wasm.ExternalFunction,
+				Index:    23,
 			},
 		},
 	}

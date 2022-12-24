@@ -21,9 +21,11 @@ package utils
 import (
 	"bytes"
 	"fmt"
+	"github.com/cntmio/cntmology/smartccntmract/states"
 	"math"
 	"math/big"
 	"reflect"
+	"time"
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/payload"
@@ -172,4 +174,82 @@ func BuildNeoVMParam(builder *vm.ParamsBuilder, smartCcntmractParams []interface
 		}
 	}
 	return nil
+}
+
+//build param bytes for wasm ccntmract
+func BuildWasmVMInvokeCode(ccntmractAddress common.Address, params []interface{}) ([]byte, error) {
+	ccntmract := &states.WasmCcntmractParam{}
+	ccntmract.Address = ccntmractAddress
+	//bf := bytes.NewBuffer(nil)
+	argbytes, err := BuildWasmCcntmractParam(params)
+	if err != nil {
+		return nil, fmt.Errorf("build wasm ccntmract param failed:%s", err)
+	}
+	ccntmract.Args = argbytes
+	sink := common.NewZeroCopySink(nil)
+	ccntmract.Serialization(sink)
+	return sink.Bytes(), nil
+
+}
+
+//build param bytes for wasm ccntmract
+func BuildWasmCcntmractParam(params []interface{}) ([]byte, error) {
+	bf := common.NewZeroCopySink(nil)
+	for _, param := range params {
+		switch param.(type) {
+		case string:
+			bf.WriteString(param.(string))
+		case int:
+			bf.WriteInt32(param.(int32))
+		case int64:
+			bf.WriteInt64(param.(int64))
+		case uint16:
+			bf.WriteUint16(param.(uint16))
+		case uint32:
+			bf.WriteUint32(param.(uint32))
+		case uint64:
+			bf.WriteUint64(param.(uint64))
+		case []byte:
+			bf.WriteVarBytes(param.([]byte))
+		case common.Uint256:
+			bf.WriteHash(param.(common.Uint256))
+		case common.Address:
+			bf.WriteAddress(param.(common.Address))
+		case byte:
+			bf.WriteByte(param.(byte))
+		case []interface{}:
+			val, err := BuildWasmCcntmractParam(param.([]interface{}))
+			if err != nil {
+				return nil, err
+			}
+			bf.WriteBytes(val)
+		default:
+			return nil, fmt.Errorf("not a supported type :%v\n", param)
+		}
+	}
+	return bf.Bytes(), nil
+
+}
+
+func NewWasmVMInvokeTransaction(gasPrice, gasLimit uint64, ccntmractAddress common.Address, params []interface{}) (*types.MutableTransaction, error) {
+	invokeCode, err := BuildWasmVMInvokeCode(ccntmractAddress, params)
+	if err != nil {
+		return nil, err
+	}
+	return NewWasmSmartCcntmractTransaction(gasPrice, gasLimit, invokeCode)
+}
+
+func NewWasmSmartCcntmractTransaction(gasPrice, gasLimit uint64, invokeCode []byte) (*types.MutableTransaction, error) {
+	invokePayload := &payload.InvokeCode{
+		Code: invokeCode,
+	}
+	tx := &types.MutableTransaction{
+		GasPrice: gasPrice,
+		GasLimit: gasLimit,
+		TxType:   types.InvokeWasm,
+		Nonce:    uint32(time.Now().Unix()),
+		Payload:  invokePayload,
+		Sigs:     nil,
+	}
+	return tx, nil
 }

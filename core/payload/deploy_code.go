@@ -205,9 +205,17 @@ func (dc *DeployCode) Deserialization(source *common.ZeroCopySource) error {
 	return nil
 }
 
+const maxWasmCodeSize = 512 * 1024
+
 func validateDeployCode(dep *DeployCode) error {
-	if len(dep.Code) > 1024*1024 {
-		return errors.NewErr("[Ccntmract] Code too lcntm!")
+	if dep.VmType == WASMVM_TYPE {
+		if len(dep.Code) > maxWasmCodeSize {
+			return errors.NewErr("[Ccntmract] Code too lcntm!")
+		}
+	} else {
+		if len(dep.Code) > 1024*1024 {
+			return errors.NewErr("[Ccntmract] Code too lcntm!")
+		}
 	}
 
 	if len(dep.Name) > 252 {
