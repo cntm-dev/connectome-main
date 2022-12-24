@@ -30,7 +30,6 @@ import (
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
-	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	native2 "github.com/cntmio/cntmology/smartccntmract/service/native"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
@@ -128,8 +127,7 @@ func Checkwitness(proc *exec.Process, dst uint32) uint32 {
 
 func Ret(proc *exec.Process, ptr uint32, len uint32) {
 	self := proc.HostData().(*Runtime)
-	bs := make([]byte, len)
-	_, err := proc.ReadAt(bs, int64(ptr))
+	bs, err := ReadWasmMemory(proc, ptr, len)
 	if err != nil {
 		panic(err)
 	}
@@ -139,8 +137,7 @@ func Ret(proc *exec.Process, ptr uint32, len uint32) {
 }
 
 func Debug(proc *exec.Process, ptr uint32, len uint32) {
-	bs := make([]byte, len)
-	_, err := proc.ReadAt(bs, int64(ptr))
+	bs, err := ReadWasmMemory(proc, ptr, len)
 	if err != nil {
 		//do not panic on debug
 		return
@@ -151,8 +148,7 @@ func Debug(proc *exec.Process, ptr uint32, len uint32) {
 
 func Notify(proc *exec.Process, ptr uint32, len uint32) {
 	self := proc.HostData().(*Runtime)
-	bs := make([]byte, len)
-	_, err := proc.ReadAt(bs, int64(ptr))
+	bs, err := ReadWasmMemory(proc, ptr, len)
 	if err != nil {
 		panic(err)
 	}
@@ -209,8 +205,7 @@ func GetCurrentTxHash(proc *exec.Process, ptr uint32) uint32 {
 }
 
 func RaiseException(proc *exec.Process, ptr uint32, len uint32) {
-	bs := make([]byte, len)
-	_, err := proc.ReadAt(bs, int64(ptr))
+	bs, err := ReadWasmMemory(proc, ptr, len)
 	if err != nil {
 		//do not panic on debug
 		return
@@ -223,23 +218,13 @@ func CallCcntmract(proc *exec.Process, ccntmractAddr uint32, inputPtr uint32, in
 	self := proc.HostData().(*Runtime)
 
 	self.checkGas(CALL_CcntmRACT_GAS)
-	ccntmractAddrbytes := make([]byte, 20)
-	_, err := proc.ReadAt(ccntmractAddrbytes, int64(ccntmractAddr))
+	var ccntmractAddress common.Address
+	_, err := proc.ReadAt(ccntmractAddress[:], int64(ccntmractAddr))
 	if err != nil {
 		panic(err)
 	}
 
-	ccntmractAddress, err := common.AddressParseFromBytes(ccntmractAddrbytes)
-	if err != nil {
-		panic(err)
-	}
-
-	if uint32(proc.MemAllocated()) < inputLen {
-		panic(errors.NewErr("inputLen is greater than memory size"))
-	}
-
-	inputs := make([]byte, inputLen)
-	_, err = proc.ReadAt(inputs, int64(inputPtr))
+	inputs, err := ReadWasmMemory(proc, inputPtr, inputLen)
 	if err != nil {
 		panic(err)
 	}
@@ -248,12 +233,6 @@ func CallCcntmract(proc *exec.Process, ccntmractAddr uint32, inputPtr uint32, in
 	if err != nil {
 		panic(err)
 	}
-
-	currentCtx := &ccntmext.Ccntmext{
-		Code:            self.Service.Code,
-		CcntmractAddress: self.Service.CcntmextRef.CurrentCcntmext().CcntmractAddress,
-	}
-	self.Service.CcntmextRef.PushCcntmext(currentCtx)
 
 	var result []byte
 
@@ -345,7 +324,6 @@ func CallCcntmract(proc *exec.Process, ccntmractAddr uint32, inputPtr uint32, in
 	default:
 		panic(errors.NewErr("Not a supported ccntmract type"))
 	}
-	self.Service.CcntmextRef.PopCcntmext()
 
 	self.CallOutPut = result
 	return uint32(len(self.CallOutPut))

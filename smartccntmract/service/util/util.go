@@ -173,7 +173,10 @@ func buildWasmCcntmractParam(params []interface{}, bf *common.ZeroCopySink) ([]b
 		case byte:
 			bf.WriteByte(param.(byte))
 		case []interface{}:
-			buildWasmCcntmractParam(param.([]interface{}), bf)
+			_, err := buildWasmCcntmractParam(param.([]interface{}), bf)
+			if err != nil {
+				return nil, err
+			}
 		default:
 			return nil, fmt.Errorf("not a supported type :%v\n", param)
 		}

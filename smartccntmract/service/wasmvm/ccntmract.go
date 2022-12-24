@@ -41,13 +41,7 @@ func CcntmractCreate(proc *exec.Process,
 	descLen uint32,
 	newAddressPtr uint32) uint32 {
 	self := proc.HostData().(*Runtime)
-
-	if uint32(proc.MemAllocated()) < codeLen+nameLen+verLen+authorLen+emailLen+descLen {
-		panic(errors.NewErr("ccntmract create len is greater than memory size"))
-	}
-
-	code := make([]byte, codeLen)
-	_, err := proc.ReadAt(code, int64(codePtr))
+	code, err := ReadWasmMemory(proc, codePtr, codeLen)
 	if err != nil {
 		panic(err)
 	}
@@ -55,38 +49,38 @@ func CcntmractCreate(proc *exec.Process,
 	cost := CcntmRACT_CREATE_GAS + uint64(uint64(codeLen)/PER_UNIT_CODE_LEN)*UINT_DEPLOY_CODE_LEN_GAS
 	self.checkGas(cost)
 
-	name := make([]byte, nameLen)
-	_, err = proc.ReadAt(name, int64(namePtr))
+	name, err := ReadWasmMemory(proc, namePtr, nameLen)
 	if err != nil {
 		panic(err)
 	}
 
-	version := make([]byte, verLen)
-	_, err = proc.ReadAt(version, int64(verPtr))
+	version, err := ReadWasmMemory(proc, verPtr, verLen)
 	if err != nil {
 		panic(err)
 	}
 
-	author := make([]byte, authorLen)
-	_, err = proc.ReadAt(author, int64(authorPtr))
+	author, err := ReadWasmMemory(proc, authorPtr, authorLen)
 	if err != nil {
 		panic(err)
 	}
 
-	email := make([]byte, emailLen)
-	_, err = proc.ReadAt(email, int64(emailPtr))
+	email, err := ReadWasmMemory(proc, emailPtr, emailLen)
 	if err != nil {
 		panic(err)
 	}
 
-	desc := make([]byte, descLen)
-	_, err = proc.ReadAt(desc, int64(descPtr))
+	desc, err := ReadWasmMemory(proc, descPtr, descLen)
 	if err != nil {
 		panic(err)
 	}
 
 	dep, err := payload.CreateDeployCode(code, needStorage, name, version, author, email, desc)
 	if err != nil {
+		panic(err)
+	}
+
+	_, err = ReadWasmModule(dep, true)
+	if dep.VmType == payload.WASMVM_TYPE && err != nil {
 		panic(err)
 	}
 
@@ -123,12 +117,7 @@ func CcntmractMigrate(proc *exec.Process,
 
 	self := proc.HostData().(*Runtime)
 
-	if uint32(proc.MemAllocated()) < codeLen+nameLen+verLen+authorLen+emailLen+descLen {
-		panic(errors.NewErr("ccntmract migrate len is greater than memory size"))
-	}
-
-	code := make([]byte, codeLen)
-	_, err := proc.ReadAt(code, int64(codePtr))
+	code, err := ReadWasmMemory(proc, codePtr, codeLen)
 	if err != nil {
 		panic(err)
 	}
@@ -136,32 +125,27 @@ func CcntmractMigrate(proc *exec.Process,
 	cost := CcntmRACT_CREATE_GAS + uint64(uint64(codeLen)/PER_UNIT_CODE_LEN)*UINT_DEPLOY_CODE_LEN_GAS
 	self.checkGas(cost)
 
-	name := make([]byte, nameLen)
-	_, err = proc.ReadAt(name, int64(namePtr))
+	name, err := ReadWasmMemory(proc, namePtr, nameLen)
 	if err != nil {
 		panic(err)
 	}
 
-	version := make([]byte, verLen)
-	_, err = proc.ReadAt(version, int64(verPtr))
+	version, err := ReadWasmMemory(proc, verPtr, verLen)
 	if err != nil {
 		panic(err)
 	}
 
-	author := make([]byte, authorLen)
-	_, err = proc.ReadAt(author, int64(authorPtr))
+	author, err := ReadWasmMemory(proc, authorPtr, authorLen)
 	if err != nil {
 		panic(err)
 	}
 
-	email := make([]byte, emailLen)
-	_, err = proc.ReadAt(email, int64(emailPtr))
+	email, err := ReadWasmMemory(proc, emailPtr, emailLen)
 	if err != nil {
 		panic(err)
 	}
 
-	desc := make([]byte, descLen)
-	_, err = proc.ReadAt(desc, int64(descPtr))
+	desc, err := ReadWasmMemory(proc, descPtr, descLen)
 	if err != nil {
 		panic(err)
 	}
@@ -171,13 +155,21 @@ func CcntmractMigrate(proc *exec.Process,
 		panic(err)
 	}
 
+	_, err = ReadWasmModule(dep, true)
+	if dep.VmType == payload.WASMVM_TYPE && err != nil {
+		panic(err)
+	}
+
 	ccntmractAddr := dep.Address()
 	if self.isCcntmractExist(ccntmractAddr) {
 		panic(errors.NewErr("ccntmract has been deployed"))
 	}
 	oldAddress := self.Service.CcntmextRef.CurrentCcntmext().CcntmractAddress
 
-	self.Service.CacheDB.PutCcntmract(dep)
+	err = self.Service.CacheDB.PutCcntmract(dep)
+	if err != nil {
+		panic(err)
+	}
 	self.Service.CacheDB.DeleteCcntmract(oldAddress)
 
 	iter := self.Service.CacheDB.NewIterator(oldAddress[:])

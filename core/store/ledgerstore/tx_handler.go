@@ -41,6 +41,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
+	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
 )
 
@@ -53,6 +54,11 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 		gasConsumed uint64
 		err         error
 	)
+
+	_, err = wasmvm.ReadWasmModule(deploy, true)
+	if deploy.VmType == payload.WASMVM_TYPE && err != nil {
+		return err
+	}
 
 	if tx.GasPrice != 0 {
 		// init smart ccntmract configuration info

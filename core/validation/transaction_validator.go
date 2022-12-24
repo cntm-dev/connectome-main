@@ -30,6 +30,7 @@ import (
 	"github.com/cntmio/cntmology/core/signature"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
+	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
 )
 
 // VerifyTransaction verifys received single transaction
@@ -114,6 +115,11 @@ func checkTransactionPayload(tx *types.Transaction) error {
 
 	switch pld := tx.Payload.(type) {
 	case *payload.DeployCode:
+		deploy := tx.Payload.(*payload.DeployCode)
+		_, err := wasmvm.ReadWasmModule(deploy, true)
+		if deploy.VmType == payload.WASMVM_TYPE && err != nil {
+			return err
+		}
 		return nil
 	case *payload.InvokeCode:
 		return nil
