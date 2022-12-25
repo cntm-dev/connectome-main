@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/store"
 	ctypes "github.com/cntmio/cntmology/core/types"
@@ -147,6 +148,11 @@ func (this *SmartCcntmract) NewExecuteEngine(code []byte, txtype ctypes.Transact
 		}
 	}
 	if txtype == ctypes.InvokeWasm {
+		gasFactor := this.GasTable[config.WASM_GAS_FACTOR]
+		if gasFactor == 0 {
+			gasFactor = config.DEFAULT_WASM_GAS_FACTOR
+		}
+
 		service = &wasmvm.WasmVmService{
 			Store:      this.Store,
 			CacheDB:    this.CacheDB,
@@ -157,7 +163,8 @@ func (this *SmartCcntmract) NewExecuteEngine(code []byte, txtype ctypes.Transact
 			Height:     this.Config.Height,
 			BlockHash:  this.Config.BlockHash,
 			PreExec:    this.PreExec,
-			GasLimit:   this.Gas,
+			GasLimit:   &this.Gas,
+			GasFactor:  gasFactor,
 		}
 	}
 

@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "helloworld",
+    "ccntmractop",
 	"js-vm"
 ]
 

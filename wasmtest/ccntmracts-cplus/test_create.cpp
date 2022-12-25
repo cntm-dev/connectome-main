@@ -15,7 +15,7 @@ using namespace cntmio;
 class hello: public ccntmract {
 	public:
 	using ccntmract::ccntmract;
-	int64_t test_ccntmract_create(void) {
+	void test_ccntmract_create(void) {
 		int64_t res;
 		/** file: test_create.wat
 			(module
@@ -41,7 +41,6 @@ class hello: public ccntmract {
 		vector<char> args = {};
 		call_ccntmract(t,args, res);
 		check(res == 2222, "migrate failed");
-		return res;
 	}
 	
 	string testcase(void) {

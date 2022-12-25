@@ -29,6 +29,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"strings"
 
 	"github.com/go-interpreter/wagon/exec"
 	"github.com/go-interpreter/wagon/wasm"
@@ -53,10 +54,6 @@ import (
 
 const ccntmractDir = "testwasmdata"
 const testcaseMethod = "testcase"
-
-func hasSuffix(s string, suffix string) bool {
-	return len(s) >= len(suffix) && s[(len(s)-len(suffix)):] == suffix
-}
 
 func NewDeployWasmCcntmract(signer *account.Account, code []byte) (*types.Transaction, error) {
 	mutable := utils.NewDeployCodeTransaction(0, 100000000, code, payload.WASMVM_TYPE, "name", "version",
@@ -103,7 +100,8 @@ func ExactTestCase(code []byte) [][]common3.TestCase {
 	host := &wasmvm.Runtime{Input: param.Bytes()}
 	vm.HostData = host
 	vm.RecoverPanic = true
-	vm.AvaliableGas = &exec.Gas{GasLimit: 100000000000000, GasPrice: 0}
+	envGasLimit := uint64(100000000000000)
+	vm.AvaliableGas = &exec.Gas{GasLimit: &envGasLimit, GasPrice: 0, GasFactor: 5}
 	vm.CallStackDepth = 1024
 
 	entry := compiled.RawModule.Export.Entries["invoke"]
@@ -132,7 +130,7 @@ func LoadCcntmracts(dir string) (map[string][]byte, error) {
 		return nil, err
 	}
 	for _, name := range fnames {
-		if !(hasSuffix(name, ".wasm") || hasSuffix(name, ".avm")) {
+		if !(strings.HasSuffix(name, ".wasm") || strings.HasSuffix(name, ".avm")) {
 			ccntminue
 		}
 		raw, err := ioutil.ReadFile(name)
@@ -192,11 +190,11 @@ func main() {
 	log.Infof("deploying %d wasm ccntmracts", len(ccntmract))
 	txes := make([]*types.Transaction, 0, len(ccntmract))
 	for file, ccntm := range ccntmract {
-		if hasSuffix(file, ".wasm") {
+		if strings.HasSuffix(file, ".wasm") {
 			tx, err := NewDeployWasmCcntmract(acct, ccntm)
 			checkErr(err)
 			txes = append(txes, tx)
-		} else if hasSuffix(file, ".avm") {
+		} else if strings.HasSuffix(file, ".avm") {
 			tx, err := NewDeployNeoCcntmract(acct, ccntm)
 			checkErr(err)
 			txes = append(txes, tx)
@@ -217,7 +215,7 @@ func main() {
 	}
 
 	for file, ccntm := range ccntmract {
-		if !hasSuffix(file, ".wasm") {
+		if !strings.HasSuffix(file, ".wasm") {
 			ccntminue
 		}
 
@@ -225,6 +223,8 @@ func main() {
 		testCases := ExactTestCase(ccntm)
 		addr := common.AddressFromVmCode(ccntm)
 		for _, testCase := range testCases[0] { // only handle group 0 currently
+			val, _ := json.Marshal(testCase)
+			log.Info("executing testcase: ", string(val))
 			tx, err := common3.GenWasmTransaction(testCase, addr, &testCcntmext)
 			checkErr(err)
 

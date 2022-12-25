@@ -9,7 +9,7 @@ class hello: public ccntmract {
 	public:
 	using ccntmract::ccntmract;
 
-	int64_t test_regex_match(string &text, string &pattern) {
+	int128_t test_regex_match(string &text, string &pattern) {
 		regex re(pattern);
         if (std::regex_match(text, re))
 			return 1;
@@ -17,7 +17,7 @@ class hello: public ccntmract {
 			return 0;
 	}
 
-	int64_t test_regex_search(string &text, string &pattern) {
+	int128_t test_regex_search(string &text, string &pattern) {
 		regex re(pattern);
         bool ret = std::regex_search(text, re);
 		if (ret) {

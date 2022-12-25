@@ -15,7 +15,7 @@ using namespace cntmio;
 class hello: public ccntmract {
 	public:
 	using ccntmract::ccntmract;
-	uint64_t test_native_cntm(string &method, address &from, address &to, asset &amount, test_conext &tc) {
+	uint128_t test_native_cntm(string &method, address &from, address &to, asset &amount, test_conext &tc) {
 		if (method == "balanceOf") {
 			asset balance = cntm::balanceof(tc.admin);
 			check(balance == 1000000000, "init balance wrcntm");
