@@ -445,7 +445,7 @@ func NewNativeInvokeTransaction(gasPirce, gasLimit uint64, ccntmractAddress comm
 }
 
 func NewNeovmInvokeTransaction(gasPrice, gasLimit uint64, ccntmractAddress common.Address, params []interface{}) (*types.MutableTransaction, error) {
-	invokeCode, err := BuildNeoVMInvokeCode(ccntmractAddress, params)
+	invokeCode, err := cutils.BuildNeoVMInvokeCode(ccntmractAddress, params)
 	if err != nil {
 		return nil, err
 	}

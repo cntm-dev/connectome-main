@@ -21,7 +21,6 @@ package auth
 import (
 	"bytes"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/cntmio/cntmology/account"
@@ -191,13 +190,12 @@ func AssignFuncsToRole(native *native.NativeService) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("[assignFuncsToRole] getRoleFunc failed: %v", err)
 	}
-	if funcs != nil {
-		funcNames := append(funcs.funcNames, param.FuncNames...)
-		funcs.funcNames = stringSliceUniq(funcNames)
-	} else {
+	if funcs == nil {
 		funcs = new(roleFuncs)
-		funcs.funcNames = stringSliceUniq(param.FuncNames)
 	}
+
+	funcs.AppendFuncs(param.FuncNames)
+
 	err = putRoleFunc(native, param.CcntmractAddr, param.Role, funcs)
 	if err != nil {
 		return nil, fmt.Errorf("[assignFuncsToRole] putRoleFunc failed: %v", err)
@@ -589,10 +587,8 @@ func verifyToken(native *native.NativeService, ccntmractAddr common.Address, cal
 			if funcs == nil || token.expireTime < native.Time {
 				ccntminue
 			}
-			for _, f := range funcs.funcNames {
-				if strings.Compare(fn, f) == 0 {
-					return true, nil
-				}
+			if funcs.CcntmainsFunc(fn) {
+				return true, nil
 			}
 		}
 	}
@@ -610,10 +606,8 @@ func verifyToken(native *native.NativeService, ccntmractAddr common.Address, cal
 			if funcs == nil || s.expireTime < native.Time {
 				ccntminue
 			}
-			for _, f := range funcs.funcNames {
-				if strings.Compare(fn, f) == 0 {
-					return true, nil
-				}
+			if funcs.CcntmainsFunc(fn) {
+				return true, nil
 			}
 		}
 	}

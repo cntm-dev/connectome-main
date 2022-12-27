@@ -22,6 +22,7 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"fmt"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/signature"
@@ -31,13 +32,18 @@ import (
 	"golang.org/x/crypto/ripemd160"
 )
 
-func NewExecutor(code []byte) *Executor {
+type VmFeatureFlag struct {
+	DisableHasKey bool // disable haskey, dcall, values opcode
+}
+
+func NewExecutor(code []byte, feature VmFeatureFlag) *Executor {
 	var engine Executor
 	engine.EvalStack = NewValueStack(STACK_LIMIT)
 	engine.AltStack = NewValueStack(STACK_LIMIT)
 	ccntmext := NewExecutionCcntmext(code)
 	engine.Ccntmext = ccntmext
 	engine.State = BREAK
+	engine.Features = feature
 	return &engine
 }
 
@@ -45,6 +51,7 @@ type Executor struct {
 	EvalStack *ValueStack
 	AltStack  *ValueStack
 	State     VMState
+	Features  VmFeatureFlag
 	Callers   []*ExecutionCcntmext
 	Ccntmext   *ExecutionCcntmext
 }
@@ -91,7 +98,22 @@ func (self *Executor) Execute() error {
 	return nil
 }
 
+func (self *Executor) checkFeaturesEnabled(opcode OpCode) error {
+	switch opcode {
+	case HASKEY, KEYS, DCALL, VALUES:
+		if self.Features.DisableHasKey {
+			return errors.ERR_NOT_SUPPORT_OPCODE
+		}
+	}
+
+	return nil
+}
+
 func (self *Executor) ExecuteOp(opcode OpCode, ccntmext *ExecutionCcntmext) (VMState, error) {
+	if err := self.checkFeaturesEnabled(opcode); err != nil {
+		return FAULT, err
+	}
+
 	if opcode >= PUSHBYTES1 && opcode <= PUSHBYTES75 {
 		buf, err := ccntmext.OpReader.ReadBytes(int(opcode))
 		if err != nil {
@@ -640,7 +662,15 @@ func (self *Executor) ExecuteOp(opcode OpCode, ccntmext *ExecutionCcntmext) (VMS
 			return FAULT, err
 		}
 	case LT, GT, LTE, GTE:
-		left, right, err := self.EvalStack.PopPairAsIntVal()
+		leftVal, rightVal, err := self.EvalStack.PopPair()
+		if err != nil {
+			return FAULT, err
+		}
+		left, err := leftVal.AsBigInt()
+		if err != nil {
+			return FAULT, err
+		}
+		right, err := rightVal.AsBigInt()
 		if err != nil {
 			return FAULT, err
 		}
@@ -939,7 +969,10 @@ func (self *Executor) ExecuteOp(opcode OpCode, ccntmext *ExecutionCcntmext) (VMS
 		}
 		array := types.NewStructValue()
 		for i := int64(0); i < count; i++ {
-			array.Append(types.VmValueFromBool(false))
+			err = array.Append(types.VmValueFromBool(false))
+			if err != nil {
+				return FAULT, err
+			}
 		}
 		err = self.EvalStack.Push(types.VmValueFromStructVal(array))
 		if err != nil {
@@ -966,7 +999,10 @@ func (self *Executor) ExecuteOp(opcode OpCode, ccntmext *ExecutionCcntmext) (VMS
 		switch val.GetType() {
 		case types.StructType:
 			array, _ := val.AsStructValue()
-			array.Append(item)
+			err = array.Append(item)
+			if err != nil {
+				return FAULT, err
+			}
 		case types.ArrayType:
 			array, _ := val.AsArrayValue()
 			err = array.Append(item)

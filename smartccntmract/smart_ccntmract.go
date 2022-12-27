@@ -18,6 +18,7 @@
 package smartccntmract
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/cntmio/cntmology/common"
@@ -123,6 +124,14 @@ func (this *SmartCcntmract) checkCcntmexts() bool {
 	return true
 }
 
+func NewVmFeatureFlag(blockHeight uint32) vm.VmFeatureFlag {
+	var feature vm.VmFeatureFlag
+	enableHeight := config.GetOpcodeUpdateCheckHeight(config.DefConfig.P2PNode.NetworkId)
+	feature.DisableHasKey = blockHeight <= enableHeight
+
+	return feature
+}
+
 // Execute is smart ccntmract execute manager
 // According different vm type to launch different service
 func (this *SmartCcntmract) NewExecuteEngine(code []byte, txtype ctypes.TransactionType) (ccntmext.Engine, error) {
@@ -131,8 +140,9 @@ func (this *SmartCcntmract) NewExecuteEngine(code []byte, txtype ctypes.Transact
 	}
 
 	var service ccntmext.Engine
-	if txtype == ctypes.InvokeNeo {
-
+	switch txtype {
+	case ctypes.InvokeNeo:
+		feature := NewVmFeatureFlag(this.Config.Height)
 		service = &neovm.NeoVmService{
 			Store:      this.Store,
 			CacheDB:    this.CacheDB,
@@ -143,11 +153,10 @@ func (this *SmartCcntmract) NewExecuteEngine(code []byte, txtype ctypes.Transact
 			Time:       this.Config.Time,
 			Height:     this.Config.Height,
 			BlockHash:  this.Config.BlockHash,
-			Engine:     vm.NewExecutor(code),
+			Engine:     vm.NewExecutor(code, feature),
 			PreExec:    this.PreExec,
 		}
-	}
-	if txtype == ctypes.InvokeWasm {
+	case ctypes.InvokeWasm:
 		gasFactor := this.GasTable[config.WASM_GAS_FACTOR]
 		if gasFactor == 0 {
 			gasFactor = config.DEFAULT_WASM_GAS_FACTOR
@@ -166,6 +175,8 @@ func (this *SmartCcntmract) NewExecuteEngine(code []byte, txtype ctypes.Transact
 			GasLimit:   &this.Gas,
 			GasFactor:  gasFactor,
 		}
+	default:
+		return nil, errors.New("failed to construct execute engine, wrcntm transaction type")
 	}
 
 	return service, nil

@@ -167,19 +167,19 @@ func Debug(proc *exec.Process, ptr uint32, len uint32) {
 	log.Debugf("[WasmCcntmract]Debug:%s\n", bs)
 }
 
-func Notify(proc *exec.Process, ptr uint32, len uint32) {
+func Notify(proc *exec.Process, ptr uint32, l uint32) {
 	self := proc.HostData().(*Runtime)
-	bs, err := ReadWasmMemory(proc, ptr, len)
+	if l >= neotypes.MAX_NOTIFY_LENGTH {
+		panic("notify length over the uplimit")
+	}
+	bs, err := ReadWasmMemory(proc, ptr, l)
 	if err != nil {
 		panic(err)
 	}
+	notify := &event.NotifyEventInfo{CcntmractAddress: self.Service.CcntmextRef.CurrentCcntmext().CcntmractAddress}
+	val := crossvm_codec.DeserializeNotify(bs)
+	notify.States = val
 
-	list, err := crossvm_codec.DeserializeInput(bs)
-	if err != nil {
-		panic(err)
-	}
-
-	notify := &event.NotifyEventInfo{self.Service.CcntmextRef.CurrentCcntmext().CcntmractAddress, list}
 	notifys := make([]*event.NotifyEventInfo, 1)
 	notifys[0] = notify
 	self.Service.CcntmextRef.PushNotifications(notifys)
@@ -318,7 +318,6 @@ func CallCcntmract(proc *exec.Process, ccntmractAddr uint32, inputPtr uint32, in
 		result = tmpRes.([]byte)
 
 	case NEOVM_CcntmRACT:
-
 		parambytes, err := util.CreateNeoInvokeParam(ccntmractAddress, inputs)
 		if err != nil {
 			panic(err)
@@ -536,7 +535,7 @@ func NewHostModule() *wasm.Module {
 		},
 		{ //21
 			Sig:  &m.Types.Entries[10],
-			Host: reflect.ValueOf(CcntmractDelete),
+			Host: reflect.ValueOf(CcntmractDestroy),
 			Body: &wasm.FunctionBody{}, // create a dummy wasm body (the actual value will be taken from Host.)
 		},
 		{ //22

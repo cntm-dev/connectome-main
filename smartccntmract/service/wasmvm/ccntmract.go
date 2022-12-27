@@ -196,7 +196,7 @@ func CcntmractMigrate(proc *exec.Process,
 	return uint32(length)
 }
 
-func CcntmractDelete(proc *exec.Process) {
+func CcntmractDestroy(proc *exec.Process) {
 	self := proc.HostData().(*Runtime)
 	ccntmractAddress := self.Service.CcntmextRef.CurrentCcntmext().CcntmractAddress
 	iter := self.Service.CacheDB.NewIterator(ccntmractAddress[:])
@@ -211,7 +211,6 @@ func CcntmractDelete(proc *exec.Process) {
 
 	//the ccntmract has been deleted ,quit the ccntmract operation
 	proc.Terminate()
-
 }
 
 func (self *Runtime) isCcntmractExist(ccntmractAddress common.Address) bool {

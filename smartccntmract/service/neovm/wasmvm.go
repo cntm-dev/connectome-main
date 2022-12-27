@@ -19,18 +19,18 @@ package neovm
 
 import (
 	"fmt"
+	"github.com/cntmio/cntmology/core/utils"
+	"reflect"
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology/smartccntmract/service/util"
 	"github.com/cntmio/cntmology/vm/crossvm_codec"
 	vm "github.com/cntmio/cntmology/vm/neovm"
 )
 
 //neovm ccntmract call wasmvm ccntmract
 func WASMInvoke(service *NeoVmService, engine *vm.Executor) error {
-
 	address, err := engine.EvalStack.PopAsBytes()
 	if err != nil {
 		return err
@@ -56,12 +56,17 @@ func WASMInvoke(service *NeoVmService, engine *vm.Executor) error {
 	if err != nil {
 		return err
 	}
-	list, err := crossvm_codec.DeserializeInput(parambytes)
+	list, err := crossvm_codec.DeserializeCallParam(parambytes)
 	if err != nil {
 		return err
 	}
 
-	inputs, err := util.BuildWasmVMInvokeCode(ccntmractAddress, list)
+	params, ok := list.([]interface{})
+	if ok == false {
+		return fmt.Errorf("wasm invoke error: wrcntm param type:%s", reflect.TypeOf(list).String())
+	}
+
+	inputs, err := utils.BuildWasmVMInvokeCode(ccntmractAddress, params)
 	if err != nil {
 		return err
 	}
@@ -76,7 +81,5 @@ func WASMInvoke(service *NeoVmService, engine *vm.Executor) error {
 		return err
 	}
 
-	engine.EvalStack.PushBytes(tmpRes.([]byte))
-	return nil
-
+	return engine.EvalStack.PushBytes(tmpRes.([]byte))
 }
