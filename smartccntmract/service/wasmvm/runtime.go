@@ -690,7 +690,7 @@ func (self *Runtime) getCcntmractType(addr common.Address) (CcntmractType, error
 	if dep == nil {
 		return UNKOWN_CcntmRACT, errors.NewErr("ccntmract is not exist.")
 	}
-	if dep.VmType == payload.WASMVM_TYPE {
+	if dep.VmType() == payload.WASMVM_TYPE {
 		return WASMVM_CcntmRACT, nil
 	}
 

@@ -28,14 +28,18 @@ type ExecutionCcntmext struct {
 	Code               []byte
 	OpReader           *utils.VmReader
 	InstructionPointer int
+	vmFlags            VmFeatureFlag
 }
 
-func NewExecutionCcntmext(code []byte) *ExecutionCcntmext {
-	var executionCcntmext ExecutionCcntmext
-	executionCcntmext.Code = code
-	executionCcntmext.OpReader = utils.NewVmReader(code)
-	executionCcntmext.InstructionPointer = 0
-	return &executionCcntmext
+func NewExecutionCcntmext(code []byte, flag VmFeatureFlag) *ExecutionCcntmext {
+	var ccntmext ExecutionCcntmext
+	ccntmext.Code = code
+	ccntmext.OpReader = utils.NewVmReader(code)
+	ccntmext.OpReader.AllowEOF = flag.AllowReaderEOF
+	ccntmext.vmFlags = flag
+
+	ccntmext.InstructionPointer = 0
+	return &ccntmext
 }
 
 func (ec *ExecutionCcntmext) GetInstructionPointer() int {
@@ -62,8 +66,8 @@ func (self *ExecutionCcntmext) ReadOpCode() (val OpCode, eof bool) {
 }
 
 func (ec *ExecutionCcntmext) Clone() *ExecutionCcntmext {
-	executionCcntmext := NewExecutionCcntmext(ec.Code)
-	executionCcntmext.InstructionPointer = ec.InstructionPointer
-	_ = executionCcntmext.SetInstructionPointer(int64(ec.GetInstructionPointer()))
-	return executionCcntmext
+	ccntmext := NewExecutionCcntmext(ec.Code, ec.vmFlags)
+	ccntmext.InstructionPointer = ec.InstructionPointer
+	_ = ccntmext.SetInstructionPointer(int64(ec.GetInstructionPointer()))
+	return ccntmext
 }

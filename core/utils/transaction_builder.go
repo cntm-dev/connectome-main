@@ -36,21 +36,21 @@ import (
 const NATIVE_INVOKE_NAME = "Ontology.Native.Invoke" // copy from smartccntmract/service/neovm/config.go to avoid cycle dependences
 
 // NewDeployTransaction returns a deploy Transaction
-func NewDeployTransaction(code []byte, name, version, author, email, desp string, vmType byte) *types.MutableTransaction {
+func NewDeployTransaction(code []byte, name, version, author, email, desp string, vmType payload.VmType) *types.MutableTransaction {
 	//TODO: check arguments
-	DeployCodePayload := &payload.DeployCode{
+	depCode := &payload.DeployCode{
 		Code:        code,
-		VmType:      vmType,
 		Name:        name,
 		Version:     version,
 		Author:      author,
 		Email:       email,
 		Description: desp,
 	}
+	depCode.SetVmType(vmType)
 
 	return &types.MutableTransaction{
 		TxType:  types.Deploy,
-		Payload: DeployCodePayload,
+		Payload: depCode,
 	}
 }
 
@@ -221,6 +221,18 @@ func BuildWasmCcntmractParam(params []interface{}) ([]byte, error) {
 			bf.WriteI128(common.I128FromUint64(uint64(val)))
 		case uint64:
 			bf.WriteI128(common.I128FromUint64(uint64(val)))
+		case *big.Int:
+			bint, err := common.I128FromBigInt(val)
+			if err != nil {
+				return nil, err
+			}
+			bf.WriteI128(bint)
+		case big.Int:
+			bint, err := common.I128FromBigInt(&val)
+			if err != nil {
+				return nil, err
+			}
+			bf.WriteI128(bint)
 		case []byte:
 			bf.WriteVarBytes(val)
 		case common.Uint256:
@@ -232,6 +244,9 @@ func BuildWasmCcntmractParam(params []interface{}) ([]byte, error) {
 		case bool:
 			bf.WriteBool(val)
 		case []interface{}:
+			// actually if different type will pass tuple to wasm. or will pass array.
+			vnum := len(val)
+			bf.WriteVarUint(uint64(vnum))
 			value, err := BuildWasmCcntmractParam(val)
 			if err != nil {
 				return nil, err

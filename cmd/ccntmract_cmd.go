@@ -125,7 +125,12 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 		return nil
 	}
 
-	vmtype := ctx.Uint(utils.GetFlagName(utils.CcntmractVmTypeFlag))
+	vmtypeFlag := ctx.Uint(utils.GetFlagName(utils.CcntmractVmTypeFlag))
+	vmtype, err := payload.VmTypeFromByte(byte(vmtypeFlag))
+	if err != nil {
+		return err
+	}
+
 	codeFile := ctx.String(utils.GetFlagName(utils.CcntmractCodeFileFlag))
 	if "" == codeFile {
 		return fmt.Errorf("please specific code file")
@@ -154,7 +159,7 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 	cversion := fmt.Sprintf("%s", version)
 
 	if ctx.IsSet(utils.GetFlagName(utils.CcntmractPrepareDeployFlag)) {
-		preResult, err := utils.PrepareDeployCcntmract(byte(vmtype), code, name, cversion, author, email, desc)
+		preResult, err := utils.PrepareDeployCcntmract(vmtype, code, name, cversion, author, email, desc)
 		if err != nil {
 			return fmt.Errorf("PrepareDeployCcntmract error:%s", err)
 		}
@@ -171,7 +176,7 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 		return fmt.Errorf("get signer account error:%s", err)
 	}
 
-	txHash, err := utils.DeployCcntmract(gasPrice, gasLimit, signer, byte(vmtype), code, name, cversion, author, email, desc)
+	txHash, err := utils.DeployCcntmract(gasPrice, gasLimit, signer, vmtype, code, name, cversion, author, email, desc)
 	if err != nil {
 		return fmt.Errorf("DeployCcntmract error:%s", err)
 	}
@@ -289,9 +294,10 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 	if err != nil {
 		return fmt.Errorf("invalid ccntmract address error:%s", err)
 	}
-	vmtype := ctx.Uint(utils.GetFlagName(utils.CcntmractVmTypeFlag))
-	if byte(vmtype) != payload.NEOVM_TYPE && byte(vmtype) != payload.WASMVM_TYPE {
-		return fmt.Errorf("invalid vmtype")
+	vmtypeFlag := ctx.Uint(utils.GetFlagName(utils.CcntmractVmTypeFlag))
+	vmtype, err := payload.VmTypeFromByte(byte(vmtypeFlag))
+	if err != nil {
+		return err
 	}
 	paramsStr := ctx.String(utils.GetFlagName(utils.CcntmractParamsFlag))
 	params, err := utils.ParseParams(paramsStr)
@@ -304,11 +310,11 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 	if ctx.IsSet(utils.GetFlagName(utils.CcntmractPrepareInvokeFlag)) {
 
 		var preResult *states.PreExecResult
-		if byte(vmtype) == payload.NEOVM_TYPE {
+		if vmtype == payload.NEOVM_TYPE {
 			preResult, err = utils.PrepareInvokeNeoVMCcntmract(ccntmractAddr, params)
 
 		}
-		if byte(vmtype) == payload.WASMVM_TYPE {
+		if vmtype == payload.WASMVM_TYPE {
 			preResult, err = utils.PrepareInvokeWasmVMCcntmract(ccntmractAddr, params)
 		}
 
@@ -327,7 +333,7 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 			PrintInfoMsg("  Return:%s (raw value)", preResult.Result)
 			return nil
 		}
-		values, err := utils.ParseReturnValue(preResult.Result, rawReturnTypes, byte(vmtype))
+		values, err := utils.ParseReturnValue(preResult.Result, rawReturnTypes, vmtype)
 		if err != nil {
 			return fmt.Errorf("parseReturnValue values:%+v types:%s error:%s", values, rawReturnTypes, err)
 		}
@@ -356,13 +362,13 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 	}
 
 	var txHash string
-	if byte(vmtype) == payload.NEOVM_TYPE {
+	if vmtype == payload.NEOVM_TYPE {
 		txHash, err = utils.InvokeNeoVMCcntmract(gasPrice, gasLimit, signer, ccntmractAddr, params)
 		if err != nil {
 			return fmt.Errorf("invoke NeoVM ccntmract error:%s", err)
 		}
 	}
-	if byte(vmtype) == payload.WASMVM_TYPE {
+	if vmtype == payload.WASMVM_TYPE {
 		txHash, err = utils.InvokeWasmVMCcntmract(gasPrice, gasLimit, signer, ccntmractAddr, params)
 		if err != nil {
 			return fmt.Errorf("invoke NeoVM ccntmract error:%s", err)
