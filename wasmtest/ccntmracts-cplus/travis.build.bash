@@ -5,12 +5,13 @@ oldir=$(pwd)
 currentdir=$(dirname $0)
 cd $currentdir
 
-git clone https://github.com/cntmio/cntmology-wasm-cdt-cpp
+git clone --recursive https://github.com/cntmio/cntmology-wasm-cdt-cpp
+cd cntmology-wasm-cdt-cpp; git checkout v1.0 -b testframe; bash compiler_install.bash;cd ../
 compilerdir="./cntmology-wasm-cdt-cpp/install/bin"
 
 for f in $(ls *.cpp)
 do
-	$compilerdir/cntm_cpp $f -lbase58 -lcrypto -lbuiltins -o  ${f%.cpp}.wasm
+	$compilerdir/cntm_cpp $f -lbase58 -lbuiltins -o  ${f%.cpp}.wasm
 done
 
 rm -rf cntmology-wasm-cdt-cpp

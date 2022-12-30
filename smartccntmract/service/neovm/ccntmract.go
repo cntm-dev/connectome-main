@@ -39,10 +39,7 @@ func CcntmractCreate(service *NeoVmService, engine *vm.Executor) error {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[CcntmractCreate] GetOrAdd error!")
 	}
 	if dep == nil {
-		err := service.CacheDB.PutCcntmract(ccntmract)
-		if err != nil {
-			return err
-		}
+		service.CacheDB.PutCcntmract(ccntmract)
 		dep = ccntmract
 	}
 	return engine.EvalStack.PushAsInteropValue(dep)
@@ -62,10 +59,7 @@ func CcntmractMigrate(service *NeoVmService, engine *vm.Executor) error {
 	ccntmext := service.CcntmextRef.CurrentCcntmext()
 	oldAddr := ccntmext.CcntmractAddress
 
-	err = service.CacheDB.PutCcntmract(ccntmract)
-	if err != nil {
-		return err
-	}
+	service.CacheDB.PutCcntmract(ccntmract)
 	service.CacheDB.DeleteCcntmract(oldAddr)
 
 	iter := service.CacheDB.NewIterator(oldAddr[:])
@@ -182,9 +176,12 @@ func isCcntmractParamValid(engine *vm.Executor) (*payload.DeployCode, error) {
 	}
 
 	ccntmract, err := payload.CreateDeployCode(code, uint32(vmType), name, version, author, email, desc)
-
 	if err != nil {
 		return nil, err
+	}
+
+	if ccntmract.VmType() != payload.NEOVM_TYPE {
+		return nil, fmt.Errorf("[Ccntmract] expect NEOVM_TYPE. get WASMVM_TYPE")
 	}
 
 	return ccntmract, nil

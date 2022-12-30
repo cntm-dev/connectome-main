@@ -48,6 +48,7 @@ func WASMInvoke(service *NeoVmService, engine *vm.Executor) error {
 	if dp == nil {
 		return fmt.Errorf("wasm ccntmract does not exist")
 	}
+
 	if dp.VmType() != payload.WASMVM_TYPE {
 		return fmt.Errorf("not a wasm ccntmract")
 	}

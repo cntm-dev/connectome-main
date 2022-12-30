@@ -93,6 +93,10 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 		return nil, err
 	}
 
+	if code == nil {
+		return nil, errors.NewErr("wasm ccntmract does not exist")
+	}
+
 	this.CcntmextRef.PushCcntmext(&ccntmext.Ccntmext{CcntmractAddress: ccntmract.Address, Code: code.Code})
 	host := &Runtime{Service: this, Input: ccntmract.Args}
 
@@ -105,7 +109,7 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	}
 
 	if compiled == nil {
-		compiled, err = ReadWasmModule(code, false)
+		compiled, err = ReadWasmModule(code.Code, false)
 		if err != nil {
 			return nil, err
 		}

@@ -100,18 +100,14 @@ func (self *CacheDB) GetCcntmract(addr comm.Address) (*payload.DeployCode, error
 	return ccntmract, nil
 }
 
-func (self *CacheDB) PutCcntmract(ccntmract *payload.DeployCode) error {
+func (self *CacheDB) PutCcntmract(ccntmract *payload.DeployCode) {
 	address := ccntmract.Address()
 
 	sink := comm.NewZeroCopySink(nil)
-	err := ccntmract.Serialization(sink)
-	if err != nil {
-		return err
-	}
+	ccntmract.Serialization(sink)
 
 	value := sink.Bytes()
 	self.put(common.ST_CcntmRACT, address[:], value)
-	return nil
 }
 
 func (self *CacheDB) DeleteCcntmract(address comm.Address) {
