@@ -18,7 +18,6 @@
 package states
 
 import (
-	"bytes"
 	"testing"
 
 	"github.com/cntmio/cntmology/common"
@@ -33,13 +32,12 @@ func TestCcntmract_Serialize_Deserialize(t *testing.T) {
 		Method:  "init",
 		Args:    []byte{2},
 	}
-	bf := new(bytes.Buffer)
-	if err := c.Serialize(bf); err != nil {
-		t.Fatalf("CcntmractInvokeParam serialize error: %v", err)
-	}
+	sink := common.NewZeroCopySink(nil)
+	c.Serialization(sink)
 
 	v := new(CcntmractInvokeParam)
-	if err := v.Deserialize(bf); err != nil {
+	source := common.NewZeroCopySource(sink.Bytes())
+	if err := v.Deserialization(source); err != nil {
 		t.Fatalf("CcntmractInvokeParam deserialize error: %v", err)
 	}
 }

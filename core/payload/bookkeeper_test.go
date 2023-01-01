@@ -16,24 +16,34 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ledgerstore
+package payload
 
 import (
-	"fmt"
+	"testing"
 
-	"github.com/cntmio/cntmology/core/payload"
-	scom "github.com/cntmio/cntmology/core/store/common"
+	"encoding/hex"
+	"github.com/cntmio/cntmology-crypto/keypair"
+	"github.com/cntmio/cntmology/common"
+	"github.com/stretchr/testify/assert"
 )
 
-type CacheCodeTable struct {
-	store scom.StateStore
-}
-
-func (table *CacheCodeTable) GetCode(address []byte) ([]byte, error) {
-	value, _ := table.store.TryGet(scom.ST_CcntmRACT, address)
-	if value == nil {
-		return nil, fmt.Errorf("[GetCode] TryGet ccntmract error! address:%x", address)
+func TestBookkeeper_Serialization(t *testing.T) {
+	pubkey, err := hex.DecodeString("039af138392513408f9d1509c651c60066c05b2305de17e44f68088510563e2279")
+	assert.Nil(t, err)
+	pub, err := keypair.DeserializePublicKey(pubkey)
+	assert.Nil(t, err)
+	bookkeeper := &Bookkeeper{
+		PubKey: pub,
+		Action: BookkeeperAction(1),
+		Cert:   pubkey,
+		Issuer: pub,
 	}
+	sink := common.NewZeroCopySink(nil)
+	bookkeeper.Serialization(sink)
+	bookkeeper2 := &Bookkeeper{}
+	source := common.NewZeroCopySource(sink.Bytes())
+	err = bookkeeper2.Deserialization(source)
+	assert.Nil(t, err)
 
-	return value.Value.(*payload.DeployCode).Code, nil
+	assert.Equal(t, bookkeeper, bookkeeper2)
 }

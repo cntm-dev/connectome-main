@@ -19,7 +19,6 @@
 package dbft
 
 import (
-	"bytes"
 	"fmt"
 	"reflect"
 	"time"

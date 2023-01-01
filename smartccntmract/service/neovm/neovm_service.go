@@ -192,7 +192,7 @@ func (this *NeoVmService) Invoke() (interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-			code, err := this.getCcntmract(addr)
+			code, err := this.getNeoCcntmract(addr)
 			if err != nil {
 				return nil, err
 			}
@@ -260,14 +260,14 @@ func (this *NeoVmService) SystemCall(engine *vm.Executor) error {
 	return nil
 }
 
-func (this *NeoVmService) getCcntmract(address scommon.Address) ([]byte, error) {
+func (this *NeoVmService) getNeoCcntmract(address scommon.Address) ([]byte, error) {
 	dep, err := this.CacheDB.GetCcntmract(address)
 	if err != nil {
-		return nil, errors.NewErr("[getCcntmract] get ccntmract ccntmext error!")
+		return nil, errors.NewErr("[getNeoCcntmract] get ccntmract ccntmext error!")
 	}
 	log.Debugf("invoke ccntmract address:%s", address.ToHexString())
 	if dep == nil {
 		return nil, CcntmRACT_NOT_EXIST
 	}
-	return dep.Code, nil
+	return dep.GetNeoCode()
 }

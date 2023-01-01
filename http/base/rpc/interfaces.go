@@ -19,7 +19,6 @@
 package rpc
 
 import (
-	"bytes"
 	"encoding/hex"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"

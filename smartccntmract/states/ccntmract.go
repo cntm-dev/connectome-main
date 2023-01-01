@@ -22,8 +22,6 @@ import (
 	"io"
 
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/serialization"
-	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 )
 

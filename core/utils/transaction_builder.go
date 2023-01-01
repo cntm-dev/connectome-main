@@ -36,22 +36,16 @@ import (
 const NATIVE_INVOKE_NAME = "Ontology.Native.Invoke" // copy from smartccntmract/service/neovm/config.go to avoid cycle dependences
 
 // NewDeployTransaction returns a deploy Transaction
-func NewDeployTransaction(code []byte, name, version, author, email, desp string, vmType payload.VmType) *types.MutableTransaction {
+func NewDeployTransaction(code []byte, name, version, author, email, desp string, vmType payload.VmType) (*types.MutableTransaction, error) {
 	//TODO: check arguments
-	depCode := &payload.DeployCode{
-		Code:        code,
-		Name:        name,
-		Version:     version,
-		Author:      author,
-		Email:       email,
-		Description: desp,
+	depCode, err := payload.NewDeployCode(code, vmType, name, version, author, email, desp)
+	if err != nil {
+		return nil, err
 	}
-	depCode.SetVmType(vmType)
-
 	return &types.MutableTransaction{
 		TxType:  types.Deploy,
 		Payload: depCode,
-	}
+	}, nil
 }
 
 // NewInvokeTransaction returns an invoke Transaction
@@ -199,9 +193,8 @@ func BuildWasmVMInvokeCode(ccntmractAddress common.Address, params []interface{}
 		return nil, fmt.Errorf("build wasm ccntmract param failed:%s", err)
 	}
 	ccntmract.Args = argbytes
-	sink := common.NewZeroCopySink(nil)
-	ccntmract.Serialization(sink)
-	return sink.Bytes(), nil
+
+	return common.SerializeToBytes(ccntmract), nil
 }
 
 //build param bytes for wasm ccntmract

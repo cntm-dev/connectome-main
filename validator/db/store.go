@@ -24,7 +24,6 @@ import (
 	"sync"
 
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/serialization"
 	storcomm "github.com/cntmio/cntmology/core/store/common"
 	leveldb "github.com/cntmio/cntmology/core/store/leveldbstore"
 	"github.com/cntmio/cntmology/core/types"
@@ -162,11 +161,10 @@ func (self *Store) saveTransaction(tx *types.Transaction, height uint32) error {
 	// generate key with DATA_TRANSACTION prefix
 	key := GenDataTransactionKey(tx.Hash())
 	defer keyPool.Put(key)
-	value := valuePool.Get()
-	defer valuePool.Put(value)
 
-	serialization.WriteUint32(value, height)
-	tx.Serialize(value)
+	value := common.NewZeroCopySink(nil)
+	value.WriteUint32(height)
+	tx.Serialization(value)
 
 	// put value
 	self.db.BatchPut(key.Bytes(), value.Bytes())

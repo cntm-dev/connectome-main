@@ -25,9 +25,8 @@ import (
 	"strconv"
 
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/config"
+	sysconfig "github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/store"
 	scommon "github.com/cntmio/cntmology/core/store/common"
@@ -56,7 +55,7 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 	)
 
 	if deploy.VmType() == payload.WASMVM_TYPE {
-		_, err = wasmvm.ReadWasmModule(deploy.Code, true)
+		_, err = wasmvm.ReadWasmModule(deploy.GetRawCode(), true)
 		if err != nil {
 			return err
 		}
@@ -82,7 +81,7 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 			return nil
 		}
 
-		gasLimit := createGasPrice + calcGasByCodeLen(len(deploy.Code), uintCodePrice)
+		gasLimit := createGasPrice + calcGasByCodeLen(len(deploy.GetRawCode()), uintCodePrice)
 		balance, err := isBalanceSufficient(tx.Payer, cache, config, store, gasLimit*tx.GasPrice)
 		if err != nil {
 			if err := costInvalidGas(tx.Payer, balance, config, overlay, store, notify); err != nil {
@@ -197,12 +196,13 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 
 	//init smart ccntmract info
 	sc := smartccntmract.SmartCcntmract{
-		Config:   config,
-		CacheDB:  cache,
-		Store:    store,
-		GasTable: gasTable,
-		Gas:      availableGasLimit - codeLenGasLimit,
-		PreExec:  false,
+		Config:       config,
+		CacheDB:      cache,
+		Store:        store,
+		GasTable:     gasTable,
+		Gas:          availableGasLimit - codeLenGasLimit,
+		WasmExecStep: sysconfig.DEFAULT_WASM_MAX_STEPCOUNT,
+		PreExec:      false,
 	}
 
 	//start the smart ccntmract executive function
@@ -254,7 +254,7 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 }
 
 func SaveNotify(eventStore scommon.EventStore, txHash common.Uint256, notify *event.ExecuteNotify) error {
-	if !config.DefConfig.Common.EnableEventLog {
+	if !sysconfig.DefConfig.Common.EnableEventLog {
 		return nil
 	}
 	if err := eventStore.SaveEventNotifyByTx(txHash, notify); err != nil {
@@ -265,10 +265,8 @@ func SaveNotify(eventStore scommon.EventStore, txHash common.Uint256, notify *ev
 }
 
 func genNativeTransferCode(from, to common.Address, value uint64) []byte {
-	transfer := cntm.Transfers{States: []cntm.State{{From: from, To: to, Value: value}}}
-	tr := new(bytes.Buffer)
-	transfer.Serialize(tr)
-	return tr.Bytes()
+	transfer := &cntm.Transfers{States: []cntm.State{{From: from, To: to, Value: value}}}
+	return common.SerializeToBytes(transfer)
 }
 
 // check whether payer cntm balance sufficient
@@ -304,14 +302,10 @@ func chargeCostGas(payer common.Address, gas uint64, config *smartccntmract.Conf
 }
 
 func refreshGlobalParam(config *smartccntmract.Config, cache *storage.CacheDB, store store.LedgerStore) error {
-	bf := new(bytes.Buffer)
-	if err := utils.WriteVarUint(bf, uint64(len(neovm.GAS_TABLE_KEYS))); err != nil {
-		return fmt.Errorf("write gas_table_keys length error:%s", err)
-	}
+	sink := common.NewZeroCopySink(nil)
+	utils.EncodeVarUint(sink, uint64(len(neovm.GAS_TABLE_KEYS)))
 	for _, value := range neovm.GAS_TABLE_KEYS {
-		if err := serialization.WriteString(bf, value); err != nil {
-			return fmt.Errorf("serialize param name error:%s", value)
-		}
+		sink.WriteString(value)
 	}
 
 	sc := smartccntmract.SmartCcntmract{
@@ -322,12 +316,12 @@ func refreshGlobalParam(config *smartccntmract.Config, cache *storage.CacheDB, s
 	}
 
 	service, _ := sc.NewNativeService()
-	result, err := service.NativeCall(utils.ParamCcntmractAddress, "getGlobalParam", bf.Bytes())
+	result, err := service.NativeCall(utils.ParamCcntmractAddress, "getGlobalParam", sink.Bytes())
 	if err != nil {
 		return err
 	}
 	params := new(global_params.Params)
-	if err := params.Deserialize(bytes.NewBuffer(result.([]byte))); err != nil {
+	if err := params.Deserialization(common.NewZeroCopySource(result.([]byte))); err != nil {
 		return fmt.Errorf("deserialize global params error:%s", err)
 	}
 	neovm.GAS_TABLE.Range(func(key, value interface{}) bool {
@@ -346,10 +340,8 @@ func refreshGlobalParam(config *smartccntmract.Config, cache *storage.CacheDB, s
 }
 
 func getBalanceFromNative(config *smartccntmract.Config, cache *storage.CacheDB, store store.LedgerStore, address common.Address) (uint64, error) {
-	bf := new(bytes.Buffer)
-	if err := utils.WriteAddress(bf, address); err != nil {
-		return 0, err
-	}
+	bf := common.NewZeroCopySink(nil)
+	utils.EncodeAddress(bf, address)
 	sc := smartccntmract.SmartCcntmract{
 		Config:  config,
 		CacheDB: cache,

@@ -19,11 +19,9 @@
 package states
 
 import (
-	"io"
-
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/serialization"
+	"io"
 )
 
 type VoteState struct {
@@ -75,9 +73,9 @@ func (this *VoteState) Deserialize(r io.Reader) error {
 		}
 		this.PublicKeys = append(this.PublicKeys, pk)
 	}
-	c, err := serialization.ReadUint64(r)
-	if err != nil {
-		return err
+	c, eof := source.NextUint64()
+	if eof {
+		return io.ErrUnexpectedEOF
 	}
 	this.Count = common.Fixed64(int64(c))
 	return nil

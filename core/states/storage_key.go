@@ -19,11 +19,8 @@
 package states
 
 import (
-	"bytes"
-	"io"
-
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/serialization"
+	"io"
 )
 
 type StorageKey struct {
@@ -31,30 +28,26 @@ type StorageKey struct {
 	Key             []byte
 }
 
-func (this *StorageKey) Serialize(w io.Writer) (int, error) {
-	if err := this.CcntmractAddress.Serialize(w); err != nil {
-		return 0, err
-	}
-	if err := serialization.WriteVarBytes(w, this.Key); err != nil {
-		return 0, err
-	}
-	return 0, nil
+func (this *StorageKey) Serialization(sink *common.ZeroCopySink) {
+	this.CcntmractAddress.Serialization(sink)
+	sink.WriteVarBytes(this.Key)
 }
 
-func (this *StorageKey) Deserialize(r io.Reader) error {
-	if err := this.CcntmractAddress.Deserialize(r); err != nil {
+func (this *StorageKey) Deserialization(source *common.ZeroCopySource) error {
+	if err := this.CcntmractAddress.Deserialization(source); err != nil {
 		return err
 	}
-	key, err := serialization.ReadVarBytes(r)
-	if err != nil {
-		return err
+	key, _, irregular, eof := source.NextVarBytes()
+	if irregular {
+		return common.ErrIrregularData
+	}
+	if eof {
+		return io.ErrUnexpectedEOF
 	}
 	this.Key = key
 	return nil
 }
 
 func (this *StorageKey) ToArray() []byte {
-	b := new(bytes.Buffer)
-	this.Serialize(b)
-	return b.Bytes()
+	return common.SerializeToBytes(this)
 }

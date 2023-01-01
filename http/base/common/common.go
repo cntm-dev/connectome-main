@@ -27,7 +27,6 @@ import (
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
@@ -39,6 +38,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	cstate "github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/vm/neovm"
+	"io"
 	"strings"
 	"time"
 )
@@ -299,9 +299,10 @@ func GetGrantOng(addr common.Address) (string, error) {
 	if err != nil {
 		value = []byte{0, 0, 0, 0}
 	}
-	v, err := serialization.ReadUint32(bytes.NewBuffer(value))
-	if err != nil {
-		return fmt.Sprintf("%v", 0), err
+	source := common.NewZeroCopySource(value)
+	v, eof := source.NextUint32()
+	if eof {
+		return fmt.Sprintf("%v", 0), io.ErrUnexpectedEOF
 	}
 	cntm, err := GetCcntmractBalance(0, utils.OntCcntmractAddress, addr)
 	if err != nil {

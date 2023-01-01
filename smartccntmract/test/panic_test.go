@@ -25,8 +25,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/core/types"
 	. "github.com/cntmio/cntmology/smartccntmract"
 	neovm2 "github.com/cntmio/cntmology/smartccntmract/service/neovm"
@@ -110,19 +110,19 @@ func TestOpReadMemAttack(t *testing.T) {
 	bf := new(bytes.Buffer)
 	builder := neovm.NewParamsBuilder(bf)
 	builder.Emit(neovm.SYSCALL)
-	bs := bytes.NewBuffer(builder.ToArray())
+	sink := common.NewZeroCopySink(builder.ToArray())
 	builder.EmitPushByteArray([]byte(neovm2.NATIVE_INVOKE_NAME))
 	l := 0X7fffffc7 - 1
-	serialization.WriteVarUint(bs, uint64(l))
+	sink.WriteVarUint(uint64(l))
 	b := make([]byte, 4)
-	bs.Write(b)
+	sink.WriteBytes(b)
 
 	sc := SmartCcntmract{
 		Config:  config,
 		Gas:     100000,
 		CacheDB: nil,
 	}
-	engine, _ := sc.NewExecuteEngine(bs.Bytes(), types.InvokeNeo)
+	engine, _ := sc.NewExecuteEngine(sink.Bytes(), types.InvokeNeo)
 	_, err := engine.Invoke()
 
 	assert.NotNil(t, err)

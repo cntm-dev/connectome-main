@@ -19,7 +19,6 @@
 package rest
 
 import (
-	"bytes"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
@@ -231,9 +230,7 @@ func GetTransactionByHash(cmd map[string]interface{}) map[string]interface{} {
 		return ResponsePack(berr.UNKNOWN_TRANSACTION)
 	}
 	if raw, ok := cmd["Raw"].(string); ok && raw == "1" {
-		w := bytes.NewBuffer(nil)
-		tx.Serialize(w)
-		resp["Result"] = common.ToHexString(w.Bytes())
+		resp["Result"] = common.ToHexString(common.SerializeToBytes(tx))
 		return resp
 	}
 	tran := bcomn.TransArryByteToHexString(tx)
@@ -369,9 +366,9 @@ func GetCcntmractState(cmd map[string]interface{}) map[string]interface{} {
 		return ResponsePack(berr.UNKNOWN_CcntmRACT)
 	}
 	if raw, ok := cmd["Raw"].(string); ok && raw == "1" {
-		w := bytes.NewBuffer(nil)
-		ccntmract.Serialize(w)
-		resp["Result"] = common.ToHexString(w.Bytes())
+		sink := common.NewZeroCopySink(nil)
+		ccntmract.Serialization(sink)
+		resp["Result"] = common.ToHexString(sink.Bytes())
 		return resp
 	}
 	resp["Result"] = bcomn.TransPayloadToHex(ccntmract)

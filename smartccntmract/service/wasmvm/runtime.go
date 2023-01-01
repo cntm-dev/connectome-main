@@ -27,7 +27,6 @@ import (
 	"github.com/go-interpreter/wagon/wasm"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
@@ -38,6 +37,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/vm/crossvm_codec"
 	neotypes "github.com/cntmio/cntmology/vm/neovm/types"
+	"io"
 )
 
 type CcntmractType byte
@@ -259,20 +259,25 @@ func CallCcntmract(proc *exec.Process, ccntmractAddr uint32, inputPtr uint32, in
 
 	switch ccntmracttype {
 	case NATIVE_CcntmRACT:
-		bf := bytes.NewBuffer(inputs)
-		ver, err := serialization.ReadByte(bf)
-		if err != nil {
-			panic(err)
+		source := common.NewZeroCopySource(inputs)
+		ver, eof := source.NextByte()
+		if eof {
+			panic(io.ErrUnexpectedEOF)
+		}
+		method, _, irregular, eof := source.NextString()
+		if irregular {
+			panic(common.ErrIrregularData)
+		}
+		if eof {
+			panic(io.ErrUnexpectedEOF)
 		}
 
-		method, err := serialization.ReadString(bf)
-		if err != nil {
-			panic(err)
+		args, _, irregular, eof := source.NextVarBytes()
+		if irregular {
+			panic(common.ErrIrregularData)
 		}
-
-		args, err := serialization.ReadVarBytes(bf)
-		if err != nil {
-			panic(err)
+		if eof {
+			panic(io.ErrUnexpectedEOF)
 		}
 
 		ccntmract := states.CcntmractInvokeParam{
@@ -302,10 +307,9 @@ func CallCcntmract(proc *exec.Process, ccntmractAddr uint32, inputPtr uint32, in
 
 	case WASMVM_CcntmRACT:
 		conParam := states.WasmCcntmractParam{Address: ccntmractAddress, Args: inputs}
-		sink := common.NewZeroCopySink(nil)
-		conParam.Serialization(sink)
+		param := common.SerializeToBytes(&conParam)
 
-		newservice, err := self.Service.CcntmextRef.NewExecuteEngine(sink.Bytes(), types.InvokeWasm)
+		newservice, err := self.Service.CcntmextRef.NewExecuteEngine(param, types.InvokeWasm)
 		if err != nil {
 			panic(err)
 		}

@@ -19,6 +19,7 @@
 package ledgerstore
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"fmt"
 	types2 "github.com/cntmio/cntmology/vm/neovm/types"
@@ -48,6 +49,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
+	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
 	sstate "github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
 )
@@ -305,10 +307,7 @@ func (this *LedgerStoreImp) recoverStore() error {
 		if err != nil {
 			return fmt.Errorf("save to state store height:%d error:%s", i, err)
 		}
-		err = this.saveBlockToEventStore(block)
-		if err != nil {
-			return fmt.Errorf("save to event store height:%d error:%s", i, err)
-		}
+		this.saveBlockToEventStore(block)
 		err = this.eventStore.CommitTo()
 		if err != nil {
 			return fmt.Errorf("eventStore.CommitTo height:%d error %s", i, err)
@@ -736,7 +735,7 @@ func (this *LedgerStoreImp) saveBlockToStateStore(block *types.Block, result sto
 	return nil
 }
 
-func (this *LedgerStoreImp) saveBlockToEventStore(block *types.Block) error {
+func (this *LedgerStoreImp) saveBlockToEventStore(block *types.Block) {
 	blockHash := block.Hash()
 	blockHeight := block.Header.Height
 	txs := make([]common.Uint256, 0)
@@ -745,16 +744,9 @@ func (this *LedgerStoreImp) saveBlockToEventStore(block *types.Block) error {
 		txs = append(txs, txHash)
 	}
 	if len(txs) > 0 {
-		err := this.eventStore.SaveEventNotifyByBlock(block.Header.Height, txs)
-		if err != nil {
-			return fmt.Errorf("SaveEventNotifyByBlock error %s", err)
-		}
+		this.eventStore.SaveEventNotifyByBlock(block.Header.Height, txs)
 	}
-	err := this.eventStore.SaveCurrentBlock(blockHeight, blockHash)
-	if err != nil {
-		return fmt.Errorf("SaveCurrentBlock error %s", err)
-	}
-	return nil
+	this.eventStore.SaveCurrentBlock(blockHeight, blockHash)
 }
 
 func (this *LedgerStoreImp) tryGetSavingBlockLock() (hasLocked bool) {
@@ -800,10 +792,7 @@ func (this *LedgerStoreImp) submitBlock(block *types.Block, result store.Execute
 	if err != nil {
 		return fmt.Errorf("save to state store height:%d error:%s", blockHeight, err)
 	}
-	err = this.saveBlockToEventStore(block)
-	if err != nil {
-		return fmt.Errorf("save to event store height:%d error:%s", blockHeight, err)
-	}
+	this.saveBlockToEventStore(block)
 	err = this.blockStore.CommitTo()
 	if err != nil {
 		return fmt.Errorf("blockStore.CommitTo height:%d error %s", blockHeight, err)
@@ -866,10 +855,7 @@ func (this *LedgerStoreImp) saveHeaderIndexList() error {
 	}
 	this.lock.RUnlock()
 
-	err := this.blockStore.SaveHeaderIndexList(storeCount, headerList)
-	if err != nil {
-		return fmt.Errorf("SaveHeaderIndexList start %d error %s", storeCount, err)
-	}
+	this.blockStore.SaveHeaderIndexList(storeCount, headerList)
 
 	this.lock.Lock()
 	this.storedIndexCount += HEADER_INDEX_BATCH_SIZE
@@ -926,10 +912,6 @@ func (this *LedgerStoreImp) GetRawHeaderByHash(blockHash common.Uint256) (*types
 //GetHeaderByHash return the block header by block height
 func (this *LedgerStoreImp) GetHeaderByHeight(height uint32) (*types.Header, error) {
 	blockHash := this.GetBlockHash(height)
-	var empty common.Uint256
-	if blockHash == empty {
-		return nil, nil
-	}
 	return this.GetHeaderByHash(blockHash)
 }
 
@@ -1003,7 +985,7 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.
 	}
 	stf := &sstate.PreExecResult{State: event.CcntmRACT_STATE_FAIL, Gas: neovm.MIN_TRANSACTION_GAS, Result: nil}
 
-	config := &smartccntmract.Config{
+	sconfig := &smartccntmract.Config{
 		Time:      blockTime,
 		Height:    height + 1,
 		Tx:        tx,
@@ -1025,12 +1007,13 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.
 		invoke := tx.Payload.(*payload.InvokeCode)
 
 		sc := smartccntmract.SmartCcntmract{
-			Config:   config,
-			Store:    this,
-			CacheDB:  cache,
-			GasTable: gasTable,
-			Gas:      math.MaxUint64 - calcGasByCodeLen(len(invoke.Code), gasTable[neovm.UINT_INVOKE_CODE_LEN_NAME]),
-			PreExec:  true,
+			Config:       sconfig,
+			Store:        this,
+			CacheDB:      cache,
+			GasTable:     gasTable,
+			Gas:          math.MaxUint64 - calcGasByCodeLen(len(invoke.Code), gasTable[neovm.UINT_INVOKE_CODE_LEN_NAME]),
+			WasmExecStep: config.DEFAULT_WASM_MAX_STEPCOUNT,
+			PreExec:      true,
 		}
 		//start the smart ccntmract executive function
 		engine, _ := sc.NewExecuteEngine(invoke.Code, tx.TxType)
@@ -1061,7 +1044,23 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.
 		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_SUCCESS, Gas: gasCost, Result: cv, Notify: sc.Notifications}, nil
 	} else if tx.TxType == types.Deploy {
 		deploy := tx.Payload.(*payload.DeployCode)
-		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_SUCCESS, Gas: gasTable[neovm.CcntmRACT_CREATE_NAME] + calcGasByCodeLen(len(deploy.Code), gasTable[neovm.UINT_DEPLOY_CODE_LEN_NAME]), Result: nil}, nil
+
+		if deploy.VmType() == payload.WASMVM_TYPE {
+			_, err := wasmvm.ReadWasmModule(deploy.GetRawCode(), true)
+			if err != nil {
+				return stf, err
+			}
+		} else {
+			wasmMagicversion := []byte{0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00}
+
+			if len(deploy.GetRawCode()) >= len(wasmMagicversion) {
+				if bytes.Compare(wasmMagicversion, deploy.GetRawCode()[:8]) == 0 {
+					return stf, errors.NewErr("this code is wasm binary. can not deployed as neo ccntmract")
+				}
+			}
+		}
+
+		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_SUCCESS, Gas: gasTable[neovm.CcntmRACT_CREATE_NAME] + calcGasByCodeLen(len(deploy.GetRawCode()), gasTable[neovm.UINT_DEPLOY_CODE_LEN_NAME]), Result: nil}, nil
 	} else {
 		return stf, errors.NewErr("transaction type error")
 	}

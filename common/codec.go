@@ -15,30 +15,17 @@
  * You should have received a copy of the GNU Lesser General Public License
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
+package common
 
-package cntm
+type Serializable interface {
+	Serialization(sink *ZeroCopySink)
+}
 
-import (
-	"testing"
-
-	"github.com/cntmio/cntmology/common"
-	"github.com/stretchr/testify/assert"
-)
-
-func TestState_Serialize(t *testing.T) {
-	state := State{
-		From:  common.AddressFromVmCode([]byte{1, 2, 3}),
-		To:    common.AddressFromVmCode([]byte{4, 5, 6}),
-		Value: 1,
-	}
-	sink := common.NewZeroCopySink(nil)
-	state.Serialization(sink)
-
-	state2 := State{}
-	source := common.NewZeroCopySource(sink.Bytes())
-	if err := state2.Deserialization(source); err != nil {
-		t.Fatal("state deserialize fail!")
+func SerializeToBytes(values ...Serializable) []byte {
+	sink := NewZeroCopySink(nil)
+	for _, val := range values {
+		val.Serialization(sink)
 	}
 
-	assert.Equal(t, state, state2)
+	return sink.Bytes()
 }

@@ -19,7 +19,6 @@
 package cntm
 
 import (
-	"bytes"
 	"fmt"
 	"math/big"
 
@@ -285,9 +284,6 @@ func getApproveArgs(native *native.NativeService, ccntmract, cntmCcntmract, addr
 	}
 
 	approve.Value += stateValue
-
-	if err := approve.Serialize(bf); err != nil {
-		return nil, err
-	}
+	approve.Serialization(bf)
 	return bf.Bytes(), nil
 }

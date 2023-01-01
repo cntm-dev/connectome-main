@@ -43,6 +43,7 @@ type WasmVmService struct {
 	PreExec       bool
 	GasPrice      uint64
 	GasLimit      *uint64
+	ExecStep      *uint64
 	GasFactor     uint64
 	IsTerminate   bool
 	vm            *exec.VM
@@ -97,7 +98,11 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 		return nil, errors.NewErr("wasm ccntmract does not exist")
 	}
 
-	this.CcntmextRef.PushCcntmext(&ccntmext.Ccntmext{CcntmractAddress: ccntmract.Address, Code: code.Code})
+	wasmCode, err := code.GetWasmCode()
+	if err != nil {
+		return nil, errors.NewErr("not a wasm ccntmract")
+	}
+	this.CcntmextRef.PushCcntmext(&ccntmext.Ccntmext{CcntmractAddress: ccntmract.Address, Code: wasmCode})
 	host := &Runtime{Service: this, Input: ccntmract.Args}
 
 	var compiled *exec.CompiledModule
@@ -109,7 +114,7 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	}
 
 	if compiled == nil {
-		compiled, err = ReadWasmModule(code.Code, false)
+		compiled, err = ReadWasmModule(wasmCode, false)
 		if err != nil {
 			return nil, err
 		}
@@ -123,7 +128,7 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 
 	vm.HostData = host
 
-	vm.AvaliableGas = &exec.Gas{GasLimit: this.GasLimit, LocalGasCounter: 0, GasPrice: this.GasPrice, GasFactor: this.GasFactor}
+	vm.AvaliableGas = &exec.Gas{GasLimit: this.GasLimit, LocalGasCounter: 0, GasPrice: this.GasPrice, GasFactor: this.GasFactor, ExecStep: this.ExecStep}
 	vm.CallStackDepth = uint32(WASM_CALLSTACK_LIMIT)
 	vm.RecoverPanic = true
 

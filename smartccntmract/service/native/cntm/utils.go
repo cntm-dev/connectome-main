@@ -19,12 +19,10 @@
 package cntm
 
 import (
-	"bytes"
 	"fmt"
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
-	"github.com/cntmio/cntmology/common/serialization"
 	cstates "github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/event"
@@ -59,9 +57,9 @@ func AddNotifications(native *native.NativeService, ccntmract common.Address, st
 }
 
 func GetToUInt64StorageItem(toBalance, value uint64) *cstates.StorageItem {
-	bf := new(bytes.Buffer)
-	serialization.WriteUint64(bf, toBalance+value)
-	return &cstates.StorageItem{Value: bf.Bytes()}
+	sink := common.NewZeroCopySink(nil)
+	sink.WriteUint64(toBalance + value)
+	return &cstates.StorageItem{Value: sink.Bytes()}
 }
 
 func GenTotalSupplyKey(ccntmract common.Address) []byte {

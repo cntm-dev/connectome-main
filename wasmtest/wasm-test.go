@@ -58,10 +58,12 @@ const ccntmractDir = "testwasmdata"
 const testcaseMethod = "testcase"
 
 func NewDeployWasmCcntmract(signer *account.Account, code []byte) (*types.Transaction, error) {
-	mutable := utils.NewDeployCodeTransaction(0, 100000000, code, payload.WASMVM_TYPE, "name", "version",
+	mutable, err := utils.NewDeployCodeTransaction(0, 100000000, code, payload.WASMVM_TYPE, "name", "version",
 		"author", "email", "desc")
-
-	err := utils.SignTransaction(signer, mutable)
+	if err != nil {
+		return nil, err
+	}
+	err = utils.SignTransaction(signer, mutable)
 	if err != nil {
 		return nil, err
 	}
@@ -70,10 +72,12 @@ func NewDeployWasmCcntmract(signer *account.Account, code []byte) (*types.Transa
 }
 
 func NewDeployNeoCcntmract(signer *account.Account, code []byte) (*types.Transaction, error) {
-	mutable := utils.NewDeployCodeTransaction(0, 100000000, code, payload.NEOVM_TYPE, "name", "version",
+	mutable, err := utils.NewDeployCodeTransaction(0, 100000000, code, payload.NEOVM_TYPE, "name", "version",
 		"author", "email", "desc")
-
-	err := utils.SignTransaction(signer, mutable)
+	if err != nil {
+		return nil, err
+	}
+	err = utils.SignTransaction(signer, mutable)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +141,8 @@ func ExactTestCase(code []byte) [][]common3.TestCase {
 	vm.HostData = host
 	vm.RecoverPanic = true
 	envGasLimit := uint64(100000000000000)
-	vm.AvaliableGas = &exec.Gas{GasLimit: &envGasLimit, GasPrice: 0, GasFactor: 5}
+	envExecStep := uint64(100000000000000)
+	vm.AvaliableGas = &exec.Gas{GasLimit: &envGasLimit, GasPrice: 0, GasFactor: 5, ExecStep: &envExecStep}
 	vm.CallStackDepth = 1024
 
 	entry := compiled.RawModule.Export.Entries["invoke"]
@@ -192,6 +197,7 @@ func checkErr(err error) {
 
 func execTxCheckRes(tx *types.Transaction, testCase common3.TestCase, database *ledger.Ledger, addr common.Address, acct *account.Account) {
 	res, err := database.PreExecuteCcntmract(tx)
+	log.Infof("testcase consume gas: %d", res.Gas)
 	checkErr(err)
 
 	height := database.GetCurrentBlockHeight()
@@ -244,16 +250,22 @@ func main() {
 	log.Infof("deploying %d wasm ccntmracts", len(ccntmract))
 	txes := make([]*types.Transaction, 0, len(ccntmract))
 	for file, ccntm := range ccntmract {
+		var tx *types.Transaction
+		var err error
 		if strings.HasSuffix(file, ".wasm") {
-			tx, err := NewDeployWasmCcntmract(acct, ccntm)
-			checkErr(err)
-			txes = append(txes, tx)
+			tx, err = NewDeployWasmCcntmract(acct, ccntm)
 		} else if strings.HasSuffix(file, ".avm") {
-			tx, err := NewDeployNeoCcntmract(acct, ccntm)
-			checkErr(err)
-			txes = append(txes, tx)
+			tx, err = NewDeployNeoCcntmract(acct, ccntm)
 		}
+
+		checkErr(err)
+
+		res, err := database.PreExecuteCcntmract(tx)
+		log.Infof("deploy %s consume gas: %d", file, res.Gas)
+		checkErr(err)
+		txes = append(txes, tx)
 	}
+
 	block, _ := makeBlock(acct, txes)
 	err = database.AddBlock(block, common.UINT256_EMPTY)
 	checkErr(err)

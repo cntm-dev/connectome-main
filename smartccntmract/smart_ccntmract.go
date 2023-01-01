@@ -49,6 +49,7 @@ type SmartCcntmract struct {
 	GasTable      map[string]uint64
 	Gas           uint64
 	ExecStep      int
+	WasmExecStep  uint64
 	PreExec       bool
 }
 
@@ -173,6 +174,7 @@ func (this *SmartCcntmract) NewExecuteEngine(code []byte, txtype ctypes.Transact
 			Height:     this.Config.Height,
 			BlockHash:  this.Config.BlockHash,
 			PreExec:    this.PreExec,
+			ExecStep:   &this.WasmExecStep,
 			GasLimit:   &this.Gas,
 			GasFactor:  gasFactor,
 		}

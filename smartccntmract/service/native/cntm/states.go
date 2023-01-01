@@ -19,11 +19,7 @@
 package cntm
 
 import (
-	"fmt"
-	"io"
-
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 )
 

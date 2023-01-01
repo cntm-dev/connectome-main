@@ -28,7 +28,7 @@ import (
 func CcntmractCreate(proc *exec.Process,
 	codePtr uint32,
 	codeLen uint32,
-	needStorage uint32,
+	vmType uint32,
 	namePtr uint32,
 	nameLen uint32,
 	verPtr uint32,
@@ -74,16 +74,16 @@ func CcntmractCreate(proc *exec.Process,
 		panic(err)
 	}
 
-	dep, err := payload.CreateDeployCode(code, needStorage, name, version, author, email, desc)
+	dep, err := payload.CreateDeployCode(code, vmType, name, version, author, email, desc)
 	if err != nil {
 		panic(err)
 	}
 
-	if dep.VmType() != payload.WASMVM_TYPE {
-		panic("[Ccntmract] expect WASMVM_TYPE. get NEOVM_TYPE")
+	wasmCode, err := dep.GetWasmCode()
+	if err != nil {
+		panic(err)
 	}
-
-	_, err = ReadWasmModule(dep.Code, true)
+	_, err = ReadWasmModule(wasmCode, true)
 	if err != nil {
 		panic(err)
 	}
@@ -103,7 +103,7 @@ func CcntmractCreate(proc *exec.Process,
 func CcntmractMigrate(proc *exec.Process,
 	codePtr uint32,
 	codeLen uint32,
-	needStorage uint32,
+	vmType uint32,
 	namePtr uint32,
 	nameLen uint32,
 	verPtr uint32,
@@ -151,16 +151,16 @@ func CcntmractMigrate(proc *exec.Process,
 		panic(err)
 	}
 
-	dep, err := payload.CreateDeployCode(code, needStorage, name, version, author, email, desc)
+	dep, err := payload.CreateDeployCode(code, vmType, name, version, author, email, desc)
 	if err != nil {
 		panic(err)
 	}
 
-	if dep.VmType() != payload.WASMVM_TYPE {
-		panic("[Ccntmract] expect WASMVM_TYPE. get NEOVM_TYPE")
+	wasmCode, err := dep.GetWasmCode()
+	if err != nil {
+		panic(err)
 	}
-
-	_, err = ReadWasmModule(dep.Code, true)
+	_, err = ReadWasmModule(wasmCode, true)
 	if err != nil {
 		panic(err)
 	}
