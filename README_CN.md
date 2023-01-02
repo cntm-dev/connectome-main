@@ -52,7 +52,7 @@ Ontology MainNet 已经在2018年6月30日成功上线。<br>
 ## 构建开发环境
 成功编译cntmology需要以下准备：
 
-* Golang版本在1.9及以上
+* Golang版本在1.11及以上
 * 安装第三方包管理工具glide
 * 正确的Go语言开发环境
 * Golang所支持的操作系统

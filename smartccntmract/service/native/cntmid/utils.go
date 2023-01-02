@@ -22,7 +22,6 @@ import (
 	"errors"
 
 	"github.com/cntmio/cntmology-crypto/keypair"
-	com "github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
@@ -95,11 +94,25 @@ func checkWitness(srvc *native.NativeService, key []byte) error {
 		}
 	}
 
-	// try as if key is an address
-	addr, err := com.AddressParseFromBytes(key)
-	if srvc.CcntmextRef.CheckWitness(addr) {
-		return nil
+	return errors.New("check witness failed, " + hex.EncodeToString(key))
+}
+
+func deleteID(srvc *native.NativeService, encID []byte) error {
+	key := append(encID, FIELD_PK)
+	srvc.CacheDB.Delete(key)
+
+	key = append(encID, FIELD_CcntmROLLER)
+	srvc.CacheDB.Delete(key)
+
+	key = append(encID, FIELD_RECOVERY)
+	srvc.CacheDB.Delete(key)
+
+	err := deleteAllAttr(srvc, encID)
+	if err != nil {
+		return err
 	}
 
-	return errors.New("check witness failed, " + hex.EncodeToString(key))
+	//set flag to revoke
+	utils.PutBytes(srvc, encID, []byte{flag_revoke})
+	return nil
 }

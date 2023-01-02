@@ -20,7 +20,6 @@ package cntmid
 import (
 	"encoding/hex"
 
-	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 )
@@ -54,10 +53,5 @@ func triggerAttributeEvent(srvc *native.NativeService, op string, id []byte, pat
 		attr = t
 	}
 	st := []interface{}{"Attribute", op, string(id), attr}
-	newEvent(srvc, st)
-}
-
-func triggerRecoveryEvent(srvc *native.NativeService, op string, id []byte, addr common.Address) {
-	st := []string{"Recovery", op, string(id), addr.ToHexString()}
 	newEvent(srvc, st)
 }
