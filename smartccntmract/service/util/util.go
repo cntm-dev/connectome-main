@@ -18,14 +18,34 @@
 package util
 
 import (
+	"bytes"
+
 	"errors"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/utils"
+	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
+	neovms "github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	"github.com/cntmio/cntmology/vm/crossvm_codec"
+	"github.com/cntmio/cntmology/vm/neovm"
 )
 
+func BuildNeoVMParamEvalStack(params []interface{}) (*neovm.ValueStack, error) {
+	builder := neovm.NewParamsBuilder(new(bytes.Buffer))
+	err := utils.BuildNeoVMParam(builder, params)
+	if err != nil {
+		return nil, err
+	}
+
+	exec := neovm.NewExecutor(builder.ToArray(), neovm.VmFeatureFlag{true, true})
+	err = exec.Execute()
+	if err != nil {
+		return nil, err
+	}
+	return exec.EvalStack, nil
+}
+
 //create paramters for neovm ccntmract
-func CreateNeoInvokeParam(ccntmractAddress common.Address, input []byte) ([]byte, error) {
+func GenerateNeoVMParamEvalStack(input []byte) (*neovm.ValueStack, error) {
 	params, err := crossvm_codec.DeserializeCallParam(input)
 	if err != nil {
 		return nil, err
@@ -36,5 +56,30 @@ func CreateNeoInvokeParam(ccntmractAddress common.Address, input []byte) ([]byte
 		return nil, errors.New("invoke neovm param is not list type")
 	}
 
-	return utils.BuildNeoVMInvokeCode(ccntmractAddress, list)
+	stack, err := BuildNeoVMParamEvalStack(list)
+	if err != nil {
+		return nil, err
+	}
+
+	return stack, nil
+}
+
+func SetNeoServiceParamAndEngine(addr common.Address, engine ccntmext.Engine, stack *neovm.ValueStack) error {
+	service, ok := engine.(*neovms.NeoVmService)
+	if ok == false {
+		return errors.New("engine should be NeoVmService")
+	}
+
+	code, err := service.GetNeoCcntmract(addr)
+	if err != nil {
+		return err
+	}
+
+	feature := service.Engine.Features
+	service.Engine = neovm.NewExecutor(code, feature)
+	service.Code = code
+
+	service.Engine.EvalStack = stack
+
+	return nil
 }

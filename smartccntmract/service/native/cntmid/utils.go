@@ -4,8 +4,7 @@
  *
  * The cntmology is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * the Free Software Foundation, either version 3 of the License, or * (at your option) any later version.
  *
  * The cntmology is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -92,6 +91,12 @@ func checkWitness(srvc *native.NativeService, key []byte) error {
 		if srvc.CcntmextRef.CheckWitness(addr) {
 			return nil
 		}
+	}
+
+	// try as if key is an address
+	addr, err := common.AddressParseFromBytes(key)
+	if srvc.CcntmextRef.CheckWitness(addr) {
+		return nil
 	}
 
 	return errors.New("check witness failed, " + hex.EncodeToString(key))

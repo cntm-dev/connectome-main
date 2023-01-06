@@ -34,6 +34,8 @@ func RegisterIDCcntmract(srvc *native.NativeService) {
 	srvc.Register("removeCcntmroller", removeCcntmroller)
 	srvc.Register("addRecovery", addRecovery)
 	srvc.Register("changeRecovery", changeRecovery)
+	srvc.Register("setRecovery", setRecovery)
+	srvc.Register("updateRecovery", updateRecovery)
 	srvc.Register("addKey", addKey)
 	srvc.Register("removeKey", removeKey)
 	srvc.Register("addKeyByCcntmroller", addKeyByCcntmroller)

@@ -322,12 +322,17 @@ func CallCcntmract(proc *exec.Process, ccntmractAddr uint32, inputPtr uint32, in
 		result = tmpRes.([]byte)
 
 	case NEOVM_CcntmRACT:
-		parambytes, err := util.CreateNeoInvokeParam(ccntmractAddress, inputs)
+		evalstack, err := util.GenerateNeoVMParamEvalStack(inputs)
 		if err != nil {
 			panic(err)
 		}
 
-		neoservice, err := self.Service.CcntmextRef.NewExecuteEngine(parambytes, types.InvokeNeo)
+		neoservice, err := self.Service.CcntmextRef.NewExecuteEngine([]byte{}, types.InvokeNeo)
+		if err != nil {
+			panic(err)
+		}
+
+		err = util.SetNeoServiceParamAndEngine(ccntmractAddress, neoservice, evalstack)
 		if err != nil {
 			panic(err)
 		}

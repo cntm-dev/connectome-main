@@ -6,7 +6,7 @@ currentdir=$(dirname $0)
 cd $currentdir
 
 git clone --recursive https://github.com/cntmio/cntmology-wasm-cdt-cpp
-cd cntmology-wasm-cdt-cpp; git checkout v1.0 -b testframe; bash compiler_install.bash;cd ../
+cd cntmology-wasm-cdt-cpp; git checkout v1.1 -b testframe; bash compiler_install.bash;cd ../
 compilerdir="./cntmology-wasm-cdt-cpp/install/bin"
 
 for f in $(ls *.cpp)
