@@ -58,6 +58,7 @@ type NativeService struct {
 	Time          uint32
 	BlockHash     common.Uint256
 	CcntmextRef    ccntmext.CcntmextRef
+	PreExec       bool
 }
 
 func (this *NativeService) Register(methodName string, handler Handler) {

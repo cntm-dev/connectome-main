@@ -296,6 +296,7 @@ func CallCcntmract(proc *exec.Process, ccntmractAddr uint32, inputPtr uint32, in
 			Time:        self.Service.Time,
 			CcntmextRef:  self.Service.CcntmextRef,
 			ServiceMap:  make(map[string]native2.Handler),
+			PreExec:     self.Service.PreExec,
 		}
 
 		tmpRes, err := native.Invoke()

@@ -24,7 +24,6 @@ import (
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 )
@@ -75,7 +74,7 @@ func regIdWithCcntmroller(srvc *native.NativeService) ([]byte, error) {
 	key := append(encId, FIELD_CcntmROLLER)
 	utils.PutBytes(srvc, key, arg1)
 
-	srvc.CacheDB.Put(encId, states.GenRawStorageItem([]byte{flag_valid}))
+	utils.PutBytes(srvc, encId, []byte{flag_valid})
 	triggerRegisterEvent(srvc, arg0)
 	return utils.BYTE_TRUE, nil
 }
@@ -148,16 +147,8 @@ func removeCcntmroller(srvc *native.NativeService) ([]byte, error) {
 	if err != nil {
 		return utils.BYTE_FALSE, err
 	}
-	pk, err := getPk(srvc, encId, uint32(arg1))
-	if err != nil {
-		return utils.BYTE_FALSE, err
-	}
-	if pk.revoked {
-		return utils.BYTE_FALSE, fmt.Errorf("authentication failed, public key is removed")
-	}
-	err = checkWitness(srvc, pk.key)
-	if err != nil {
-		return utils.BYTE_FALSE, fmt.Errorf("checkWitness failed")
+	if err := checkWitnessByIndex(srvc, encId, uint32(arg1)); err != nil {
+		return utils.BYTE_FALSE, fmt.Errorf("checkWitness failed, %s", err)
 	}
 	key := append(encId, FIELD_CcntmROLLER)
 	srvc.CacheDB.Delete(key)
@@ -338,18 +329,7 @@ func verifySingleCcntmroller(srvc *native.NativeService, id []byte, args *common
 	if err != nil {
 		return err
 	}
-	pk, err := getPk(srvc, encId, uint32(index))
-	if err != nil {
-		return err
-	}
-	if pk.revoked {
-		return fmt.Errorf("revoked key")
-	}
-	err = checkWitness(srvc, pk.key)
-	if err != nil {
-		return err
-	}
-	return nil
+	return checkWitnessByIndex(srvc, encId, uint32(index))
 }
 
 func verifyGroupCcntmroller(srvc *native.NativeService, group *Group, args *common.ZeroCopySource) error {
