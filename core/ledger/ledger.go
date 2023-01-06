@@ -195,6 +195,10 @@ func (self *Ledger) PreExecuteCcntmract(tx *types.Transaction) (*cstate.PreExecR
 	return self.ldgStore.PreExecuteCcntmract(tx)
 }
 
+func (self *Ledger) PreExecuteCcntmractBatch(txes []*types.Transaction, atomic bool) ([]*cstate.PreExecResult, uint32, error) {
+	return self.ldgStore.PreExecuteCcntmractBatch(txes, atomic)
+}
+
 func (self *Ledger) GetEventNotifyByTx(tx common.Uint256) (*event.ExecuteNotify, error) {
 	return self.ldgStore.GetEventNotifyByTx(tx)
 }

@@ -47,8 +47,9 @@ const MAX_SEARCH_HEIGHT uint32 = 100
 const MAX_REQUEST_BODY_SIZE = 1 << 20
 
 type BalanceOfRsp struct {
-	Ont string `json:"cntm"`
-	Ong string `json:"cntm"`
+	Ont    string `json:"cntm"`
+	Ong    string `json:"cntm"`
+	Height string `json:"height"`
 }
 
 type MerkleProof struct {
@@ -279,17 +280,14 @@ func GetBlockInfo(block *types.Block) BlockInfo {
 }
 
 func GetBalance(address common.Address) (*BalanceOfRsp, error) {
-	cntm, err := GetCcntmractBalance(0, utils.OntCcntmractAddress, address)
-	if err != nil {
-		return nil, fmt.Errorf("get cntm balance error:%s", err)
-	}
-	cntm, err := GetCcntmractBalance(0, utils.OngCcntmractAddress, address)
+	balances, height, err := GetCcntmractBalance(0, []common.Address{utils.OntCcntmractAddress, utils.OngCcntmractAddress}, address, true)
 	if err != nil {
 		return nil, fmt.Errorf("get cntm balance error:%s", err)
 	}
 	return &BalanceOfRsp{
-		Ont: fmt.Sprintf("%d", cntm),
-		Ong: fmt.Sprintf("%d", cntm),
+		Ont:    fmt.Sprintf("%d", balances[0]),
+		Ong:    fmt.Sprintf("%d", balances[1]),
+		Height: fmt.Sprintf("%d", height),
 	}, nil
 }
 
@@ -304,11 +302,11 @@ func GetGrantOng(addr common.Address) (string, error) {
 	if eof {
 		return fmt.Sprintf("%v", 0), io.ErrUnexpectedEOF
 	}
-	cntm, err := GetCcntmractBalance(0, utils.OntCcntmractAddress, addr)
+	cntms, _, err := GetCcntmractBalance(0, []common.Address{utils.OntCcntmractAddress}, addr, false)
 	if err != nil {
 		return fmt.Sprintf("%v", 0), err
 	}
-	boundcntm := utils.CalcUnbindOng(cntm, v, uint32(time.Now().Unix())-constants.GENESIS_BLOCK_TIMESTAMP)
+	boundcntm := utils.CalcUnbindOng(cntms[0], v, uint32(time.Now().Unix())-constants.GENESIS_BLOCK_TIMESTAMP)
 	return fmt.Sprintf("%v", boundcntm), nil
 }
 
@@ -329,29 +327,40 @@ func GetAllowance(asset string, from, to common.Address) (string, error) {
 	return fmt.Sprintf("%v", allowance), nil
 }
 
-func GetCcntmractBalance(cVersion byte, ccntmractAddr, accAddr common.Address) (uint64, error) {
-	mutable, err := NewNativeInvokeTransaction(0, 0, ccntmractAddr, cVersion, "balanceOf", []interface{}{accAddr[:]})
-	if err != nil {
-		return 0, fmt.Errorf("NewNativeInvokeTransaction error:%s", err)
-	}
-	tx, err := mutable.IntoImmutable()
-	if err != nil {
-		return 0, err
-	}
-	result, err := bactor.PreExecuteCcntmract(tx)
-	if err != nil {
-		return 0, fmt.Errorf("PrepareInvokeCcntmract error:%s", err)
-	}
-	if result.State == 0 {
-		return 0, fmt.Errorf("prepare invoke failed")
-	}
-	data, err := hex.DecodeString(result.Result.(string))
-	if err != nil {
-		return 0, fmt.Errorf("hex.DecodeString error:%s", err)
+func GetCcntmractBalance(cVersion byte, ccntmractAddres []common.Address, accAddr common.Address, atomic bool) ([]uint64, uint32, error) {
+	txes := make([]*types.Transaction, 0, len(ccntmractAddres))
+	for _, ccntmractAddr := range ccntmractAddres {
+		mutable, err := NewNativeInvokeTransaction(0, 0, ccntmractAddr, cVersion, "balanceOf", []interface{}{accAddr[:]})
+		if err != nil {
+			return nil, 0, fmt.Errorf("NewNativeInvokeTransaction error:%s", err)
+		}
+		tx, err := mutable.IntoImmutable()
+		if err != nil {
+			return nil, 0, err
+		}
+
+		txes = append(txes, tx)
 	}
 
-	balance := common.BigIntFromNeoBytes(data)
-	return balance.Uint64(), nil
+	results, height, err := bactor.PreExecuteCcntmractBatch(txes, atomic)
+	if err != nil {
+		return nil, 0, fmt.Errorf("PrepareInvokeCcntmract error:%s", err)
+	}
+	balances := make([]uint64, 0, len(ccntmractAddres))
+	for _, result := range results {
+		if result.State == 0 {
+			return nil, 0, fmt.Errorf("prepare invoke failed")
+		}
+		data, err := hex.DecodeString(result.Result.(string))
+		if err != nil {
+			return nil, 0, fmt.Errorf("hex.DecodeString error:%s", err)
+		}
+
+		balance := common.BigIntFromNeoBytes(data)
+		balances = append(balances, balance.Uint64())
+	}
+
+	return balances, height, nil
 }
 
 func GetCcntmractAllowance(cVersion byte, ccntmractAddr, fromAddr, toAddr common.Address) (uint64, error) {
@@ -489,4 +498,29 @@ func GetAddress(str string) (common.Address, error) {
 		address, err = common.AddressFromBase58(str)
 	}
 	return address, err
+}
+
+type SyncStatus struct {
+	CurrentBlockHeight uint32
+	ConnectCount       uint32
+	MaxPeerBlockHeight uint64
+}
+
+func GetSyncStatus() (SyncStatus, error) {
+	var status SyncStatus
+	height, err := bactor.GetMaxPeerBlockHeight()
+	if err != nil {
+		return status, err
+	}
+	cnt, err := bactor.GetConnectionCnt()
+	if err != nil {
+		return status, err
+	}
+	curBlockHeight := bactor.GetCurrentBlockHeight()
+
+	return SyncStatus{
+		CurrentBlockHeight: curBlockHeight,
+		ConnectCount:       cnt,
+		MaxPeerBlockHeight: height,
+	}, nil
 }

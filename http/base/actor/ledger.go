@@ -89,6 +89,10 @@ func PreExecuteCcntmract(tx *types.Transaction) (*cstate.PreExecResult, error) {
 	return ledger.DefLedger.PreExecuteCcntmract(tx)
 }
 
+func PreExecuteCcntmractBatch(tx []*types.Transaction, atomic bool) ([]*cstate.PreExecResult, uint32, error) {
+	return ledger.DefLedger.PreExecuteCcntmractBatch(tx, atomic)
+}
+
 //GetEventNotifyByTxHash from ledger
 func GetEventNotifyByTxHash(txHash common.Uint256) (*event.ExecuteNotify, error) {
 	return ledger.DefLedger.GetEventNotifyByTx(txHash)

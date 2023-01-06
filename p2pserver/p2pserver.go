@@ -89,6 +89,11 @@ func (this *P2PServer) GetConnectionCnt() uint32 {
 	return this.network.GetConnectionCnt()
 }
 
+//GetMaxPeerBlockHeight return the established connect count
+func (this *P2PServer) GetMaxPeerBlockHeight() uint64 {
+	return this.network.GetMaxPeerBlockHeight()
+}
+
 //Start create all services
 func (this *P2PServer) Start() error {
 	if this.network != nil {
@@ -454,7 +459,7 @@ func (this *P2PServer) connectSeedService() {
 			}
 		case <-this.quitOnline:
 			t.Stop()
-			break
+			return
 		}
 	}
 }
@@ -470,7 +475,7 @@ func (this *P2PServer) keepOnlineService() {
 			t.Reset(time.Second * common.CONN_MONITOR)
 		case <-this.quitOnline:
 			t.Stop()
-			break
+			return
 		}
 	}
 }
@@ -593,7 +598,7 @@ func (this *P2PServer) syncUpRecentPeers() {
 			this.syncPeerAddr()
 		case <-this.quitSyncRecent:
 			t.Stop()
-			break
+			return
 		}
 	}
 

@@ -976,6 +976,26 @@ func (this *LedgerStoreImp) GetEventNotifyByBlock(height uint32) ([]*event.Execu
 }
 
 //PreExecuteCcntmract return the result of smart ccntmract execution without commit to store
+func (this *LedgerStoreImp) PreExecuteCcntmractBatch(txes []*types.Transaction, atomic bool) ([]*sstate.PreExecResult, uint32, error) {
+	if atomic {
+		this.getSavingBlockLock()
+		defer this.releaseSavingBlockLock()
+	}
+	height := this.GetCurrentBlockHeight()
+	results := make([]*sstate.PreExecResult, 0, len(txes))
+	for _, tx := range txes {
+		res, err := this.PreExecuteCcntmract(tx)
+		if err != nil {
+			return nil, height, err
+		}
+
+		results = append(results, res)
+	}
+
+	return results, height, nil
+}
+
+//PreExecuteCcntmract return the result of smart ccntmract execution without commit to store
 func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.PreExecResult, error) {
 	height := this.GetCurrentBlockHeight()
 	// use previous block time to make it predictable for easy test

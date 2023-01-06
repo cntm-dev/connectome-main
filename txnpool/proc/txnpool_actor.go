@@ -62,13 +62,13 @@ func NewVerifyRspActor(s *TXPoolServer) *VerifyRspActor {
 
 // isBalanceEnough checks if the tranactor has enough to cover gas cost
 func isBalanceEnough(address common.Address, gas uint64) bool {
-	balance, err := hComm.GetCcntmractBalance(0, utils.OngCcntmractAddress, address)
+	balance, _, err := hComm.GetCcntmractBalance(0, []common.Address{utils.OngCcntmractAddress}, address, false)
 	if err != nil {
 		log.Debugf("failed to get ccntmract balance %s err %v",
 			address.ToHexString(), err)
 		return false
 	}
-	return balance >= gas
+	return balance[0] >= gas
 }
 
 func replyTxResult(txResultCh chan *tc.TxResult, hash common.Uint256,

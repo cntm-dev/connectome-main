@@ -210,7 +210,7 @@ func CcntmractDestroy(proc *exec.Process) {
 	if err := iter.Error(); err != nil {
 		panic(err)
 	}
-
+	self.Service.CacheDB.DeleteCcntmract(ccntmractAddress)
 	//the ccntmract has been deleted ,quit the ccntmract operation
 	proc.Terminate()
 }
