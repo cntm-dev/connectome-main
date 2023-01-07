@@ -19,10 +19,10 @@
 package wasmvm
 
 import (
-	"github.com/go-interpreter/wagon/exec"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/errors"
+	"github.com/cntmio/wagon/exec"
 )
 
 func CcntmractCreate(proc *exec.Process,

@@ -22,9 +22,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-interpreter/wagon/exec"
-	"github.com/go-interpreter/wagon/validate"
-	"github.com/go-interpreter/wagon/wasm"
+	"github.com/cntmio/wagon/exec"
+	"github.com/cntmio/wagon/validate"
+	"github.com/cntmio/wagon/wasm"
 )
 
 func ReadWasmMemory(proc *exec.Process, ptr uint32, len uint32) ([]byte, error) {

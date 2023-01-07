@@ -18,7 +18,6 @@
 package wasmvm
 
 import (
-	"github.com/go-interpreter/wagon/exec"
 	"github.com/hashicorp/golang-lru"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/store"
@@ -28,6 +27,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
+	"github.com/cntmio/wagon/exec"
 )
 
 type WasmVmService struct {
@@ -128,7 +128,7 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 
 	vm.HostData = host
 
-	vm.AvaliableGas = &exec.Gas{GasLimit: this.GasLimit, LocalGasCounter: 0, GasPrice: this.GasPrice, GasFactor: this.GasFactor, ExecStep: this.ExecStep}
+	vm.ExecMetrics = &exec.Gas{GasLimit: this.GasLimit, LocalGasCounter: 0, GasPrice: this.GasPrice, GasFactor: this.GasFactor, ExecStep: this.ExecStep}
 	vm.CallStackDepth = uint32(WASM_CALLSTACK_LIMIT)
 	vm.RecoverPanic = true
 

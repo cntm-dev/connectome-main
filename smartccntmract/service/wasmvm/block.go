@@ -18,7 +18,7 @@
 package wasmvm
 
 import (
-	"github.com/go-interpreter/wagon/exec"
+	"github.com/cntmio/wagon/exec"
 )
 
 func GetCurrentBlockHash(proc *exec.Process, ptr uint32) uint32 {

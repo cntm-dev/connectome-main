@@ -87,6 +87,7 @@ func (self *ChainStore) ReloadFromLedger() {
 				newPending[blkNum] = blk
 			}
 		}
+		log.Debug("chainstore ReloadFromLedger pendingBlocks")
 		// update pending blocks
 		self.pendingBlocks = newPending
 	}
@@ -115,6 +116,7 @@ func (self *ChainStore) AddBlock(block *Block) error {
 		log.Errorf("chainstore AddBlock GetBlockExecResult: %s", err)
 		return fmt.Errorf("chainstore AddBlock GetBlockExecResult: %s", err)
 	}
+	log.Debugf("chainstore addblock pendingBlocks height:%d,block height:%d", blkNum, block.getBlockNum())
 	self.pendingBlocks[blkNum] = &PendingBlock{block: block, execResult: &execResult, hasSubmitted: false}
 
 	if self.pid != nil {
@@ -137,6 +139,7 @@ func (self *ChainStore) submitBlock(blkNum uint32) error {
 			return fmt.Errorf("ledger add submitBlk (%d, %d, %d) failed: %s", blkNum, self.GetChainedBlockNum(), self.db.GetCurrentBlockHeight(), err)
 		}
 		if _, present := self.pendingBlocks[blkNum-1]; present {
+			log.Infof("chainstore submitBlock delete pendingBlocks height:%d", blkNum-1)
 			delete(self.pendingBlocks, blkNum-1)
 		}
 		submitBlk.hasSubmitted = true
