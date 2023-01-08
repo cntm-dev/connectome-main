@@ -20,19 +20,12 @@ package event
 
 import (
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/vm/neovm/types"
 )
 
 const (
 	CcntmRACT_STATE_FAIL    byte = 0
 	CcntmRACT_STATE_SUCCESS byte = 1
 )
-
-// NotifyEventArgs describe smart ccntmract event notify arguments struct
-type NotifyEventArgs struct {
-	CcntmractAddress common.Address
-	States          types.StackItems
-}
 
 // NotifyEventInfo describe smart ccntmract event notify info struct
 type NotifyEventInfo struct {

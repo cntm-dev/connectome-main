@@ -30,7 +30,7 @@ import (
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/types"
 	// neovms "github.com/cntmio/cntmology/smartccntmract/service/neovm"
-	neovm "github.com/cntmio/cntmology/vm/neovm"
+	"github.com/cntmio/cntmology/vm/neovm"
 )
 
 type TestEnv struct {

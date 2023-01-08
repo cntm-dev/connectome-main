@@ -21,7 +21,6 @@ package common
 import (
 	"errors"
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 )
 
@@ -54,34 +53,6 @@ type PersistStore interface {
 	NewIterator(prefix []byte) StoreIterator //Return the iterator of store
 }
 
-//StateStore save result of smart ccntmract execution, before commit to store
-type StateStore interface {
-	//Add key-value pair to store
-	TryAdd(prefix DataEntryPrefix, key []byte, value states.StateValue)
-	//Get key from state store, if not exist, add it to store
-	TryGetOrAdd(prefix DataEntryPrefix, key []byte, value states.StateValue) error
-	//Get key from state store
-	TryGet(prefix DataEntryPrefix, key []byte) (*StateItem, error)
-	//Delete key in store
-	TryDelete(prefix DataEntryPrefix, key []byte)
-	//iterator key in store
-	Find(prefix DataEntryPrefix, key []byte) ([]*StateItem, error)
-}
-
-//MemoryCacheStore
-type MemoryCacheStore interface {
-	//Put the key-value pair to store
-	Put(prefix byte, key []byte, value states.StateValue, state ItemState)
-	//Get the value if key in store
-	Get(prefix byte, key []byte) *StateItem
-	//Delete the key in store
-	Delete(prefix byte, key []byte)
-	//Get all updated key-value set
-	GetChangeSet() map[string]*StateItem
-	// Get all key-value in store
-	Find() []*StateItem
-}
-
 //EventStore save event notify
 type EventStore interface {
 	//SaveEventNotifyByTx save event notify gen by smart ccntmract execution
@@ -92,27 +63,4 @@ type EventStore interface {
 	GetEventNotifyByTx(txHash common.Uint256) (*event.ExecuteNotify, error)
 	//Commit event notify to store
 	CommitTo() error
-}
-
-//State item type
-type ItemState byte
-
-//Status of item
-const (
-	None    ItemState = iota //no change
-	Changed                  //which was be mark delete
-	Deleted                  //which wad be mark delete
-)
-
-//State item struct
-type StateItem struct {
-	Key   string            //State key
-	Value states.StateValue //State value
-	State ItemState         //Status
-	Trie  bool              //no use
-}
-
-func (e *StateItem) Copy() *StateItem {
-	c := *e
-	return &c
 }
