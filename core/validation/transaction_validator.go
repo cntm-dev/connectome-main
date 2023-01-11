@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/ledger"
@@ -117,7 +118,7 @@ func checkTransactionPayload(tx *types.Transaction) error {
 	case *payload.DeployCode:
 		deploy := tx.Payload.(*payload.DeployCode)
 		if deploy.VmType() == payload.WASMVM_TYPE {
-			_, err := wasmvm.ReadWasmModule(deploy.GetRawCode(), true)
+			_, err := wasmvm.ReadWasmModule(deploy.GetRawCode(), config.DefConfig.Common.WasmVerifyMethod)
 			if err != nil {
 				return err
 			}
@@ -128,5 +129,4 @@ func checkTransactionPayload(tx *types.Transaction) error {
 	default:
 		return errors.New(fmt.Sprint("[txValidator], unimplemented transaction payload type.", pld))
 	}
-	return nil
 }

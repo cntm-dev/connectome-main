@@ -20,10 +20,50 @@ package wasmvm
 
 import (
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/wagon/exec"
 )
+
+func migrateCcntmractStorage(service *WasmVmService, newAddress common.Address) error {
+	oldAddress := service.CcntmextRef.CurrentCcntmext().CcntmractAddress
+	service.CacheDB.DeleteCcntmract(oldAddress)
+
+	iter := service.CacheDB.NewIterator(oldAddress[:])
+	for has := iter.First(); has; has = iter.Next() {
+		key := iter.Key()
+		val := iter.Value()
+
+		newkey := serializeStorageKey(newAddress, key[20:])
+
+		service.CacheDB.Put(newkey, val)
+		service.CacheDB.Delete(key)
+	}
+
+	iter.Release()
+	if err := iter.Error(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func deleteCcntmractStorage(service *WasmVmService) error {
+	ccntmractAddress := service.CcntmextRef.CurrentCcntmext().CcntmractAddress
+	iter := service.CacheDB.NewIterator(ccntmractAddress[:])
+
+	for has := iter.First(); has; has = iter.Next() {
+		service.CacheDB.Delete(iter.Key())
+	}
+	iter.Release()
+	if err := iter.Error(); err != nil {
+		return err
+	}
+
+	service.CacheDB.DeleteCcntmract(ccntmractAddress)
+	return nil
+}
 
 func CcntmractCreate(proc *exec.Process,
 	codePtr uint32,
@@ -83,7 +123,7 @@ func CcntmractCreate(proc *exec.Process,
 	if err != nil {
 		panic(err)
 	}
-	_, err = ReadWasmModule(wasmCode, true)
+	_, err = ReadWasmModule(wasmCode, config.DefConfig.Common.WasmVerifyMethod)
 	if err != nil {
 		panic(err)
 	}
@@ -160,7 +200,7 @@ func CcntmractMigrate(proc *exec.Process,
 	if err != nil {
 		panic(err)
 	}
-	_, err = ReadWasmModule(wasmCode, true)
+	_, err = ReadWasmModule(wasmCode, config.DefConfig.Common.WasmVerifyMethod)
 	if err != nil {
 		panic(err)
 	}
@@ -169,24 +209,10 @@ func CcntmractMigrate(proc *exec.Process,
 	if self.isCcntmractExist(ccntmractAddr) {
 		panic(errors.NewErr("ccntmract has been deployed"))
 	}
-	oldAddress := self.Service.CcntmextRef.CurrentCcntmext().CcntmractAddress
-
 	self.Service.CacheDB.PutCcntmract(dep)
-	self.Service.CacheDB.DeleteCcntmract(oldAddress)
 
-	iter := self.Service.CacheDB.NewIterator(oldAddress[:])
-	for has := iter.First(); has; has = iter.Next() {
-		key := iter.Key()
-		val := iter.Value()
-
-		newkey := serializeStorageKey(ccntmractAddr, key[20:])
-
-		self.Service.CacheDB.Put(newkey, val)
-		self.Service.CacheDB.Delete(key)
-	}
-
-	iter.Release()
-	if err := iter.Error(); err != nil {
+	err = migrateCcntmractStorage(self.Service, ccntmractAddr)
+	if err != nil {
 		panic(err)
 	}
 
@@ -200,17 +226,10 @@ func CcntmractMigrate(proc *exec.Process,
 
 func CcntmractDestroy(proc *exec.Process) {
 	self := proc.HostData().(*Runtime)
-	ccntmractAddress := self.Service.CcntmextRef.CurrentCcntmext().CcntmractAddress
-	iter := self.Service.CacheDB.NewIterator(ccntmractAddress[:])
-
-	for has := iter.First(); has; has = iter.Next() {
-		self.Service.CacheDB.Delete(iter.Key())
-	}
-	iter.Release()
-	if err := iter.Error(); err != nil {
+	err := deleteCcntmractStorage(self.Service)
+	if err != nil {
 		panic(err)
 	}
-	self.Service.CacheDB.DeleteCcntmract(ccntmractAddress)
 	//the ccntmract has been deleted ,quit the ccntmract operation
 	proc.Terminate()
 }

@@ -52,6 +52,10 @@ var (
 		Name:  "disable-event-log",
 		Usage: "Discard event log output by smart ccntmract execution",
 	}
+	WasmVerifyMethodFlag = cli.BoolFlag{
+		Name:  "enable-wasmjit-verifier",
+		Usage: "Enable wasmjit verifier to verify wasm ccntmract",
+	}
 	WalletFileFlag = cli.StringFlag{
 		Name:  "wallet,w",
 		Value: config.DEFAULT_WALLET_FILE_NAME,

@@ -17,23 +17,6 @@ As a public blockchain project, Ontology is currently maintained by both the Ont
 
 New features are still being rapidly developed, therefore the master branch may be unstable. Stable versions can be found in the [releases section](https://github.com/cntmio/cntmology/releases).
 
-- [Features](#features)
-- [Build Development Environment](#build-development-environment)
-- [Download Ontology](#download-cntmology)
-    - [Download Release](#download-release)
-    - [Build from Source Code](#build-from-source-code)
-- [Run Ontology](#run-cntmology)
-    - [MainNet Sync Node](#mainnet-sync-node)
-    - [TestNet Sync Node](#testnet-sync-node)
-    - [Local PrivateNet](#local-privatenet)
-    - [Run with Docker](#run-in-docker)
-- [Examples](#examples)
-    - [cntm transfer sample](#cntm-transfer-sample)
-    - [Query transfer status sample](#query-transfer-status-sample)
-    - [Query account balance sample](#query-account-balance-sample)
-- [Ccntmributions](#ccntmributions)
-- [License](#license)
-
 ## Features
 
 - Scalable lightweight universal smart ccntmracts
@@ -46,22 +29,23 @@ New features are still being rapidly developed, therefore the master branch may 
 - Quick block generation time (1-30 seconds)
 
 
-## Build Development Environment
-The requirements to build Ontology are:
-
-- [Golang](https://golang.org/doc/install) version 1.11 or later
-- [Glide](https://glide.sh) (a third party package management tool for Golang)
-
-## Download Ontology
-
-### Download Release
+## Install from Binaries
 You can download a stable compiled version of the Ontology node software by either:
 
 - Downloading the latest Ontology binary file with `curl https://dev.cntm.io/cntmology_install | sh`.
 - Downloading a specific version from the [release section](https://github.com/cntmio/cntmology/releases).
 
-### Build from Source Code
-Alternatively, you can build the Ontology application directly from the source code. Note that the code in the `master` branch may not be stable.
+## Build From Source
+
+### Prerequisites
+
+- [Golang](https://golang.org/doc/install) version 1.11 or later
+- [Glide](https://glide.sh) (a third party package management tool for Golang)
+
+
+### Build
+
+Note that the code in the `master` branch may not be stable.
 
 1) Clone the Ontology repository into the appropriate `$GOPATH/src/github.com/cntmio` directory:
 
@@ -76,21 +60,10 @@ $ go get github.com/cntmio/cntmology
 2) Fetch the dependent third party packages with [Glide](https://glide.sh):
 
 ```
-$ cd $GOPATH/src/github.com/cntmio/cntmology
-$ glide install
-```
-
-3) If necessary, update the dependent third party packages with Glide:
-
-```
-$ cd $GOPATH/src/github.com/cntmio/cntmology
-$ glide update
-```
-
-4) Build the source code with make:
-
-```
-$ make all
+cd $GOPATH/src/github.com/cntmio/cntmology
+glide install
+glide update
+make all
 ```
 
 After building the source code successfully, you should see two executable programs:
@@ -106,41 +79,21 @@ The Ontology CLI can run nodes for the MainNet, TestNet and local PrivateNet. Ch
 
 You can run an Ontology MainNet node built from the source code with:
 
- ``` shell
-./cntmology
- ```
-
- To run it with a macOS release build:
-
- ``` shell
- ./cntmology-darwin-amd64
- ```
-
- To run it with a Windows release build:
-
- ``` shell
- start cntmology-windows-amd64.exe
- ```
+```shell
+./cntmology                          # Linux
+./cntmology-darwin-amd64             # MacOS
+start cntmology-windows-amd64.exe    # Windows
+```
 
 ### TestNet Sync Node
 
 You can run an Ontology TestNet node built from the source code with:
 
- ``` shell
-./cntmology --networkid 2
- ```
-
- To run it with a macOS release build:
-
- ``` shell
- ./cntmology-darwin-amd64 --networkid 2
- ```
-
- To run it with a Windows release build:
-
- ``` shell
- start cntmology-windows-amd64.exe --networkid 2
- ```
+```shell
+./cntmology --networkid 2                        # Linux
+./cntmology-darwin-amd64 --networkid 2           # MacOS
+ start cntmology-windows-amd64.exe --networkid 2 # Windows
+```
 
 ### Local PrivateNet
 
@@ -152,8 +105,10 @@ The Ontology CLI allows you to run a local PrivateNet on your computer. Before y
 
 To start the PrivateNet built from the source code with:
 
-``` shell
-./cntmology --testmode
+```shell
+./cntmology --testmode                       # Linux
+./cntmology-darwin-amd64 --testmode          # MacOS
+start cntmology-windows-amd64.exe --testmode # Windows
 ```
 
 Here's an example of the directory structure
@@ -165,17 +120,6 @@ $ tree
     └── wallet.dat
 ```
 
-To run it with a macOS release build:
-
-``` shell
-./cntmology-darwin-amd64 --testmode
-```
-
-To run it with a Windows release build:
-
-``` shell
-start cntmology-windows-amd64.exe --testmode
-```
 
 ### Run with Docker
 

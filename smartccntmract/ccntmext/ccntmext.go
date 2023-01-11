@@ -41,6 +41,9 @@ type CcntmextRef interface {
 	NewExecuteEngine(code []byte, txtype types.TransactionType) (Engine, error)
 	CheckUseGas(gas uint64) bool
 	CheckExecStep() bool
+	GetCallerAddress() []common.Address
+	SetInternalErr()
+	IsInternalErr() bool
 }
 
 type Engine interface {
