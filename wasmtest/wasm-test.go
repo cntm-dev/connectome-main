@@ -209,7 +209,7 @@ func execTxCheckRes(tx *types.Transaction, testCase common3.TestCase, database *
 	checkExecResult(testCase, res, execEnv)
 
 	block, _ := makeBlock(acct, []*types.Transaction{tx})
-	err = database.AddBlock(block, common.UINT256_EMPTY)
+	err = database.AddBlock(block, nil, common.UINT256_EMPTY)
 	checkErr(err)
 }
 

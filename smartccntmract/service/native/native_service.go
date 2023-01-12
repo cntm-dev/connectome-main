@@ -59,6 +59,7 @@ type NativeService struct {
 	BlockHash     common.Uint256
 	CcntmextRef    ccntmext.CcntmextRef
 	PreExec       bool
+	CrossHashes   []common.Uint256
 }
 
 func (this *NativeService) Register(methodName string, handler Handler) {

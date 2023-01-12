@@ -61,6 +61,9 @@ func StartRPCServer() error {
 	rpc.HandleFunc("getunboundcntm", rpc.GetUnboundOng)
 	rpc.HandleFunc("getgrantcntm", rpc.GetGrantOng)
 
+	rpc.HandleFunc("getcrosschainmsg", rpc.GetCrossChainMsg)
+	rpc.HandleFunc("getcrossstatesproof", rpc.GetCrossStatesProof)
+
 	err := http.ListenAndServe(":"+strconv.Itoa(int(cfg.DefConfig.Rpc.HttpJsonPort)), nil)
 	if err != nil {
 		return fmt.Errorf("ListenAndServe error:%s", err)

@@ -20,7 +20,6 @@ package cntm
 
 import (
 	"fmt"
-
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	cstates "github.com/cntmio/cntmology/core/states"
@@ -55,7 +54,6 @@ func AddNotifications(native *native.NativeService, ccntmract common.Address, st
 			States:          []interface{}{TRANSFER_NAME, state.From.ToBase58(), state.To.ToBase58(), state.Value},
 		})
 }
-
 func GetToUInt64StorageItem(toBalance, value uint64) *cstates.StorageItem {
 	sink := common.NewZeroCopySink(nil)
 	sink.WriteUint64(toBalance + value)

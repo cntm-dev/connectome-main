@@ -37,7 +37,6 @@ import (
 	rpccommon "github.com/cntmio/cntmology/http/base/common"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
-	cstates "github.com/cntmio/cntmology/smartccntmract/states"
 	"io"
 	"math/rand"
 	"sort"
@@ -454,12 +453,12 @@ func SendRawTransactionData(txData string) (string, error) {
 	return hexHash, nil
 }
 
-func PrepareSendRawTransaction(txData string) (*cstates.PreExecResult, error) {
+func PrepareSendRawTransaction(txData string) (*rpccommon.PreExecuteResult, error) {
 	data, cntmErr := sendRpcRequest("sendrawtransaction", []interface{}{txData, 1})
 	if cntmErr != nil {
 		return nil, cntmErr.Error
 	}
-	preResult := &cstates.PreExecResult{}
+	preResult := &rpccommon.PreExecuteResult{}
 	err := json.Unmarshal(data, &preResult)
 	if err != nil {
 		return nil, fmt.Errorf("json.Unmarshal PreExecResult:%s error:%s", data, err)
@@ -555,6 +554,27 @@ func GetBlockData(hashOrHeight interface{}) ([]byte, error) {
 	return blockData, nil
 }
 
+func GetCrossChainMsg(height uint32) ([]byte, error) {
+	data, cntmErr := sendRpcRequest("getcrosschainmsg", []interface{}{height})
+	if cntmErr != nil {
+		switch cntmErr.ErrorCode {
+		case ERROR_INVALID_PARAMS:
+			return nil, fmt.Errorf("invalid block hash or block height:%d", height)
+		}
+		return nil, cntmErr.Error
+	}
+	hexStr := ""
+	err := json.Unmarshal(data, &hexStr)
+	if err != nil {
+		return nil, fmt.Errorf("json.Unmarshal error:%s", err)
+	}
+	crossChainMsg, err := hex.DecodeString(hexStr)
+	if err != nil {
+		return nil, fmt.Errorf("hex.DecodeString error:%s", err)
+	}
+	return crossChainMsg, nil
+}
+
 func GetBlockCount() (uint32, error) {
 	data, cntmErr := sendRpcRequest("getblockcount", []interface{}{})
 	if cntmErr != nil {
@@ -628,7 +648,7 @@ func PrepareDeployCcntmract(
 	cversion,
 	cauthor,
 	cemail,
-	cdesc string) (*cstates.PreExecResult, error) {
+	cdesc string) (*httpcom.PreExecuteResult, error) {
 	c, err := hex.DecodeString(code)
 	if err != nil {
 		return nil, fmt.Errorf("hex.DecodeString error:%s", err)
@@ -693,7 +713,7 @@ func InvokeSmartCcntmract(signer *account.Account, tx *types.MutableTransaction)
 func PrepareInvokeNeoVMCcntmract(
 	ccntmractAddress common.Address,
 	params []interface{},
-) (*cstates.PreExecResult, error) {
+) (*rpccommon.PreExecuteResult, error) {
 	mutable, err := httpcom.NewNeovmInvokeTransaction(0, 0, ccntmractAddress, params)
 	if err != nil {
 		return nil, err
@@ -708,7 +728,7 @@ func PrepareInvokeNeoVMCcntmract(
 	return PrepareSendRawTransaction(txData)
 }
 
-func PrepareInvokeCodeNeoVMCcntmract(code []byte) (*cstates.PreExecResult, error) {
+func PrepareInvokeCodeNeoVMCcntmract(code []byte) (*rpccommon.PreExecuteResult, error) {
 	mutable, err := httpcom.NewSmartCcntmractTransaction(0, 0, code)
 	if err != nil {
 		return nil, err
@@ -722,7 +742,7 @@ func PrepareInvokeCodeNeoVMCcntmract(code []byte) (*cstates.PreExecResult, error
 }
 
 //prepare invoke wasm
-func PrepareInvokeWasmVMCcntmract(ccntmractAddress common.Address, params []interface{}) (*cstates.PreExecResult, error) {
+func PrepareInvokeWasmVMCcntmract(ccntmractAddress common.Address, params []interface{}) (*rpccommon.PreExecuteResult, error) {
 	mutable, err := cutils.NewWasmVMInvokeTransaction(0, 0, ccntmractAddress, params)
 	if err != nil {
 		return nil, err
@@ -741,7 +761,7 @@ func PrepareInvokeNativeCcntmract(
 	ccntmractAddress common.Address,
 	version byte,
 	method string,
-	params []interface{}) (*cstates.PreExecResult, error) {
+	params []interface{}) (*httpcom.PreExecuteResult, error) {
 	mutable, err := httpcom.NewNativeInvokeTransaction(0, 0, ccntmractAddress, version, method, params)
 	if err != nil {
 		return nil, err

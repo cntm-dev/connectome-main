@@ -24,6 +24,9 @@ import (
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/auth"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/cross_chain/cross_chain_manager"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/cross_chain/header_sync"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/cross_chain/lock_proxy"
 	params "github.com/cntmio/cntmology/smartccntmract/service/native/global_params"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/governance"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
@@ -45,6 +48,9 @@ func init() {
 	cntmid.Init()
 	auth.Init()
 	governance.InitGovernance()
+	cross_chain_manager.InitCrossChain()
+	header_sync.InitHeaderSync()
+	lock_proxy.InitLockProxy()
 }
 
 func InitBytes(addr common.Address, method string) []byte {

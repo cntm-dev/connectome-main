@@ -27,7 +27,6 @@ import (
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/core/payload"
 	httpcom "github.com/cntmio/cntmology/http/base/common"
-	"github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/urfave/cli"
 	"io/ioutil"
 	"strings"
@@ -309,7 +308,7 @@ func invokeCcntmract(ctx *cli.Ccntmext) error {
 	PrintInfoMsg("Invoke:%x Params:%s", ccntmractAddr[:], paramData)
 	if ctx.IsSet(utils.GetFlagName(utils.CcntmractPrepareInvokeFlag)) {
 
-		var preResult *states.PreExecResult
+		var preResult *httpcom.PreExecuteResult
 		if vmtype == payload.NEOVM_TYPE {
 			preResult, err = utils.PrepareInvokeNeoVMCcntmract(ccntmractAddr, params)
 

@@ -118,6 +118,10 @@ func (this *SmartCcntmract) CheckUseGas(gas uint64) bool {
 	return true
 }
 
+func (this *SmartCcntmract) PutCrossStateHashes(hashes []common.Uint256) {
+	this.CrossHashes = append(this.CrossHashes, hashes...)
+}
+
 func (this *SmartCcntmract) checkCcntmexts() bool {
 	if len(this.Ccntmexts) > MAX_EXECUTE_ENGINE {
 		return false

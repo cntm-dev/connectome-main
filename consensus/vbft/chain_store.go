@@ -65,7 +65,19 @@ func (self *ChainStore) getExecMerkleRoot(blkNum uint32) (common.Uint256, error)
 	} else {
 		return merkleRoot, nil
 	}
+}
 
+func (self *ChainStore) getCrossStatesRoot(blkNum uint32) (common.Uint256, error) {
+	if blk, present := self.pendingBlocks[blkNum]; blk != nil && present {
+		return blk.execResult.CrossStatesRoot, nil
+	}
+	statesRoot, err := self.db.GetCrossStatesRoot(blkNum)
+	if err != nil {
+		log.Infof("getCrossStatesRoot blockNum:%d, error :%s", blkNum, err)
+		return common.UINT256_EMPTY, fmt.Errorf("getCrossStatesRoot blockNum:%d, error :%s", blkNum, err)
+	} else {
+		return statesRoot, nil
+	}
 }
 
 func (self *ChainStore) getExecWriteSet(blkNum uint32) *overlaydb.MemDB {
@@ -116,6 +128,7 @@ func (self *ChainStore) AddBlock(block *Block) error {
 		log.Errorf("chainstore AddBlock GetBlockExecResult: %s", err)
 		return fmt.Errorf("chainstore AddBlock GetBlockExecResult: %s", err)
 	}
+	log.Debugf("execResult:%+v, AddBlock execResult height:%d \n", execResult, block.Block.Header.Height)
 	log.Debugf("chainstore addblock pendingBlocks height:%d,block height:%d", blkNum, block.getBlockNum())
 	self.pendingBlocks[blkNum] = &PendingBlock{block: block, execResult: &execResult, hasSubmitted: false}
 
@@ -134,12 +147,11 @@ func (self *ChainStore) submitBlock(blkNum uint32) error {
 		return nil
 	}
 	if submitBlk, present := self.pendingBlocks[blkNum]; submitBlk != nil && submitBlk.hasSubmitted == false && present {
-		err := self.db.SubmitBlock(submitBlk.block.Block, *submitBlk.execResult)
+		err := self.db.SubmitBlock(submitBlk.block.Block, submitBlk.block.CrossChainMsg, *submitBlk.execResult)
 		if err != nil {
 			return fmt.Errorf("ledger add submitBlk (%d, %d, %d) failed: %s", blkNum, self.GetChainedBlockNum(), self.db.GetCurrentBlockHeight(), err)
 		}
 		if _, present := self.pendingBlocks[blkNum-1]; present {
-			log.Infof("chainstore submitBlock delete pendingBlocks height:%d", blkNum-1)
 			delete(self.pendingBlocks, blkNum-1)
 		}
 		submitBlk.hasSubmitted = true
@@ -151,19 +163,25 @@ func (self *ChainStore) getBlock(blockNum uint32) (*Block, error) {
 	if blk, present := self.pendingBlocks[blockNum]; present {
 		return blk.block, nil
 	}
-	block, err := self.db.GetBlockByHeight(uint32(blockNum))
+	block, err := self.db.GetBlockByHeight(blockNum)
 	if err != nil {
 		return nil, err
 	}
 	prevMerkleRoot := common.Uint256{}
+	var crossChainMsg *types.CrossChainMsg
 	if blockNum > 1 {
 		prevMerkleRoot, err = self.db.GetStateMerkleRoot(blockNum - 1)
 		if err != nil {
 			log.Errorf("GetStateMerkleRoot blockNum:%d, error :%s", blockNum, err)
 			return nil, fmt.Errorf("GetStateMerkleRoot blockNum:%d, error :%s", blockNum, err)
 		}
+		crossChainMsg, err = self.db.GetCrossChainMsg(blockNum - 1)
+		if err != nil {
+			log.Errorf("GetCrossChainMsg blockNum:%d, error :%s", blockNum, err)
+			return nil, fmt.Errorf("v blockNum:%d, error :%s", blockNum, err)
+		}
 	}
-	return initVbftBlock(block, prevMerkleRoot)
+	return initVbftBlock(block, crossChainMsg, prevMerkleRoot)
 }
 
 func (self *ChainStore) GetVbftConfigInfo() (*config.VBFTConfig, error) {

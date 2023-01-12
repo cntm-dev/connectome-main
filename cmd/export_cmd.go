@@ -21,12 +21,14 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"github.com/gosuri/uiprogress"
-	"github.com/cntmio/cntmology/cmd/utils"
-	"github.com/cntmio/cntmology/common/serialization"
-	"github.com/urfave/cli"
 	"os"
 	"time"
+
+	"github.com/gosuri/uiprogress"
+	"github.com/urfave/cli"
+
+	"github.com/cntmio/cntmology/cmd/utils"
+	"github.com/cntmio/cntmology/common/serialization"
 )
 
 var ExportCommand = cli.Command{
@@ -124,6 +126,31 @@ func exportBlocks(ctx *cli.Ccntmext) error {
 		_, err = fWriter.Write(data)
 		if err != nil {
 			return fmt.Errorf("write block data height:%d error:%s", i, err)
+		}
+
+		//save cross chain msg to file
+		crossChainMsg, err := utils.GetCrossChainMsg(i)
+		if err != nil {
+			return fmt.Errorf("GetCrossChainMsg:%d error:%s", i, err)
+		}
+		if crossChainMsg == nil {
+			err = serialization.WriteUint32(fWriter, 0)
+			if err != nil {
+				return fmt.Errorf("write block data height:%d len:%d error:%s", i, uint32(len(data)), err)
+			}
+		} else {
+			data, err := utils.CompressBlockData(crossChainMsg, metadata.CompressType)
+			if err != nil {
+				return fmt.Errorf("CompressBlockData height:%d error:%s", i, err)
+			}
+			err = serialization.WriteUint32(fWriter, uint32(len(data)))
+			if err != nil {
+				return fmt.Errorf("write block data height:%d len:%d error:%s", i, uint32(len(data)), err)
+			}
+			_, err = fWriter.Write(data)
+			if err != nil {
+				return fmt.Errorf("write block data height:%d error:%s", i, err)
+			}
 		}
 		if sleepTime > 0 {
 			time.Sleep(sleepTime)

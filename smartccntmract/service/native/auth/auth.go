@@ -26,7 +26,6 @@ import (
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 )
@@ -646,11 +645,7 @@ func verifySig(native *native.NativeService, cntmID []byte, keyNo uint64) (bool,
 	if err != nil {
 		return false, err
 	}
-	valid, ok := ret.([]byte)
-	if !ok {
-		return false, errors.NewErr("verifySignature return non-bool value")
-	}
-	if bytes.Compare(valid, utils.BYTE_TRUE) == 0 {
+	if bytes.Compare(ret, utils.BYTE_TRUE) == 0 {
 		return true, nil
 	} else {
 		return false, nil
