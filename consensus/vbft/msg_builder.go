@@ -26,7 +26,7 @@ import (
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/consensus/vbft/config"
+	vconfig "github.com/cntmio/cntmology/consensus/vbft/config"
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/signature"
 	"github.com/cntmio/cntmology/core/types"
@@ -226,7 +226,7 @@ func (self *Server) constructCrossChainMsg(blkNum uint32) (*types.CrossChainMsg,
 	if err != nil {
 		return nil, err
 	}
-	log.Errorf("submitBlock height:%d statesroot:%+v", blkNum, root)
+	log.Debugf("submitBlock height:%d statesroot:%+v", blkNum, root)
 	if root == common.UINT256_EMPTY {
 		return nil, nil
 	}
