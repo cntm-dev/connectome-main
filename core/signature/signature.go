@@ -20,6 +20,7 @@ package signature
 
 import (
 	"errors"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	s "github.com/cntmio/cntmology-crypto/signature"
 )

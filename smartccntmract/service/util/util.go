@@ -19,8 +19,8 @@ package util
 
 import (
 	"bytes"
-
 	"errors"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/utils"
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"

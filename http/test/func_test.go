@@ -21,14 +21,15 @@ package test
 import (
 	"bytes"
 	"fmt"
+	"math/big"
+	"testing"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/merkle"
 	"github.com/cntmio/cntmology/vm/neovm"
 	"github.com/stretchr/testify/assert"
-	"math/big"
-	"testing"
 )
 
 func TestMerkleVerifier(t *testing.T) {

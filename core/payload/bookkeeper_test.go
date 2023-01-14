@@ -19,9 +19,9 @@
 package payload
 
 import (
+	"encoding/hex"
 	"testing"
 
-	"encoding/hex"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/stretchr/testify/assert"

@@ -23,7 +23,7 @@ import (
 	"github.com/cntmio/cntmology/common/log"
 	msgCommon "github.com/cntmio/cntmology/p2pserver/common"
 	"github.com/cntmio/cntmology/p2pserver/message/types"
-	"github.com/cntmio/cntmology/p2pserver/net/protocol"
+	p2p "github.com/cntmio/cntmology/p2pserver/net/protocol"
 )
 
 // MessageHandler defines the unified api for each net message

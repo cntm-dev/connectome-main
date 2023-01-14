@@ -20,6 +20,8 @@ package test
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
@@ -28,7 +30,6 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract"
 	svm "github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	vtypes "github.com/cntmio/cntmology/vm/neovm/types"
-	"testing"
 )
 
 func TestVerifySig(t *testing.T) {

@@ -23,16 +23,16 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"github.com/cntmio/cntmology-crypto/keypair"
-	s "github.com/cntmio/cntmology-crypto/signature"
-	"golang.org/x/crypto/ripemd160"
 	"math"
 	"math/big"
 	"testing"
 
+	"github.com/cntmio/cntmology-crypto/keypair"
+	s "github.com/cntmio/cntmology-crypto/signature"
 	"github.com/cntmio/cntmology/vm/neovm/interfaces"
 	"github.com/cntmio/cntmology/vm/neovm/types"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/ripemd160"
 )
 
 type Value interface{}

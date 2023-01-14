@@ -19,8 +19,9 @@
 package neovm
 
 import (
-	"github.com/cntmio/cntmology/vm/neovm/types"
 	"testing"
+
+	"github.com/cntmio/cntmology/vm/neovm/types"
 )
 
 func BenchmarkNewExecutor(b *testing.B) {

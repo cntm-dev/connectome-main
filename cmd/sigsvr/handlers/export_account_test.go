@@ -19,10 +19,11 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/cntmio/cntmology/account"
-	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
 	"os"
 	"testing"
+
+	"github.com/cntmio/cntmology/account"
+	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
 )
 
 func TestExportWallet(t *testing.T) {

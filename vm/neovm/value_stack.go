@@ -20,6 +20,7 @@ package neovm
 
 import (
 	"fmt"
+
 	"github.com/cntmio/cntmology/vm/neovm/errors"
 	"github.com/cntmio/cntmology/vm/neovm/types"
 )

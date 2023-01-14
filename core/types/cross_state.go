@@ -20,6 +20,7 @@ package types
 import (
 	"crypto/sha256"
 	"fmt"
+
 	"github.com/cntmio/cntmology/common"
 )
 

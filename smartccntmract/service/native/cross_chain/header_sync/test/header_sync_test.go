@@ -21,10 +21,12 @@ package test
 import (
 	"encoding/hex"
 	"encoding/json"
+	"testing"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/consensus/vbft/config"
+	vconfig "github.com/cntmio/cntmology/consensus/vbft/config"
 	"github.com/cntmio/cntmology/core/signature"
 	"github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/core/store/leveldbstore"
@@ -38,7 +40,6 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var (

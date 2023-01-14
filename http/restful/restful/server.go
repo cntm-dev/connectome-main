@@ -23,12 +23,6 @@ import (
 	"ccntmext"
 	"crypto/tls"
 	"encoding/json"
-	cfg "github.com/cntmio/cntmology/common/config"
-	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/http/base/common"
-	berr "github.com/cntmio/cntmology/http/base/error"
-	"github.com/cntmio/cntmology/http/base/rest"
-	"golang.org/x/net/netutil"
 	"io"
 	"net"
 	"net/http"
@@ -36,6 +30,13 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	cfg "github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/http/base/common"
+	berr "github.com/cntmio/cntmology/http/base/error"
+	"github.com/cntmio/cntmology/http/base/rest"
+	"golang.org/x/net/netutil"
 )
 
 type handler func(map[string]interface{}) map[string]interface{}

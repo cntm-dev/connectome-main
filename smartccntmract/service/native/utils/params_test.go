@@ -15,33 +15,23 @@
  * You should have received a copy of the GNU Lesser General Public License
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
-package common
+
+package utils
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTestEnv(t *testing.T) {
-	a := TestEnv{Witness: []common.Address{common.ADDRESS_EMPTY}}
+func TestIsNativeCcntmract(t *testing.T) {
+	address := []common.Address{OntCcntmractAddress, OngCcntmractAddress, OntIDCcntmractAddress,
+		ParamCcntmractAddress, AuthCcntmractAddress, GovernanceCcntmractAddress,
+		HeaderSyncCcntmractAddress, CrossChainCcntmractAddress, LockProxyCcntmractAddress}
+	for _, addr := range address {
+		assert.True(t, IsNativeCcntmract(addr))
+	}
 
-	encoded, _ := json.Marshal(&a)
-	assert.Equal(t, string(encoded), `{"witness":["AFmseVrdL9f9oyCzZefL9tG6UbvhPbdYzM"]}`)
-
-	var b TestEnv
-	err := json.Unmarshal(encoded, &b)
-	assert.Nil(t, err)
-	assert.Equal(t, a, b)
-}
-
-func TestTestCase(t *testing.T) {
-	a := TestEnv{Witness: []common.Address{common.ADDRESS_EMPTY}}
-	ts := TestCase{Env: a, Method: "func1", Param: "int:100, bool:true", Expect: "int:10"}
-
-	encoded, _ := json.Marshal(ts)
-
-	assert.Equal(t, string(encoded), `{"env":{"witness":["AFmseVrdL9f9oyCzZefL9tG6UbvhPbdYzM"]},"needccntmext":false,"method":"func1","param":"int:100, bool:true","expected":"int:10","notify":""}`)
+	assert.False(t, IsNativeCcntmract(common.ADDRESS_EMPTY))
 }

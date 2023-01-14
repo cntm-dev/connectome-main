@@ -22,6 +22,8 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"math/big"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/core/genesis"
@@ -32,7 +34,6 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/global_params"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
-	"math/big"
 )
 
 func InitLockProxy() {

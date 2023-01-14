@@ -23,6 +23,10 @@ package proc
 import (
 	"encoding/hex"
 	"fmt"
+	"sort"
+	"strconv"
+	"sync"
+
 	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
@@ -35,9 +39,6 @@ import (
 	nutils "github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	tc "github.com/cntmio/cntmology/txnpool/common"
 	"github.com/cntmio/cntmology/validator/types"
-	"sort"
-	"strconv"
-	"sync"
 )
 
 type txStats struct {

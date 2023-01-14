@@ -21,13 +21,14 @@ package program
 import (
 	"errors"
 	"fmt"
+	"io"
+	"math"
+	"math/big"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/vm/neovm"
-	"io"
-	"math"
-	"math/big"
 )
 
 type ProgramBuilder struct {

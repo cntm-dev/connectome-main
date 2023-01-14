@@ -18,8 +18,9 @@
 package handlers
 
 import (
-	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
 	"testing"
+
+	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
 )
 
 func TestCreateAccount(t *testing.T) {

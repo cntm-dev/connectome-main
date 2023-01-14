@@ -20,6 +20,7 @@ package cntm
 
 import (
 	"fmt"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	cstates "github.com/cntmio/cntmology/core/states"

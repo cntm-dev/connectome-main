@@ -20,11 +20,12 @@ package account
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	s "github.com/cntmio/cntmology-crypto/signature"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"testing"
 )
 
 var (

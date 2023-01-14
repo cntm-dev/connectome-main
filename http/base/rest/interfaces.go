@@ -19,6 +19,8 @@
 package rest
 
 import (
+	"strconv"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
@@ -29,7 +31,6 @@ import (
 	bcomn "github.com/cntmio/cntmology/http/base/common"
 	berr "github.com/cntmio/cntmology/http/base/error"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
-	"strconv"
 )
 
 const TLS_PORT int = 443

@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/cntmio/cntmology-crypto/keypair"
-	"github.com/cntmio/cntmology/consensus/vbft/config"
+	vconfig "github.com/cntmio/cntmology/consensus/vbft/config"
 )
 
 type Peer struct {

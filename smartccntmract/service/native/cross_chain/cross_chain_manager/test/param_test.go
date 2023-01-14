@@ -19,10 +19,11 @@
 package test
 
 import (
+	"testing"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cross_chain/cross_chain_manager"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestCreateCrossChainTxParam(t *testing.T) {

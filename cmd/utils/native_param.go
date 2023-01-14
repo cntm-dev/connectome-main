@@ -22,16 +22,17 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"math"
+	"math/big"
+	"strconv"
+	"strings"
+
 	"github.com/cntmio/cntmology/cmd/abi"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/types"
 	httpcom "github.com/cntmio/cntmology/http/base/common"
 	svrneovm "github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	"github.com/cntmio/cntmology/vm/neovm"
-	"math"
-	"math/big"
-	"strconv"
-	"strings"
 )
 
 func NewNativeInvokeTransaction(gasPrice, gasLimit uint64, ccntmractAddr common.Address, version byte,

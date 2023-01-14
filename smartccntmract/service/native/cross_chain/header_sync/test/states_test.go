@@ -19,10 +19,11 @@
 package test
 
 import (
+	"testing"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cross_chain/header_sync"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestPeer(t *testing.T) {

@@ -21,11 +21,12 @@ package utils
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/core/payload"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/payload"
 )
 
 const (

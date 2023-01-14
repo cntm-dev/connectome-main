@@ -19,13 +19,13 @@
 package types
 
 import (
+	"math"
 	"math/big"
 
 	"github.com/JohnCGriffin/overflow"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/vm/neovm/constants"
 	"github.com/cntmio/cntmology/vm/neovm/errors"
-	"math"
 )
 
 type IntValue struct {

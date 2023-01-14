@@ -20,6 +20,7 @@ package types
 
 import (
 	"errors"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/payload"
 )

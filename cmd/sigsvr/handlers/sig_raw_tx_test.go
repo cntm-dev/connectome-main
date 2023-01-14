@@ -21,6 +21,9 @@ package handlers
 import (
 	"encoding/hex"
 	"encoding/json"
+	"os"
+	"testing"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology-crypto/signature"
 	"github.com/cntmio/cntmology/account"
@@ -30,8 +33,6 @@ import (
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"testing"
 )
 
 var (

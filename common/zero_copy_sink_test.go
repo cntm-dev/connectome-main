@@ -18,9 +18,9 @@
 package common
 
 import (
+	"bytes"
 	"testing"
 
-	"bytes"
 	ser "github.com/cntmio/cntmology/common/serialization"
 	"github.com/stretchr/testify/assert"
 )

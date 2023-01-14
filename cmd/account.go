@@ -21,13 +21,14 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"strings"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	s "github.com/cntmio/cntmology-crypto/signature"
 	"github.com/cntmio/cntmology/cmd/common"
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/urfave/cli"
-	"strings"
 )
 
 //map info, to get some information easily

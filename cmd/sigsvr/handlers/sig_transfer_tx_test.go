@@ -20,9 +20,10 @@ package handlers
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/cntmio/cntmology/account"
 	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
-	"testing"
 )
 
 func TestSigTransferTransaction(t *testing.T) {

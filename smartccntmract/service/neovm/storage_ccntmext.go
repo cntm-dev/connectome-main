@@ -20,6 +20,7 @@ package neovm
 
 import (
 	"fmt"
+
 	"github.com/cntmio/cntmology/common"
 	vm "github.com/cntmio/cntmology/vm/neovm"
 )

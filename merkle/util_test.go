@@ -16,23 +16,37 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package overlaydb
+package merkle
 
-import (
-	"testing"
+import "testing"
 
-	"github.com/stretchr/testify/assert"
-)
+func TestBitOp(t *testing.T) {
+	base := uint32(100001)
+	for i := 0; i < 1000; i++ {
+		n := base + uint32(i)
+		if countBit(n) != countBitOld(n) {
+			t.Fatal("countBit check fail", n)
+		}
+		if highBit(n) != highBitOld(n) {
+			t.Fatal("highBit check fail", n)
+		}
+	}
+}
 
-func TestIter(t *testing.T) {
-	db := NewMemDB(0, 0)
-	db.Put([]byte("aaa"), []byte("bbb"))
-	iter := db.NewIterator(nil)
-	assert.Equal(t, iter.First(), true)
-	assert.Equal(t, iter.Last(), true)
-	db.Delete([]byte("aaa"))
-	assert.Equal(t, iter.First(), true)
-	assert.Equal(t, len(iter.Value()), 0)
-	assert.Equal(t, iter.Last(), true)
-	assert.Equal(t, len(iter.Value()), 0)
+func countBitOld(num uint32) uint {
+	var count uint
+	for num != 0 {
+		num &= num - 1
+		count += 1
+	}
+	return count
+}
+
+func highBitOld(num uint32) uint {
+	var hiBit uint
+	for num != 0 {
+		num >>= 1
+		hiBit += 1
+	}
+	return hiBit
 }

@@ -20,6 +20,7 @@ package header_sync
 
 import (
 	"fmt"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 )

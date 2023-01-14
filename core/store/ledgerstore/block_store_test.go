@@ -21,6 +21,9 @@ package ledgerstore
 import (
 	"crypto/sha256"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
@@ -30,8 +33,6 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	nutils "github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestExtractHeaderHeight(t *testing.T) {

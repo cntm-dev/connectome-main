@@ -19,11 +19,12 @@
 package test
 
 import (
+	"os"
+	"testing"
+
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract"
 	"github.com/cntmio/cntmology/vm/neovm"
-	"os"
-	"testing"
 )
 
 func TestPackCrash(t *testing.T) {

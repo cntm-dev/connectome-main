@@ -18,8 +18,9 @@
 package states
 
 import (
-	"github.com/cntmio/cntmology/common"
 	"testing"
+
+	"github.com/cntmio/cntmology/common"
 )
 
 func TestStateBase_Serialize_Deserialize(t *testing.T) {

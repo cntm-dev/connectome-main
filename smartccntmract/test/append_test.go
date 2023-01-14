@@ -19,12 +19,13 @@
 package test
 
 import (
+	"testing"
+
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract"
 	"github.com/cntmio/cntmology/vm/neovm"
 	"github.com/cntmio/cntmology/vm/neovm/errors"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestAppendOverFlow(t *testing.T) {

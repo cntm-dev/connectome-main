@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
+	"io"
 	"reflect"
 
 	"github.com/cntmio/cntmology/common"
@@ -37,7 +38,6 @@ import (
 	neotypes "github.com/cntmio/cntmology/vm/neovm/types"
 	"github.com/cntmio/wagon/exec"
 	"github.com/cntmio/wagon/wasm"
-	"io"
 )
 
 type CcntmractType byte

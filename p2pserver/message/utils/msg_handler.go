@@ -35,9 +35,9 @@ import (
 	"github.com/cntmio/cntmology/core/types"
 	actor "github.com/cntmio/cntmology/p2pserver/actor/req"
 	msgCommon "github.com/cntmio/cntmology/p2pserver/common"
-	"github.com/cntmio/cntmology/p2pserver/message/msg_pack"
+	msgpack "github.com/cntmio/cntmology/p2pserver/message/msg_pack"
 	msgTypes "github.com/cntmio/cntmology/p2pserver/message/types"
-	"github.com/cntmio/cntmology/p2pserver/net/protocol"
+	p2p "github.com/cntmio/cntmology/p2pserver/net/protocol"
 )
 
 //respCache cache for some response data

@@ -19,9 +19,10 @@
 package states
 
 import (
+	"io"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
-	"io"
 )
 
 type VoteState struct {

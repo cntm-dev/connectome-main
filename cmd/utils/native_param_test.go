@@ -21,10 +21,11 @@ package utils
 import (
 	"bytes"
 	"encoding/hex"
+	"testing"
+
 	"github.com/cntmio/cntmology/cmd/abi"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/vm/neovm"
-	"testing"
 )
 
 func TestParseNativeParam(t *testing.T) {

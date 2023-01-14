@@ -38,10 +38,10 @@ import (
 	ct "github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/events"
 	msgCommon "github.com/cntmio/cntmology/p2pserver/common"
-	"github.com/cntmio/cntmology/p2pserver/message/msg_pack"
+	msgpack "github.com/cntmio/cntmology/p2pserver/message/msg_pack"
 	"github.com/cntmio/cntmology/p2pserver/message/types"
 	"github.com/cntmio/cntmology/p2pserver/net/netserver"
-	"github.com/cntmio/cntmology/p2pserver/net/protocol"
+	p2p "github.com/cntmio/cntmology/p2pserver/net/protocol"
 	"github.com/cntmio/cntmology/p2pserver/peer"
 	"github.com/stretchr/testify/assert"
 )

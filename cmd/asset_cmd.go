@@ -20,14 +20,15 @@ package cmd
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/cntmio/cntmology/account"
 	cmdcom "github.com/cntmio/cntmology/cmd/common"
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common/config"
 	nutils "github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/urfave/cli"
-	"strconv"
-	"strings"
 )
 
 var AssetCommand = cli.Command{

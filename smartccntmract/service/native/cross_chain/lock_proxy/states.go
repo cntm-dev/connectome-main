@@ -20,10 +20,11 @@ package lock_proxy
 
 import (
 	"fmt"
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"io"
 	"math/big"
+
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 )
 
 // Args for lock and unlock

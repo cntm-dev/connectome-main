@@ -21,6 +21,9 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"strings"
+
 	cmdcom "github.com/cntmio/cntmology/cmd/common"
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
@@ -28,8 +31,6 @@ import (
 	"github.com/cntmio/cntmology/core/payload"
 	httpcom "github.com/cntmio/cntmology/http/base/common"
 	"github.com/urfave/cli"
-	"io/ioutil"
-	"strings"
 )
 
 var (

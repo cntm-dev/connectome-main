@@ -20,12 +20,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology-crypto/signature"
 	"github.com/cntmio/cntmology/cmd/abi"
 	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
 	nutils "github.com/cntmio/cntmology/smartccntmract/service/native/utils"
-	"testing"
 )
 
 func TestSigNativeInvokeTx(t *testing.T) {

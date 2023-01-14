@@ -21,11 +21,12 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cntmio/cntmology/common/config"
-	rpcerr "github.com/cntmio/cntmology/http/base/error"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/cntmio/cntmology/common/config"
+	rpcerr "github.com/cntmio/cntmology/http/base/error"
 )
 
 //JsonRpc version

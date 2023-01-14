@@ -20,6 +20,8 @@ package cmd
 import (
 	"encoding/hex"
 	"fmt"
+	"strings"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	cmdcom "github.com/cntmio/cntmology/cmd/common"
 	"github.com/cntmio/cntmology/cmd/utils"
@@ -27,7 +29,6 @@ import (
 	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/urfave/cli"
-	"strings"
 )
 
 var MultiSigAddrCommand = cli.Command{

@@ -20,6 +20,8 @@ package handlers
 import (
 	"encoding/hex"
 	"encoding/json"
+	"testing"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology-crypto/signature"
 	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
@@ -27,7 +29,6 @@ import (
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestSigMutilRawTransaction(t *testing.T) {

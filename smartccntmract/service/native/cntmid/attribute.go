@@ -20,10 +20,11 @@ package cntmid
 import (
 	"errors"
 	"fmt"
+	"io"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
-	"io"
 )
 
 const (

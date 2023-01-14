@@ -19,11 +19,12 @@
 package test
 
 import (
+	"os"
+	"testing"
+
 	"github.com/cntmio/cntmology/core/types"
 	. "github.com/cntmio/cntmology/smartccntmract"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"testing"
 )
 
 func TestInfiniteLoopCrash(t *testing.T) {

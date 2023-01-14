@@ -20,13 +20,14 @@ package ledgerstore
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/genesis"
-	"os"
-	"testing"
 )
 
 var testBlockStore *BlockStore

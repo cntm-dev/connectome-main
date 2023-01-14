@@ -22,15 +22,16 @@ package rpc
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/http/base/common"
-	berr "github.com/cntmio/cntmology/http/base/error"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/http/base/common"
+	berr "github.com/cntmio/cntmology/http/base/error"
 )
 
 func init() {

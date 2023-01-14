@@ -19,15 +19,15 @@
 package cross_chain_manager
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/cross_chain/header_sync"
 	"math/big"
 
-	"bytes"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 	ccom "github.com/cntmio/cntmology/smartccntmract/service/native/cross_chain/common"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/cross_chain/header_sync"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/cntmio/cntmology/vm/neovm/types"
 )

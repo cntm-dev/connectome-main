@@ -19,11 +19,12 @@
 package test
 
 import (
+	"testing"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestBuildParamToNative(t *testing.T) {

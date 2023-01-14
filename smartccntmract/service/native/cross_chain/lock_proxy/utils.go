@@ -21,6 +21,8 @@ package lock_proxy
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/smartccntmract/event"
@@ -28,7 +30,6 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cross_chain/cross_chain_manager"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
-	"math/big"
 )
 
 const (

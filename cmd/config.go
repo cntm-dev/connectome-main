@@ -20,6 +20,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"

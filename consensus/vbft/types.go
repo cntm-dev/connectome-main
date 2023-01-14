@@ -24,7 +24,7 @@ import (
 	"io"
 
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/consensus/vbft/config"
+	vconfig "github.com/cntmio/cntmology/consensus/vbft/config"
 	"github.com/cntmio/cntmology/core/types"
 )
 

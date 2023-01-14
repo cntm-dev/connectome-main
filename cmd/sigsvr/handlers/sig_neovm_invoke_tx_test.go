@@ -20,9 +20,10 @@ package handlers
 
 import (
 	"encoding/json"
+	"testing"
+
 	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
 	"github.com/cntmio/cntmology/cmd/utils"
-	"testing"
 )
 
 func TestSigNeoVMInvokeTx(t *testing.T) {

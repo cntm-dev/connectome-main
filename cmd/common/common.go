@@ -20,13 +20,14 @@ package common
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/password"
 	"github.com/urfave/cli"
-	"strconv"
 )
 
 func GetPasswd(ctx *cli.Ccntmext) ([]byte, error) {

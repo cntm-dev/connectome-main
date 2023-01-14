@@ -38,7 +38,7 @@ import (
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/p2pserver/common"
-	"github.com/cntmio/cntmology/p2pserver/message/msg_pack"
+	msgpack "github.com/cntmio/cntmology/p2pserver/message/msg_pack"
 	msgtypes "github.com/cntmio/cntmology/p2pserver/message/types"
 	"github.com/cntmio/cntmology/p2pserver/message/utils"
 	"github.com/cntmio/cntmology/p2pserver/net/netserver"

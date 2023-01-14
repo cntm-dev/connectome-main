@@ -19,8 +19,9 @@ package handlers
 
 import (
 	"encoding/json"
-	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
 	"testing"
+
+	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
 )
 
 var testNeovmAbi = `{

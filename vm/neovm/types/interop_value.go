@@ -20,6 +20,7 @@ package types
 
 import (
 	"bytes"
+
 	"github.com/cntmio/cntmology/vm/neovm/interfaces"
 )
 

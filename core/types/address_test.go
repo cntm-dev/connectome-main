@@ -18,9 +18,10 @@
 package types
 
 import (
+	"testing"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestAddressFromBookkeepers(t *testing.T) {

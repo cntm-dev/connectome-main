@@ -21,10 +21,11 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/log"
 	"math/big"
 	"reflect"
+
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/log"
 )
 
 func DeserializeNotify(input []byte) interface{} {

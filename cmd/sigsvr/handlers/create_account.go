@@ -19,6 +19,7 @@ package handlers
 
 import (
 	"encoding/json"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	s "github.com/cntmio/cntmology-crypto/signature"
 	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"

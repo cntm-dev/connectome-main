@@ -20,6 +20,7 @@ package types
 
 import (
 	"fmt"
+
 	"github.com/cntmio/cntmology/vm/neovm/constants"
 	"github.com/cntmio/cntmology/vm/neovm/errors"
 )

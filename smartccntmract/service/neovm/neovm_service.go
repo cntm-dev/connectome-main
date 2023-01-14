@@ -21,6 +21,8 @@ package neovm
 import (
 	"bytes"
 	"fmt"
+	"io"
+
 	scommon "github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/store"
@@ -31,7 +33,6 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/storage"
 	vm "github.com/cntmio/cntmology/vm/neovm"
 	vmty "github.com/cntmio/cntmology/vm/neovm/types"
-	"io"
 )
 
 var (

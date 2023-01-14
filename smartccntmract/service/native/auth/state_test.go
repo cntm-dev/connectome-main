@@ -20,8 +20,9 @@ package auth
 
 import (
 	"bytes"
-	"github.com/cntmio/cntmology/common"
 	"testing"
+
+	"github.com/cntmio/cntmology/common"
 )
 
 func TestSerRoleFuncs(t *testing.T) {

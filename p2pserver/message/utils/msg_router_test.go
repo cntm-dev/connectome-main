@@ -25,7 +25,7 @@ import (
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/p2pserver/message/types"
 	"github.com/cntmio/cntmology/p2pserver/net/netserver"
-	"github.com/cntmio/cntmology/p2pserver/net/protocol"
+	p2p "github.com/cntmio/cntmology/p2pserver/net/protocol"
 	"github.com/stretchr/testify/assert"
 )
 

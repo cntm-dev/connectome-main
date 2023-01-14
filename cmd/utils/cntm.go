@@ -23,6 +23,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
+	"math/rand"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	sig "github.com/cntmio/cntmology-crypto/signature"
 	"github.com/cntmio/cntmology/account"
@@ -37,12 +44,6 @@ import (
 	rpccommon "github.com/cntmio/cntmology/http/base/common"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
-	"io"
-	"math/rand"
-	"sort"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (

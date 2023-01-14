@@ -19,8 +19,9 @@
 package states
 
 import (
-	"github.com/cntmio/cntmology/common"
 	"io"
+
+	"github.com/cntmio/cntmology/common"
 )
 
 type StorageKey struct {

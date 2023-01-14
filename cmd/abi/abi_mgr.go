@@ -21,9 +21,10 @@ package abi
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cntmio/cntmology/common/log"
 	"io/ioutil"
 	"strings"
+
+	"github.com/cntmio/cntmology/common/log"
 )
 
 var DefAbiMgr = NewAbiMgr()

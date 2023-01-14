@@ -29,7 +29,7 @@ import (
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/types"
 	p2pComm "github.com/cntmio/cntmology/p2pserver/common"
-	"github.com/cntmio/cntmology/p2pserver/message/msg_pack"
+	msgpack "github.com/cntmio/cntmology/p2pserver/message/msg_pack"
 	"github.com/cntmio/cntmology/p2pserver/peer"
 )
 

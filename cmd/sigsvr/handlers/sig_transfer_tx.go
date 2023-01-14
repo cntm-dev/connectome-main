@@ -21,11 +21,12 @@ package handlers
 import (
 	"encoding/hex"
 	"encoding/json"
+	"strconv"
+
 	clisvrcom "github.com/cntmio/cntmology/cmd/sigsvr/common"
 	cliutil "github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
-	"strconv"
 )
 
 type SigTransferTransactionReq struct {

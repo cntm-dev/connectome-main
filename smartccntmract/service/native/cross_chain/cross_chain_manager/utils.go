@@ -21,8 +21,8 @@ package cross_chain_manager
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/cntmio/cntmology/common"
 
+	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	cstates "github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/merkle"

@@ -24,9 +24,9 @@ import (
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/consensus/vbft/config"
+	vconfig "github.com/cntmio/cntmology/consensus/vbft/config"
 	"github.com/cntmio/cntmology/core/signature"
-	"github.com/cntmio/cntmology/p2pserver/message/msg_pack"
+	msgpack "github.com/cntmio/cntmology/p2pserver/message/msg_pack"
 	p2pmsg "github.com/cntmio/cntmology/p2pserver/message/types"
 )
 

@@ -22,13 +22,13 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/serialization"
 	scom "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/core/store/leveldbstore"
 	"github.com/cntmio/cntmology/core/types"
-	"io"
 )
 
 //Block store save the data of block & transaction

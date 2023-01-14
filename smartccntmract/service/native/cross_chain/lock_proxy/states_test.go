@@ -19,14 +19,14 @@
 package lock_proxy
 
 import (
+	"encoding/hex"
+	"math/big"
 	"testing"
 
-	"encoding/hex"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/stretchr/testify/assert"
-	"math/big"
 )
 
 func TestLockParam_Serialize(t *testing.T) {

@@ -20,6 +20,7 @@ package rpc
 
 import (
 	"encoding/hex"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"

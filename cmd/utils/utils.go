@@ -22,12 +22,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/cntmio/cntmology/common/constants"
 	"io/ioutil"
 	"math"
 	"math/big"
 	"os"
 	"strings"
+
+	"github.com/cntmio/cntmology/common/constants"
 )
 
 const (

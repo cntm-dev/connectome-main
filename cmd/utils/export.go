@@ -22,9 +22,10 @@ import (
 	"bytes"
 	"compress/zlib"
 	"fmt"
-	"github.com/cntmio/cntmology/common/serialization"
 	"io"
 	"io/ioutil"
+
+	"github.com/cntmio/cntmology/common/serialization"
 )
 
 const (

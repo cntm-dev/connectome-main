@@ -20,10 +20,11 @@ package crossvm_codec
 
 import (
 	"fmt"
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/log"
 	"math/big"
 	"reflect"
+
+	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/log"
 )
 
 const (

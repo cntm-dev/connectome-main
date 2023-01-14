@@ -19,8 +19,9 @@
 package neovm
 
 import (
-	"github.com/cntmio/cntmology/common/config"
 	"sync"
+
+	"github.com/cntmio/cntmology/common/config"
 )
 
 var (

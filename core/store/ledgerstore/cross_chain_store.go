@@ -20,11 +20,12 @@ package ledgerstore
 import (
 	"encoding/binary"
 	"fmt"
+	"os"
+
 	"github.com/cntmio/cntmology/common"
 	scom "github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/core/store/leveldbstore"
 	"github.com/cntmio/cntmology/core/types"
-	"os"
 )
 
 const (

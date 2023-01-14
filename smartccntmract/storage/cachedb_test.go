@@ -18,12 +18,13 @@
 package storage
 
 import (
+	"math/rand"
+	"testing"
+
 	"github.com/cntmio/cntmology/core/store/common"
 	"github.com/cntmio/cntmology/core/store/leveldbstore"
 	"github.com/cntmio/cntmology/core/store/overlaydb"
 	"github.com/stretchr/testify/assert"
-	"math/rand"
-	"testing"
 )
 
 func genRandKeyVal() (string, string) {

@@ -21,9 +21,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/cntmio/cntmology/cmd/abi"
 	"strconv"
 	"strings"
+
+	"github.com/cntmio/cntmology/cmd/abi"
 )
 
 func NewNeovmCcntmractAbi(abiData []byte) (*abi.NeovmCcntmractAbi, error) {

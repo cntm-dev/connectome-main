@@ -18,8 +18,6 @@
 package utils
 
 import (
-	"bytes"
-
 	"github.com/cntmio/cntmology/common"
 )
 
@@ -36,14 +34,16 @@ var (
 	HeaderSyncCcntmractAddress, _ = common.AddressParseFromBytes([]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08})
 	CrossChainCcntmractAddress, _ = common.AddressParseFromBytes([]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09})
 	LockProxyCcntmractAddress, _  = common.AddressParseFromBytes([]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a})
+	//WARN: when add Ccntmract Here, please update IsNativeCcntmract function bellow.
 )
 
 func IsNativeCcntmract(addr common.Address) bool {
-	return bytes.Compare(addr[:], OntCcntmractAddress[:]) == 0 ||
-		bytes.Compare(addr[:], OngCcntmractAddress[:]) == 0 ||
-		bytes.Compare(addr[:], OntIDCcntmractAddress[:]) == 0 ||
-		bytes.Compare(addr[:], ParamCcntmractAddress[:]) == 0 ||
-		bytes.Compare(addr[:], AuthCcntmractAddress[:]) == 0 ||
-		bytes.Compare(addr[:], GovernanceCcntmractAddress[:]) == 0
-
+	switch addr {
+	case OntCcntmractAddress, OngCcntmractAddress, OntIDCcntmractAddress,
+		ParamCcntmractAddress, AuthCcntmractAddress, GovernanceCcntmractAddress,
+		HeaderSyncCcntmractAddress, CrossChainCcntmractAddress, LockProxyCcntmractAddress:
+		return true
+	default:
+		return false
+	}
 }

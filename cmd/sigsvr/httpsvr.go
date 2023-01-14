@@ -21,10 +21,11 @@ package sigsvr
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cntmio/cntmology/cmd/sigsvr/common"
-	"github.com/cntmio/cntmology/common/log"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/cntmio/cntmology/cmd/sigsvr/common"
+	"github.com/cntmio/cntmology/common/log"
 )
 
 var DefCliRpcSvr = NewCliRpcServer()

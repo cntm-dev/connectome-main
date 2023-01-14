@@ -21,7 +21,7 @@ package ledgerstore
 import (
 	"fmt"
 
-	"github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/types"
 )

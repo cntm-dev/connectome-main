@@ -20,6 +20,7 @@ package neovm
 
 import (
 	"fmt"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/errors"

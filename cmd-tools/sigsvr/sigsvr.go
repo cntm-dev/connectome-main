@@ -18,6 +18,11 @@
 package main
 
 import (
+	"os"
+	"os/signal"
+	"runtime"
+	"syscall"
+
 	"github.com/cntmio/cntmology/cmd"
 	"github.com/cntmio/cntmology/cmd/abi"
 	cmdsvr "github.com/cntmio/cntmology/cmd/sigsvr"
@@ -27,10 +32,6 @@ import (
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/urfave/cli"
-	"os"
-	"os/signal"
-	"runtime"
-	"syscall"
 )
 
 func setupSigSvr() *cli.App {

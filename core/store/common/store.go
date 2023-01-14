@@ -20,6 +20,7 @@ package common
 
 import (
 	"errors"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 )

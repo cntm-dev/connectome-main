@@ -21,6 +21,7 @@ package header_sync
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	vconfig "github.com/cntmio/cntmology/consensus/vbft/config"

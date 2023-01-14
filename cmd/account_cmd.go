@@ -22,6 +22,8 @@ import (
 	"bufio"
 	"encoding/hex"
 	"fmt"
+	"os"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology-crypto/signature"
 	"github.com/cntmio/cntmology/account"
@@ -30,7 +32,6 @@ import (
 	"github.com/cntmio/cntmology/common/password"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/urfave/cli"
-	"os"
 )
 
 var (

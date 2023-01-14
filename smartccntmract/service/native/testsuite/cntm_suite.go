@@ -20,7 +20,6 @@ package testsuite
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 
@@ -31,6 +30,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
+	"github.com/stretchr/testify/assert"
 )
 
 func RandomAddress() common.Address {

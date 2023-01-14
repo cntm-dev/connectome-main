@@ -19,12 +19,12 @@ package neovm
 
 import (
 	"fmt"
-	"github.com/cntmio/cntmology/core/utils"
 	"reflect"
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/core/utils"
 	"github.com/cntmio/cntmology/vm/crossvm_codec"
 	vm "github.com/cntmio/cntmology/vm/neovm"
 )

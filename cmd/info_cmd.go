@@ -21,11 +21,12 @@ package cmd
 import (
 	"encoding/hex"
 	"fmt"
+	"strconv"
+
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/core/types"
 	httpcom "github.com/cntmio/cntmology/http/base/common"
 	"github.com/urfave/cli"
-	"strconv"
 )
 
 var InfoCommand = cli.Command{
