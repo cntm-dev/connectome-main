@@ -37,6 +37,7 @@ import (
 	cutils "github.com/cntmio/cntmology/core/utils"
 	cntmErrors "github.com/cntmio/cntmology/errors"
 	bactor "github.com/cntmio/cntmology/http/base/actor"
+	common2 "github.com/cntmio/cntmology/p2pserver/common"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
@@ -152,9 +153,8 @@ type BlockInfo struct {
 }
 
 type NodeInfo struct {
-	NodeState   uint   // node status
-	NodePort    uint16 // The nodes's port
-	ID          uint64 // The nodes's id
+	NodePort    uint16         // The nodes's port
+	ID          common2.PeerId // The nodes's id
 	NodeTime    int64
 	NodeVersion uint32   // The network protocol the node used
 	NodeType    uint64   // The services the node supplied
@@ -528,15 +528,8 @@ type SyncStatus struct {
 }
 
 func GetSyncStatus() (SyncStatus, error) {
-	var status SyncStatus
-	height, err := bactor.GetMaxPeerBlockHeight()
-	if err != nil {
-		return status, err
-	}
-	cnt, err := bactor.GetConnectionCnt()
-	if err != nil {
-		return status, err
-	}
+	height := bactor.GetMaxPeerBlockHeight()
+	cnt := bactor.GetConnectionCnt()
 	curBlockHeight := bactor.GetCurrentBlockHeight()
 
 	return SyncStatus{

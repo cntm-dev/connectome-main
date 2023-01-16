@@ -19,18 +19,11 @@
 package req
 
 import (
-	"time"
-
 	"github.com/cntmio/cntmology-eventbus/actor"
-	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology/errors"
-	p2pcommon "github.com/cntmio/cntmology/p2pserver/common"
 	tc "github.com/cntmio/cntmology/txnpool/common"
 )
-
-const txnPoolReqTimeout = p2pcommon.ACTOR_TIMEOUT * time.Second
 
 var txnPoolPid *actor.PID
 
@@ -50,19 +43,4 @@ func AddTransaction(transaction *types.Transaction) {
 		TxResultCh: nil,
 	}
 	txnPoolPid.Tell(txReq)
-}
-
-//get txn according to hash
-func GetTransaction(hash common.Uint256) (*types.Transaction, error) {
-	if txnPoolPid == nil {
-		log.Warn("[p2p]net_server tx pool pid is nil")
-		return nil, errors.NewErr("[p2p]net_server tx pool pid is nil")
-	}
-	future := txnPoolPid.RequestFuture(&tc.GetTxnReq{Hash: hash}, txnPoolReqTimeout)
-	result, err := future.Result()
-	if err != nil {
-		log.Warnf("[p2p]net_server GetTransaction error: %v\n", err)
-		return nil, err
-	}
-	return result.(tc.GetTxnRsp).Txn, nil
 }

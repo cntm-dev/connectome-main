@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	"github.com/urfave/cli"
 )
@@ -47,6 +48,11 @@ var (
 	DisableLogFileFlag = cli.BoolFlag{
 		Name:  "disable-log-file",
 		Usage: "Discard log output to file",
+	}
+	LogDirFlag = cli.StringFlag{
+		Name:  "log-dir",
+		Usage: "log output to the file",
+		Value: log.PATH,
 	}
 	DisableEventLogFlag = cli.BoolFlag{
 		Name:  "disable-event-log",

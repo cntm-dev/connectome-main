@@ -26,6 +26,7 @@ import (
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/signature"
 	"github.com/cntmio/cntmology/errors"
+	common2 "github.com/cntmio/cntmology/p2pserver/common"
 )
 
 type ConsensusPayload struct {
@@ -37,7 +38,7 @@ type ConsensusPayload struct {
 	Data            []byte
 	Owner           keypair.PublicKey
 	Signature       []byte
-	PeerId          uint64
+	PeerId          common2.PeerId
 	hash            common.Uint256
 }
 
@@ -118,10 +119,25 @@ func (this *ConsensusPayload) SerializationUnsigned(sink *common.ZeroCopySink) {
 func (this *ConsensusPayload) DeserializationUnsigned(source *common.ZeroCopySource) error {
 	var irregular, eof bool
 	this.Version, eof = source.NextUint32()
+	if eof {
+		return io.ErrUnexpectedEOF
+	}
 	this.PrevHash, eof = source.NextHash()
+	if eof {
+		return io.ErrUnexpectedEOF
+	}
 	this.Height, eof = source.NextUint32()
+	if eof {
+		return io.ErrUnexpectedEOF
+	}
 	this.BookkeeperIndex, eof = source.NextUint16()
+	if eof {
+		return io.ErrUnexpectedEOF
+	}
 	this.Timestamp, eof = source.NextUint32()
+	if eof {
+		return io.ErrUnexpectedEOF
+	}
 	this.Data, _, irregular, eof = source.NextVarBytes()
 	if eof {
 		return io.ErrUnexpectedEOF

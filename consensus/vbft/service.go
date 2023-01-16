@@ -89,7 +89,7 @@ type Server struct {
 	Index         uint32
 	account       *account.Account
 	poolActor     *actorTypes.TxPoolActor
-	p2p           *actorTypes.P2PActor
+	p2p           p2p.P2P
 	ledger        *ledger.Ledger
 	incrValidator *increment.IncrementValidator
 	pid           *actor.PID
@@ -128,12 +128,12 @@ type Server struct {
 	quitWg     sync.WaitGroup
 }
 
-func NewVbftServer(account *account.Account, txpool, p2p *actor.PID) (*Server, error) {
+func NewVbftServer(account *account.Account, txpool *actor.PID, p2p p2p.P2P) (*Server, error) {
 	server := &Server{
 		msgHistoryDuration: 64,
 		account:            account,
 		poolActor:          &actorTypes.TxPoolActor{Pool: txpool},
-		p2p:                &actorTypes.P2PActor{P2P: p2p},
+		p2p:                p2p,
 		ledger:             ledger.DefLedger,
 		incrValidator:      increment.NewIncrementValidator(20),
 	}
@@ -2132,10 +2132,7 @@ func (self *Server) msgSendLoop() {
 			}
 			if evt.ToPeer == math.MaxUint32 {
 				// broadcast
-				if err := self.broadcastToAll(payload); err != nil {
-					log.Errorf("server %d xmit msg (type %d): %s",
-						self.Index, evt.Msg.Type(), err)
-				}
+				self.broadcastToAll(payload)
 			} else {
 				if err := self.sendToPeer(evt.ToPeer, payload); err != nil {
 					log.Errorf("server %d xmit to peer %d failed: %s", self.Index, evt.ToPeer, err)

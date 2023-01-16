@@ -52,6 +52,7 @@ func RegisterOntCcntmract(native *native.NativeService) {
 	native.Register(TOTALSUPPLY_NAME, OntTotalSupply)
 	native.Register(BALANCEOF_NAME, OntBalanceOf)
 	native.Register(ALLOWANCE_NAME, OntAllowance)
+	native.Register(TOTAL_ALLOWANCE_NAME, OntTotalAllowance)
 }
 
 func OntInit(native *native.NativeService) ([]byte, error) {
@@ -234,6 +235,39 @@ func GetBalanceValue(native *native.NativeService, flag byte) ([]byte, error) {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[GetBalanceValue] address parse error!")
 	}
 	return common.BigIntToNeoBytes(big.NewInt(int64(amount))), nil
+}
+
+func OntTotalAllowance(native *native.NativeService) ([]byte, error) {
+	return TotalAllowance(native)
+}
+
+func TotalAllowance(native *native.NativeService) ([]byte, error) {
+	source := common.NewZeroCopySource(native.Input)
+	from, err := utils.DecodeAddress(source)
+	if err != nil {
+		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[TotalAllowance] get from address error!")
+	}
+	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
+
+	iter := native.CacheDB.NewIterator(utils.ConcatKey(ccntmract, from[:]))
+	defer iter.Release()
+	var r uint64 = 0
+	for has := iter.First(); has; has = iter.Next() {
+		if bytes.Equal(iter.Key(), utils.ConcatKey(ccntmract, from[:])) {
+			ccntminue
+		}
+		item := new(cstates.StorageItem)
+		err = item.Deserialization(common.NewZeroCopySource(iter.Value()))
+		if err != nil {
+			return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[TotalAllowance] instance isn't StorageItem!")
+		}
+		v, err := serialization.ReadUint64(bytes.NewBuffer(item.Value))
+		if err != nil {
+			return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[TotalAllowance] get uint64 from value error!")
+		}
+		r = r + v
+	}
+	return common.BigIntToNeoBytes(big.NewInt(int64(r))), nil
 }
 
 func grantOng(native *native.NativeService, ccntmract, address common.Address, balance uint64) error {

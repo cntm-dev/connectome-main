@@ -25,8 +25,6 @@ import (
 	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
-	netActor "github.com/cntmio/cntmology/p2pserver/actor/server"
-	ptypes "github.com/cntmio/cntmology/p2pserver/message/types"
 	txpool "github.com/cntmio/cntmology/txnpool/common"
 )
 
@@ -62,23 +60,4 @@ func (self *TxPoolActor) VerifyBlock(txs []*types.Transaction, height uint32) er
 	}
 
 	return nil
-}
-
-type P2PActor struct {
-	P2P *actor.PID
-}
-
-func (self *P2PActor) Broadcast(msg interface{}) {
-	self.P2P.Tell(msg)
-}
-
-func (self *P2PActor) Transmit(target uint64, msg ptypes.Message) {
-	self.P2P.Tell(&netActor.TransmitConsensusMsgReq{
-		Target: target,
-		Msg:    msg,
-	})
-}
-
-type LedgerActor struct {
-	Ledger *actor.PID
 }
