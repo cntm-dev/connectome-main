@@ -169,7 +169,6 @@ func (this *SmartCcntmract) NewExecuteEngine(code []byte, txtype ctypes.Transact
 		}
 
 		service = &wasmvm.WasmVmService{
-			Store:      this.Store,
 			CacheDB:    this.CacheDB,
 			CcntmextRef: this,
 			Code:       code,

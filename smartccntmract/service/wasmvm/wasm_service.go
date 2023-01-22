@@ -31,7 +31,6 @@ import (
 )
 
 type WasmVmService struct {
-	Store         store.LedgerStore
 	CacheDB       *storage.CacheDB
 	CcntmextRef    ccntmext.CcntmextRef
 	Notifications []*event.NotifyEventInfo
