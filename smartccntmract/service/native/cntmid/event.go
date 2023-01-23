@@ -61,3 +61,24 @@ func triggerRecoveryEvent(srvc *native.NativeService, op string, id []byte, addr
 	st := []string{"Recovery", op, string(id), addr.ToHexString()}
 	newEvent(srvc, st)
 }
+
+func triggerCcntmextEvent(srvc *native.NativeService, op string, id []byte, ccntmexts [][]byte) {
+	t := make([]string, len(ccntmexts))
+	var c interface{}
+	for i := 0; i < len(ccntmexts); i++ {
+		t[i] = hex.EncodeToString(ccntmexts[i])
+	}
+	c = t
+	st := []interface{}{"Ccntmext", op, string(id), c}
+	newEvent(srvc, st)
+}
+
+func triggerServiceEvent(srvc *native.NativeService, op string, id []byte, serviceId []byte) {
+	st := []string{"Service", op, string(id), common.ToHexString(serviceId)}
+	newEvent(srvc, st)
+}
+
+func triggerAuthKeyEvent(srvc *native.NativeService, op string, id []byte, keyID uint32) {
+	st := []interface{}{"AuthKey", op, string(id), keyID}
+	newEvent(srvc, st)
+}

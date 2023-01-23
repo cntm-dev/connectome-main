@@ -193,6 +193,7 @@ func (this *SmartCcntmract) NewNativeService() (*native.NativeService, error) {
 		return nil, fmt.Errorf("%s", "engine over max limit!")
 	}
 	service := &native.NativeService{
+		Store:      this.Store,
 		CacheDB:    this.CacheDB,
 		CcntmextRef: this,
 		Tx:         this.Config.Tx,

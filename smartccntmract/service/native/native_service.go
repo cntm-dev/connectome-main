@@ -48,6 +48,7 @@ var (
 // Native service struct
 // Invoke a native smart ccntmract, new a native service
 type NativeService struct {
+	Store         store.LedgerStore
 	CacheDB       *storage.CacheDB
 	ServiceMap    map[string]Handler
 	Notifications []*event.NotifyEventInfo

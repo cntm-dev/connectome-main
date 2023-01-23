@@ -44,7 +44,6 @@ func regIdWithCcntmroller(srvc *native.NativeService) ([]byte, error) {
 	if err != nil {
 		return utils.BYTE_FALSE, err
 	}
-
 	if checkIDState(srvc, encId) != flag_not_exist {
 		return utils.BYTE_FALSE, fmt.Errorf("%s already registered", string(arg0))
 	}
@@ -73,8 +72,9 @@ func regIdWithCcntmroller(srvc *native.NativeService) ([]byte, error) {
 
 	key := append(encId, FIELD_CcntmROLLER)
 	utils.PutBytes(srvc, key, arg1)
-
 	utils.PutBytes(srvc, encId, []byte{flag_valid})
+
+	createTimeAndClearProof(srvc, encId)
 	triggerRegisterEvent(srvc, arg0)
 	return utils.BYTE_TRUE, nil
 }
@@ -87,21 +87,20 @@ func revokeIDByCcntmroller(srvc *native.NativeService) ([]byte, error) {
 		return utils.BYTE_FALSE, fmt.Errorf("argument 0 error")
 	}
 
-	encID, err := encodeID(arg0)
+	encId, err := encodeID(arg0)
 	if err != nil {
 		return utils.BYTE_FALSE, err
 	}
-
-	if !isValid(srvc, encID) {
+	if !isValid(srvc, encId) {
 		return utils.BYTE_FALSE, fmt.Errorf("%s is not registered or already revoked", string(arg0))
 	}
 
-	err = verifyCcntmrollerSignature(srvc, encID, source)
+	err = verifyCcntmrollerSignature(srvc, encId, source)
 	if err != nil {
 		return utils.BYTE_FALSE, fmt.Errorf("authorization failed")
 	}
 
-	err = deleteID(srvc, encID)
+	err = deleteID(srvc, encId)
 	if err != nil {
 		return utils.BYTE_FALSE, fmt.Errorf("delete id error, %s", err)
 	}
@@ -118,12 +117,15 @@ func verifyCcntmroller(srvc *native.NativeService) ([]byte, error) {
 		return utils.BYTE_FALSE, fmt.Errorf("argument 0 error, %s", err)
 	}
 
-	key, err := encodeID(arg0)
+	encId, err := encodeID(arg0)
 	if err != nil {
 		return utils.BYTE_FALSE, err
 	}
+	if !isValid(srvc, encId) {
+		return utils.BYTE_FALSE, errors.New("verifyCcntmroller error: have not registered")
+	}
 
-	err = verifyCcntmrollerSignature(srvc, key, source)
+	err = verifyCcntmrollerSignature(srvc, encId, source)
 	if err == nil {
 		return utils.BYTE_TRUE, nil
 	} else {
@@ -147,12 +149,16 @@ func removeCcntmroller(srvc *native.NativeService) ([]byte, error) {
 	if err != nil {
 		return utils.BYTE_FALSE, err
 	}
+	if !isValid(srvc, encId) {
+		return utils.BYTE_FALSE, errors.New("removeCcntmroller error: have not registered")
+	}
 	if err := checkWitnessByIndex(srvc, encId, uint32(arg1)); err != nil {
 		return utils.BYTE_FALSE, fmt.Errorf("checkWitness failed, %s", err)
 	}
 	key := append(encId, FIELD_CcntmROLLER)
 	srvc.CacheDB.Delete(key)
 
+	updateTimeAndClearProof(srvc, encId)
 	newEvent(srvc, []interface{}{"RemoveCcntmroller", string(arg0)})
 	return utils.BYTE_TRUE, nil
 }
@@ -179,17 +185,27 @@ func addKeyByCcntmroller(srvc *native.NativeService) ([]byte, error) {
 	if err != nil {
 		return utils.BYTE_FALSE, err
 	}
+	if !isValid(srvc, encId) {
+		return utils.BYTE_FALSE, errors.New("addKeyByCcntmroller error: have not registered")
+	}
 
 	err = verifyCcntmrollerSignature(srvc, encId, source)
 	if err != nil {
 		return utils.BYTE_FALSE, fmt.Errorf("verification failed, %s", err)
 	}
 
-	index, err := insertPk(srvc, encId, arg1)
+	//decode new field of verison 1
+	ccntmroller, err := utils.DecodeVarBytes(source)
+	if err != nil {
+		ccntmroller = arg0
+	}
+
+	index, err := insertPk(srvc, encId, arg1, ccntmroller, true, false)
 	if err != nil {
 		return utils.BYTE_FALSE, fmt.Errorf("insertion failed, %s", err)
 	}
 
+	updateTimeAndClearProof(srvc, encId)
 	triggerPublicEvent(srvc, "add", arg0, arg1, index)
 	return utils.BYTE_TRUE, nil
 }
@@ -212,6 +228,9 @@ func removeKeyByCcntmroller(srvc *native.NativeService) ([]byte, error) {
 	if err != nil {
 		return utils.BYTE_FALSE, errors.New(err.Error())
 	}
+	if !isValid(srvc, encId) {
+		return utils.BYTE_FALSE, errors.New("removeKeyByCcntmroller error: have not registered")
+	}
 
 	err = verifyCcntmrollerSignature(srvc, encId, source)
 	if err != nil {
@@ -223,6 +242,7 @@ func removeKeyByCcntmroller(srvc *native.NativeService) ([]byte, error) {
 		return utils.BYTE_FALSE, err
 	}
 
+	updateTimeAndClearProof(srvc, encId)
 	triggerPublicEvent(srvc, "remove", arg0, pk, uint32(arg1))
 	return utils.BYTE_TRUE, nil
 }
@@ -254,6 +274,9 @@ func addAttributesByCcntmroller(srvc *native.NativeService) ([]byte, error) {
 	if err != nil {
 		return utils.BYTE_FALSE, err
 	}
+	if !isValid(srvc, encId) {
+		return utils.BYTE_FALSE, errors.New("addAttributesByCcntmroller error: have not registered")
+	}
 
 	err = verifyCcntmrollerSignature(srvc, encId, source)
 	if err != nil {
@@ -265,6 +288,7 @@ func addAttributesByCcntmroller(srvc *native.NativeService) ([]byte, error) {
 		return utils.BYTE_FALSE, fmt.Errorf("insert attributes error, %s", err)
 	}
 
+	updateTimeAndClearProof(srvc, encId)
 	paths := getAttrKeys(arg1)
 	triggerAttributeEvent(srvc, "add", arg0, paths)
 	return utils.BYTE_TRUE, nil
@@ -288,6 +312,9 @@ func removeAttributeByCcntmroller(srvc *native.NativeService) ([]byte, error) {
 	if err != nil {
 		return utils.BYTE_FALSE, err
 	}
+	if !isValid(srvc, encId) {
+		return utils.BYTE_FALSE, errors.New("removeAttributeByCcntmroller error: have not registered")
+	}
 
 	err = verifyCcntmrollerSignature(srvc, encId, source)
 	if err != nil {
@@ -299,6 +326,7 @@ func removeAttributeByCcntmroller(srvc *native.NativeService) ([]byte, error) {
 		return utils.BYTE_FALSE, err
 	}
 
+	updateTimeAndClearProof(srvc, encId)
 	triggerAttributeEvent(srvc, "remove", arg0, [][]byte{arg1})
 	return utils.BYTE_TRUE, nil
 }
@@ -309,13 +337,33 @@ func getCcntmroller(srvc *native.NativeService, encId []byte) (interface{}, erro
 	if err != nil {
 		return nil, err
 	} else if item == nil {
-		return nil, errors.New("empty ccntmroller storage")
+		return nil, nil
 	}
 
 	if account.VerifyID(string(item.Value)) {
 		return item.Value, nil
 	} else {
 		return deserializeGroup(item.Value)
+	}
+}
+
+func getCcntmrollerJson(srvc *native.NativeService, encId []byte) (interface{}, error) {
+	key := append(encId, FIELD_CcntmROLLER)
+	item, err := utils.GetStorageItem(srvc, key)
+	if err != nil {
+		return nil, err
+	} else if item == nil {
+		return nil, nil
+	}
+
+	if account.VerifyID(string(item.Value)) {
+		return string(item.Value), nil
+	} else {
+		r, err := deserializeGroup(item.Value)
+		if err != nil {
+			return nil, err
+		}
+		return parse(r), nil
 	}
 }
 
@@ -352,6 +400,9 @@ func verifyCcntmrollerSignature(srvc *native.NativeService, encId []byte, args *
 	ctrl, err := getCcntmroller(srvc, encId)
 	if err != nil {
 		return err
+	}
+	if ctrl == nil {
+		return errors.New("ccntmroller is not exist")
 	}
 
 	switch t := ctrl.(type) {

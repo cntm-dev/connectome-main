@@ -23,12 +23,35 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/cntmio/cntmology/account"
+	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/core/store/leveldbstore"
 	"github.com/cntmio/cntmology/core/store/overlaydb"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
 )
+
+func (g *Group) Serialize() []byte {
+	sink := common.NewZeroCopySink(nil)
+	utils.EncodeVarUint(sink, uint64(len(g.Members)))
+	for _, m := range g.Members {
+		switch t := m.(type) {
+		case []byte:
+			if !account.VerifyID(string(t)) {
+				panic("invalid cntm id format")
+			}
+			sink.WriteVarBytes(t)
+		case *Group:
+			sink.WriteVarBytes(t.Serialize())
+		default:
+			panic("invalid member type")
+		}
+	}
+	utils.EncodeVarUint(sink, uint64(g.Threshold))
+	return sink.Bytes()
+}
 
 func TestDeserializeGroup(t *testing.T) {
 	id0 := []byte("did:cntm:ARY2ekof1eCSetcimGdjqyzUYaVDDPVWmw")
@@ -68,13 +91,13 @@ func TestDeserializeGroup(t *testing.T) {
 	srvc.CacheDB = cache
 
 	key, _ := encodeID(id0)
-	insertPk(srvc, key, []byte("test pk"))
+	insertPk(srvc, key, []byte("test pk"), []byte("ccntmroller"), true, false)
 	cache.Put(key, states.GenRawStorageItem([]byte{flag_valid}))
 	key, _ = encodeID(id1)
-	insertPk(srvc, key, []byte("test pk"))
+	insertPk(srvc, key, []byte("test pk"), []byte("ccntmroller"), true, false)
 	cache.Put(key, states.GenRawStorageItem([]byte{flag_valid}))
 	key, _ = encodeID(id2)
-	insertPk(srvc, key, []byte("test pk"))
+	insertPk(srvc, key, []byte("test pk"), []byte("ccntmroller"), true, false)
 	cache.Put(key, states.GenRawStorageItem([]byte{flag_valid}))
 
 	err = validateMembers(srvc, g)

@@ -102,8 +102,24 @@ func checkWitness(srvc *native.NativeService, key []byte) error {
 	return errors.New("check witness failed, " + hex.EncodeToString(key))
 }
 
-func checkWitnessByIndex(srvc *native.NativeService, encID []byte, index uint32) error {
-	pk, err := getPk(srvc, encID, index)
+func checkWitnessByIndex(srvc *native.NativeService, encId []byte, index uint32) error {
+	pk, err := getPk(srvc, encId, index)
+	if err != nil {
+		return err
+	} else if pk.revoked {
+		return errors.New("revoked key")
+	}
+
+	//verify access
+	if !pk.isAuthentication {
+		return fmt.Errorf("pk do not have access")
+	}
+
+	return checkWitness(srvc, pk.key)
+}
+
+func checkWitnessWithoutAuth(srvc *native.NativeService, encId []byte, index uint32) error {
+	pk, err := getPk(srvc, encId, index)
 	if err != nil {
 		return err
 	} else if pk.revoked {
@@ -113,22 +129,49 @@ func checkWitnessByIndex(srvc *native.NativeService, encID []byte, index uint32)
 	return checkWitness(srvc, pk.key)
 }
 
-func deleteID(srvc *native.NativeService, encID []byte) error {
-	key := append(encID, FIELD_PK)
+func deleteID(srvc *native.NativeService, encId []byte) error {
+	key := append(encId, FIELD_PK)
 	srvc.CacheDB.Delete(key)
 
-	key = append(encID, FIELD_CcntmROLLER)
+	key = append(encId, FIELD_CcntmROLLER)
 	srvc.CacheDB.Delete(key)
 
-	key = append(encID, FIELD_RECOVERY)
+	key = append(encId, FIELD_RECOVERY)
 	srvc.CacheDB.Delete(key)
 
-	err := deleteAllAttr(srvc, encID)
+	key = append(encId, FIELD_SERVICE)
+	srvc.CacheDB.Delete(key)
+
+	key = append(encId, FIELD_CREATED)
+	srvc.CacheDB.Delete(key)
+
+	key = append(encId, FIELD_UPDATED)
+	srvc.CacheDB.Delete(key)
+
+	key = append(encId, FIELD_PROOF)
+	srvc.CacheDB.Delete(key)
+
+	key = append(encId, FIELD_CcntmEXT)
+	srvc.CacheDB.Delete(key)
+
+	err := deleteAllAttr(srvc, encId)
 	if err != nil {
 		return err
 	}
 
 	//set flag to revoke
-	utils.PutBytes(srvc, encID, []byte{flag_revoke})
+	utils.PutBytes(srvc, encId, []byte{flag_revoke})
 	return nil
+}
+
+func updateTimeAndClearProof(srvc *native.NativeService, encId []byte) {
+	clearProof(srvc, encId)
+	key := append(encId, FIELD_UPDATED)
+	updateTime(srvc, key)
+}
+
+func createTimeAndClearProof(srvc *native.NativeService, encId []byte) {
+	clearProof(srvc, encId)
+	key := append(encId, FIELD_CREATED)
+	updateTime(srvc, key)
 }
