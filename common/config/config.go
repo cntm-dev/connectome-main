@@ -33,7 +33,7 @@ import (
 	"github.com/cntmio/cntmology/errors"
 )
 
-var Version = "" //Set value when build project
+var Version = "1.10.0" //Set value when build project
 
 type VerifyMethod int
 

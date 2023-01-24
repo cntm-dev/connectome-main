@@ -200,7 +200,12 @@ func FsJudge(native *native.NativeService) ([]byte, error) {
 		if spaceInfo == nil {
 			return utils.BYTE_FALSE, errors.NewErr("[APP SDK] FsJudge getSpaceRawRealInfo error!")
 		}
-		punishAmount = calcSpaceModePerServerProfit(spaceInfo.TimeExpired, spaceInfo.TimeExpired, fileInfo)
+		//fileInfo.CurrFeeRate equals spaceInfo.CurrFeeRate
+		punishAmount = calcTotalPayAmountWithFile(fileInfo)
+		if err = checkUint64OverflowWithSum(punishAmount, 2*globalParam.CcntmractInvokeGasFee); err != nil {
+			return utils.BYTE_FALSE, fmt.Errorf("[APP SDK] FsJudge error: %s", err.Error())
+		}
+		punishAmount = punishAmount + 2*globalParam.CcntmractInvokeGasFee
 	default:
 		return utils.BYTE_FALSE, errors.NewErr("[APP SDK] FsJudge file StorageType error!")
 	}
@@ -575,6 +580,7 @@ func FsStoreFiles(native *native.NativeService) ([]byte, error) {
 			serverPdpGasFee := globalParam.FilePerServerPdpTimes * globalParam.CcntmractInvokeGasFee * fileInfo.CopyNumber
 			fileInfo.CurrFeeRate = globalParam.FilePerBlockFeeRate
 			fileInfo.PayAmount = calcTotalPayAmountWithFile(&fileInfo)
+			fileInfo.RestAmount = fileInfo.PayAmount
 			if err = checkUint64OverflowWithSum(fileInfo.PayAmount, serverPdpGasFee); err != nil {
 				return utils.BYTE_FALSE, fmt.Errorf("[APP SDK] FsStoreFiles error: %s", err.Error())
 			}
@@ -731,6 +737,11 @@ func deleteFile(native *native.NativeService, fileInfo *FileInfo, errInfos *Erro
 				ccntminue
 			}
 			nodeInfo.Profit += nodeProfit
+			if fileInfo.RestAmount < nodeProfit {
+				errInfos.AddObjectError(string(fileInfo.FileHash), "[APP SDK] DeleteFile fileInfo.RestAmount not enough")
+				ccntminue
+			}
+			fileInfo.RestAmount -= nodeProfit
 		case FileStorageTypeUseSpace:
 			spaceInfo := getSpaceInfoFromDb(native, fileInfo.FileOwner)
 			if spaceInfo == nil {
@@ -743,6 +754,12 @@ func deleteFile(native *native.NativeService, fileInfo *FileInfo, errInfos *Erro
 				ccntminue
 			}
 			nodeInfo.Profit += nodeProfit
+			if spaceInfo.RestAmount < nodeProfit {
+				errInfos.AddObjectError(string(fileInfo.FileHash), "[APP SDK] DeleteFile spaceInfo.RestAmount not enough")
+				ccntminue
+			}
+			spaceInfo.RestAmount -= nodeProfit
+			addSpaceInfo(native, spaceInfo)
 		default:
 			errInfos.AddObjectError(string(fileInfo.FileHash), "[APP SDK] DeleteFile file StorageType error")
 			ccntminue
@@ -752,11 +769,6 @@ func deleteFile(native *native.NativeService, fileInfo *FileInfo, errInfos *Erro
 			errInfos.AddObjectError(string(fileInfo.FileHash), "[APP SDK] DeleteFile checkUint64OverflowWithSum error: "+err.Error())
 			ccntminue
 		}
-		if fileInfo.RestAmount < nodeProfit {
-			errInfos.AddObjectError(string(fileInfo.FileHash), "[APP SDK] DeleteFile fileInfo.RestAmount not enough")
-			ccntminue
-		}
-		fileInfo.RestAmount -= nodeProfit
 		nodeInfo.RestVol += fileSize
 		addNodeInfo(native, nodeInfo)
 	}

@@ -23,9 +23,9 @@ const (
 )
 
 const (
-	DefaultMinTimeForFileStorage = 60        //1minute
-	DefaultCcntmractInvokeGasFee  = 10000000  //0.01cntm
-	DefaultChallengeReward       = 100000000 //0.1cntm
+	DefaultMinTimeForFileStorage = 60 * 60 * 24 //1day
+	DefaultCcntmractInvokeGasFee  = 10000000     //0.01cntm
+	DefaultChallengeReward       = 100000000    //0.1cntm
 	DefaultFilePerServerPdpTimes = 2
 	DefaultPassportExpire        = 9           //block count. passport expire for GetFileHashList
 	DefaultNodeMinVolume         = 1024 * 1024 //kb. min total volume with single fsNode

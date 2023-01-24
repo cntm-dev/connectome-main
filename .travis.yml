@@ -26,5 +26,4 @@ deploy:
   overwrite: true
   draft: true
   on:
-    repo: cntmio/cntmology
     tags: true
