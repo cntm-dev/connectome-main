@@ -18,6 +18,7 @@
 package cntmid
 
 import (
+	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 )
@@ -36,22 +37,31 @@ func RegisterIDCcntmract(srvc *native.NativeService) {
 	srvc.Register("changeRecovery", changeRecovery)
 	srvc.Register("setRecovery", setRecovery)
 	srvc.Register("updateRecovery", updateRecovery)
-	srvc.Register("removeRecovery", removeRecovery)
 	srvc.Register("addKey", addKey)
-	srvc.Register("addKeyByIndex", addKeyByIndex)
 	srvc.Register("removeKey", removeKey)
-	srvc.Register("removeKeyByIndex", removeKeyByIndex)
 	srvc.Register("addKeyByCcntmroller", addKeyByCcntmroller)
 	srvc.Register("removeKeyByCcntmroller", removeKeyByCcntmroller)
 	srvc.Register("addKeyByRecovery", addKeyByRecovery)
 	srvc.Register("removeKeyByRecovery", removeKeyByRecovery)
 	srvc.Register("regIDWithAttributes", regIdWithAttributes)
 	srvc.Register("addAttributes", addAttributes)
-	srvc.Register("addAttributesByIndex", addAttributesByIndex)
 	srvc.Register("removeAttribute", removeAttribute)
-	srvc.Register("removeAttributeByIndex", removeAttributeByIndex)
 	srvc.Register("addAttributesByCcntmroller", addAttributesByCcntmroller)
 	srvc.Register("removeAttributeByCcntmroller", removeAttributeByCcntmroller)
+	srvc.Register("verifySignature", verifySignature)
+	srvc.Register("verifyCcntmroller", verifyCcntmroller)
+	srvc.Register("getPublicKeys", GetPublicKeys)
+	srvc.Register("getKeyState", GetKeyState)
+	srvc.Register("getAttributes", GetAttributes)
+	srvc.Register("getDDO", GetDDO)
+	if srvc.Height < config.GetNewOntIdHeight() {
+		return
+	}
+	srvc.Register("removeRecovery", removeRecovery)
+	srvc.Register("addKeyByIndex", addKeyByIndex)
+	srvc.Register("removeKeyByIndex", removeKeyByIndex)
+	srvc.Register("addAttributesByIndex", addAttributesByIndex)
+	srvc.Register("removeAttributeByIndex", removeAttributeByIndex)
 	srvc.Register("addNewAuthKey", addNewAuthKey)
 	srvc.Register("addNewAuthKeyByRecovery", addNewAuthKeyByRecovery)
 	srvc.Register("addNewAuthKeyByCcntmroller", addNewAuthKeyByCcntmroller)
@@ -67,15 +77,9 @@ func RegisterIDCcntmract(srvc *native.NativeService) {
 	srvc.Register("addCcntmext", addCcntmext)
 	srvc.Register("removeCcntmext", removeCcntmext)
 	srvc.Register("addProof", addProof)
-	srvc.Register("verifySignature", verifySignature)
-	srvc.Register("verifyCcntmroller", verifyCcntmroller)
-	srvc.Register("getPublicKeys", GetPublicKeys)
 	srvc.Register("getPublicKeysJson", GetPublicKeysJson)
-	srvc.Register("getKeyState", GetKeyState)
 	srvc.Register("getAttributesJson", GetAttributesJson)
-	srvc.Register("getAttributes", GetAttributes)
 	srvc.Register("getAttributeByKey", GetAttributeByKey)
-	srvc.Register("getDDO", GetDDO)
 	srvc.Register("getServiceJson", GetServiceJson)
 	srvc.Register("getCcntmrollerJson", GetCcntmrollerJson)
 	srvc.Register("getDocumentJson", GetDocumentJson)

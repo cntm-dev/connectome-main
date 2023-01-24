@@ -26,10 +26,16 @@ import (
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/testsuite"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
+	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	Init()
+}
 
 func testcase(t *testing.T, f func(t *testing.T, n *native.NativeService)) {
 	testsuite.InvokeNativeCcntmract(t, utils.OntIDCcntmractAddress,
@@ -54,6 +60,11 @@ func TestOwner(t *testing.T) {
 
 func TestOwnerSize(t *testing.T) {
 	testcase(t, CaseOwnerSize)
+}
+
+func TestNewApiFork(t *testing.T) {
+	testcase(t, CaseBeforeNewApiFork)
+	testcase(t, CaseAfterNewApiFork)
 }
 
 // Register id with account acc
@@ -343,7 +354,7 @@ func CaseOwnerSize(t *testing.T, n *native.NativeService) {
 }
 
 func CaseGetDocument(t *testing.T, n *native.NativeService) {
-	n.Height = 10000000
+	n.Height = config.GetNewOntIdHeight()
 	// 1. register ID
 	id0, _ := account.GenerateID()
 	a0 := account.NewAccount("")
@@ -484,5 +495,169 @@ func CaseGetDocument(t *testing.T, n *native.NativeService) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	fmt.Println(string(res))
+}
+
+func CaseBeforeNewApiFork(t *testing.T, n *native.NativeService) {
+	// 1. register ID
+	id0, _ := account.GenerateID()
+	a0 := account.NewAccount("")
+	id1, _ := account.GenerateID()
+	a1 := account.NewAccount("")
+	id2, _ := account.GenerateID()
+	a2 := account.NewAccount("")
+	if err := regID(n, id0, a0); err != nil {
+		t.Fatal("register ID error", err)
+	}
+	if err := regID(n, id1, a1); err != nil {
+		t.Fatal("register ID error", err)
+	}
+	if err := regID(n, id2, a2); err != nil {
+		t.Fatal("register ID error", err)
+	}
+
+	// 2. add ccntmext before fork height
+	var ccntmexts = [][]byte{[]byte("https://www.w3.org/ns0/did/v1"), []byte("https://cntmid.cntm.io0/did/v1"), []byte("https://cntmid.cntm.io0/did/v1")}
+	ccntmext := &Ccntmext{
+		OntId:    []byte(id0),
+		Ccntmexts: ccntmexts,
+		Index:    1,
+	}
+	sink := common.NewZeroCopySink(nil)
+	ccntmext.Serialization(sink)
+	n.Tx.SignedAddr = []common.Address{a0.Address}
+	_, err := n.NativeCall(utils.OntIDCcntmractAddress, "addCcntmext", sink.Bytes())
+	assert.Ccntmains(t, err.Error(), "doesn't support this function")
+
+	// 3. add auth key before fork height
+	newPublicKey := &NewPublicKey{
+		key:        keypair.SerializePublicKey(a2.PublicKey),
+		ccntmroller: []byte(id2),
+	}
+	authKeyParam := &AddNewAuthKeyParam{
+		OntId:        []byte(id0),
+		NewPublicKey: newPublicKey,
+		SignIndex:    1,
+	}
+
+	sink.Reset()
+	authKeyParam.Serialization(sink)
+	n.Tx.SignedAddr = []common.Address{a0.Address}
+	_, err = n.NativeCall(utils.OntIDCcntmractAddress, "addNewAuthKey", sink.Bytes())
+	assert.Ccntmains(t, err.Error(), "doesn't support this function")
+
+	// 4. set auth key before fork height
+	setAuthKeyParam := &SetAuthKeyParam{
+		OntId:     []byte(id0),
+		Index:     1,
+		SignIndex: 1,
+	}
+
+	sink.Reset()
+	setAuthKeyParam.Serialization(sink)
+	n.Tx.SignedAddr = []common.Address{a0.Address}
+	_, err = n.NativeCall(utils.OntIDCcntmractAddress, "setAuthKey", sink.Bytes())
+	assert.Ccntmains(t, err.Error(), "doesn't support this function")
+
+	// 5. add service before fork height
+	service := &ServiceParam{
+		OntId:          []byte(id0),
+		ServiceId:      []byte("someService"),
+		Type:           []byte("sss"),
+		ServiceEndpint: []byte("http;;s;s;s;;s"),
+		Index:          1,
+	}
+
+	sink.Reset()
+	service.Serialization(sink)
+	n.Tx.SignedAddr = []common.Address{a0.Address}
+	_, err = n.NativeCall(utils.OntIDCcntmractAddress, "addService", sink.Bytes())
+	assert.Ccntmains(t, err.Error(), "doesn't support this function")
+
+	// 6. get document before fork height
+	_, err = n.NativeCall(utils.OntIDCcntmractAddress, "getDocumentJson", sink.Bytes())
+	assert.Ccntmains(t, err.Error(), "doesn't support this function")
+}
+
+func CaseAfterNewApiFork(t *testing.T, n *native.NativeService) {
+	n.Height = config.GetNewOntIdHeight()
+	// 1. register ID
+	id0, _ := account.GenerateID()
+	a0 := account.NewAccount("")
+	id1, _ := account.GenerateID()
+	a1 := account.NewAccount("")
+	id2, _ := account.GenerateID()
+	a2 := account.NewAccount("")
+	if err := regID(n, id0, a0); err != nil {
+		t.Fatal("register ID error", err)
+	}
+	if err := regID(n, id1, a1); err != nil {
+		t.Fatal("register ID error", err)
+	}
+	if err := regID(n, id2, a2); err != nil {
+		t.Fatal("register ID error", err)
+	}
+
+	// 2. add ccntmext after fork height
+	var ccntmexts = [][]byte{[]byte("https://www.w3.org/ns0/did/v1"), []byte("https://cntmid.cntm.io0/did/v1"), []byte("https://cntmid.cntm.io0/did/v1")}
+	ccntmext := &Ccntmext{
+		OntId:    []byte(id0),
+		Ccntmexts: ccntmexts,
+		Index:    1,
+	}
+	sink := common.NewZeroCopySink(nil)
+	ccntmext.Serialization(sink)
+	n.Tx.SignedAddr = []common.Address{a0.Address}
+	_, err := n.NativeCall(utils.OntIDCcntmractAddress, "addCcntmext", sink.Bytes())
+	assert.NoError(t, err)
+
+	// 3. add auth key after fork height
+	newPublicKey := &NewPublicKey{
+		key:        keypair.SerializePublicKey(a2.PublicKey),
+		ccntmroller: []byte(id2),
+	}
+	authKeyParam := &AddNewAuthKeyParam{
+		OntId:        []byte(id0),
+		NewPublicKey: newPublicKey,
+		SignIndex:    1,
+	}
+
+	sink.Reset()
+	authKeyParam.Serialization(sink)
+	n.Tx.SignedAddr = []common.Address{a0.Address}
+	_, err = n.NativeCall(utils.OntIDCcntmractAddress, "addNewAuthKey", sink.Bytes())
+	assert.NoError(t, err)
+
+	// 4. set auth key after fork height
+	setAuthKeyParam := &SetAuthKeyParam{
+		OntId:     []byte(id0),
+		Index:     1,
+		SignIndex: 1,
+	}
+
+	sink.Reset()
+	setAuthKeyParam.Serialization(sink)
+	n.Tx.SignedAddr = []common.Address{a0.Address}
+	_, err = n.NativeCall(utils.OntIDCcntmractAddress, "setAuthKey", sink.Bytes())
+	assert.NoError(t, err)
+
+	// 5. add service after fork height
+	service := &ServiceParam{
+		OntId:          []byte(id0),
+		ServiceId:      []byte("someService"),
+		Type:           []byte("sss"),
+		ServiceEndpint: []byte("http;;s;s;s;;s"),
+		Index:          1,
+	}
+
+	sink.Reset()
+	service.Serialization(sink)
+	n.Tx.SignedAddr = []common.Address{a0.Address}
+	_, err = n.NativeCall(utils.OntIDCcntmractAddress, "addService", sink.Bytes())
+	assert.NoError(t, err)
+
+	// 6. get document after fork height
+	res, err := n.NativeCall(utils.OntIDCcntmractAddress, "getDocumentJson", sink.Bytes())
+	assert.NoError(t, err)
 	fmt.Println(string(res))
 }

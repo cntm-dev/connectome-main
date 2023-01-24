@@ -50,6 +50,7 @@ func StartRPCServer() error {
 	rpc.HandleFunc("getccntmractstate", rpc.GetCcntmractState)
 	rpc.HandleFunc("getmempooltxcount", rpc.GetMemPoolTxCount)
 	rpc.HandleFunc("getmempooltxstate", rpc.GetMemPoolTxState)
+	rpc.HandleFunc("getmempooltxhashlist", rpc.GetMemPoolTxHashList)
 	rpc.HandleFunc("getsmartcodeevent", rpc.GetSmartCodeEvent)
 	rpc.HandleFunc("getblockheightbytxhash", rpc.GetBlockHeightByTxHash)
 

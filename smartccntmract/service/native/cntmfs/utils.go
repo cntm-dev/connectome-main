@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
@@ -189,4 +190,11 @@ func DecodeBool(source *common.ZeroCopySource) (bool, error) {
 		return false, common.ErrIrregularData
 	}
 	return ret, err
+}
+
+func CheckOntFsAvailability(service *native.NativeService) error {
+	if service.Height < config.GetOntFsHeight() {
+		return fmt.Errorf("OntFs ccntmract is not avaliable")
+	}
+	return nil
 }
