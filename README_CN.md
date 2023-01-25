@@ -52,8 +52,7 @@ Ontology MainNet 已经在2018年6月30日成功上线。<br>
 ## 构建开发环境
 成功编译cntmology需要以下准备：
 
-* Golang版本在1.11及以上
-* 安装第三方包管理工具glide
+* Golang版本在1.12及以上
 * 正确的Go语言开发环境
 * Golang所支持的操作系统
 
@@ -64,33 +63,10 @@ Ontology MainNet 已经在2018年6月30日成功上线。<br>
 - 你也可以从[下载页面](https://github.com/cntmio/cntmology/releases)获取.
 
 ### 从源码获取
-克隆cntmology仓库到 **$GOPATH/src/github.com/cntmio** 目录
 
 ```shell
 $ git clone https://github.com/cntmio/cntmology.git
-```
-或者
-```shell
-$ go get github.com/cntmio/cntmology
-```
-
-用第三方包管理工具glide拉取依赖库
-
-````shell
-$ cd $GOPATH/src/github.com/cntmio/cntmology
-$ glide install
-````
-
-如果项目有新的第三方依赖包，使用glide更新依赖库
-
-````shell
-$ cd $GOPATH/src/github.com/cntmio/cntmology
-$ glide update
-````
-
-用make编译源码
-
-```shell
+$ cd cntmology
 $ make all
 ```
 
@@ -105,18 +81,18 @@ $ make all
 
 直接启动Ontology
 
-   ```
-	./cntmology
-   ```
+```
+./cntmology
+```
 然后你可以连接上主网了。
 
 ### 公开测试网Polaris同步节点
 
 直接启动Ontology
 
-   ```
-	./cntmology --networkid 2
-   ```
+```
+./cntmology --networkid 2
+```
 然后你可以连接上公共测试网了。
 
 ### 测试模式
