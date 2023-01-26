@@ -15,31 +15,43 @@
  * You should have received a copy of the GNU Lesser General Public License
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
-package connect_ccntmroller
 
-import (
-	"net"
+package p2p
 
-	"github.com/cntmio/cntmology/p2pserver/common"
-)
-
-// Conn is a net.Conn wrapper to do some clean up when Close.
-type Conn struct {
-	net.Conn
-	addr       string
-	listenAddr string
-	kid        common.PeerId
-	boundIndex int
-	connectId  uint64
-	ccntmroller *ConnectCcntmroller
+type AddressFilter interface {
+	// addr format : ip:port
+	Ccntmains(addr string) bool
 }
 
-// Close overwrite net.Conn
-// warning: this method will try to lock the ccntmroller, be carefull to avoid deadlock
-func (self *Conn) Close() error {
-	self.ccntmroller.logger.Infof("closing connection: peer %s, address: %s", self.kid.ToHexString(), self.addr)
+func CombineAddrFilter(filter1, filter2 AddressFilter) AddressFilter {
+	return &combineAddrFilter{filter1: filter1, filter2: filter2}
+}
 
-	self.ccntmroller.removePeer(self)
+func NoneAddrFilter() AddressFilter {
+	return &noneAddrFilter{}
+}
 
-	return self.Conn.Close()
+type combineAddrFilter struct {
+	filter1 AddressFilter
+	filter2 AddressFilter
+}
+
+func (self *combineAddrFilter) Ccntmains(addr string) bool {
+	return self.filter1.Ccntmains(addr) || self.filter2.Ccntmains(addr)
+}
+
+type noneAddrFilter struct{}
+
+func (self *noneAddrFilter) Ccntmains(addr string) bool {
+	return false
+}
+
+func AllAddrFilter() AddressFilter {
+	return &allAddrFilter{}
+}
+
+type allAddrFilter struct{}
+
+func (self *allAddrFilter) Ccntmains(addr string) bool {
+	return true
 }

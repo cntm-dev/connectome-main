@@ -19,8 +19,11 @@ package testsuite
 
 import (
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
 	_ "github.com/cntmio/cntmology/smartccntmract/service/native/init"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
@@ -42,6 +45,33 @@ func cntmBalanceOf(native *native.NativeService, addr common.Address) int {
 	buf, _ := cntm.OntBalanceOf(native)
 	val := common.BigIntFromNeoBytes(buf)
 	return int(val.Uint64())
+}
+
+func setOngBalance(db *storage.CacheDB, addr common.Address, value uint64) {
+	balanceKey := cntm.GenBalanceKey(utils.OngCcntmractAddress, addr)
+	item := utils.GenUInt64StorageItem(value)
+	db.Put(balanceKey, item.ToArray())
+}
+
+func cntmBalanceOf(native *native.NativeService, addr common.Address) uint64 {
+	native.CcntmextRef.CurrentCcntmext().CcntmractAddress = utils.OngCcntmractAddress
+	sink := common.NewZeroCopySink(nil)
+	utils.EncodeAddress(sink, addr)
+	native.Input = sink.Bytes()
+	buf, _ := cntm.OngBalanceOf(native)
+	val := common.BigIntFromNeoBytes(buf)
+	return val.Uint64()
+}
+
+func cntmAllowance(native *native.NativeService, from, to common.Address) uint64 {
+	native.CcntmextRef.CurrentCcntmext().CcntmractAddress = utils.OngCcntmractAddress
+	sink := common.NewZeroCopySink(nil)
+	utils.EncodeAddress(sink, from)
+	utils.EncodeAddress(sink, to)
+	native.Input = sink.Bytes()
+	buf, _ := cntm.OngAllowance(native)
+	val := common.BigIntFromNeoBytes(buf)
+	return val.Uint64()
 }
 
 func cntmTotalAllowance(native *native.NativeService, addr common.Address) int {
@@ -69,6 +99,11 @@ func cntmApprove(native *native.NativeService, from, to common.Address, value ui
 	native.Input = common.SerializeToBytes(&cntm.State{from, to, value})
 
 	_, err := cntm.OntApprove(native)
+	return err
+}
+
+func unboundGovernanceOng(native *native.NativeService) error {
+	_, err := cntm.UnboundOngToGovernance(native)
 	return err
 }
 
@@ -113,6 +148,70 @@ func TestTotalAllowance(t *testing.T) {
 		assert.Nil(t, cntmApprove(native, a, c, 100))
 		assert.Equal(t, cntmTotalAllowance(native, a), 110)
 		assert.Equal(t, cntmTotalAllowance(native, c), 0)
+
+		return nil, nil
+	})
+}
+
+func TestGovernanceUnbound(t *testing.T) {
+	InvokeNativeCcntmract(t, utils.OntCcntmractAddress, func(native *native.NativeService) ([]byte, error) {
+		gov := utils.GovernanceCcntmractAddress
+		setOntBalance(native.CacheDB, gov, constants.cntm_TOTAL_SUPPLY)
+		setOngBalance(native.CacheDB, utils.OntCcntmractAddress, constants.cntm_TOTAL_SUPPLY)
+
+		native.Time = constants.GENESIS_BLOCK_TIMESTAMP + 1
+
+		assert.Nil(t, cntmTransfer(native, gov, gov, 1))
+		assert.Equal(t, cntmAllowance(native, utils.OntCcntmractAddress, gov), uint64(5000000000))
+
+		return nil, nil
+	})
+
+	InvokeNativeCcntmract(t, utils.OntCcntmractAddress, func(native *native.NativeService) ([]byte, error) {
+		gov := utils.GovernanceCcntmractAddress
+		setOntBalance(native.CacheDB, gov, constants.cntm_TOTAL_SUPPLY)
+		setOngBalance(native.CacheDB, utils.OntCcntmractAddress, constants.cntm_TOTAL_SUPPLY)
+
+		native.Time = constants.GENESIS_BLOCK_TIMESTAMP + 18*constants.UNBOUND_TIME_INTERVAL
+
+		assert.Nil(t, cntmTransfer(native, gov, gov, 1))
+		assert.Nil(t, unboundGovernanceOng(native))
+		assert.Equal(t, cntmBalanceOf(native, gov), constants.cntm_TOTAL_SUPPLY)
+
+		return nil, nil
+	})
+
+	InvokeNativeCcntmract(t, utils.OntCcntmractAddress, func(native *native.NativeService) ([]byte, error) {
+		gov := utils.GovernanceCcntmractAddress
+		setOntBalance(native.CacheDB, gov, constants.cntm_TOTAL_SUPPLY)
+		setOngBalance(native.CacheDB, utils.OntCcntmractAddress, constants.cntm_TOTAL_SUPPLY)
+
+		native.Time = constants.GENESIS_BLOCK_TIMESTAMP + 18*constants.UNBOUND_TIME_INTERVAL
+
+		assert.Nil(t, unboundGovernanceOng(native))
+		assert.Nil(t, cntmTransfer(native, gov, gov, 1))
+		assert.Equal(t, cntmBalanceOf(native, gov), constants.cntm_TOTAL_SUPPLY)
+
+		return nil, nil
+	})
+
+	InvokeNativeCcntmract(t, utils.OntCcntmractAddress, func(native *native.NativeService) ([]byte, error) {
+		gov := utils.GovernanceCcntmractAddress
+		setOntBalance(native.CacheDB, gov, constants.cntm_TOTAL_SUPPLY)
+		setOngBalance(native.CacheDB, utils.OntCcntmractAddress, constants.cntm_TOTAL_SUPPLY)
+
+		native.Time = constants.GENESIS_BLOCK_TIMESTAMP + 1
+		assert.Nil(t, cntmTransfer(native, gov, gov, 1))
+		native.Time = constants.GENESIS_BLOCK_TIMESTAMP + 10000
+		assert.Nil(t, cntmTransfer(native, gov, gov, 1))
+		native.Time = config.GetOntHolderUnboundDeadline() - 100
+		assert.Nil(t, cntmTransfer(native, gov, gov, 1))
+
+		native.Time = constants.GENESIS_BLOCK_TIMESTAMP + 18*constants.UNBOUND_TIME_INTERVAL
+
+		assert.Nil(t, unboundGovernanceOng(native))
+		assert.Nil(t, cntmTransfer(native, gov, gov, 1))
+		assert.Equal(t, cntmBalanceOf(native, gov), constants.cntm_TOTAL_SUPPLY)
 
 		return nil, nil
 	})

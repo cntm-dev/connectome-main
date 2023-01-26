@@ -23,6 +23,7 @@ import (
 	"math/big"
 
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/common/serialization"
@@ -53,6 +54,7 @@ func RegisterOntCcntmract(native *native.NativeService) {
 	native.Register(BALANCEOF_NAME, OntBalanceOf)
 	native.Register(ALLOWANCE_NAME, OntAllowance)
 	native.Register(TOTAL_ALLOWANCE_NAME, OntTotalAllowance)
+	native.Register(UNBOUND_cntm_TO_GOVERNANCE, UnboundOngToGovernance)
 }
 
 func OntInit(native *native.NativeService) ([]byte, error) {
@@ -270,6 +272,14 @@ func TotalAllowance(native *native.NativeService) ([]byte, error) {
 	return common.BigIntToNeoBytes(big.NewInt(int64(r))), nil
 }
 
+func UnboundOngToGovernance(native *native.NativeService) ([]byte, error) {
+	err := unboundOngToGovernance(native)
+	if err != nil {
+		return utils.BYTE_FALSE, fmt.Errorf("unboundOngToGovernance error: %s", err)
+	}
+	return utils.BYTE_TRUE, nil
+}
+
 func grantOng(native *native.NativeService, ccntmract, address common.Address, balance uint64) error {
 	startOffset, err := getUnboundOffset(native, ccntmract, address)
 	if err != nil {
@@ -317,10 +327,36 @@ func getApproveArgs(native *native.NativeService, ccntmract, cntmCcntmract, addr
 
 	stateValue, err := utils.GetStorageUInt64(native, GenApproveKey(cntmCcntmract, approve.From, approve.To))
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	approve.Value += stateValue
 	approve.Serialization(bf)
+	return bf.Bytes(), approve.Value, nil
+}
+
+func getTransferArgs(ccntmract, address common.Address, value uint64) ([]byte, error) {
+	bf := common.NewZeroCopySink(nil)
+	state := State{
+		From:  ccntmract,
+		To:    address,
+		Value: value,
+	}
+	transfers := Transfers{[]State{state}}
+
+	transfers.Serialization(bf)
 	return bf.Bytes(), nil
+}
+
+func getTransferFromArgs(sender, from, to common.Address, value uint64) ([]byte, error) {
+	sink := common.NewZeroCopySink(nil)
+	param := TransferFrom{
+		Sender: sender,
+		From:   from,
+		To:     to,
+		Value:  value,
+	}
+
+	param.Serialization(sink)
+	return sink.Bytes(), nil
 }

@@ -23,6 +23,7 @@ import (
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/constants"
 	cstates "github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/event"
@@ -31,19 +32,20 @@ import (
 )
 
 const (
-	UNBOUND_TIME_OFFSET  = "unboundTimeOffset"
-	TOTAL_SUPPLY_NAME    = "totalSupply"
-	INIT_NAME            = "init"
-	TRANSFER_NAME        = "transfer"
-	APPROVE_NAME         = "approve"
-	TRANSFERFROM_NAME    = "transferFrom"
-	NAME_NAME            = "name"
-	SYMBOL_NAME          = "symbol"
-	DECIMALS_NAME        = "decimals"
-	TOTALSUPPLY_NAME     = "totalSupply"
-	BALANCEOF_NAME       = "balanceOf"
-	ALLOWANCE_NAME       = "allowance"
-	TOTAL_ALLOWANCE_NAME = "totalAllowance"
+	UNBOUND_TIME_OFFSET       = "unboundTimeOffset"
+	TOTAL_SUPPLY_NAME         = "totalSupply"
+	INIT_NAME                 = "init"
+	TRANSFER_NAME             = "transfer"
+	APPROVE_NAME              = "approve"
+	TRANSFERFROM_NAME         = "transferFrom"
+	NAME_NAME                 = "name"
+	SYMBOL_NAME               = "symbol"
+	DECIMALS_NAME             = "decimals"
+	TOTALSUPPLY_NAME          = "totalSupply"
+	BALANCEOF_NAME            = "balanceOf"
+	ALLOWANCE_NAME            = "allowance"
+	TOTAL_ALLOWANCE_NAME      = "totalAllowance"
+	UNBOUND_cntm_TO_GOVERNANCE = "unboundOngToGovernance"
 )
 
 func AddNotifications(native *native.NativeService, ccntmract common.Address, state *State) {
@@ -93,8 +95,14 @@ func GenApproveKey(ccntmract, from, to common.Address) []byte {
 }
 
 func TransferedFrom(native *native.NativeService, currentCcntmract common.Address, state *TransferFrom) (uint64, uint64, error) {
-	if native.CcntmextRef.CheckWitness(state.Sender) == false {
-		return 0, 0, errors.NewErr("authentication failed!")
+	if native.Time <= config.GetOntHolderUnboundDeadline()+constants.GENESIS_BLOCK_TIMESTAMP {
+		if !native.CcntmextRef.CheckWitness(state.Sender) {
+			return 0, 0, errors.NewErr("authentication failed!")
+		}
+	} else {
+		if state.Sender != state.To && !native.CcntmextRef.CheckWitness(state.Sender) {
+			return 0, 0, errors.NewErr("authentication failed!")
+		}
 	}
 
 	if err := fromApprove(native, genTransferFromKey(currentCcntmract, state), state.Value); err != nil {
@@ -115,6 +123,14 @@ func TransferedFrom(native *native.NativeService, currentCcntmract common.Addres
 
 func getUnboundOffset(native *native.NativeService, ccntmract, address common.Address) (uint32, error) {
 	offset, err := utils.GetStorageUInt32(native, genAddressUnboundOffsetKey(ccntmract, address))
+	if err != nil {
+		return 0, err
+	}
+	return offset, nil
+}
+
+func getGovernanceUnboundOffset(native *native.NativeService, ccntmract common.Address) (uint32, error) {
+	offset, err := utils.GetStorageUInt32(native, genGovernanceUnboundOffsetKey(ccntmract))
 	if err != nil {
 		return 0, err
 	}
@@ -170,4 +186,9 @@ func toTransfer(native *native.NativeService, toKey []byte, value uint64) (uint6
 func genAddressUnboundOffsetKey(ccntmract, address common.Address) []byte {
 	temp := append(ccntmract[:], UNBOUND_TIME_OFFSET...)
 	return append(temp, address[:]...)
+}
+
+func genGovernanceUnboundOffsetKey(ccntmract common.Address) []byte {
+	temp := append(ccntmract[:], UNBOUND_TIME_OFFSET...)
+	return temp
 }

@@ -15,31 +15,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
-package connect_ccntmroller
 
-import (
-	"net"
+package common
 
-	"github.com/cntmio/cntmology/p2pserver/common"
-)
-
-// Conn is a net.Conn wrapper to do some clean up when Close.
-type Conn struct {
-	net.Conn
-	addr       string
-	listenAddr string
-	kid        common.PeerId
-	boundIndex int
-	connectId  uint64
-	ccntmroller *ConnectCcntmroller
-}
-
-// Close overwrite net.Conn
-// warning: this method will try to lock the ccntmroller, be carefull to avoid deadlock
-func (self *Conn) Close() error {
-	self.ccntmroller.logger.Infof("closing connection: peer %s, address: %s", self.kid.ToHexString(), self.addr)
-
-	self.ccntmroller.removePeer(self)
-
-	return self.Conn.Close()
+type SubnetMemberInfo struct {
+	PubKey     string `json:"pubKey"`
+	ListenAddr string `json:"listenAddr"`
+	Connected  bool   `json:"connected"`
 }

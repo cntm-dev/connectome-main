@@ -19,7 +19,6 @@
 package nodeinfo
 
 import (
-	"strings"
 	"time"
 
 	"github.com/cntmio/cntmology/common/config"
@@ -56,11 +55,6 @@ var (
 		Help: "cntmology peer info",
 	}, []string{"ip", "id"})
 
-	reserveCountMetric = prom.NewGaugeVec(prom.GaugeOpts{
-		Name: "cntmology_p2p_reserve_count",
-		Help: "cntmology peer info",
-	}, []string{"ips"})
-
 	reconnectCountMetric = prom.NewGauge(prom.GaugeOpts{
 		Name: "cntmology_p2p_reconnect_count",
 		Help: "cntmology p2p reconnect count",
@@ -68,7 +62,8 @@ var (
 )
 
 var (
-	metrics = []prom.Collector{nodePortMetric, blockHeightMetric, inboundsCountMetric, outboundsCountMetric, peerStatusMetric, reserveCountMetric, reconnectCountMetric}
+	metrics = []prom.Collector{nodePortMetric, blockHeightMetric, inboundsCountMetric,
+		outboundsCountMetric, peerStatusMetric, reconnectCountMetric}
 )
 
 func initMetric() error {
@@ -101,8 +96,6 @@ func metricUpdate(n p2p.P2P) {
 		// label: IP PeedID
 		peerStatusMetric.WithLabelValues(curPeer.GetAddr(), id.ToHexString()).Set(float64(curPeer.GetHeight()))
 	}
-
-	reserveCountMetric.WithLabelValues(strings.Join(ns.ConnectCcntmroller().ReservedPeers, " ")).Set(float64(len(ns.ConnectCcntmroller().ReservedPeers)))
 
 	pt := ns.Protocol()
 	mh, ok := pt.(*protocols.MsgHandler)

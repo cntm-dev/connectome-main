@@ -20,11 +20,11 @@ package connect_ccntmroller
 import (
 	"fmt"
 	"net"
-	"sort"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/p2pserver/common"
 	"github.com/cntmio/cntmology/p2pserver/handshake"
 	"github.com/cntmio/cntmology/p2pserver/peer"
@@ -91,8 +91,9 @@ func NewNode(option ConnCtrlOption) *Node {
 		SoftVersion: common.MIN_VERSION_FOR_DHT,
 	}
 
+	logger := common.LoggerWithCcntmext(log.Log, fmt.Sprintf("peer %s:, ", info.Id.ToHexString()[:6]))
 	return &Node{
-		ConnectCcntmroller: NewConnectCcntmroller(info, key, option),
+		ConnectCcntmroller: NewConnectCcntmroller(info, key, option, logger),
 		Info:              info,
 		Key:               key,
 	}
@@ -238,24 +239,16 @@ func TestCheckReserveWithDomain(t *testing.T) {
 	gips, err := net.LookupHost(dname)
 	a.Nil(err, "fail to get domain record")
 
-	cc := &ConnectCcntmroller{}
-	cc.ReservedPeers = []string{dname}
+	rsvPeers := NewStaticReserveFilter([]string{dname})
 	for _, ip := range gips {
-		err := cc.checkReservedPeers(fmt.Sprintf("%s:1234", ip))
-		a.Nil(err, "fail")
+		a.True(rsvPeers.Ccntmains(fmt.Sprintf("%s:1234", ip)))
 	}
 
-	cc.ReservedPeers = []string{"192.168.1.111"}
-	cret := cc.inReserveList("192.168.1.1:1234")
-	a.False(cret, "fail")
-	cret = cc.inReserveList("192.168.1.11:1234")
-	a.False(cret, "fail")
-	cret = cc.inReserveList("192.168.1.111:1234")
-	a.True(cret, "fail")
+	rsvPeers = NewStaticReserveFilter([]string{"192.168.1.111"})
+	a.False(rsvPeers.Ccntmains("192.168.1.1:1234"), "fail")
+	a.False(rsvPeers.Ccntmains("192.168.1.11:1234"), "fail")
+	a.True(rsvPeers.Ccntmains("192.168.1.111:1234"), "fail")
 
-	cc.ReservedPeers = []string{"192.168.1.2", "www.baidu.com", "192.168.1.1"}
-	sort.Slice(cc.ReservedPeers, func(i, j int) bool {
-		return net.ParseIP(cc.ReservedPeers[i]) != nil
-	})
-	a.Equal(cc.ReservedPeers[len(cc.ReservedPeers)-1], "www.baidu.com", "fail")
+	rsvPeers = NewStaticReserveFilter([]string{"192.168.1.2", "www.baidu.com", "192.168.1.1"})
+	a.Equal(rsvPeers.ReservedPeers[len(rsvPeers.ReservedPeers)-1], "www.baidu.com", "fail")
 }

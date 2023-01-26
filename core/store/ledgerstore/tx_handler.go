@@ -125,13 +125,13 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 	}
 
 	address := deploy.Address()
-	log.Infof("deploy ccntmract address:%s", address.ToHexString())
 	// store ccntmract message
 	dep, err := cache.GetCcntmract(address)
 	if err != nil {
 		return err
 	}
 	if dep == nil {
+		log.Infof("deploy ccntmract address:%s", address.ToHexString())
 		cache.PutCcntmract(deploy)
 	}
 	cache.Commit()

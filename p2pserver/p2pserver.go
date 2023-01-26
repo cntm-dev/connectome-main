@@ -22,31 +22,48 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/p2pserver/common"
+	"github.com/cntmio/cntmology/p2pserver/connect_ccntmroller"
 	"github.com/cntmio/cntmology/p2pserver/net/netserver"
-	p2pnet "github.com/cntmio/cntmology/p2pserver/net/protocol"
+	p2p "github.com/cntmio/cntmology/p2pserver/net/protocol"
 	"github.com/cntmio/cntmology/p2pserver/protocols"
+	"github.com/cntmio/cntmology/p2pserver/protocols/utils"
 )
 
 //P2PServer ccntmrol all network activities
 type P2PServer struct {
 	network *netserver.NetServer
+	db      *ledger.Ledger
 }
 
 //NewServer return a new p2pserver according to the pubkey
-func NewServer() (*P2PServer, error) {
-	ld := ledger.DefLedger
+func NewServer(acct *account.Account) (*P2PServer, error) {
+	db := ledger.DefLedger
+	var rsv []string
+	var recRsv []string
+	conf := config.DefConfig.P2PNode
+	if conf.ReservedPeersOnly && conf.ReservedCfg != nil {
+		rsv = conf.ReservedCfg.ReservedPeers
+	}
+	if conf.ReservedCfg != nil {
+		recRsv = conf.ReservedCfg.ReservedPeers
+	}
 
-	protocol := protocols.NewMsgHandler(ld)
-	n, err := netserver.NewNetServer(protocol, config.DefConfig.P2PNode)
+	staticFilter := connect_ccntmroller.NewStaticReserveFilter(rsv)
+	protocol := protocols.NewMsgHandler(acct, connect_ccntmroller.NewStaticReserveFilter(recRsv), db, log.Log)
+	reserved := protocol.GetReservedAddrFilter(len(rsv) != 0)
+	reservedPeers := p2p.CombineAddrFilter(staticFilter, reserved)
+	n, err := netserver.NewNetServer(protocol, conf, reservedPeers)
 	if err != nil {
 		return nil, err
 	}
 
 	p := &P2PServer{
+		db:      db,
 		network: n,
 	}
 
@@ -54,26 +71,26 @@ func NewServer() (*P2PServer, error) {
 }
 
 //Start create all services
-func (this *P2PServer) Start() error {
-	return this.network.Start()
+func (self *P2PServer) Start() error {
+	return self.network.Start()
 }
 
 //Stop halt all service by send signal to channels
-func (this *P2PServer) Stop() {
-	this.network.Stop()
+func (self *P2PServer) Stop() {
+	self.network.Stop()
 }
 
 // GetNetwork returns the low level netserver
-func (this *P2PServer) GetNetwork() p2pnet.P2P {
-	return this.network
+func (self *P2PServer) GetNetwork() p2p.P2P {
+	return self.network
 }
 
 //WaitForPeersStart check whether enough peer linked in loop
-func (this *P2PServer) WaitForPeersStart() {
+func (self *P2PServer) WaitForPeersStart() {
 	periodTime := config.DEFAULT_GEN_BLOCK_TIME / common.UPDATE_RATE_PER_BLOCK
 	for {
 		log.Info("[p2p]Wait for minimum connection...")
-		if this.reachMinConnection() {
+		if self.reachMinConnection() {
 			break
 		}
 
@@ -82,7 +99,7 @@ func (this *P2PServer) WaitForPeersStart() {
 }
 
 //reachMinConnection return whether net layer have enough link under different config
-func (this *P2PServer) reachMinConnection() bool {
+func (self *P2PServer) reachMinConnection() bool {
 	if !config.DefConfig.Consensus.EnableConsensus {
 		//just sync
 		return true
@@ -91,14 +108,26 @@ func (this *P2PServer) reachMinConnection() bool {
 	if consensusType == "" {
 		consensusType = "dbft"
 	}
-	minCount := config.DBFT_MIN_NODE_NUM
+	var minCount uint32 = config.DBFT_MIN_NODE_NUM
 	switch consensusType {
 	case "dbft":
 	case "solo":
 		minCount = config.SOLO_MIN_NODE_NUM
 	case "vbft":
-		minCount = config.VBFT_MIN_NODE_NUM
-
+		minCount = self.getVbftGovNodeCount()
 	}
-	return int(this.network.GetConnectionCnt())+1 >= minCount
+	return self.network.GetConnectionCnt()+1 >= minCount
+}
+
+func (self *P2PServer) getVbftGovNodeCount() uint32 {
+	view, err := utils.GetGovernanceView(self.db)
+	if err != nil {
+		return config.VBFT_MIN_NODE_NUM
+	}
+	_, count, err := utils.GetPeersConfig(self.db, view.View)
+	if err != nil {
+		return config.VBFT_MIN_NODE_NUM
+	}
+
+	return count - count/3
 }
