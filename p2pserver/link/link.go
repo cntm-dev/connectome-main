@@ -102,6 +102,11 @@ func (this *Link) Rx() {
 			break
 		}
 
+		if unknown, ok := msg.(*types.UnknownMessage); ok {
+			log.Infof("skip handle unknown msg type:%s from:%d", unknown.CmdType(), this.id)
+			ccntminue
+		}
+
 		t := time.Now()
 		this.UpdateRXTime(t)
 
