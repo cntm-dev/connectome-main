@@ -20,6 +20,7 @@ package proc
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cntmio/cntmology/common"
@@ -53,6 +54,7 @@ type txPoolWorker struct {
 	timer         *time.Timer                   // The timer of reverifying
 	stopCh        chan bool                     // stop routine
 	pendingTxList map[common.Uint256]*pendingTx // The transaction on the verifying process
+	pendingTxLen  int64                         // atomic accessed by other routine
 }
 
 // init initializes the worker with the configured settings
@@ -103,6 +105,7 @@ func (worker *txPoolWorker) handleRsp(rsp *types.CheckResponse) {
 		log.Debugf("handleRsp: validator %d transaction %x invalid: %s",
 			rsp.Type, rsp.Hash, rsp.ErrCode.Error())
 		delete(worker.pendingTxList, rsp.Hash)
+		atomic.StoreInt64(&worker.pendingTxLen, int64(len(worker.pendingTxList)))
 		worker.server.removePendingTx(rsp.Hash, rsp.ErrCode)
 		return
 	}
@@ -127,6 +130,7 @@ func (worker *txPoolWorker) handleRsp(rsp *types.CheckResponse) {
 	if pt.flag&0xf == tc.VERIFY_MASK {
 		worker.putTxPool(pt)
 		delete(worker.pendingTxList, rsp.Hash)
+		atomic.StoreInt64(&worker.pendingTxLen, int64(len(worker.pendingTxList)))
 	}
 }
 
@@ -159,6 +163,7 @@ func (worker *txPoolWorker) handleTimeoutEvent() {
 			}
 		}
 	}
+	atomic.StoreInt64(&worker.pendingTxLen, int64(len(worker.pendingTxList)))
 }
 
 // putTxPool adds a valid transaction to the tx pool and removes it from
@@ -205,6 +210,7 @@ func (worker *txPoolWorker) verifyTx(tx *tx.Transaction) {
 	// Add it to the pending transaction list
 	worker.mu.Lock()
 	worker.pendingTxList[tx.Hash()] = pt
+	atomic.StoreInt64(&worker.pendingTxLen, int64(len(worker.pendingTxList)))
 	worker.mu.Unlock()
 	// Record the time per a txn
 	pt.valTime = time.Now()
@@ -291,6 +297,7 @@ func (worker *txPoolWorker) verifyStateful(tx *tx.Transaction) {
 	// Add it to the pending transaction list
 	worker.mu.Lock()
 	worker.pendingTxList[tx.Hash()] = pt
+	atomic.StoreInt64(&worker.pendingTxLen, int64(len(worker.pendingTxList)))
 	worker.mu.Unlock()
 
 	worker.sendReq2StatefulV(req)
