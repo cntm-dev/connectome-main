@@ -96,7 +96,7 @@ func NewReservedNode(seeds []string, net Network, reservedPeers []string, logPre
 	dis := NewDiscoveryProtocol(seeds, nil)
 	dis.RefleshInterval = time.Millisecond * 1000
 	ccntmext := fmt.Sprintf("peer %s-%s:, ", logPrefix, seedId.Id.ToHexString()[:6])
-	logger := common.LoggerWithCcntmext(log.Log, ccntmext)
+	logger := common.LoggerWithCcntmext(common.NewGlobalLoggerWrapper(), ccntmext)
 
 	rsvFilter := p2p.NoneAddrFilter()
 	if len(reservedPeers) == 0 {

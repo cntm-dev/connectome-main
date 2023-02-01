@@ -51,7 +51,11 @@ func (self *ChainStore) close() {
 }
 
 func (self *ChainStore) GetChainedBlockNum() uint32 {
-	return self.chainedBlockNum
+	return atomic.LoadUint32(&self.chainedBlockNum)
+}
+
+func (self *ChainStore) setChainedBlockNum(blknum uint32) {
+	atomic.StoreUint32(&self.chainedBlockNum, blknum)
 }
 
 func (self *ChainStore) getExecMerkleRoot(blkNum uint32) (common.Uint256, error) {
@@ -89,9 +93,9 @@ func (self *ChainStore) getExecWriteSet(blkNum uint32) *overlaydb.MemDB {
 
 func (self *ChainStore) ReloadFromLedger() {
 	height := self.db.GetCurrentBlockHeight()
-	if height > self.chainedBlockNum {
+	if height > self.GetChainedBlockNum() {
 		// update chainstore height
-		self.chainedBlockNum = height
+		self.setChainedBlockNum(height)
 		// remove persisted pending blocks
 		newPending := make(map[uint32]*PendingBlock)
 		for blkNum, blk := range self.pendingBlocks {
@@ -138,7 +142,7 @@ func (self *ChainStore) AddBlock(block *Block) error {
 				Block: block.Block,
 			})
 	}
-	self.chainedBlockNum = blkNum
+	self.setChainedBlockNum(blkNum)
 	return nil
 }
 

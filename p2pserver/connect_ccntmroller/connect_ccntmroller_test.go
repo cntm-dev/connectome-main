@@ -24,7 +24,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/p2pserver/common"
 	"github.com/cntmio/cntmology/p2pserver/handshake"
 	"github.com/cntmio/cntmology/p2pserver/peer"
@@ -91,7 +90,7 @@ func NewNode(option ConnCtrlOption) *Node {
 		SoftVersion: common.MIN_VERSION_FOR_DHT,
 	}
 
-	logger := common.LoggerWithCcntmext(log.Log, fmt.Sprintf("peer %s:, ", info.Id.ToHexString()[:6]))
+	logger := common.LoggerWithCcntmext(common.NewGlobalLoggerWrapper(), fmt.Sprintf("peer %s:, ", info.Id.ToHexString()[:6]))
 	return &Node{
 		ConnectCcntmroller: NewConnectCcntmroller(info, key, option, logger),
 		Info:              info,

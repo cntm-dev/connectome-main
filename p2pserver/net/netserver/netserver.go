@@ -62,7 +62,7 @@ func NewNetServer(protocol p2p.Protocol, conf *config.P2PNodeConfig, reserveAddr
 func NewCustomNetServer(id *common.PeerKeyId, info *peer.PeerInfo, proto p2p.Protocol,
 	listener net.Listener, opt connect_ccntmroller.ConnCtrlOption, logger common.Logger) *NetServer {
 	if logger == nil {
-		logger = log.Log
+		logger = common.NewGlobalLoggerWrapper()
 	}
 	connCtrl := connect_ccntmroller.NewConnectCcntmroller(info, id, opt, logger)
 
