@@ -137,7 +137,7 @@ func (pool *BlockPool) newBlockProposal(msg *blockProposalMsg) error {
 	// check dup-proposal from same proposer
 	for _, p := range candidate.Proposals {
 		if p.Block.getProposer() == msg.Block.getProposer() {
-			if bytes.Compare(p.Block.Block.Header.SigData[0], msg.Block.Block.Header.SigData[0]) == 0 {
+			if bytes.Compare(p.BlockProposerSig, msg.BlockProposerSig) == 0 {
 				return nil
 			}
 			return errDupProposal
@@ -151,7 +151,7 @@ func (pool *BlockPool) newBlockProposal(msg *blockProposalMsg) error {
 	proposer := msg.Block.getProposer()
 	eSig := &CandidateEndorseSigInfo{
 		EndorsedProposer: proposer,
-		Signature:        msg.Block.Block.Header.SigData[0],
+		Signature:        msg.BlockProposerSig,
 		ForEmpty:         false,
 	}
 	if msg.Block.Block.Header.Height > 1 && msg.Block.CrossChainMsg != nil {
@@ -518,11 +518,10 @@ func (pool *BlockPool) commitDone(blkNum uint32, C uint32, N uint32) (uint32, bo
 	// check consensus with commit msgs
 	proposer, forEmpty := getCommitConsensus(candidate.CommitMsgs, int(C), int(N))
 
-	// enforce signature quorum if checking commit-consensus base on signature count
-	// if C <= (N-1)/3, N-1-C >= 2*C
-	C = N - 1 - C
 	if proposer == math.MaxUint32 {
 		// check consensus with endorse sigs
+		// enforce signature quorum if checking commit-consensus base on signature count
+		C = N - (N-1)/3 - 1
 		var emptyCnt uint32
 		endorseCnt := make(map[uint32]uint32) // proposer -> endorsed-cnt
 		for endorser, eSigs := range candidate.EndorseSigs {

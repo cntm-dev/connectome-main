@@ -21,6 +21,7 @@ package vbft
 import (
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cntmio/cntmology/common"
@@ -240,8 +241,10 @@ func (self *Syncer) blockConsensusDone(blks BlockFromPeers) *Block {
 	for _, blk := range blks {
 		proposers[blk.getProposer()] += 1
 	}
+
+	chainCfg := self.server.GetChainConfig()
 	for proposerId, cnt := range proposers {
-		if cnt > int(self.server.config.C) {
+		if cnt > int(chainCfg.C) {
 			// find the block
 			for _, blk := range blks {
 				if blk.getProposer() == proposerId {
@@ -262,8 +265,10 @@ func (self *Syncer) blockCheckMerkleRoot(blks BlockFromPeers) *Block {
 	for _, blk := range blks {
 		merkleRoot[blk.getPrevExecMerkleRoot()] += 1
 	}
+
+	chainCfg := self.server.GetChainConfig()
 	for merklerootvalue, cnt := range merkleRoot {
-		if cnt > int(self.server.config.C) {
+		if cnt > int(chainCfg.C) {
 			// find the block
 			for _, blk := range blks {
 				if blk.getPrevExecMerkleRoot() == merklerootvalue {
@@ -417,7 +422,7 @@ func (self *PeerSyncer) requestBlock(blkNum uint32) (*Block, error) {
 		Msg:    msg,
 	}
 
-	t := time.NewTimer(makeProposalTimeout * 2)
+	t := time.NewTimer(time.Duration(atomic.LoadInt64(&makeProposalTimeout) * 2))
 	defer t.Stop()
 
 	select {
@@ -448,7 +453,7 @@ func (self *PeerSyncer) requestBlockInfo(startBlkNum uint32) ([]*BlockInfo_, err
 		Msg:    msg,
 	}
 
-	t := time.NewTimer(makeProposalTimeout * 2)
+	t := time.NewTimer(time.Duration(atomic.LoadInt64(&makeProposalTimeout) * 2))
 	defer t.Stop()
 
 	select {
