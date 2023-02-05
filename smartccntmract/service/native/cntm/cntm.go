@@ -178,7 +178,7 @@ func OntApprove(native *native.NativeService) ([]byte, error) {
 	if state.Value > constants.cntm_TOTAL_SUPPLY {
 		return utils.BYTE_FALSE, fmt.Errorf("approve cntm amount:%d over totalSupply:%d", state.Value, constants.cntm_TOTAL_SUPPLY)
 	}
-	if native.CcntmextRef.CheckWitness(state.From) == false {
+	if !native.CcntmextRef.CheckWitness(state.From) {
 		return utils.BYTE_FALSE, errors.NewErr("authentication failed!")
 	}
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress

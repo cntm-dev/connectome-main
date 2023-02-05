@@ -375,7 +375,7 @@ func normalQuit(native *native.NativeService, ccntmract common.Address, peerPool
 	if err := iter.Error(); err != nil {
 		return err
 	}
-	if flag == false {
+	if !flag {
 		authorizeInfo := &AuthorizeInfo{
 			PeerPubkey:          peerPoolItem.PeerPubkey,
 			Address:             peerPoolItem.Address,

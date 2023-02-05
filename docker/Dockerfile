@@ -1,9 +1,17 @@
+# 1. Stage one: build cntmology
+FROM golang:1.13 AS build
+WORKDIR /app
+RUN git clone https://github.com/cntmio/cntmology.git  && \
+    cd cntmology && \
+    make 
 
-FROM tianon/ubuntu-core:14.04
-ENV cntmOLOGY_PATH /var/cntmology
-RUN mkdir -p $cntmOLOGY_PATH
-COPY cntmology $cntmOLOGY_PATH
+# 2. Stage two: copy compiled binary from prev builded ccntmainer(referenced by name build)
+FROM ubuntu:18.04
+WORKDIR /app
+COPY --from=build /app/cntmology/cntmology cntmology
+
+
 EXPOSE 20334 20335 20336 20337 20338 20339
-WORKDIR $cntmOLOGY_PATH
-ENTRYPOINT ["./cntmology"]
-
+#NOTE! we highly recommand that you put data dir to a mounted volume, e.g. --data-dir /data/Chain
+#write data to docker image is *not* a best practice
+CMD ["/app/cntmology"]

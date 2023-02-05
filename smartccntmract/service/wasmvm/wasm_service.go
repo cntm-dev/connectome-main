@@ -135,7 +135,7 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 
 	entry, ok := compiled.RawModule.Export.Entries[entryName]
 
-	if ok == false {
+	if !ok {
 		return nil, errors.NewErr("[Call]Method:" + entryName + " does not exist!")
 	}
 

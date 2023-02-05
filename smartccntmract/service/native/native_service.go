@@ -29,7 +29,6 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/ccntmext"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/states"
-	sstates "github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
 )
 
@@ -52,7 +51,7 @@ type NativeService struct {
 	CacheDB       *storage.CacheDB
 	ServiceMap    map[string]Handler
 	Notifications []*event.NotifyEventInfo
-	InvokeParam   sstates.CcntmractInvokeParam
+	InvokeParam   states.CcntmractInvokeParam
 	Input         []byte
 	Tx            *types.Transaction
 	Height        uint32

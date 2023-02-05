@@ -30,7 +30,6 @@ func newEvent(srvc *native.NativeService, st interface{}) {
 	e.CcntmractAddress = srvc.CcntmextRef.CurrentCcntmext().CcntmractAddress
 	e.States = st
 	srvc.Notifications = append(srvc.Notifications, &e)
-	return
 }
 
 func triggerRegisterEvent(srvc *native.NativeService, id []byte) {

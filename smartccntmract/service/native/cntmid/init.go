@@ -83,5 +83,4 @@ func RegisterIDCcntmract(srvc *native.NativeService) {
 	srvc.Register("getServiceJson", GetServiceJson)
 	srvc.Register("getCcntmrollerJson", GetCcntmrollerJson)
 	srvc.Register("getDocumentJson", GetDocumentJson)
-	return
 }

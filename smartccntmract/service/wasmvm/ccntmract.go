@@ -136,6 +136,9 @@ func CcntmractCreate(proc *exec.Process,
 	self.Service.CacheDB.PutCcntmract(dep)
 
 	length, err := proc.WriteAt(ccntmractAddr[:], int64(newAddressPtr))
+	if err != nil {
+		panic(err)
+	}
 	return uint32(length)
 
 }

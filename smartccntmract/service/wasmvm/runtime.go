@@ -698,7 +698,7 @@ func (self *Runtime) getCcntmractType(addr common.Address) (CcntmractType, error
 		return UNKOWN_CcntmRACT, err
 	}
 	if dep == nil {
-		return UNKOWN_CcntmRACT, errors.NewErr("ccntmract is not exist.")
+		return UNKOWN_CcntmRACT, fmt.Errorf("ccntmract %s is not exist", addr.ToHexString())
 	}
 	if dep.VmType() == payload.WASMVM_TYPE {
 		return WASMVM_CcntmRACT, nil

@@ -19,30 +19,21 @@
 package vconfig
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 
 	"github.com/cntmio/cntmology-crypto/keypair"
+	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/types"
 )
 
 // PubkeyID returns a marshaled representation of the given public key.
 func PubkeyID(pub keypair.PublicKey) string {
-	nodeid := hex.EncodeToString(keypair.SerializePublicKey(pub))
-	return nodeid
+	return common.PubKeyToHex(pub)
 }
 
 func Pubkey(nodeid string) (keypair.PublicKey, error) {
-	pubKey, err := hex.DecodeString(nodeid)
-	if err != nil {
-		return nil, err
-	}
-	pk, err := keypair.DeserializePublicKey(pubKey)
-	if err != nil {
-		return nil, fmt.Errorf("deserialize failed: %s", err)
-	}
-	return pk, err
+	return common.PubKeyFromHex(nodeid)
 }
 
 func VbftBlock(header *types.Header) (*VbftBlockInfo, error) {

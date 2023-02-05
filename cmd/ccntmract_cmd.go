@@ -156,7 +156,7 @@ func deployCcntmract(ctx *cli.Ccntmext) error {
 		gasPrice = 0
 	}
 
-	cversion := fmt.Sprintf("%s", version)
+	cversion := version
 
 	if ctx.IsSet(utils.GetFlagName(utils.CcntmractPrepareDeployFlag)) {
 		preResult, err := utils.PrepareDeployCcntmract(vmtype, code, name, cversion, author, email, desc)
