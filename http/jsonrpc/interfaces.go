@@ -16,7 +16,7 @@
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package rpc
+package jsonrpc
 
 import (
 	"encoding/hex"
@@ -31,13 +31,14 @@ import (
 	bactor "github.com/cntmio/cntmology/http/base/actor"
 	bcomn "github.com/cntmio/cntmology/http/base/common"
 	berr "github.com/cntmio/cntmology/http/base/error"
+	"github.com/cntmio/cntmology/http/base/rpc"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 )
 
 //get best block hash
 func GetBestBlockHash(params []interface{}) map[string]interface{} {
 	hash := bactor.CurrentBlockHash()
-	return responseSuccess(hash.ToHexString())
+	return rpc.ResponseSuccess(hash.ToHexString())
 }
 
 // get block by height or hash

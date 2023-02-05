@@ -54,6 +54,16 @@ type BalanceOfRsp struct {
 	Height string `json:"height"`
 }
 
+type Oep4BalanceOfRsp struct {
+	Oep4   []Oep4Balance `json:"oep4"`
+	Height string        `json:"height"`
+}
+
+type Oep4Balance struct {
+	Addr    string `json:"addr"`
+	Balance string `json:"balance"`
+}
+
 type MerkleProof struct {
 	Type             string
 	TransactionsRoot string
@@ -312,6 +322,24 @@ func GetBalance(address common.Address) (*BalanceOfRsp, error) {
 	}, nil
 }
 
+func GetOep4Balance(ccntmractAddress common.Address, addrs []common.Address) (*Oep4BalanceOfRsp, error) {
+	balances, height, err := GetOep4CcntmractBalance(ccntmractAddress, addrs, true)
+	if err != nil {
+		return nil, fmt.Errorf("get cntm balance error:%s", err)
+	}
+	res := make([]Oep4Balance, len(addrs))
+	for i, addr := range addrs {
+		res[i] = Oep4Balance{
+			Addr:    addr.ToBase58(),
+			Balance: balances[i],
+		}
+	}
+	return &Oep4BalanceOfRsp{
+		Oep4:   res,
+		Height: fmt.Sprintf("%d", height),
+	}, nil
+}
+
 func GetGrantOng(addr common.Address) (string, error) {
 	key := append([]byte(cntm.UNBOUND_TIME_OFFSET), addr[:]...)
 	value, err := ledger.DefLedger.GetStorageItem(utils.OntCcntmractAddress, key)
@@ -355,6 +383,7 @@ func GetCcntmractBalance(cVersion byte, ccntmractAddres []common.Address, accAdd
 		if err != nil {
 			return nil, 0, fmt.Errorf("NewNativeInvokeTransaction error:%s", err)
 		}
+
 		tx, err := mutable.IntoImmutable()
 		if err != nil {
 			return nil, 0, err
@@ -379,6 +408,45 @@ func GetCcntmractBalance(cVersion byte, ccntmractAddres []common.Address, accAdd
 
 		balance := common.BigIntFromNeoBytes(data)
 		balances = append(balances, balance.Uint64())
+	}
+
+	return balances, height, nil
+}
+
+func GetOep4CcntmractBalance(ccntmractAddr common.Address, accAddr []common.Address, atomic bool) ([]string, uint32, error) {
+	txes := make([]*types.Transaction, 0, len(accAddr))
+	var mutable *types.MutableTransaction
+	var err error
+	for _, userAcc := range accAddr {
+		mutable, err = NewNeovmInvokeTransaction(0, 0, ccntmractAddr, []interface{}{"balanceOf", []interface{}{userAcc}})
+		if err != nil {
+			return nil, 0, fmt.Errorf("NewNeovmInvokeTransaction error:%s", err)
+		}
+
+		tx, err := mutable.IntoImmutable()
+		if err != nil {
+			return nil, 0, err
+		}
+
+		txes = append(txes, tx)
+	}
+
+	results, height, err := bactor.PreExecuteCcntmractBatch(txes, atomic)
+	if err != nil {
+		return nil, 0, fmt.Errorf("PrepareInvokeCcntmract error:%s", err)
+	}
+	balances := make([]string, 0, len(ccntmractAddr))
+	for _, result := range results {
+		if result.State == 0 {
+			return nil, 0, fmt.Errorf("prepare invoke failed")
+		}
+		data, err := hex.DecodeString(result.Result.(string))
+		if err != nil {
+			return nil, 0, fmt.Errorf("hex.DecodeString error:%s", err)
+		}
+
+		balance := common.BigIntFromNeoBytes(data)
+		balances = append(balances, balance.String())
 	}
 
 	return balances, height, nil

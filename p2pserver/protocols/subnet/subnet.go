@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/cntmio/cntmology/account"
+	common2 "github.com/cntmio/cntmology/common"
 	vconfig "github.com/cntmio/cntmology/consensus/vbft/config"
 	"github.com/cntmio/cntmology/p2pserver/common"
 	"github.com/cntmio/cntmology/p2pserver/message/types"
@@ -39,6 +40,17 @@ const MaxInactiveTime = 10 * time.Minute
 
 var RefreshDuration = 1 * time.Minute
 
+type WitnessStatus = byte
+
+const NewStatus WitnessStatus = 0
+const UpdatedStatus WitnessStatus = 1
+const UnchangedStatus WitnessStatus = 2
+
+type Offline struct {
+	Status WitnessStatus
+	Msg    *types.OfflineWitnessMsg
+}
+
 type SubNet struct {
 	acct     *account.Account // nil if conenesus is not enabled
 	seeds    *utils.HostsResolver
@@ -50,9 +62,10 @@ type SubNet struct {
 	seedNode uint32 // bool acturally
 	closed   bool
 
-	connected map[string]*peer.PeerInfo // connected seed or gov node, listen address --> PeerInfo
-	members   map[string]*MemberStatus  // gov node info, listen address --> pubkey hex string
-	logger    common.Logger
+	connected      map[string]*peer.PeerInfo    // connected seed/gov node, listenAddr --> PeerInfo
+	members        map[string]*MemberStatus     // gov node info, listenAddr --> pubkey hex string
+	offlineWitness map[common2.Uint256]*Offline // hash -> msg
+	logger         common.Logger
 }
 
 func NewSubNet(acc *account.Account, seeds *utils.HostsResolver,
@@ -64,8 +77,9 @@ func NewSubNet(acc *account.Account, seeds *utils.HostsResolver,
 		unparker: utils.NewParker(),
 		logger:   logger,
 
-		connected: make(map[string]*peer.PeerInfo),
-		members:   make(map[string]*MemberStatus),
+		connected:      make(map[string]*peer.PeerInfo),
+		members:        make(map[string]*MemberStatus),
+		offlineWitness: make(map[common2.Uint256]*Offline),
 	}
 }
 
@@ -187,10 +201,11 @@ func (self *SubNet) OnMembersRequest(ctx *p2p.Ccntmext, msg *types.SubnetMembers
 	}
 
 	self.lock.Lock()
-	members := make([]types.MemberInfo, 0, len(self.members))
+	memberInfos := self.cleanAndGetMembersInfoLocked()
+	members := make([]types.MemberInfo, 0, len(memberInfos))
 
-	for addr, status := range self.members {
-		members = append(members, types.MemberInfo{PubKey: status.PubKey, Addr: addr})
+	for _, info := range memberInfos {
+		members = append(members, types.MemberInfo{PubKey: info.PubKey, Addr: info.ListenAddr})
 	}
 
 	//update self.members
@@ -356,10 +371,17 @@ func (self *SubNet) maintainLoop(net p2p.P2P) {
 		self.cleanInactiveGovNode()
 
 		if seedOrGov {
+			self.sendOfflineWitness(net)
+
 			self.sendMembersRequestToRandNodes(net)
 			members := self.GetMembersInfo()
 			buf, _ := json.Marshal(members)
 			self.logger.Infof("[subnet] current members: %s", string(buf))
+			votes := self.GetOfflineVotes()
+			if len(votes) != 0 {
+				buf, _ = json.Marshal(votes)
+				self.logger.Infof("[subnet] current offline votes: %s", string(buf))
+			}
 		}
 
 		parker.ParkTimeout(RefreshDuration)
@@ -382,12 +404,10 @@ func (self *SubNet) GetMaskAddrFilter() p2p.AddressFilter {
 	}
 }
 
-//restful api
-func (self *SubNet) GetMembersInfo() []common.SubnetMemberInfo {
-	self.lock.RLock()
-	defer self.lock.RUnlock()
-
-	var members []common.SubnetMemberInfo
+// some gov node may change its listen ip address,
+// this function will try to remove old address
+func (self *SubNet) cleanAndGetMembersInfoLocked() map[string]common.SubnetMemberInfo {
+	members := make(map[string]common.SubnetMemberInfo)
 	for addr, mem := range self.members {
 		connected := self.selfAddr == addr
 		height := uint64(0)
@@ -397,14 +417,43 @@ func (self *SubNet) GetMembersInfo() []common.SubnetMemberInfo {
 			height = p.Height()
 			version = p.SoftVersion
 		}
-		members = append(members, common.SubnetMemberInfo{
+
+		curr := common.SubnetMemberInfo{
 			PubKey:     mem.PubKey,
 			ListenAddr: addr,
 			Connected:  connected,
 			Height:     height,
 			Version:    version,
-		})
+		}
+
+		prev, ok := members[mem.PubKey]
+		if !ok {
+			members[mem.PubKey] = curr
+		} else { // already has one item
+			if connected && !prev.Connected { // delete prev if curr is connected, but prev is not
+				delete(self.members, prev.ListenAddr)
+				members[mem.PubKey] = curr
+			} else if prev.Connected && !connected { // delete curr if prev is connected, but curr is not
+				delete(self.members, addr)
+			}
+
+			// keep both if both not connected, (both connected is not possible because of p2p handshake)
+		}
 	}
 
 	return members
+}
+
+//restful api
+func (self *SubNet) GetMembersInfo() []common.SubnetMemberInfo {
+	self.lock.Lock()
+	members := self.cleanAndGetMembersInfoLocked()
+	self.lock.Unlock()
+
+	result := make([]common.SubnetMemberInfo, 0, len(members))
+	for _, info := range members {
+		result = append(result, info)
+	}
+
+	return result
 }
