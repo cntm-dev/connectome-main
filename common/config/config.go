@@ -220,6 +220,17 @@ func GetNewPeerCostHeight() uint32 {
 	}
 }
 
+func GetTrackDestroyedCcntmractHeight() uint32 {
+	switch DefConfig.P2PNode.NetworkId {
+	case NETWORK_ID_MAIN_NET:
+		return constants.BLOCKHEIGHT_TRACK_DESTROYED_CcntmRACT_MAINNET
+	case NETWORK_ID_POLARIS_NET:
+		return constants.BLOCKHEIGHT_TRACK_DESTROYED_CcntmRACT_POLARIS
+	default:
+		return 0
+	}
+}
+
 // the end of unbound timestamp offset from genesis block's timestamp
 func GetGovUnboundDeadline() (uint32, uint64) {
 	count := uint64(0)

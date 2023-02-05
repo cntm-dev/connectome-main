@@ -126,9 +126,12 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 
 	address := deploy.Address()
 	// store ccntmract message
-	dep, err := cache.GetCcntmract(address)
+	dep, destroyed, err := cache.GetCcntmract(address)
 	if err != nil {
 		return err
+	}
+	if destroyed {
+		return fmt.Errorf("can not redeploy destroyed ccntmract: %s", address.ToHexString())
 	}
 	if dep == nil {
 		log.Infof("deploy ccntmract address:%s", address.ToHexString())

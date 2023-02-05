@@ -30,8 +30,9 @@ const (
 
 	// Transaction
 	ST_BOOKKEEPER DataEntryPrefix = 0x03 //BookKeeper state key prefix
-	ST_CcntmRACT   DataEntryPrefix = 0x04 //Smart ccntmract state key prefix
+	ST_CcntmRACT   DataEntryPrefix = 0x04 //Smart ccntmract deploy code key prefix
 	ST_STORAGE    DataEntryPrefix = 0x05 //Smart ccntmract storage key prefix
+	ST_DESTROYED  DataEntryPrefix = 0x06 // record destroyed smart ccntmract: prefix+address -> height
 
 	IX_HEADER_HASH_LIST DataEntryPrefix = 0x09 //Block height => block hash key prefix
 
