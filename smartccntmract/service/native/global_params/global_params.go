@@ -59,7 +59,7 @@ func RegisterParamCcntmract(native *native.NativeService) {
 func ParamInit(native *native.NativeService) ([]byte, error) {
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
 	storageAdmin, _ := GetStorageRole(native, generateAdminKey(ccntmract, false))
-	storageOperator, _ := GetStorageRole(native, generateAdminKey(ccntmract, false))
+	storageOperator, _ := GetStorageRole(native, GenerateOperatorKey(ccntmract))
 	if storageAdmin != common.ADDRESS_EMPTY || storageOperator != common.ADDRESS_EMPTY {
 		return utils.BYTE_FALSE, errors.NewErr("init param, admin or operator has already existed!")
 	}
