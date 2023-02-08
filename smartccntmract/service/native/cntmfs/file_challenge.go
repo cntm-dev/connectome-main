@@ -132,7 +132,7 @@ func getChallenge(native *native.NativeService, nodeAddr common.Address, fileHas
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
 	fileChallengeKey := GenChallengeKey(ccntmract, nodeAddr, fileHash)
 
-	item, err := utils.GetStorageItem(native, fileChallengeKey)
+	item, err := utils.GetStorageItem(native.CacheDB, fileChallengeKey)
 	if err != nil || item == nil || item.Value == nil {
 		return nil
 	}

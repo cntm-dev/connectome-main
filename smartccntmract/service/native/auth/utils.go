@@ -46,7 +46,7 @@ func concatCcntmractAdminKey(native *native.NativeService, ccntmractAddr common.
 
 func getCcntmractAdmin(native *native.NativeService, ccntmractAddr common.Address) ([]byte, error) {
 	key := concatCcntmractAdminKey(native, ccntmractAddr)
-	item, err := utils.GetStorageItem(native, key)
+	item, err := utils.GetStorageItem(native.CacheDB, key)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func concatRoleFuncKey(native *native.NativeService, ccntmractAddr common.Addres
 
 func getRoleFunc(native *native.NativeService, ccntmractAddr common.Address, role []byte) (*roleFuncs, error) {
 	key := concatRoleFuncKey(native, ccntmractAddr, role)
-	item, err := utils.GetStorageItem(native, key)
+	item, err := utils.GetStorageItem(native.CacheDB, key)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func concatOntIDTokenKey(native *native.NativeService, ccntmractAddr common.Addr
 
 func getOntIDToken(native *native.NativeService, ccntmractAddr common.Address, cntmID []byte) (*roleTokens, error) {
 	key := concatOntIDTokenKey(native, ccntmractAddr, cntmID)
-	item, err := utils.GetStorageItem(native, key)
+	item, err := utils.GetStorageItem(native.CacheDB, key)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func concatDelegateStatusKey(native *native.NativeService, ccntmractAddr common.
 
 func getDelegateStatus(native *native.NativeService, ccntmractAddr common.Address, cntmID []byte) (*Status, error) {
 	key := concatDelegateStatusKey(native, ccntmractAddr, cntmID)
-	item, err := utils.GetStorageItem(native, key)
+	item, err := utils.GetStorageItem(native.CacheDB, key)
 	if err != nil {
 		return nil, err
 	}

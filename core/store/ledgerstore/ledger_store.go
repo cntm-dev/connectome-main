@@ -31,6 +31,7 @@ import (
 	"sync"
 	"time"
 
+	types3 "github.com/ethereum/go-ethereum/core/types"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
@@ -49,6 +50,7 @@ import (
 	"github.com/cntmio/cntmology/merkle"
 	"github.com/cntmio/cntmology/smartccntmract"
 	"github.com/cntmio/cntmology/smartccntmract/event"
+	"github.com/cntmio/cntmology/smartccntmract/service/evm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
@@ -733,15 +735,18 @@ func (this *LedgerStoreImp) executeBlock(block *types.Block) (result store.Execu
 
 		return true
 	})
-
 	cache := storage.NewCacheDB(overlay)
-	for _, tx := range block.Transactions {
+	for i, tx := range block.Transactions {
 		cache.Reset()
-		notify, crossStateHashes, e := this.handleTransaction(overlay, cache, gasTable, block, tx)
+		notify, crossStateHashes, e := this.handleTransaction(overlay, cache, gasTable, block, tx, uint32(i))
 		if e != nil {
 			err = e
 			return
 		}
+		if tx.GasPrice != 0 {
+			notify.GasStepUsed = notify.GasConsumed / tx.GasPrice
+		}
+		notify.TxIndex = uint32(i)
 		result.Notify = append(result.Notify, notify)
 		result.CrossStates = append(result.CrossStates, crossStateHashes...)
 	}
@@ -773,25 +778,17 @@ func (this *LedgerStoreImp) executeBlock(block *types.Block) (result store.Execu
 
 func calculateTotalStateHash(overlay *overlaydb.OverlayDB) (result common.Uint256, err error) {
 	stateDiff := sha256.New()
-	iter := overlay.NewIterator([]byte{byte(scom.ST_CcntmRACT)})
-	err = accumulateHash(stateDiff, iter)
-	iter.Release()
-	if err != nil {
-		return
-	}
 
-	iter = overlay.NewIterator([]byte{byte(scom.ST_STORAGE)})
-	err = accumulateHash(stateDiff, iter)
-	iter.Release()
-	if err != nil {
-		return
-	}
+	prefix := []scom.DataEntryPrefix{scom.ST_CcntmRACT, scom.ST_STORAGE, scom.ST_DESTROYED, scom.ST_ETH_CODE,
+		scom.ST_ETH_ACCOUNT}
 
-	iter = overlay.NewIterator([]byte{byte(scom.ST_DESTROYED)})
-	err = accumulateHash(stateDiff, iter)
-	iter.Release()
-	if err != nil {
-		return
+	for _, v := range prefix {
+		iter := overlay.NewIterator([]byte{byte(v)})
+		err = accumulateHash(stateDiff, iter)
+		iter.Release()
+		if err != nil {
+			return
+		}
 	}
 
 	stateDiff.Sum(result[:0])
@@ -1174,6 +1171,15 @@ func (this *LedgerStoreImp) PreExecuteCcntmractBatch(txes []*types.Transaction, 
 	return results, height, nil
 }
 
+func (this *LedgerStoreImp) PreExecuteEIP155(tx *types3.Transaction, ctx Eip155Ccntmext) (*evm.ExecutionResult, *event.ExecuteNotify, error) {
+	overlay := this.stateStore.NewOverlayDB()
+	cache := storage.NewCacheDB(overlay)
+
+	notify := &event.ExecuteNotify{State: event.CcntmRACT_STATE_FAIL, TxIndex: ctx.TxIndex}
+	result, err := this.stateStore.HandleEIP155Transaction(this, cache, tx, ctx, notify)
+	return result, notify, err
+}
+
 //PreExecuteCcntmract return the result of smart ccntmract execution without commit to store
 func (this *LedgerStoreImp) PreExecuteCcntmractWithParam(tx *types.Transaction, preParam PrexecuteParam) (*sstate.PreExecResult, error) {
 	height := this.GetCurrentBlockHeight()
@@ -1182,7 +1188,28 @@ func (this *LedgerStoreImp) PreExecuteCcntmractWithParam(tx *types.Transaction, 
 	if header, err := this.GetHeaderByHeight(height); err == nil {
 		blockTime = header.Timestamp + 1
 	}
+	blockHash := this.GetBlockHash(height)
 	stf := &sstate.PreExecResult{State: event.CcntmRACT_STATE_FAIL, Gas: neovm.MIN_TRANSACTION_GAS, Result: nil}
+
+	if tx.TxType == types.EIP155 {
+		invoke := tx.Payload.(*payload.EIP155Code)
+		ctx := Eip155Ccntmext{
+			BlockHash: blockHash,
+			TxIndex:   0,
+			Height:    height,
+			Timestamp: blockTime,
+		}
+
+		result, notify, err := this.PreExecuteEIP155(invoke.EIPTx, ctx)
+		if err != nil {
+			return nil, err
+		}
+		stf.State = notify.State
+		stf.Notify = notify.Notify
+		stf.Result = result.ReturnData
+		stf.Gas = result.UsedGas
+		return stf, nil
+	}
 
 	sconfig := &smartccntmract.Config{
 		Time:      blockTime,
@@ -1338,4 +1365,10 @@ func (this *LedgerStoreImp) maxAllowedPruneHeight(currHeader *types.Header) uint
 		return 0
 	}
 	return lastReferHeight - 1
+}
+
+func (this *LedgerStoreImp) GetCacheDB() *storage.CacheDB {
+	overlay := this.stateStore.NewOverlayDB()
+	return storage.NewCacheDB(overlay)
+
 }

@@ -59,7 +59,7 @@ func RegisterOntCcntmract(native *native.NativeService) {
 
 func OntInit(native *native.NativeService) ([]byte, error) {
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-	amount, err := utils.GetStorageUInt64(native, GenTotalSupplyKey(ccntmract))
+	amount, err := utils.GetStorageUInt64(native.CacheDB, GenTotalSupplyKey(ccntmract))
 	if err != nil {
 		return utils.BYTE_FALSE, err
 	}
@@ -200,7 +200,7 @@ func OntSymbol(native *native.NativeService) ([]byte, error) {
 
 func OntTotalSupply(native *native.NativeService) ([]byte, error) {
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-	amount, err := utils.GetStorageUInt64(native, GenTotalSupplyKey(ccntmract))
+	amount, err := utils.GetStorageUInt64(native.CacheDB, GenTotalSupplyKey(ccntmract))
 	if err != nil {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[OntTotalSupply] get totalSupply error!")
 	}
@@ -232,7 +232,7 @@ func GetBalanceValue(native *native.NativeService, flag byte) ([]byte, error) {
 	} else if flag == TRANSFER_FLAG {
 		key = GenBalanceKey(ccntmract, from)
 	}
-	amount, err := utils.GetStorageUInt64(native, key)
+	amount, err := utils.GetStorageUInt64(native.CacheDB, key)
 	if err != nil {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[GetBalanceValue] address parse error!")
 	}
@@ -325,7 +325,7 @@ func getApproveArgs(native *native.NativeService, ccntmract, cntmCcntmract, addr
 		Value: value,
 	}
 
-	stateValue, err := utils.GetStorageUInt64(native, GenApproveKey(cntmCcntmract, approve.From, approve.To))
+	stateValue, err := utils.GetStorageUInt64(native.CacheDB, GenApproveKey(cntmCcntmract, approve.From, approve.To))
 	if err != nil {
 		return nil, 0, err
 	}

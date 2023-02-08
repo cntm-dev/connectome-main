@@ -27,6 +27,7 @@ import (
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	cstates "github.com/cntmio/cntmology/smartccntmract/states"
+	"github.com/cntmio/cntmology/smartccntmract/storage"
 )
 
 type ExecuteResult struct {

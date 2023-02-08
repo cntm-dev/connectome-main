@@ -22,6 +22,8 @@ import (
 	"bytes"
 	"math/big"
 
+	"github.com/cntmio/cntmology/smartccntmract/service/native/system"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/auth"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cross_chain/cross_chain_manager"
@@ -53,6 +55,7 @@ func init() {
 	header_sync.InitHeaderSync()
 	lock_proxy.InitLockProxy()
 	cntmfs.InitFs()
+	system.InitSystem()
 }
 
 func InitBytes(addr common.Address, method string) []byte {

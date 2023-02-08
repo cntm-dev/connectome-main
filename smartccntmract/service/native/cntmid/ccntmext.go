@@ -153,7 +153,7 @@ func removeDuplicate(params *Ccntmext) {
 }
 
 func getCcntmexts(srvc *native.NativeService, key []byte) ([][]byte, error) {
-	ccntmextsStore, err := utils.GetStorageItem(srvc, key)
+	ccntmextsStore, err := utils.GetStorageItem(srvc.CacheDB, key)
 	if err != nil {
 		return nil, errors.New("getCcntmexts error:" + err.Error())
 	}

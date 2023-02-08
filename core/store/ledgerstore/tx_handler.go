@@ -24,6 +24,13 @@ import (
 	"math"
 	"strconv"
 
+	common2 "github.com/ethereum/go-ethereum/common"
+	evm2 "github.com/cntmio/cntmology/smartccntmract/service/evm"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
+	"github.com/cntmio/cntmology/vm/evm"
+	"github.com/cntmio/cntmology/vm/evm/params"
+
+	types2 "github.com/ethereum/go-ethereum/core/types"
 	"github.com/cntmio/cntmology/common"
 	sysconfig "github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
@@ -114,7 +121,6 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 				return err
 			}
 			return fmt.Errorf("gasLimit insufficient, need:%d actual:%d", gasLimit, tx.GasLimit)
-
 		}
 		gasConsumed = gasLimit * tx.GasPrice
 		notifies, err = chargeCostGas(tx.Payer, gasConsumed, config, cache, store)
@@ -136,6 +142,7 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 	if dep == nil {
 		log.Infof("deploy ccntmract address:%s", address.ToHexString())
 		cache.PutCcntmract(deploy)
+		notify.CreatedCcntmract = address
 	}
 	cache.Commit()
 
@@ -403,4 +410,34 @@ func costInvalidGas(address common.Address, gas uint64, config *smartccntmract.C
 
 func calcGasByCodeLen(codeLen int, codeGas uint64) uint64 {
 	return uint64(codeLen/neovm.PER_UNIT_CODE_LEN) * codeGas
+}
+
+type Eip155Ccntmext struct {
+	BlockHash common.Uint256
+	TxIndex   uint32
+	Height    uint32
+	Timestamp uint32
+}
+
+func (self *StateStore) HandleEIP155Transaction(store store.LedgerStore, cache *storage.CacheDB,
+	tx *types2.Transaction, ctx Eip155Ccntmext, notify *event.ExecuteNotify) (*evm2.ExecutionResult, error) {
+	usedGas := uint64(0)
+	config := params.MainnetChainConfig // todo use config based on network
+	statedb := storage.NewStateDB(cache, tx.Hash(), common2.Hash(ctx.BlockHash), cntm.OngBalanceHandle{})
+	result, receipt, err := evm2.ApplyTransaction(config, store, statedb, ctx.Height, ctx.Timestamp, tx, &usedGas,
+		utils.GovernanceCcntmractAddress, evm.Config{})
+
+	if err != nil {
+		cache.SetDbErr(err)
+		return nil, err
+	}
+	if err = statedb.DbErr(); err != nil {
+		cache.SetDbErr(err)
+		return nil, err
+	}
+	receipt.TxIndex = ctx.TxIndex
+
+	*notify = *event.ExecuteNotifyFromEthReceipt(receipt)
+
+	return result, nil
 }

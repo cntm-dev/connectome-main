@@ -333,7 +333,7 @@ func removeAttributeByCcntmroller(srvc *native.NativeService) ([]byte, error) {
 
 func getCcntmroller(srvc *native.NativeService, encId []byte) (interface{}, error) {
 	key := append(encId, FIELD_CcntmROLLER)
-	item, err := utils.GetStorageItem(srvc, key)
+	item, err := utils.GetStorageItem(srvc.CacheDB, key)
 	if err != nil {
 		return nil, err
 	} else if item == nil {
@@ -349,7 +349,7 @@ func getCcntmroller(srvc *native.NativeService, encId []byte) (interface{}, erro
 
 func getCcntmrollerJson(srvc *native.NativeService, encId []byte) (interface{}, error) {
 	key := append(encId, FIELD_CcntmROLLER)
-	item, err := utils.GetStorageItem(srvc, key)
+	item, err := utils.GetStorageItem(srvc.CacheDB, key)
 	if err != nil {
 		return nil, err
 	} else if item == nil {

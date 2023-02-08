@@ -130,7 +130,7 @@ func getRawReadPledge(native *native.NativeService, downLoader common.Address, f
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
 
 	key := GenFsReadPledgeKey(ccntmract, downLoader, fileHash)
-	item, err := utils.GetStorageItem(native, key)
+	item, err := utils.GetStorageItem(native.CacheDB, key)
 	if err != nil {
 		return nil, errors.NewDetailErr(err, errors.ErrNoCode, "getRawReadPledge GetStorageItem error!")
 	}
@@ -145,7 +145,7 @@ func getReadPledge(native *native.NativeService, downLoader common.Address, file
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
 
 	key := GenFsReadPledgeKey(ccntmract, downLoader, fileHash)
-	item, err := utils.GetStorageItem(native, key)
+	item, err := utils.GetStorageItem(native.CacheDB, key)
 	if err != nil {
 		return nil, errors.NewDetailErr(err, errors.ErrNoCode, "getReadPledge GetStorageItem error!")
 	}
