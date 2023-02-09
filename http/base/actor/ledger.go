@@ -19,12 +19,16 @@
 package actor
 
 import (
+	common2 "github.com/ethereum/go-ethereum/common"
+	types2 "github.com/ethereum/go-ethereum/core/types"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract/event"
+	types3 "github.com/cntmio/cntmology/smartccntmract/service/evm/types"
 	cstate "github.com/cntmio/cntmology/smartccntmract/states"
+	"github.com/cntmio/cntmology/smartccntmract/storage"
 )
 
 const (
@@ -64,7 +68,8 @@ func GetCurrentBlockHeight() uint32 {
 
 //GetTransaction from ledger
 func GetTransaction(hash common.Uint256) (*types.Transaction, error) {
-	return ledger.DefLedger.GetTransaction(hash)
+	tx, _, err := ledger.DefLedger.GetTransaction(hash)
+	return tx, err
 }
 
 //GetStorageItem from ledger
@@ -80,7 +85,7 @@ func GetCcntmractStateFromStore(hash common.Address) (*payload.DeployCode, error
 
 //GetTxnWithHeightByTxHash from ledger
 func GetTxnWithHeightByTxHash(hash common.Uint256) (uint32, *types.Transaction, error) {
-	tx, height, err := ledger.DefLedger.GetTransactionWithHeight(hash)
+	tx, height, err := ledger.DefLedger.GetTransaction(hash)
 	return height, tx, err
 }
 
@@ -114,4 +119,21 @@ func GetCrossChainMsg(height uint32) (*types.CrossChainMsg, error) {
 
 func GetCrossStatesProof(height uint32, key []byte) ([]byte, error) {
 	return ledger.DefLedger.GetCrossStatesProof(height, key)
+}
+
+func GetEthAccount(address common2.Address) (*storage.EthAccount, error) {
+	return ledger.DefLedger.GetEthAccount(address)
+}
+
+func GetEthCode(hash common2.Hash) ([]byte, error) {
+	return ledger.DefLedger.GetEthCode(hash)
+}
+
+func GetEthStorage(addr common2.Address, key common2.Hash) ([]byte, error) {
+	return ledger.DefLedger.GetEthState(addr, key)
+}
+
+func PreExecuteEip155Tx(tx *types2.Transaction) (*types3.ExecutionResult, error) {
+	res, err := ledger.DefLedger.PreExecuteEip155Tx(tx)
+	return res, err
 }

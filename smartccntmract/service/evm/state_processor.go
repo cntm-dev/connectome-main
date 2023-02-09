@@ -26,12 +26,13 @@ import (
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/store"
 	otypes "github.com/cntmio/cntmology/core/types"
+	types2 "github.com/cntmio/cntmology/smartccntmract/service/evm/types"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
 	"github.com/cntmio/cntmology/vm/evm"
 	"github.com/cntmio/cntmology/vm/evm/params"
 )
 
-func applyTransaction(msg types.Message, statedb *storage.StateDB, blockHeight uint32, tx *types.Transaction, usedGas *uint64, evm *evm.EVM, feeReceiver common.Address) (*ExecutionResult, *otypes.Receipt, error) {
+func applyTransaction(msg types.Message, statedb *storage.StateDB, blockHeight uint32, tx *types.Transaction, usedGas *uint64, evm *evm.EVM, feeReceiver common.Address) (*types2.ExecutionResult, *otypes.Receipt, error) {
 	// Create a new ccntmext to be used in the EVM environment
 	txCcntmext := NewEVMTxCcntmext(msg)
 	// Add addresses to access list if applicable
@@ -84,7 +85,7 @@ func applyTransaction(msg types.Message, statedb *storage.StateDB, blockHeight u
 // and uses the input parameters for its environment. It returns the receipt
 // for the transaction, gas used and an error if the transaction failed,
 // indicating the block was invalid.
-func ApplyTransaction(config *params.ChainConfig, bc store.LedgerStore, statedb *storage.StateDB, blockHeight, timestamp uint32, tx *types.Transaction, usedGas *uint64, feeReceiver common.Address, cfg evm.Config) (*ExecutionResult, *otypes.Receipt, error) {
+func ApplyTransaction(config *params.ChainConfig, bc store.LedgerStore, statedb *storage.StateDB, blockHeight, timestamp uint32, tx *types.Transaction, usedGas *uint64, feeReceiver common.Address, cfg evm.Config) (*types2.ExecutionResult, *otypes.Receipt, error) {
 	signer := types.NewEIP155Signer(config.ChainID)
 	msg, err := tx.AsMessage(signer)
 	if err != nil {

@@ -24,6 +24,8 @@ import (
 	"math"
 	"strconv"
 
+	types3 "github.com/cntmio/cntmology/smartccntmract/service/evm/types"
+
 	common2 "github.com/ethereum/go-ethereum/common"
 	evm2 "github.com/cntmio/cntmology/smartccntmract/service/evm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
@@ -420,7 +422,7 @@ type Eip155Ccntmext struct {
 }
 
 func (self *StateStore) HandleEIP155Transaction(store store.LedgerStore, cache *storage.CacheDB,
-	tx *types2.Transaction, ctx Eip155Ccntmext, notify *event.ExecuteNotify) (*evm2.ExecutionResult, error) {
+	tx *types2.Transaction, ctx Eip155Ccntmext, notify *event.ExecuteNotify) (*types3.ExecutionResult, error) {
 	usedGas := uint64(0)
 	config := params.MainnetChainConfig // todo use config based on network
 	statedb := storage.NewStateDB(cache, tx.Hash(), common2.Hash(ctx.BlockHash), cntm.OngBalanceHandle{})

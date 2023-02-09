@@ -31,6 +31,7 @@ import (
 	"sync"
 	"time"
 
+	common2 "github.com/ethereum/go-ethereum/common"
 	types3 "github.com/ethereum/go-ethereum/core/types"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
@@ -50,7 +51,7 @@ import (
 	"github.com/cntmio/cntmology/merkle"
 	"github.com/cntmio/cntmology/smartccntmract"
 	"github.com/cntmio/cntmology/smartccntmract/event"
-	"github.com/cntmio/cntmology/smartccntmract/service/evm"
+	types4 "github.com/cntmio/cntmology/smartccntmract/service/evm/types"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
@@ -1171,13 +1172,25 @@ func (this *LedgerStoreImp) PreExecuteCcntmractBatch(txes []*types.Transaction, 
 	return results, height, nil
 }
 
-func (this *LedgerStoreImp) PreExecuteEIP155(tx *types3.Transaction, ctx Eip155Ccntmext) (*evm.ExecutionResult, *event.ExecuteNotify, error) {
+func (this *LedgerStoreImp) PreExecuteEIP155(tx *types3.Transaction, ctx Eip155Ccntmext) (*types4.ExecutionResult, *event.ExecuteNotify, error) {
 	overlay := this.stateStore.NewOverlayDB()
 	cache := storage.NewCacheDB(overlay)
 
 	notify := &event.ExecuteNotify{State: event.CcntmRACT_STATE_FAIL, TxIndex: ctx.TxIndex}
 	result, err := this.stateStore.HandleEIP155Transaction(this, cache, tx, ctx, notify)
 	return result, notify, err
+}
+
+func (this *LedgerStoreImp) GetEthCode(hash common2.Hash) ([]byte, error) {
+	return this.stateStore.GetEthCode(hash)
+}
+
+func (this *LedgerStoreImp) GetEthState(address common2.Address, key common2.Hash) ([]byte, error) {
+	return this.stateStore.GetEthState(address, key)
+}
+
+func (this *LedgerStoreImp) GetEthAccount(address common2.Address) (*storage.EthAccount, error) {
+	return this.stateStore.GetEthAccount(address)
 }
 
 //PreExecuteCcntmract return the result of smart ccntmract execution without commit to store
@@ -1311,6 +1324,24 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.
 	}
 
 	return this.PreExecuteCcntmractWithParam(tx, param)
+}
+
+func (this *LedgerStoreImp) PreExecuteEip155Tx(tx *types3.Transaction) (*types4.ExecutionResult, error) {
+	height := this.GetCurrentBlockHeight()
+	// use previous block time to make it predictable for easy test
+	blockTime := uint32(time.Now().Unix())
+	if header, err := this.GetHeaderByHeight(height); err == nil {
+		blockTime = header.Timestamp + 1
+	}
+	blockHash := this.GetBlockHash(height)
+	ctx := Eip155Ccntmext{
+		BlockHash: blockHash,
+		TxIndex:   0,
+		Height:    height,
+		Timestamp: blockTime,
+	}
+	res, _, err := this.PreExecuteEIP155(tx, ctx)
+	return res, err
 }
 
 //Close ledger store.

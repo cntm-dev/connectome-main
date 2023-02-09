@@ -135,7 +135,7 @@ func setGenesis(ctx *cli.Ccntmext, cfg *config.OntologyConfig) error {
 func setCommonConfig(ctx *cli.Ccntmext, cfg *config.CommonConfig) {
 	cfg.LogLevel = ctx.Uint(utils.GetFlagName(utils.LogLevelFlag))
 	cfg.EnableEventLog = !ctx.Bool(utils.GetFlagName(utils.DisableEventLogFlag))
-	cfg.GasLimit = ctx.Uint64(utils.GetFlagName(utils.GasLimitFlag))
+	cfg.MinGasLimit = ctx.Uint64(utils.GetFlagName(utils.GasLimitFlag))
 	cfg.GasPrice = ctx.Uint64(utils.GetFlagName(utils.GasPriceFlag))
 	cfg.DataDir = ctx.String(utils.GetFlagName(utils.DataDirFlag))
 }
@@ -181,6 +181,7 @@ func setRpcConfig(ctx *cli.Ccntmext, cfg *config.RpcConfig) {
 	cfg.EnableHttpJsonRpc = !ctx.Bool(utils.GetFlagName(utils.RPCDisabledFlag))
 	cfg.HttpJsonPort = ctx.Uint(utils.GetFlagName(utils.RPCPortFlag))
 	cfg.HttpLocalPort = ctx.Uint(utils.GetFlagName(utils.RPCLocalProtFlag))
+	cfg.EthJsonPort = ctx.Uint(utils.GetFlagName(utils.ETHRPCPortFlag))
 }
 
 func setRestfulConfig(ctx *cli.Ccntmext, cfg *config.RestfulConfig) {

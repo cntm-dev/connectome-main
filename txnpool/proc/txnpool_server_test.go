@@ -22,35 +22,42 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cntmio/cntmology/cmd/utils"
+
 	"github.com/cntmio/cntmology-eventbus/actor"
+	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology/errors"
 	tc "github.com/cntmio/cntmology/txnpool/common"
-	"github.com/cntmio/cntmology/validator/stateless"
-	vt "github.com/cntmio/cntmology/validator/types"
-	"github.com/stretchr/testify/assert"
 )
 
 var (
-	txn    *types.Transaction
-	topic  string
-	sender tc.SenderType
+	txn       *types.Transaction
+	invalidTx *types.Transaction
+	sender    tc.SenderType
 )
 
 func init() {
-	topic = "TXN"
-
 	code := []byte("cntm")
 
 	invokeCodePayload := &payload.InvokeCode{
 		Code: code,
 	}
 
+	acct := account.NewAccount("")
+
 	mutable := &types.MutableTransaction{
 		TxType:  types.InvokeNeo,
 		Nonce:   uint32(time.Now().Unix()),
 		Payload: invokeCodePayload,
+		Payer:   acct.Address,
+	}
+
+	invalidTx, _ = mutable.IntoImmutable()
+
+	err := utils.SignTransaction(acct, mutable)
+	if err != nil {
+		panic(err)
 	}
 
 	txn, _ = mutable.IntoImmutable()
@@ -71,15 +78,13 @@ func startActor(obj interface{}) *actor.PID {
 func TestTxn(t *testing.T) {
 	t.Log("Starting test tx")
 	var s *TXPoolServer
-	s = NewTxPoolServer(tc.MAX_WORKER_NUM, true, false)
+	s = NewTxPoolServer(true, false)
 	if s == nil {
 		t.Error("Test case: new tx pool server failed")
 		return
 	}
 	defer s.Stop()
 
-	// Case 1: Send nil txn to the server, server should reject it
-	s.assignTxToWorker(nil, sender, nil)
 	/* Case 2: send non-nil txn to the server, server should assign
 	 * it to the worker
 	 */
@@ -117,67 +122,16 @@ func TestTxn(t *testing.T) {
 	t.Log("Ending test tx")
 }
 
-func TestAssignRsp2Worker(t *testing.T) {
-	t.Log("Starting assign response to the worker testing")
-	var s *TXPoolServer
-	s = NewTxPoolServer(tc.MAX_WORKER_NUM, true, false)
-	if s == nil {
-		t.Error("Test case: new tx pool server failed")
-		return
-	}
-
-	defer s.Stop()
-
-	s.assignRspToWorker(nil)
-
-	statelessRsp := &vt.CheckResponse{
-		WorkerId: 0,
-		ErrCode:  errors.ErrNoError,
-		Hash:     txn.Hash(),
-		Type:     vt.Stateless,
-		Height:   0,
-	}
-
-	statefulRsp := &vt.CheckResponse{
-		WorkerId: 0,
-		ErrCode:  errors.ErrUnknown,
-		Hash:     txn.Hash(),
-		Type:     vt.Stateful,
-		Height:   0,
-	}
-	s.assignRspToWorker(statelessRsp)
-	s.assignRspToWorker(statefulRsp)
-
-	statelessRsp = &vt.CheckResponse{
-		WorkerId: 0,
-		ErrCode:  errors.ErrUnknown,
-		Hash:     txn.Hash(),
-		Type:     vt.Stateless,
-		Height:   0,
-	}
-	s.assignRspToWorker(statelessRsp)
-
-	t.Log("Ending assign response to the worker testing")
-}
-
 func TestActor(t *testing.T) {
 	t.Log("Starting actor testing")
 	var s *TXPoolServer
-	s = NewTxPoolServer(tc.MAX_WORKER_NUM, true, false)
+	s = NewTxPoolServer(true, false)
 	if s == nil {
 		t.Error("Test case: new tx pool server failed")
 		return
 	}
 
 	defer s.Stop()
-
-	rspActor := NewVerifyRspActor(s)
-	rspPid := startActor(rspActor)
-	if rspPid == nil {
-		t.Error("Fail to start verify rsp actor")
-		return
-	}
-	s.RegisterActor(tc.VerifyRspActor, rspPid)
 
 	tpa := NewTxPoolActor(s)
 	txPoolPid := startActor(tpa)
@@ -187,13 +141,7 @@ func TestActor(t *testing.T) {
 	}
 	s.RegisterActor(tc.TxPoolActor, txPoolPid)
 
-	pid := s.GetPID(tc.VerifyRspActor)
-	if pid == nil {
-		t.Error("Fail to get the pid")
-		return
-	}
-
-	pid = s.GetPID(tc.TxPoolActor)
+	pid := s.GetPID(tc.TxPoolActor)
 	if pid == nil {
 		t.Error("Fail to get the pid")
 		return
@@ -206,14 +154,7 @@ func TestActor(t *testing.T) {
 	}
 
 	s.UnRegisterActor(tc.TxPoolActor)
-	s.UnRegisterActor(tc.VerifyRspActor)
 	pid = s.GetPID(tc.TxPoolActor)
-	if pid != nil {
-		t.Error("Pid was not registered")
-		return
-	}
-
-	pid = s.GetPID(tc.VerifyRspActor)
 	if pid != nil {
 		t.Error("Pid was not registered")
 		return
@@ -226,62 +167,4 @@ func TestActor(t *testing.T) {
 	}
 
 	t.Log("Ending actor testing")
-}
-
-func TestValidator(t *testing.T) {
-	t.Log("Starting validator testing")
-	var s *TXPoolServer
-	s = NewTxPoolServer(tc.MAX_WORKER_NUM, true, false)
-	if s == nil {
-		t.Error("Test case: new tx pool server failed")
-		return
-	}
-
-	defer s.Stop()
-
-	rspActor := NewVerifyRspActor(s)
-	rspPid := startActor(rspActor)
-	if rspPid == nil {
-		t.Error("Fail to start verify rsp actor")
-		return
-	}
-	s.RegisterActor(tc.VerifyRspActor, rspPid)
-
-	statelessV1, err := stateless.NewValidator("stateless1")
-	if err != nil {
-		t.Error("failed to new stateless valdiator", err)
-		return
-	}
-	statelessV1.Register(rspPid)
-
-	statelessV2, err := stateless.NewValidator("stateless2")
-	if err != nil {
-		t.Error("failed to new stateless valdiator", err)
-		return
-	}
-	statelessV2.Register(rspPid)
-
-	time.Sleep(1 * time.Second)
-
-	ret := s.getNextValidatorPIDs()
-	for _, v := range ret {
-		assert.NotNil(t, v)
-	}
-
-	ret = s.getNextValidatorPIDs()
-	for _, v := range ret {
-		assert.NotNil(t, v)
-	}
-
-	statelessV1.UnRegister(rspPid)
-	statelessV2.UnRegister(rspPid)
-
-	time.Sleep(1 * time.Second)
-
-	ret = s.getNextValidatorPIDs()
-	for _, v := range ret {
-		assert.NotNil(t, v)
-	}
-
-	t.Log("Ending validator testing")
 }

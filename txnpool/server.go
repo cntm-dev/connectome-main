@@ -56,15 +56,7 @@ func StartTxnPoolServer(disablePreExec, disableBroadcastNetTx bool) (*tp.TXPoolS
 	/* Start txnpool server to receive msgs from p2p,
 	 * consensus and valdiators
 	 */
-	s = tp.NewTxPoolServer(tc.MAX_WORKER_NUM, disablePreExec, disableBroadcastNetTx)
-
-	// Initialize an actor to handle the msgs from valdiators
-	rspActor := tp.NewVerifyRspActor(s)
-	rspPid, err := startActor(rspActor, "txVerifyRsp")
-	if rspPid == nil {
-		return nil, err
-	}
-	s.RegisterActor(tc.VerifyRspActor, rspPid)
+	s = tp.NewTxPoolServer(disablePreExec, disableBroadcastNetTx)
 
 	// Initialize an actor to handle the msgs from consensus
 	tpa := tp.NewTxPoolActor(s)

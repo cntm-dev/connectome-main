@@ -15,37 +15,32 @@
  * You should have received a copy of the GNU Lesser General Public License
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-package events
+package ethrpc
 
 import (
-	"fmt"
-	"testing"
+	"net/http"
+	"strconv"
+
+	"github.com/ethereum/go-ethereum/rpc"
+	cfg "github.com/cntmio/cntmology/common/config"
+	tp "github.com/cntmio/cntmology/txnpool/proc"
 )
 
-func TestNewEvent(t *testing.T) {
-	event := NewEvent()
-
-	var subscriber1 EventFunc = func(v interface{}) {
-		fmt.Println("subscriber1 event func.")
+func StartEthServer(txpool *tp.TXPoolServer) error {
+	ethAPI := NewEthereumAPI(nil) // todo  : use txpool
+	server := rpc.NewServer()
+	err := server.RegisterName("eth", ethAPI)
+	if err != nil {
+		return err
 	}
-
-	var subscriber2 EventFunc = func(v interface{}) {
-		fmt.Println("subscriber2 event func.")
+	netRpcService := new(PublicNetAPI)
+	err = server.RegisterName("net", netRpcService)
+	if err != nil {
+		return err
 	}
-
-	fmt.Println("Subscribe...")
-	sub1 := event.Subscribe(EventReplyTx, subscriber1)
-	event.Subscribe(EventSaveBlock, subscriber2)
-
-	fmt.Println("Notify...")
-	event.Notify(EventReplyTx, nil)
-
-	fmt.Println("Notify All...")
-	event.NotifyAll()
-
-	event.UnSubscribe(EventReplyTx, sub1)
-	fmt.Println("Notify All after unsubscribe sub1...")
-	event.NotifyAll()
-
+	err = http.ListenAndServe(":"+strconv.Itoa(int(cfg.DefConfig.Rpc.EthJsonPort)), server)
+	if err != nil {
+		return err
+	}
+	return nil
 }

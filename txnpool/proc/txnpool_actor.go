@@ -23,7 +23,6 @@ import (
 	"reflect"
 
 	"github.com/cntmio/cntmology-eventbus/actor"
-
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
@@ -35,28 +34,18 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	tc "github.com/cntmio/cntmology/txnpool/common"
-	"github.com/cntmio/cntmology/validator/types"
 )
 
 // NewTxActor creates an actor to handle the transaction-based messages from
 // network and http
 func NewTxActor(s *TXPoolServer) *TxActor {
-	a := &TxActor{}
-	a.setServer(s)
+	a := &TxActor{server: s}
 	return a
 }
 
 // NewTxPoolActor creates an actor to handle the messages from the consensus
 func NewTxPoolActor(s *TXPoolServer) *TxPoolActor {
-	a := &TxPoolActor{}
-	a.setServer(s)
-	return a
-}
-
-// NewVerifyRspActor creates an actor to handle the verified result from validators
-func NewVerifyRspActor(s *TXPoolServer) *VerifyRspActor {
-	a := &VerifyRspActor{}
-	a.setServer(s)
+	a := &TxPoolActor{server: s}
 	return a
 }
 
@@ -64,24 +53,24 @@ func NewVerifyRspActor(s *TXPoolServer) *VerifyRspActor {
 func isBalanceEnough(address common.Address, gas uint64) bool {
 	balance, _, err := hComm.GetCcntmractBalance(0, []common.Address{utils.OngCcntmractAddress}, address, false)
 	if err != nil {
-		log.Debugf("failed to get ccntmract balance %s err %v",
-			address.ToHexString(), err)
+		log.Debugf("failed to get ccntmract balance %s err %v", address.ToHexString(), err)
 		return false
 	}
 	return balance[0] >= gas
 }
 
-func replyTxResult(txResultCh chan *tc.TxResult, hash common.Uint256,
-	err errors.ErrCode, desc string) {
-	result := &tc.TxResult{
-		Err:  err,
-		Hash: hash,
-		Desc: desc,
-	}
-	select {
-	case txResultCh <- result:
-	default:
-		log.Debugf("handleTransaction: duplicated result")
+func replyTxResult(sender tc.SenderType, txResultCh chan *tc.TxResult, hash common.Uint256, err errors.ErrCode, desc string) {
+	if sender == tc.HttpSender && txResultCh != nil {
+		result := &tc.TxResult{
+			Err:  err,
+			Hash: hash,
+			Desc: desc,
+		}
+		select {
+		case txResultCh <- result:
+		default:
+			log.Debugf("handleTransaction: duplicated result")
+		}
 	}
 }
 
@@ -119,85 +108,60 @@ type TxActor struct {
 	server *TXPoolServer
 }
 
-// handleTransaction handles a transaction from network and http
-func (ta *TxActor) handleTransaction(sender tc.SenderType, self *actor.PID,
-	txn *tx.Transaction, txResultCh chan *tc.TxResult) {
-	ta.server.increaseStats(tc.RcvStats)
+// handles a transaction from network and http
+func (ta *TxActor) handleTransaction(sender tc.SenderType, txn *tx.Transaction, txResultCh chan *tc.TxResult) {
 	if len(txn.ToArray()) > tc.MAX_TX_SIZE {
 		log.Debugf("handleTransaction: reject a transaction due to size over 1M")
-		if sender == tc.HttpSender && txResultCh != nil {
-			replyTxResult(txResultCh, txn.Hash(), errors.ErrUnknown, "size is over 1M")
-		}
+		replyTxResult(sender, txResultCh, txn.Hash(), errors.ErrUnknown, "size is over 1M")
 		return
 	}
 
 	if ta.server.getTransaction(txn.Hash()) != nil {
-		log.Debugf("handleTransaction: transaction %x already in the txn pool",
-			txn.Hash())
+		log.Debugf("handleTransaction: transaction %x already in the txn pool", txn.Hash())
 
-		ta.server.increaseStats(tc.DuplicateStats)
-		if sender == tc.HttpSender && txResultCh != nil {
-			replyTxResult(txResultCh, txn.Hash(), errors.ErrDuplicateInput,
-				fmt.Sprintf("transaction %x is already in the tx pool", txn.Hash()))
-		}
-	} else if ta.server.getTransactionCount() >= tc.MAX_CAPACITY {
-		log.Debugf("handleTransaction: transaction pool is full for tx %x",
-			txn.Hash())
-
-		ta.server.increaseStats(tc.FailureStats)
-		if sender == tc.HttpSender && txResultCh != nil {
-			replyTxResult(txResultCh, txn.Hash(), errors.ErrTxPoolFull,
-				"transaction pool is full")
-		}
-	} else {
-		if _, overflow := common.SafeMul(txn.GasLimit, txn.GasPrice); overflow {
-			log.Debugf("handleTransaction: gasLimit %v, gasPrice %v overflow",
-				txn.GasLimit, txn.GasPrice)
-			if sender == tc.HttpSender && txResultCh != nil {
-				replyTxResult(txResultCh, txn.Hash(), errors.ErrUnknown,
-					fmt.Sprintf("gasLimit %d * gasPrice %d overflow",
-						txn.GasLimit, txn.GasPrice))
-			}
-			return
-		}
-
-		gasLimitConfig := config.DefConfig.Common.GasLimit
-		gasPriceConfig := ta.server.getGasPrice()
-		if txn.GasLimit < gasLimitConfig || txn.GasPrice < gasPriceConfig {
-			log.Debugf("handleTransaction: invalid gasLimit %v, gasPrice %v",
-				txn.GasLimit, txn.GasPrice)
-			if sender == tc.HttpSender && txResultCh != nil {
-				replyTxResult(txResultCh, txn.Hash(), errors.ErrUnknown,
-					fmt.Sprintf("Please input gasLimit >= %d and gasPrice >= %d",
-						gasLimitConfig, gasPriceConfig))
-			}
-			return
-		}
-
-		if txn.TxType == tx.Deploy && txn.GasLimit < neovm.CcntmRACT_CREATE_GAS {
-			log.Debugf("handleTransaction: deploy tx invalid gasLimit %v, gasPrice %v",
-				txn.GasLimit, txn.GasPrice)
-			if sender == tc.HttpSender && txResultCh != nil {
-				replyTxResult(txResultCh, txn.Hash(), errors.ErrUnknown,
-					fmt.Sprintf("Deploy tx gaslimit should >= %d",
-						neovm.CcntmRACT_CREATE_GAS))
-			}
-			return
-		}
-
-		if !ta.server.disablePreExec {
-			if ok, desc := preExecCheck(txn); !ok {
-				log.Debugf("handleTransaction: preExecCheck tx %x failed", txn.Hash())
-				if sender == tc.HttpSender && txResultCh != nil {
-					replyTxResult(txResultCh, txn.Hash(), errors.ErrUnknown, desc)
-				}
-				return
-			}
-			log.Debugf("handleTransaction: preExecCheck tx %x passed", txn.Hash())
-		}
-		<-ta.server.slots
-		ta.server.assignTxToWorker(txn, sender, txResultCh)
+		replyTxResult(sender, txResultCh, txn.Hash(), errors.ErrDuplicateInput,
+			fmt.Sprintf("transaction %x is already in the tx pool", txn.Hash()))
+		return
 	}
+	if ta.server.getTransactionCount() >= tc.MAX_CAPACITY {
+		log.Debugf("handleTransaction: transaction pool is full for tx %x", txn.Hash())
+
+		replyTxResult(sender, txResultCh, txn.Hash(), errors.ErrTxPoolFull, "transaction pool is full")
+		return
+	}
+	if _, overflow := common.SafeMul(txn.GasLimit, txn.GasPrice); overflow {
+		log.Debugf("handleTransaction: gasLimit %v, gasPrice %v overflow", txn.GasLimit, txn.GasPrice)
+		replyTxResult(sender, txResultCh, txn.Hash(), errors.ErrUnknown,
+			fmt.Sprintf("gasLimit %d * gasPrice %d overflow", txn.GasLimit, txn.GasPrice))
+		return
+	}
+
+	gasLimitConfig := config.DefConfig.Common.MinGasLimit
+	gasPriceConfig := ta.server.getGasPrice()
+	if txn.GasLimit < gasLimitConfig || txn.GasPrice < gasPriceConfig {
+		log.Debugf("handleTransaction: invalid gasLimit %v, gasPrice %v", txn.GasLimit, txn.GasPrice)
+		replyTxResult(sender, txResultCh, txn.Hash(), errors.ErrUnknown,
+			fmt.Sprintf("Please input gasLimit >= %d and gasPrice >= %d", gasLimitConfig, gasPriceConfig))
+		return
+	}
+
+	if txn.TxType == tx.Deploy && txn.GasLimit < neovm.CcntmRACT_CREATE_GAS {
+		log.Debugf("handleTransaction: deploy tx invalid gasLimit %v, gasPrice %v", txn.GasLimit, txn.GasPrice)
+		replyTxResult(sender, txResultCh, txn.Hash(), errors.ErrUnknown,
+			fmt.Sprintf("Deploy tx gaslimit should >= %d", neovm.CcntmRACT_CREATE_GAS))
+		return
+	}
+
+	if !ta.server.disablePreExec {
+		if ok, desc := preExecCheck(txn); !ok {
+			log.Debugf("handleTransaction: preExecCheck tx %x failed", txn.Hash())
+			replyTxResult(sender, txResultCh, txn.Hash(), errors.ErrUnknown, desc)
+			return
+		}
+		log.Debugf("handleTransaction: preExecCheck tx %x passed", txn.Hash())
+	}
+	<-ta.server.slots
+	ta.server.assignTxToWorker(txn, sender, txResultCh)
 }
 
 // Receive implements the actor interface
@@ -217,7 +181,7 @@ func (ta *TxActor) Receive(ccntmext actor.Ccntmext) {
 
 		log.Debugf("txpool-tx actor receives tx from %v ", sender.Sender())
 
-		ta.handleTransaction(sender, ccntmext.Self(), msg.Tx, msg.TxResultCh)
+		ta.handleTransaction(sender, msg.Tx, msg.TxResultCh)
 
 	case *tc.GetTxnReq:
 		sender := ccntmext.Sender()
@@ -226,30 +190,7 @@ func (ta *TxActor) Receive(ccntmext actor.Ccntmext) {
 
 		res := ta.server.getTransaction(msg.Hash)
 		if sender != nil {
-			sender.Request(&tc.GetTxnRsp{Txn: res},
-				ccntmext.Self())
-		}
-
-	case *tc.GetTxnStats:
-		sender := ccntmext.Sender()
-
-		log.Debugf("txpool-tx actor receives getting tx stats from %v", sender)
-
-		res := ta.server.getStats()
-		if sender != nil {
-			sender.Request(&tc.GetTxnStatsRsp{Count: res},
-				ccntmext.Self())
-		}
-
-	case *tc.CheckTxnReq:
-		sender := ccntmext.Sender()
-
-		log.Debugf("txpool-tx actor receives checking tx req from %v", sender)
-
-		res := ta.server.checkTx(msg.Hash)
-		if sender != nil {
-			sender.Request(&tc.CheckTxnRsp{Ok: res},
-				ccntmext.Self())
+			sender.Request(&tc.GetTxnRsp{Txn: res}, ccntmext.Self())
 		}
 
 	case *tc.GetTxnStatusReq:
@@ -293,10 +234,6 @@ func (ta *TxActor) Receive(ccntmext actor.Ccntmext) {
 	}
 }
 
-func (ta *TxActor) setServer(s *TXPoolServer) {
-	ta.server = s
-}
-
 // TxnPoolActor: Handle the high priority request from Consensus
 type TxPoolActor struct {
 	server *TXPoolServer
@@ -324,15 +261,6 @@ func (tpa *TxPoolActor) Receive(ccntmext actor.Ccntmext) {
 			sender.Request(&tc.GetTxnPoolRsp{TxnPool: res}, ccntmext.Self())
 		}
 
-	case *tc.GetPendingTxnReq:
-		sender := ccntmext.Sender()
-
-		log.Debugf("txpool actor receives getting pedning tx req from %v", sender)
-
-		res := tpa.server.getPendingTxs(msg.ByCount)
-		if sender != nil {
-			sender.Request(&tc.GetPendingTxnRsp{Txs: res}, ccntmext.Self())
-		}
 	case *tc.VerifyBlockReq:
 		sender := ccntmext.Sender()
 
@@ -352,48 +280,4 @@ func (tpa *TxPoolActor) Receive(ccntmext actor.Ccntmext) {
 	default:
 		log.Debugf("txpool actor: unknown msg %v type %v", msg, reflect.TypeOf(msg))
 	}
-}
-
-func (tpa *TxPoolActor) setServer(s *TXPoolServer) {
-	tpa.server = s
-}
-
-// VerifyRspActor: Handle the response from the validators
-type VerifyRspActor struct {
-	server *TXPoolServer
-}
-
-// Receive implements the actor interface
-func (vpa *VerifyRspActor) Receive(ccntmext actor.Ccntmext) {
-	switch msg := ccntmext.Message().(type) {
-	case *actor.Started:
-		log.Info("txpool-verify actor: started and be ready to receive validator's msg")
-
-	case *actor.Stopping:
-		log.Warn("txpool-verify actor: stopping")
-
-	case *actor.Restarting:
-		log.Warn("txpool-verify actor: Restarting")
-
-	case *types.RegisterValidator:
-		log.Debugf("txpool-verify actor:: validator %v connected", msg.Sender)
-		vpa.server.registerValidator(msg)
-
-	case *types.UnRegisterValidator:
-		log.Debugf("txpool-verify actor:: validator %d:%v disconnected", msg.Type, msg.Id)
-
-		vpa.server.unRegisterValidator(msg.Type, msg.Id)
-
-	case *types.CheckResponse:
-		log.Debug("txpool-verify actor:: Receives verify rsp message")
-
-		vpa.server.assignRspToWorker(msg)
-
-	default:
-		log.Debugf("txpool-verify actor:Unknown msg %v type %v", msg, reflect.TypeOf(msg))
-	}
-}
-
-func (vpa *VerifyRspActor) setServer(s *TXPoolServer) {
-	vpa.server = s
 }

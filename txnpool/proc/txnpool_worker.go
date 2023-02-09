@@ -20,7 +20,6 @@ package proc
 
 import (
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/cntmio/cntmology/common"
@@ -28,44 +27,68 @@ import (
 	tx "github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
 	tc "github.com/cntmio/cntmology/txnpool/common"
+	"github.com/cntmio/cntmology/validator/stateful"
+	"github.com/cntmio/cntmology/validator/stateless"
 	"github.com/cntmio/cntmology/validator/types"
 )
 
 // pendingTx ccntmains the transaction, the time of starting verifying,
-// the cache of check request, the flag indicating the verified status,
-// the verified result and retry mechanism
+// the cache of check request, the verified result and retry mechanism
 type pendingTx struct {
-	tx      *tx.Transaction // That is unverified or on the verifying process
-	valTime time.Time       // The start time
-	req     *types.CheckTx  // Req cache
-	flag    uint8           // For different types of verification
-	retries uint8           // For resend to validator when time out before verified
-	ret     []*tc.TXAttr    // verified results
+	tx              *tx.Transaction // That is unverified or on the verifying process
+	valTime         time.Time       // The start time
+	passedStateless bool
+	passedStateful  bool
+	CheckHeight     uint32
+}
+
+func (self *pendingTx) GetTxAttr() []*tc.TXAttr {
+	var res []*tc.TXAttr
+	if self.passedStateless {
+		res = append(res,
+			&tc.TXAttr{
+				Height:  0,
+				Type:    types.Stateless,
+				ErrCode: errors.ErrNoError,
+			})
+	}
+	if self.passedStateful {
+		res = append(res,
+			&tc.TXAttr{
+				Height:  self.CheckHeight,
+				Type:    types.Stateful,
+				ErrCode: errors.ErrNoError,
+			})
+	}
+
+	return res
 }
 
 // txPoolWorker handles the tasks scheduled by server
 type txPoolWorker struct {
 	mu            sync.RWMutex
-	workId        uint8                         // Worker ID
 	rcvTXCh       chan *tx.Transaction          // The channel of receive transaction
 	stfTxCh       chan *tx.Transaction          // The channel of txs to be re-verified stateful
 	rspCh         chan *types.CheckResponse     // The channel of verified response
 	server        *TXPoolServer                 // The txn pool server pointer
-	timer         *time.Timer                   // The timer of reverifying
 	stopCh        chan bool                     // stop routine
 	pendingTxList map[common.Uint256]*pendingTx // The transaction on the verifying process
-	pendingTxLen  int64                         // atomic accessed by other routine
+	stateless     *stateless.ValidatorPool
+	stateful      *stateful.ValidatorPool
 }
 
-// init initializes the worker with the configured settings
-func (worker *txPoolWorker) init(workID uint8, s *TXPoolServer) {
+func NewTxPoolWoker(s *TXPoolServer) *txPoolWorker {
+	worker := &txPoolWorker{}
 	worker.rcvTXCh = make(chan *tx.Transaction, tc.MAX_PENDING_TXN)
 	worker.stfTxCh = make(chan *tx.Transaction, tc.MAX_PENDING_TXN)
 	worker.pendingTxList = make(map[common.Uint256]*pendingTx)
 	worker.rspCh = make(chan *types.CheckResponse, tc.MAX_PENDING_TXN)
 	worker.stopCh = make(chan bool)
-	worker.workId = workID
 	worker.server = s
+	worker.stateless = stateless.NewValidatorPool(2)
+	worker.stateful = stateful.NewValidatorPool(1)
+
+	return worker
 }
 
 // GetTxStatus returns the status in the pending list with the transaction hash
@@ -80,7 +103,7 @@ func (worker *txPoolWorker) GetTxStatus(hash common.Uint256) *tc.TxStatus {
 
 	txStatus := &tc.TxStatus{
 		Hash:  hash,
-		Attrs: pt.ret,
+		Attrs: pt.GetTxAttr(),
 	}
 	return txStatus
 }
@@ -89,10 +112,6 @@ func (worker *txPoolWorker) GetTxStatus(hash common.Uint256) *tc.TxStatus {
 // the tx is valid, add it to the tx pool, or remove it from the pending
 // list
 func (worker *txPoolWorker) handleRsp(rsp *types.CheckResponse) {
-	if rsp.WorkerId != worker.workId {
-		return
-	}
-
 	worker.mu.Lock()
 	defer worker.mu.Unlock()
 
@@ -320,26 +339,16 @@ func (worker *txPoolWorker) start() {
 			if ok {
 				worker.verifyStateful(stfTx)
 			}
-		case <-worker.timer.C:
-			worker.handleTimeoutEvent()
-			worker.timer.Stop()
-			worker.timer.Reset(time.Second * tc.EXPIRE_INTERVAL)
 		case rsp, ok := <-worker.rspCh:
 			if ok {
-				/* Handle the response from validator, if all of cases
-				 * are verified, put it to txnPool
-				 */
 				worker.handleRsp(rsp)
 			}
 		}
 	}
 }
 
-// stop closes/releases channels and stops timer
+// stop closes/releases channels
 func (worker *txPoolWorker) stop() {
-	if worker.timer != nil {
-		worker.timer.Stop()
-	}
 	if worker.rcvTXCh != nil {
 		close(worker.rcvTXCh)
 	}
