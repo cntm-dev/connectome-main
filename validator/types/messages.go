@@ -20,12 +20,14 @@ package types
 
 import (
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
 )
 
 type CheckResponse struct {
 	Type    VerifyType
 	Hash    common.Uint256
+	Tx      *types.Transaction
 	Height  uint32
 	ErrCode errors.ErrCode
 }

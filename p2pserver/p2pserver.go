@@ -22,6 +22,8 @@ import (
 	"strings"
 	"time"
 
+	common2 "github.com/cntmio/cntmology/txnpool/common"
+
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
@@ -41,7 +43,7 @@ type P2PServer struct {
 }
 
 //NewServer return a new p2pserver according to the pubkey
-func NewServer(acct *account.Account) (*P2PServer, error) {
+func NewServer(acct *account.Account, txpool common2.TxPoolService) (*P2PServer, error) {
 	db := ledger.DefLedger
 	var rsv []string
 	var recRsv []string
@@ -54,7 +56,7 @@ func NewServer(acct *account.Account) (*P2PServer, error) {
 	}
 
 	staticFilter := connect_ccntmroller.NewStaticReserveFilter(rsv)
-	protocol := protocols.NewMsgHandler(acct, connect_ccntmroller.NewStaticReserveFilter(recRsv), db, common.NewGlobalLoggerWrapper())
+	protocol := protocols.NewMsgHandler(acct, connect_ccntmroller.NewStaticReserveFilter(recRsv), db, txpool, common.NewGlobalLoggerWrapper())
 	reserved := protocol.GetReservedAddrFilter(len(rsv) != 0)
 	reservedPeers := p2p.CombineAddrFilter(staticFilter, reserved)
 	n, err := netserver.NewNetServer(protocol, conf, reservedPeers)

@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"math/big"
 
+	config2 "github.com/cntmio/cntmology/common/config"
+
 	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/smartccntmract/event"
@@ -66,7 +68,7 @@ func EVMInvoke(native *native.NativeService) ([]byte, error) {
 		GasPrice: big.NewInt(0).SetUint64(gasPrice),
 	}
 	statedb := storage.NewStateDB(native.CacheDB, common2.Hash(native.Tx.Hash()), common2.Hash(native.BlockHash), cntm.OngBalanceHandle{})
-	config := params.MainnetChainConfig //todo use config based on network
+	config := params.GetChainConfig(config2.DefConfig.P2PNode.EVMChainId)
 	vmenv := evm.NewEVM(blockCcntmext, txctx, statedb, config, evm.Config{})
 
 	callerCtx := native.CcntmextRef.CallingCcntmext()

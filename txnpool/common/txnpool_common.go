@@ -19,6 +19,10 @@
 package common
 
 import (
+	"sync/atomic"
+
+	types2 "github.com/cntmio/cntmology/validator/types"
+
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
@@ -56,19 +60,6 @@ const (
 	HttpSender            // Http sends tx req
 )
 
-func (sender SenderType) Sender() string {
-	switch sender {
-	case NilSender:
-		return "nil sender"
-	case NetSender:
-		return "net sender"
-	case HttpSender:
-		return "http sender"
-	default:
-		return "unknown sender"
-	}
-}
-
 // CheckBlkResult ccntmains a verifed tx list,
 // an unverified tx list and an old tx list
 // to be re-verifed
@@ -83,64 +74,60 @@ type TxStatus struct {
 	Hash  common.Uint256 // transaction hash
 	Attrs []*TXAttr      // transaction's status
 }
+
 type TxResult struct {
 	Err  errors.ErrCode
 	Hash common.Uint256
 	Desc string
 }
 
-// TxReq specifies the api that how to submit a new transaction.
-// Input: transacton and submitter type
-type TxReq struct {
-	Tx         *types.Transaction
-	Sender     SenderType
-	TxResultCh chan *TxResult
+type CheckingStatus struct {
+	PassedStateless uint32 // actually bool, use uint32 for atomic operation
+	PassedStateful  uint32 // actually bool, use uint32 for atomic operation
+	CheckHeight     uint32
 }
 
-// restful api
-
-// GetTxnReq specifies the api that how to get the transaction.
-// Input: a transaction hash
-type GetTxnReq struct {
-	Hash common.Uint256
+func (s *CheckingStatus) SetStateless() {
+	atomic.StoreUint32(&s.PassedStateless, 1)
 }
 
-// GetTxnRsp returns a transaction for the specified tx hash.
-type GetTxnRsp struct {
-	Txn *types.Transaction
+func (s *CheckingStatus) GetStateless() bool {
+	val := atomic.LoadUint32(&s.PassedStateless)
+	return val == 1
 }
 
-// GetTxnStatusReq specifies the api that how to get a transaction
-// status.
-// Input: a transaction hash.
-type GetTxnStatusReq struct {
-	Hash common.Uint256
+func (s *CheckingStatus) GetStateful() bool {
+	val := atomic.LoadUint32(&s.PassedStateful)
+	return val == 1
 }
 
-// GetTxnStatusRsp returns a transaction status for GetTxnStatusReq.
-// Output: a transaction hash and it's verified result.
-type GetTxnStatusRsp struct {
-	Hash     common.Uint256
-	TxStatus []*TXAttr
+func (s *CheckingStatus) SetStateful(height uint32) {
+	if s.CheckHeight < height {
+		s.CheckHeight = height
+	}
+	atomic.StoreUint32(&s.PassedStateful, 1)
 }
 
-// GetTxnCountReq specifies the api that how to get the tx count
-type GetTxnCountReq struct {
-}
+func (self *CheckingStatus) GetTxAttr() []*TXAttr {
+	var res []*TXAttr
+	if self.GetStateless() {
+		res = append(res,
+			&TXAttr{
+				Height:  0,
+				Type:    types2.Stateless,
+				ErrCode: errors.ErrNoError,
+			})
+	}
+	if self.GetStateful() {
+		res = append(res,
+			&TXAttr{
+				Height:  self.CheckHeight,
+				Type:    types2.Stateful,
+				ErrCode: errors.ErrNoError,
+			})
+	}
 
-// GetTxnCountRsp returns current tx count, including pending, and verified
-type GetTxnCountRsp struct {
-	Count []uint32
-}
-
-// GetPendingTxnHashReq specifies the api that how to get a pending txHash list
-// in the pool.
-type GetPendingTxnHashReq struct {
-}
-
-// GetPendingTxnHashRsp returns a transaction hash list for GetPendingTxnHashReq.
-type GetPendingTxnHashRsp struct {
-	TxHashs []common.Uint256
+	return res
 }
 
 // consensus messages
@@ -152,7 +139,16 @@ type GetTxnPoolReq struct {
 
 // GetTxnPoolRsp returns a transaction list for GetTxnPoolReq.
 type GetTxnPoolRsp struct {
-	TxnPool []*TXEntry
+	TxnPool []*VerifiedTx
+}
+
+type TxPoolService interface {
+	GetTransaction(hash common.Uint256) *types.Transaction
+	GetTransactionStatus(hash common.Uint256) *TxStatus
+	GetTxAmount() []uint32
+	GetTxList() []common.Uint256
+	AppendTransaction(sender SenderType, txn *types.Transaction) *TxResult
+	AppendTransactionAsync(sender SenderType, txn *types.Transaction)
 }
 
 // VerifyBlockReq specifies that api that how to verify a block from consensus.
@@ -173,7 +169,7 @@ type VerifyBlockRsp struct {
 	TxnPool []*VerifyTxResult
 }
 
-type OrderByNetWorkFee []*TXEntry
+type OrderByNetWorkFee []*VerifiedTx
 
 func (n OrderByNetWorkFee) Len() int { return len(n) }
 
