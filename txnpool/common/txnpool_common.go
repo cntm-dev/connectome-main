@@ -19,13 +19,16 @@
 package common
 
 import (
+	"math/big"
 	"sync/atomic"
 
-	types2 "github.com/cntmio/cntmology/validator/types"
-
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
+	types2 "github.com/cntmio/cntmology/validator/types"
 )
 
 const (
@@ -85,6 +88,7 @@ type CheckingStatus struct {
 	PassedStateless uint32 // actually bool, use uint32 for atomic operation
 	PassedStateful  uint32 // actually bool, use uint32 for atomic operation
 	CheckHeight     uint32
+	Nonce           uint64
 }
 
 func (s *CheckingStatus) SetStateless() {
@@ -101,9 +105,10 @@ func (s *CheckingStatus) GetStateful() bool {
 	return val == 1
 }
 
-func (s *CheckingStatus) SetStateful(height uint32) {
+func (s *CheckingStatus) SetStateful(height uint32, nonce uint64) {
 	if s.CheckHeight < height {
 		s.CheckHeight = height
+		s.Nonce = nonce
 	}
 	atomic.StoreUint32(&s.PassedStateful, 1)
 }
@@ -176,3 +181,14 @@ func (n OrderByNetWorkFee) Len() int { return len(n) }
 func (n OrderByNetWorkFee) Swap(i, j int) { n[i], n[j] = n[j], n[i] }
 
 func (n OrderByNetWorkFee) Less(i, j int) bool { return n[j].Tx.GasPrice < n[i].Tx.GasPrice }
+
+func GetOngBalance(account common.Address) (*big.Int, error) {
+	cache := ledger.DefLedger.GetStore().GetCacheDB()
+	balanceKey := cntm.GenBalanceKey(utils.OngCcntmractAddress, account)
+	amount, err := utils.GetStorageUInt64(cache, balanceKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return big.NewInt(0).SetUint64(amount), nil
+}

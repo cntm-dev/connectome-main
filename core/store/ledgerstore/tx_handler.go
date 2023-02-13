@@ -422,12 +422,12 @@ type Eip155Ccntmext struct {
 }
 
 func (self *StateStore) HandleEIP155Transaction(store store.LedgerStore, cache *storage.CacheDB,
-	tx *types2.Transaction, ctx Eip155Ccntmext, notify *event.ExecuteNotify) (*types3.ExecutionResult, error) {
+	tx *types2.Transaction, ctx Eip155Ccntmext, notify *event.ExecuteNotify, checkNonce bool) (*types3.ExecutionResult, error) {
 	usedGas := uint64(0)
 	config := params.GetChainConfig(sysconfig.DefConfig.P2PNode.EVMChainId)
 	statedb := storage.NewStateDB(cache, tx.Hash(), common2.Hash(ctx.BlockHash), cntm.OngBalanceHandle{})
 	result, receipt, err := evm2.ApplyTransaction(config, store, statedb, ctx.Height, ctx.Timestamp, tx, &usedGas,
-		utils.GovernanceCcntmractAddress, evm.Config{})
+		utils.GovernanceCcntmractAddress, evm.Config{}, checkNonce)
 
 	if err != nil {
 		cache.SetDbErr(err)

@@ -21,11 +21,9 @@ package actor
 
 import (
 	"errors"
-	"time"
 
 	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
 	tcomn "github.com/cntmio/cntmology/txnpool/common"
@@ -56,25 +54,6 @@ func AppendTxToPool(txn *types.Transaction) (cntmErrors.ErrCode, string) {
 	}
 	msg := txPoolService.AppendTransaction(tcomn.HttpSender, txn)
 	return msg.Err, msg.Desc
-}
-
-//GetTxsFromPool from txpool actor
-func GetTxsFromPool(byCount bool) map[common.Uint256]*types.Transaction {
-	future := txnPoolPid.RequestFuture(&tcomn.GetTxnPoolReq{ByCount: byCount}, REQ_TIMEOUT*time.Second)
-	result, err := future.Result()
-	if err != nil {
-		log.Errorf(ERR_ACTOR_COMM, err)
-		return nil
-	}
-	txpool, ok := result.(*tcomn.GetTxnPoolRsp)
-	if !ok {
-		return nil
-	}
-	txMap := make(map[common.Uint256]*types.Transaction)
-	for _, v := range txpool.TxnPool {
-		txMap[v.Tx.Hash()] = v.Tx
-	}
-	return txMap
 }
 
 //GetTxFromPool from txpool actor

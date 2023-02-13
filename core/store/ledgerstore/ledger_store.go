@@ -36,6 +36,7 @@ import (
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
+	sysconfig "github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	vconfig "github.com/cntmio/cntmology/consensus/vbft/config"
 	"github.com/cntmio/cntmology/core/payload"
@@ -51,12 +52,16 @@ import (
 	"github.com/cntmio/cntmology/merkle"
 	"github.com/cntmio/cntmology/smartccntmract"
 	"github.com/cntmio/cntmology/smartccntmract/event"
+	"github.com/cntmio/cntmology/smartccntmract/service/evm"
 	types4 "github.com/cntmio/cntmology/smartccntmract/service/evm/types"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
 	sstate "github.com/cntmio/cntmology/smartccntmract/states"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
+	evm2 "github.com/cntmio/cntmology/vm/evm"
+	"github.com/cntmio/cntmology/vm/evm/params"
 	types2 "github.com/cntmio/cntmology/vm/neovm/types"
 )
 
@@ -1177,7 +1182,7 @@ func (this *LedgerStoreImp) PreExecuteEIP155(tx *types3.Transaction, ctx Eip155C
 	cache := storage.NewCacheDB(overlay)
 
 	notify := &event.ExecuteNotify{State: event.CcntmRACT_STATE_FAIL, TxIndex: ctx.TxIndex}
-	result, err := this.stateStore.HandleEIP155Transaction(this, cache, tx, ctx, notify)
+	result, err := this.stateStore.HandleEIP155Transaction(this, cache, tx, ctx, notify, false)
 	return result, notify, err
 }
 
@@ -1204,7 +1209,7 @@ func (this *LedgerStoreImp) PreExecuteCcntmractWithParam(tx *types.Transaction, 
 	blockHash := this.GetBlockHash(height)
 	stf := &sstate.PreExecResult{State: event.CcntmRACT_STATE_FAIL, Gas: neovm.MIN_TRANSACTION_GAS, Result: nil}
 
-	if tx.TxType == types.EIP155 {
+	if tx.IsEipTx() {
 		invoke := tx.Payload.(*payload.EIP155Code)
 		ctx := Eip155Ccntmext{
 			BlockHash: blockHash,
@@ -1326,7 +1331,7 @@ func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.
 	return this.PreExecuteCcntmractWithParam(tx, param)
 }
 
-func (this *LedgerStoreImp) PreExecuteEip155Tx(tx *types3.Transaction) (*types4.ExecutionResult, error) {
+func (this *LedgerStoreImp) PreExecuteEip155Tx(msg types3.Message) (*types4.ExecutionResult, error) {
 	height := this.GetCurrentBlockHeight()
 	// use previous block time to make it predictable for easy test
 	blockTime := uint32(time.Now().Unix())
@@ -1340,7 +1345,13 @@ func (this *LedgerStoreImp) PreExecuteEip155Tx(tx *types3.Transaction) (*types4.
 		Height:    height,
 		Timestamp: blockTime,
 	}
-	res, _, err := this.PreExecuteEIP155(tx, ctx)
+	config := params.GetChainConfig(sysconfig.DefConfig.P2PNode.EVMChainId)
+	txCcntmext := evm.NewEVMTxCcntmext(msg)
+	blockCcntmext := evm.NewEVMBlockCcntmext(height, blockTime, this)
+	cache := this.GetCacheDB()
+	statedb := storage.NewStateDB(cache, common2.Hash{}, common2.Hash(ctx.BlockHash), cntm.OngBalanceHandle{})
+	vmenv := evm2.NewEVM(blockCcntmext, txCcntmext, statedb, config, evm2.Config{})
+	res, err := evm.ApplyMessage(vmenv, msg, common2.Address(utils.GovernanceCcntmractAddress))
 	return res, err
 }
 

@@ -20,7 +20,6 @@ package common
 import (
 	"bytes"
 	"encoding/json"
-
 	utils2 "github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/utils"

@@ -27,11 +27,10 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
-	sysconfig "github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/payload"
@@ -39,6 +38,10 @@ import (
 )
 
 const MAX_TX_SIZE = 1024 * 1024 // The max size of a transaction to prevent DOS attacks
+
+//this flag is used for check EIP155 transaction chainID
+//will be set to 'true' on cntmology startup ,for sdk dependency will always be 'false'
+var CheckChainID = false
 
 type Transaction struct {
 	Version  byte
@@ -76,9 +79,7 @@ func TransactionFromRawBytes(raw []byte) (*Transaction, error) {
 }
 
 func TransactionFromEIP155(eiptx *types.Transaction) (*Transaction, error) {
-	evmChainId := sysconfig.DefConfig.P2PNode.EVMChainId
-
-	signer := types.NewEIP155Signer(big.NewInt(int64(evmChainId)))
+	signer := types.NewEIP155Signer(eiptx.ChainId())
 	from, err := signer.Sender(eiptx)
 	if err != nil {
 		return nil, fmt.Errorf("error EIP155 get sender:%s", err.Error())
@@ -119,70 +120,16 @@ func TransactionFromEIP155(eiptx *types.Transaction) (*Transaction, error) {
 	return retTx, nil
 }
 
+func (tx *Transaction) IsEipTx() bool {
+	return tx.TxType == EIP155
+}
+
 func (tx *Transaction) GetEIP155Tx() (*types.Transaction, error) {
 	if tx.TxType == EIP155 {
 		tx := tx.Payload.(*payload.EIP155Code).EIPTx
 		return tx, nil
 	}
 	return nil, fmt.Errorf("not a EIP155 tx")
-}
-
-func (tx *Transaction) VerifyEIP155Tx() error {
-	if tx.TxType != EIP155 {
-		return fmt.Errorf("not a EIP155 transaction")
-	}
-
-	eiptx := tx.Payload.(*payload.EIP155Code).EIPTx
-	v, r, s := eiptx.RawSignatureValues()
-	return sanityCheckSignature(v, r, s, true)
-}
-
-func sanityCheckSignature(v *big.Int, r *big.Int, s *big.Int, maybeProtected bool) error {
-	if isProtectedV(v) && !maybeProtected {
-		return errors.New("transaction type does not supported EIP-155 protected signatures")
-	}
-
-	var plainV byte
-	if isProtectedV(v) {
-		chainID := deriveChainId(v).Uint64()
-		plainV = byte(v.Uint64() - 35 - 2*chainID)
-	} else if maybeProtected {
-		// Only EIP-155 signatures can be optionally protected. Since
-		// we determined this v value is not protected, it must be a
-		// raw 27 or 28.
-		plainV = byte(v.Uint64() - 27)
-	} else {
-		// If the signature is not optionally protected, we assume it
-		// must already be equal to the recovery id.
-		plainV = byte(v.Uint64())
-	}
-	if !crypto.ValidateSignatureValues(plainV, r, s, false) {
-		return errors.New("transaction type not valid in this ccntmext")
-	}
-
-	return nil
-}
-
-func isProtectedV(V *big.Int) bool {
-	if V.BitLen() <= 8 {
-		v := V.Uint64()
-		return v != 27 && v != 28 && v != 1 && v != 0
-	}
-	// anything not 27 or 28 is considered protected
-	return true
-}
-
-// deriveChainId derives the chain id from the given v parameter
-func deriveChainId(v *big.Int) *big.Int {
-	if v.BitLen() <= 64 {
-		v := v.Uint64()
-		if v == 27 || v == 28 {
-			return new(big.Int)
-		}
-		return new(big.Int).SetUint64((v - 35) / 2)
-	}
-	v = new(big.Int).Sub(v, big.NewInt(35))
-	return v.Div(v, big.NewInt(2))
 }
 
 func isEip155TxBytes(source *common.ZeroCopySource) bool {
@@ -211,6 +158,13 @@ func (tx *Transaction) decodeEip155(source *common.ZeroCopySource) error {
 	if err != nil {
 		return err
 	}
+
+	if CheckChainID {
+		if pl.EIPTx.ChainId().Cmp(big.NewInt(int64(config.DefConfig.P2PNode.EVMChainId))) != 0 {
+			return fmt.Errorf("invalid chainID ! want:%d,got:%d", config.DefConfig.P2PNode.EVMChainId, pl.EIPTx.ChainId())
+		}
+	}
+
 	decoded, err := TransactionFromEIP155(pl.EIPTx)
 	if err != nil {
 		return err
@@ -495,7 +449,6 @@ func (self *Transaction) GetSignatureAddresses() []common.Address {
 type TransactionType byte
 
 const (
-	Bookkeeper TransactionType = 0x02
 	Deploy     TransactionType = 0xd0
 	InvokeNeo  TransactionType = 0xd1
 	InvokeWasm TransactionType = 0xd2 //add for wasm invoke
@@ -528,7 +481,7 @@ func (tx *Transaction) Hash() common.Uint256 {
 // calculate a hash for another chain to sign.
 // and take the chain id of cntmology as 0.
 func (tx *Transaction) SigHashForChain(id uint32) common.Uint256 {
-	if tx.TxType == EIP155 {
+	if tx.IsEipTx() {
 		eiptx, err := tx.GetEIP155Tx()
 		if err != nil {
 			panic(err)

@@ -27,6 +27,7 @@ import (
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/ledger"
+
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/events/message"
 	tc "github.com/cntmio/cntmology/txnpool/common"
@@ -75,7 +76,8 @@ func TestTxPoolActor(t *testing.T) {
 		Tx:             txn,
 		VerifiedHeight: 10,
 	}
-	s.addTxList(txEntry)
+	e := s.txPool.AddTxList(txEntry)
+	assert.True(t, e.Success())
 
 	future := txPoolPid.RequestFuture(&tc.GetTxnPoolReq{ByCount: false}, 2*time.Second)
 	result, err := future.Result()

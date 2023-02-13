@@ -54,6 +54,7 @@ import (
 	"github.com/cntmio/wagon/wasm"
 )
 
+const ccntmractDir2 = "test-ccntmract"
 const ccntmractDir = "testwasmdata"
 const testcaseMethod = "testcase"
 
@@ -83,6 +84,18 @@ func NewDeployNeoCcntmract(signer *account.Account, code []byte) (*types.Transac
 	}
 	tx, err := mutable.IntoImmutable()
 	return tx, err
+}
+
+func NewDeployEvmCcntmract(opts *bind.TransactOpts, code []byte, jsonABI string, params ...interface{}) (*types2.Transaction, error) {
+	parsed, err := abi.JSON(strings.NewReader(jsonABI))
+	checkErr(err)
+	input, err := parsed.Pack("", params...)
+	checkErr(err)
+	input = append(code, input...)
+	deployTx := types2.NewCcntmractCreation(opts.Nonce.Uint64(), opts.Value, opts.GasLimit, opts.GasPrice, input)
+	signedTx, err := opts.Signer(opts.From, deployTx)
+	checkErr(err)
+	return signedTx, err
 }
 
 func GenNeoTextCaseTransaction(ccntmract common.Address, database *ledger.Ledger) [][]common3.TestCase {
@@ -184,6 +197,21 @@ func LoadCcntmracts(dir string) (map[string][]byte, error) {
 	return ccntmracts, nil
 }
 
+func loadCcntmract(filePath string) []byte {
+	if common.FileExisted(filePath) {
+		raw, err := ioutil.ReadFile(filePath)
+		checkErr(err)
+		code, err := hex.DecodeString(string(raw))
+		if err != nil {
+			return raw
+		} else {
+			return code
+		}
+	} else {
+		panic("no existed file:" + filePath)
+	}
+}
+
 func init() {
 	log.InitLog(log.InfoLog, log.PATH, log.Stdout)
 	runtime.GOMAXPROCS(4)
@@ -211,6 +239,7 @@ func execTxCheckRes(tx *types.Transaction, testCase common3.TestCase, database *
 	block, _ := makeBlock(acct, []*types.Transaction{tx})
 	err = database.AddBlock(block, nil, common.UINT256_EMPTY)
 	checkErr(err)
+	log.Infof("execTxCheckRes success: %s", testCase.Method)
 }
 
 func main() {
@@ -288,7 +317,6 @@ func main() {
 				log.Info("executing testcase: ", string(val))
 				tx, err := common3.GenNeoVMTransaction(testCase, addr, &testCcntmext)
 				checkErr(err)
-
 				execTxCheckRes(tx, testCase, database, addr, acct)
 			}
 		} else if strings.HasSuffix(file, ".wasm") {
@@ -317,6 +345,11 @@ type ExecEnv struct {
 
 func checkExecResult(testCase common3.TestCase, result *states.PreExecResult, execEnv ExecEnv) {
 	assertEq(result.State, byte(1))
+	if execEnv.Tx.IsEipTx() {
+		res := parseEthResult(testCase.Method, result.Result, testCase.JsonAbi)
+		compareEthResult(res, testCase.Expect)
+		return
+	}
 	ret := result.Result.(string)
 	switch testCase.Method {
 	case "timestamp":
@@ -360,6 +393,30 @@ func checkExecResult(testCase common3.TestCase, result *states.PreExecResult, ex
 		if len(testCase.Notify) != 0 {
 			js, _ := json.Marshal(result.Notify)
 			assertEq(true, strings.Ccntmains(string(js), testCase.Notify))
+		}
+	}
+}
+
+func compareEthResult(result interface{}, expect string) {
+	res := strings.Split(expect, ":")
+	switch res[0] {
+	case "int":
+		data := result.(*big.Int)
+		exp, err := strconv.ParseUint(res[1], 10, 64)
+		checkErr(err)
+		if data.Uint64() != exp {
+			panic(data)
+		}
+	case "bool":
+		data := result.(bool)
+		if res[1] == "true" {
+			if !data {
+				panic(data)
+			}
+		} else {
+			if data {
+				panic(data)
+			}
 		}
 	}
 }
@@ -459,4 +516,11 @@ func assertEq(a interface{}, b interface{}) {
 	if reflect.DeepEqual(a, b) == false {
 		panic(fmt.Sprintf("not equal: a= %v, b=%v", a, b))
 	}
+}
+
+func JsonString(v interface{}) string {
+	buf, err := json.MarshalIndent(v, "", "  ")
+	checkErr(err)
+
+	return string(buf)
 }

@@ -22,10 +22,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cntmio/cntmology/cmd/utils"
-
 	"github.com/cntmio/cntmology-eventbus/actor"
 	"github.com/cntmio/cntmology/account"
+	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/types"
 	tc "github.com/cntmio/cntmology/txnpool/common"
@@ -93,22 +92,6 @@ func TestTxn(t *testing.T) {
 	time.Sleep(10 * time.Second)
 	s.startTxVerify(txn, sender, nil)
 	s.startTxVerify(txn, sender, nil)
-
-	/* Case 4: Given the tx is in the tx pool, server can get the tx
-	 * with the invalid hash
-	 */
-	time.Sleep(10 * time.Second)
-	txEntry := &tc.VerifiedTx{
-		Tx:             txn,
-		VerifiedHeight: 10,
-	}
-	s.addTxList(txEntry)
-
-	entry := s.getTransaction(txn.Hash())
-	if entry == nil {
-		t.Error("Failed to get the transaction")
-		return
-	}
 
 	t.Log("Ending test tx")
 }
