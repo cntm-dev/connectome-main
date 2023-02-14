@@ -72,14 +72,35 @@ func (self *VerifiedTx) GetAttrs() []*TXAttr {
 // in the ledger.
 type TXPool struct {
 	sync.RWMutex
-	validTxMap map[common.Uint256]*VerifiedTx  // Transactions which have been verified
-	eipTxPool  map[common.Address]*txSortedMap // The tx pool that holds the valid transaction
+	validTxMap            map[common.Uint256]*VerifiedTx  // Transactions which have been verified
+	eipTxPool             map[common.Address]*txSortedMap // The tx pool that holds the valid transaction
+	userLatestEiptxHeight map[common.Address]uint32       // record last block height user commit eiptx
 }
 
 func NewTxPool() *TXPool {
 	return &TXPool{
-		validTxMap: make(map[common.Uint256]*VerifiedTx),
-		eipTxPool:  make(map[common.Address]*txSortedMap),
+		validTxMap:            make(map[common.Uint256]*VerifiedTx),
+		eipTxPool:             make(map[common.Address]*txSortedMap),
+		userLatestEiptxHeight: make(map[common.Address]uint32),
+	}
+}
+
+func (s *TXPool) CleanStaledEIPTx(height uint32) {
+	s.Lock()
+	defer s.Unlock()
+	if len(s.validTxMap) > MAX_LIMITATION {
+		for addr, v := range s.userLatestEiptxHeight {
+			if height >= v+EIPTX_EXPIRATION_BLOCKS {
+				if list := s.eipTxPool[addr]; list != nil {
+					for _, txn := range list.items {
+						delete(s.validTxMap, txn.Hash())
+					}
+
+					delete(s.eipTxPool, addr)
+				}
+				delete(s.userLatestEiptxHeight, addr)
+			}
+		}
 	}
 }
 
@@ -118,7 +139,7 @@ func (s *TXPool) addEIPTxPool(trans *types.Transaction) (replaced *types.Transac
 		return nil, errors.ErrNoError
 	}
 
-	if old.GasPrice > trans.GasPrice*101/100 {
+	if trans.GasPrice > old.GasPrice*101/100 {
 		log.Infof("replace transaction %s with lower gas fee", old.Hash().ToHexString())
 		s.eipTxPool[trans.Payer].Put(trans)
 		return old, errors.ErrNoError
@@ -143,6 +164,9 @@ func (tp *TXPool) AddTxList(txEntry *VerifiedTx) errors.ErrCode {
 		if !code.Success() {
 			return code
 		}
+		if tp.userLatestEiptxHeight[txEntry.Tx.Payer] == 0 {
+			tp.userLatestEiptxHeight[txEntry.Tx.Payer] = txEntry.VerifiedHeight
+		}
 	}
 
 	if _, ok := tp.validTxMap[txHash]; ok {
@@ -155,7 +179,7 @@ func (tp *TXPool) AddTxList(txEntry *VerifiedTx) errors.ErrCode {
 }
 
 //clean the EIP txpool and eip pending txpool under the tx nonce
-func (s *TXPool) cleanEipTxPool(txs []*types.Transaction) []*types.Transaction {
+func (s *TXPool) cleanCompletedEipTxPool(txs []*types.Transaction, height uint32) []*types.Transaction {
 	var cleaned []*types.Transaction
 	for _, tx := range txs {
 		if tx.IsEipTx() {
@@ -163,6 +187,9 @@ func (s *TXPool) cleanEipTxPool(txs []*types.Transaction) []*types.Transaction {
 				cleaned = append(cleaned, s.eipTxPool[tx.Payer].Forward(uint64(tx.Nonce+1))...)
 				if s.eipTxPool[tx.Payer].Len() == 0 {
 					delete(s.eipTxPool, tx.Payer)
+					delete(s.userLatestEiptxHeight, tx.Payer)
+				} else {
+					s.userLatestEiptxHeight[tx.Payer] = height
 				}
 			}
 		}
@@ -171,12 +198,12 @@ func (s *TXPool) cleanEipTxPool(txs []*types.Transaction) []*types.Transaction {
 }
 
 // cleans the transaction list included in the ledger.
-func (tp *TXPool) CleanTransactionList(txs []*types.Transaction) {
+func (tp *TXPool) CleanCompletedTransactionList(txs []*types.Transaction, height uint32) {
 	cleaned := 0
 	txsNum := len(txs)
 	tp.Lock()
 	defer tp.Unlock()
-	cleanedEips := tp.cleanEipTxPool(txs)
+	cleanedEips := tp.cleanCompletedEipTxPool(txs, height)
 	txs = append(txs, cleanedEips...)
 	for _, tx := range txs {
 		if _, ok := tp.validTxMap[tx.Hash()]; ok {
@@ -189,23 +216,57 @@ func (tp *TXPool) CleanTransactionList(txs []*types.Transaction) {
 	log.Infof("clean txes: total %d, cleaned %d, remains %d in TxPool", txsNum, cleaned, len(tp.validTxMap))
 }
 
+func (tp *TXPool) selectSortEIP155WithLock(eiptxs []Transactions) []*VerifiedTx {
+	idx := make([]int, len(eiptxs))
+	total := 0
+	for _, eips := range eiptxs {
+		total += len(eips)
+	}
+	count := 0
+	ret := make([]*VerifiedTx, 0, total)
+
+	for count < total {
+		roundMaxGasIdx := 0
+		var roundMaxGas uint64
+
+		for i, curIdx := range idx {
+			if curIdx >= len(eiptxs[i]) {
+				ccntminue
+			}
+
+			if eiptxs[i][curIdx].GasPrice >= roundMaxGas {
+				roundMaxGasIdx = i
+				roundMaxGas = eiptxs[i][curIdx].GasPrice
+			}
+		}
+
+		vtxn := tp.validTxMap[eiptxs[roundMaxGasIdx][idx[roundMaxGasIdx]].Hash()]
+		if vtxn != nil {
+			ret = append(ret, vtxn)
+		} else {
+			log.Errorf("eip tx %s not in tx list, impossible!", eiptxs[roundMaxGasIdx][idx[roundMaxGasIdx]].Hash().ToHexString())
+		}
+
+		idx[roundMaxGasIdx]++
+		count++
+	}
+
+	return ret
+}
+
 // gets the transaction lists from the pool for the consensus,
 // if the byCount is marked, return the configured number at most; if the
 // the byCount is not marked, return all of the current transaction pool.
 func (tp *TXPool) GetTxPool(byCount bool, height uint32) ([]*VerifiedTx, []*types.Transaction) {
 	tp.RLock()
 
-	eipTxs := make([]*VerifiedTx, 0)
+	eiplst := make([]Transactions, 0, len(tp.eipTxPool))
 	for _, list := range tp.eipTxPool {
-		for _, txn := range list.Heading() {
-			vtxn := tp.validTxMap[txn.Hash()]
-			if vtxn != nil {
-				eipTxs = append(eipTxs, vtxn)
-			} else {
-				log.Errorf("eip tx %s not in tx list, impossible!", txn.Hash().ToHexString())
-			}
-		}
+		// group by account
+		curEipTxs := list.Heading()
+		eiplst = append(eiplst, curEipTxs)
 	}
+	eipTxs := tp.selectSortEIP155WithLock(eiplst)
 
 	orderByFeeList := make([]*VerifiedTx, 0, len(tp.validTxMap))
 	for _, txEntry := range tp.validTxMap {

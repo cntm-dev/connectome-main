@@ -23,18 +23,26 @@ import (
 
 	"github.com/ethereum/go-ethereum/rpc"
 	cfg "github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/http/ethrpc/eth"
+	"github.com/cntmio/cntmology/http/ethrpc/net"
+	"github.com/cntmio/cntmology/http/ethrpc/web3"
 	tp "github.com/cntmio/cntmology/txnpool/proc"
 )
 
 func StartEthServer(txpool *tp.TXPoolServer) error {
-	ethAPI := NewEthereumAPI(txpool)
+	ethAPI := eth.NewEthereumAPI(txpool)
 	server := rpc.NewServer()
 	err := server.RegisterName("eth", ethAPI)
 	if err != nil {
 		return err
 	}
-	netRpcService := new(PublicNetAPI)
+	netRpcService := net.NewPublicNetAPI()
 	err = server.RegisterName("net", netRpcService)
+	if err != nil {
+		return err
+	}
+	web3API := web3.NewAPI()
+	err = server.RegisterName("web3", web3API)
 	if err != nil {
 		return err
 	}

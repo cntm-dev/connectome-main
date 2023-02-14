@@ -15,18 +15,17 @@
  * You should have received a copy of the GNU Lesser General Public License
  * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
  */
-package ethrpc
+package utils
 
 import (
 	"math/big"
 	"reflect"
 
-	sysconfig "github.com/cntmio/cntmology/common/config"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	types2 "github.com/ethereum/go-ethereum/core/types"
 	oComm "github.com/cntmio/cntmology/common"
+	sysconfig "github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/core/types"
 	types3 "github.com/cntmio/cntmology/http/ethrpc/types"
 )
@@ -124,7 +123,7 @@ func OntToEthHash(txHash oComm.Uint256) common.Hash {
 }
 
 func NewTransaction(tx *types2.Transaction, txHash, blockHash common.Hash, blockNumber, index uint64) (*types3.Transaction, error) {
-	signer := types2.NewEIP155Signer(big.NewInt(int64(getChainId())))
+	signer := types2.NewEIP155Signer(big.NewInt(int64(GetChainId())))
 	from, err := signer.Sender(tx)
 	if err != nil {
 		return nil, err
@@ -153,6 +152,6 @@ func NewTransaction(tx *types2.Transaction, txHash, blockHash common.Hash, block
 	return rpcTx, nil
 }
 
-func getChainId() uint32 {
+func GetChainId() uint32 {
 	return sysconfig.DefConfig.P2PNode.EVMChainId
 }
