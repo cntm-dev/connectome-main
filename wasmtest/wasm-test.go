@@ -201,7 +201,7 @@ func loadCcntmract(filePath string) []byte {
 	if common.FileExisted(filePath) {
 		raw, err := ioutil.ReadFile(filePath)
 		checkErr(err)
-		code, err := hex.DecodeString(string(raw))
+		code, err := hex.DecodeString(strings.TrimSpace(string(raw)))
 		if err != nil {
 			return raw
 		} else {

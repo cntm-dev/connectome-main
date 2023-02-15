@@ -87,7 +87,7 @@ type ExecuteNotify struct {
 
 	GasStepUsed     uint64
 	TxIndex         uint32
-	CreatedCcntmract common.Address
+	CreatedCcntmract string
 }
 
 type PreExecuteResult struct {
@@ -208,7 +208,7 @@ func GetExecuteNotify(obj *event.ExecuteNotify) (map[string]bool, ExecuteNotify)
 	}
 	txhash := obj.TxHash.ToHexString()
 	return ccntmractAddrs, ExecuteNotify{txhash, obj.State, obj.GasConsumed, evts,
-		obj.GasStepUsed, obj.TxIndex, obj.CreatedCcntmract}
+		obj.GasStepUsed, obj.TxIndex, obj.CreatedCcntmract.ToHexString()}
 }
 
 func ConvertPreExecuteResult(obj *cstate.PreExecResult) PreExecuteResult {

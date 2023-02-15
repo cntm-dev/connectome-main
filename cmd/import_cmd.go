@@ -25,8 +25,6 @@ import (
 	"os"
 
 	"github.com/gosuri/uiprogress"
-	"github.com/urfave/cli"
-
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
@@ -35,6 +33,7 @@ import (
 	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/types"
+	"github.com/urfave/cli"
 )
 
 var ImportCommand = cli.Command{

@@ -18,18 +18,17 @@
 package evm
 
 import (
-	"github.com/cntmio/cntmology/vm/evm/errors"
 	"math"
 	"math/big"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/cntmio/cntmology/core/store/leveldbstore"
 	"github.com/cntmio/cntmology/core/store/overlaydb"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/storage"
-
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/cntmio/cntmology/vm/evm/errors"
 	"github.com/cntmio/cntmology/vm/evm/params"
 )
 

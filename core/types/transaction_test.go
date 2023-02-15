@@ -21,14 +21,14 @@ package types
 import (
 	"crypto/ecdsa"
 	"fmt"
-	ethcomm "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/cntmio/cntmology/common"
 	"math"
 	"math/big"
 	"testing"
 
+	ethcomm "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/stretchr/testify/assert"
 )

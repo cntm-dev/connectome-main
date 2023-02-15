@@ -21,13 +21,11 @@ package mock
 import (
 	"crypto/rand"
 	"encoding/binary"
-	"testing"
-
 	"net"
+	"testing"
 
 	"github.com/cntmio/cntmology/p2pserver/common"
 	"github.com/stretchr/testify/assert"
-
 	"github.com/stretchr/testify/require"
 )
 

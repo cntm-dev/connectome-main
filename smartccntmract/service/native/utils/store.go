@@ -21,13 +21,12 @@ package utils
 import (
 	"bytes"
 
-	"github.com/cntmio/cntmology/smartccntmract/storage"
-
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/serialization"
 	cstates "github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/errors"
 	"github.com/cntmio/cntmology/smartccntmract/service/native"
+	"github.com/cntmio/cntmology/smartccntmract/storage"
 )
 
 func GetStorageItem(cacheDB *storage.CacheDB, key []byte) (*cstates.StorageItem, error) {

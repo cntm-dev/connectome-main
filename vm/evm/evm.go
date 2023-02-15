@@ -22,11 +22,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cntmio/cntmology/vm/evm/errors"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/holiman/uint256"
+	"github.com/cntmio/cntmology/vm/evm/errors"
 	"github.com/cntmio/cntmology/vm/evm/params"
 )
 

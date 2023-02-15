@@ -25,10 +25,9 @@ import (
 	"time"
 
 	"github.com/gosuri/uiprogress"
-	"github.com/urfave/cli"
-
 	"github.com/cntmio/cntmology/cmd/utils"
 	"github.com/cntmio/cntmology/common/serialization"
+	"github.com/urfave/cli"
 )
 
 var ExportCommand = cli.Command{

@@ -22,8 +22,6 @@ import (
 	"errors"
 	"fmt"
 
-	common2 "github.com/cntmio/cntmology/txnpool/common"
-
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common"
@@ -44,6 +42,7 @@ import (
 	"github.com/cntmio/cntmology/p2pserver/protocols/reconnect"
 	"github.com/cntmio/cntmology/p2pserver/protocols/subnet"
 	"github.com/cntmio/cntmology/p2pserver/protocols/utils"
+	common2 "github.com/cntmio/cntmology/txnpool/common"
 )
 
 //respCache cache for some response data

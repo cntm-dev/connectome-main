@@ -20,14 +20,14 @@ package common
 import (
 	"bytes"
 	"encoding/json"
+
 	utils2 "github.com/cntmio/cntmology/cmd/utils"
+	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/core/payload"
+	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/core/utils"
 	common2 "github.com/cntmio/cntmology/http/base/common"
 	"github.com/cntmio/cntmology/smartccntmract/states"
-
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/vm/neovm"
 )
 

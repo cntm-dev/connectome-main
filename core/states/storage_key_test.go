@@ -18,9 +18,8 @@
 package states
 
 import (
-	"testing"
-
 	"crypto/rand"
+	"testing"
 
 	"github.com/cntmio/cntmology/common"
 	"github.com/stretchr/testify/assert"

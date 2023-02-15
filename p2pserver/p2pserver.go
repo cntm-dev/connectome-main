@@ -22,8 +22,6 @@ import (
 	"strings"
 	"time"
 
-	common2 "github.com/cntmio/cntmology/txnpool/common"
-
 	"github.com/cntmio/cntmology/account"
 	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
@@ -34,6 +32,7 @@ import (
 	p2p "github.com/cntmio/cntmology/p2pserver/net/protocol"
 	"github.com/cntmio/cntmology/p2pserver/protocols"
 	"github.com/cntmio/cntmology/p2pserver/protocols/utils"
+	common2 "github.com/cntmio/cntmology/txnpool/common"
 )
 
 //P2PServer ccntmrol all network activities

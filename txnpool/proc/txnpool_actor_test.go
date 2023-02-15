@@ -27,7 +27,6 @@ import (
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/genesis"
 	"github.com/cntmio/cntmology/core/ledger"
-
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/events/message"
 	tc "github.com/cntmio/cntmology/txnpool/common"

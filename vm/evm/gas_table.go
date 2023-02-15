@@ -19,10 +19,10 @@ package evm
 
 import (
 	"errors"
-	errors2 "github.com/cntmio/cntmology/vm/evm/errors"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
+	errors2 "github.com/cntmio/cntmology/vm/evm/errors"
 	"github.com/cntmio/cntmology/vm/evm/params"
 )
 

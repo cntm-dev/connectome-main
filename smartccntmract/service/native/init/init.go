@@ -22,8 +22,6 @@ import (
 	"bytes"
 	"math/big"
 
-	"github.com/cntmio/cntmology/smartccntmract/service/native/system"
-
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/auth"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cross_chain/cross_chain_manager"
@@ -35,6 +33,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntmfs"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntmid"
+	"github.com/cntmio/cntmology/smartccntmract/service/native/system"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
 	vm "github.com/cntmio/cntmology/vm/neovm"
