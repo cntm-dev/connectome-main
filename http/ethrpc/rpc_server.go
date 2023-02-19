@@ -21,15 +21,18 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
 	cfg "github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/http/ethrpc/eth"
 	"github.com/cntmio/cntmology/http/ethrpc/net"
+	"github.com/cntmio/cntmology/http/ethrpc/utils"
 	"github.com/cntmio/cntmology/http/ethrpc/web3"
 	tp "github.com/cntmio/cntmology/txnpool/proc"
 )
 
 func StartEthServer(txpool *tp.TXPoolServer) error {
+	log.Root().SetHandler(utils.OntLogHandler())
 	ethAPI := eth.NewEthereumAPI(txpool)
 	server := rpc.NewServer()
 	err := server.RegisterName("eth", ethAPI)

@@ -820,6 +820,7 @@ func opSuicide(pc *uint64, interpreter *EVMInterpreter, callCcntmext *callCtx) (
 	beneficiary := callCcntmext.stack.pop()
 	balance := interpreter.evm.StateDB.GetBalance(callCcntmext.ccntmract.Address())
 	interpreter.evm.StateDB.AddBalance(beneficiary.Bytes20(), balance)
+	MakeOngTransferLog(interpreter.evm.StateDB, callCcntmext.ccntmract.Address(), beneficiary.Bytes20(), balance)
 	interpreter.evm.StateDB.Suicide(callCcntmext.ccntmract.Address())
 	return nil, nil
 }
