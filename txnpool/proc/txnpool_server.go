@@ -162,7 +162,7 @@ func (s *TXPoolServer) movePendingTxToPool(txEntry *tc.VerifiedTx) { //solve the
 
 	errCode := s.txPool.AddTxList(txEntry)
 	s.removePendingTxLocked(txEntry.Tx.Hash(), errCode)
-	log.Infof("tx moved from pending pool to tx pool: %s, err: %s", txEntry.Tx.Hash().ToHexString(), errCode.Error())
+	tc.ShowTraceLog("tx moved from pending pool to tx pool: %s, err: %s", txEntry.Tx.Hash().ToHexString(), errCode.Error())
 }
 
 // removes a transaction from the pending list
@@ -173,7 +173,7 @@ func (s *TXPoolServer) removePendingTx(hash common.Uint256, err errors.ErrCode) 
 	s.mu.Lock()
 	s.removePendingTxLocked(hash, err)
 	s.mu.Unlock()
-	log.Infof("transaction removed from pending pool: %s, err: %s", hash.ToHexString(), err.Error())
+	tc.ShowTraceLog("transaction removed from pending pool: %s, err: %s", hash.ToHexString(), err.Error())
 }
 
 func (s *TXPoolServer) broadcastTx(pt *serverPendingTx) {

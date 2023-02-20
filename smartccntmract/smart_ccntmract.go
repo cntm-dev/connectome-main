@@ -110,6 +110,12 @@ func (this *SmartCcntmract) CheckExecStep() bool {
 	return true
 }
 
+func (this *SmartCcntmract) GetGasInfo() (gasLeft uint64, gasPrice uint64) {
+	gasLeft = this.Gas
+	gasPrice = this.Config.Tx.GasPrice
+	return
+}
+
 func (this *SmartCcntmract) CheckUseGas(gas uint64) bool {
 	if this.Gas < gas {
 		return false

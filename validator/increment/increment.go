@@ -24,6 +24,7 @@ import (
 
 	ethcomm "github.com/ethereum/go-ethereum/common"
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/config"
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/types"
@@ -134,7 +135,11 @@ func (self *IncrementValidator) Verify(tx *types.Transaction, startHeight uint32
 		}
 
 		if uint64(tx.Nonce) != nonceCtx[tx.Payer] {
-			log.Infof("wrcntm nonce for %s, tx: %s, exptected: %d, got: %d", tx.Payer.ToBase58(),
+			trace := log.Debugf
+			if config.DefConfig.Common.TraceTxPool {
+				trace = log.Infof
+			}
+			trace("wrcntm nonce for %s, tx: %s, exptected: %d, got: %d", tx.Payer.ToBase58(),
 				tx.Hash().ToHexString(), nonceCtx[tx.Payer], tx.Nonce)
 			return fmt.Errorf("wrcntm nonce for %s, exptected: %d, got: %d", tx.Payer.ToBase58(),
 				nonceCtx[tx.Payer], tx.Nonce)

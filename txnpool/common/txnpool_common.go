@@ -23,6 +23,8 @@ import (
 	"sync/atomic"
 
 	"github.com/cntmio/cntmology/common"
+	"github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/errors"
@@ -191,4 +193,12 @@ func GetOngBalance(account common.Address) (*big.Int, error) {
 	}
 
 	return big.NewInt(0).SetUint64(amount), nil
+}
+
+func ShowTraceLog(format string, a ...interface{}) {
+	if config.DefConfig.Common.TraceTxPool {
+		log.Infof(format, a...)
+	} else {
+		log.Debugf(format, a...)
+	}
 }
