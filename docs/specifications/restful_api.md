@@ -47,6 +47,7 @@ This document describes the restful api format for the http/https used in the On
 | [post_raw_tx](#21-post_raw_tx) | post /api/v1/transaction?preExec=0 | send transaction to cntmology network |
 | [get_networkid](#22-get_networkid) |  GET /api/v1/networkid | return the networkid |
 | [get_grantcntm](#23-get_grantcntm) |  GET /api/v1/grantcntm/:addr | get grant cntm |
+| [get_syncstatus](#24-get_syncstatus) |  GET /api/v1/node/syncstatus |gets the synchronization status of the node |
 
 ### 1 get_conn_count
 
@@ -869,6 +870,36 @@ curl -i http://localhost:20334/api/v1/grantcntm/AKDFapcoUhewN9Kaj6XhHusurfHzUiZq
     "Error": 0,
     "Version": "1.0.0",
     "Result": 4995625
+}
+```
+
+
+
+### 24 get_syncstatus
+
+gets the synchronization status of the node.
+
+GET
+```
+/api/v1/api/v1/node/syncstatus
+```
+
+#### Request Example:
+```
+curl -i http://localhost:20334/api/v1/node/syncstatus
+```
+#### Response
+```
+{
+    "Action":"getsyncstatus",
+    "Desc":"SUCCESS",
+    "Error":0,
+    "Result":{
+        "CurrentBlockHeight":16224658,
+        "ConnectCount":18,
+        "MaxPeerBlockHeight":16224658
+    },
+    "Version":"1.0.0"
 }
 ```
 
