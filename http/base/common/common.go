@@ -27,6 +27,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cntmio/cntmology/core/states"
+
+	"github.com/laizy/bigint"
+
 	"github.com/cntmio/cntmology-crypto/keypair"
 	"github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/constants"
@@ -316,13 +320,25 @@ func GetBlockInfo(block *types.Block) BlockInfo {
 }
 
 func GetBalance(address common.Address) (*BalanceOfRsp, error) {
-	balances, height, err := GetCcntmractBalance(0, []common.Address{utils.OntCcntmractAddress, utils.OngCcntmractAddress}, address, true)
+	balances, height, err := GetNativeTokenBalance(0, []common.Address{utils.OntCcntmractAddress, utils.OngCcntmractAddress}, address, true)
 	if err != nil {
 		return nil, fmt.Errorf("get cntm balance error:%s", err)
 	}
 	return &BalanceOfRsp{
-		Ont:    fmt.Sprintf("%d", balances[0]),
-		Ong:    fmt.Sprintf("%d", balances[1]),
+		Ont:    fmt.Sprintf("%d", balances[0].MustToInteger64()),
+		Ong:    fmt.Sprintf("%d", balances[1].MustToInteger64()),
+		Height: fmt.Sprintf("%d", height),
+	}, nil
+}
+
+func GetBalanceV2(address common.Address) (*BalanceOfRsp, error) {
+	balances, height, err := GetNativeTokenBalance(0, []common.Address{utils.OntCcntmractAddress, utils.OngCcntmractAddress}, address, true)
+	if err != nil {
+		return nil, fmt.Errorf("get cntm balance error:%s", err)
+	}
+	return &BalanceOfRsp{
+		Ont:    balances[0].String(),
+		Ong:    balances[1].String(),
 		Height: fmt.Sprintf("%d", height),
 	}, nil
 }
@@ -346,7 +362,7 @@ func GetOep4Balance(ccntmractAddress common.Address, addrs []common.Address) (*O
 }
 
 func GetGrantOng(addr common.Address) (string, error) {
-	key := append([]byte(cntm.UNBOUND_TIME_OFFSET), addr[:]...)
+	key := append([]byte(cntm.UNBOUND_TIME_OFFSET_KEY), addr[:]...)
 	value, err := ledger.DefLedger.GetStorageItem(utils.OntCcntmractAddress, key)
 	if err != nil {
 		value = []byte{0, 0, 0, 0}
@@ -356,11 +372,11 @@ func GetGrantOng(addr common.Address) (string, error) {
 	if eof {
 		return fmt.Sprintf("%v", 0), io.ErrUnexpectedEOF
 	}
-	cntms, _, err := GetCcntmractBalance(0, []common.Address{utils.OntCcntmractAddress}, addr, false)
+	cntms, _, err := GetNativeTokenBalance(0, []common.Address{utils.OntCcntmractAddress}, addr, false)
 	if err != nil {
 		return fmt.Sprintf("%v", 0), err
 	}
-	boundcntm := utils.CalcUnbindOng(cntms[0], v, uint32(time.Now().Unix())-constants.GENESIS_BLOCK_TIMESTAMP)
+	boundcntm := utils.CalcUnbindOng(cntms[0].MustToInteger64(), v, uint32(time.Now().Unix())-constants.GENESIS_BLOCK_TIMESTAMP)
 	return fmt.Sprintf("%v", boundcntm), nil
 }
 
@@ -381,10 +397,28 @@ func GetAllowance(asset string, from, to common.Address) (string, error) {
 	return fmt.Sprintf("%v", allowance), nil
 }
 
-func GetCcntmractBalance(cVersion byte, ccntmractAddres []common.Address, accAddr common.Address, atomic bool) ([]uint64, uint32, error) {
+func GetAllowanceV2(asset string, from, to common.Address) (string, error) {
+	var ccntmractAddr common.Address
+	switch strings.ToLower(asset) {
+	case "cntm":
+		ccntmractAddr = utils.OntCcntmractAddress
+	case "cntm":
+		ccntmractAddr = utils.OngCcntmractAddress
+	default:
+		return "", fmt.Errorf("unsupport asset")
+	}
+	allowance, err := GetCcntmractAllowanceV2(0, ccntmractAddr, from, to)
+	if err != nil {
+		return "", fmt.Errorf("get allowance error:%s", err)
+	}
+	return fmt.Sprintf("%v", allowance), nil
+}
+
+func GetNativeTokenBalance(cVersion byte, ccntmractAddres []common.Address, accAddr common.Address, atomic bool) (
+	[]states.NativeTokenBalance, uint32, error) {
 	txes := make([]*types.Transaction, 0, len(ccntmractAddres))
 	for _, ccntmractAddr := range ccntmractAddres {
-		mutable, err := NewNativeInvokeTransaction(0, 0, ccntmractAddr, cVersion, "balanceOf", []interface{}{accAddr[:]})
+		mutable, err := NewNativeInvokeTransaction(0, 0, ccntmractAddr, cVersion, "balanceOfV2", []interface{}{accAddr[:]})
 		if err != nil {
 			return nil, 0, fmt.Errorf("NewNativeInvokeTransaction error:%s", err)
 		}
@@ -401,7 +435,7 @@ func GetCcntmractBalance(cVersion byte, ccntmractAddres []common.Address, accAdd
 	if err != nil {
 		return nil, 0, fmt.Errorf("PrepareInvokeCcntmract error:%s", err)
 	}
-	balances := make([]uint64, 0, len(ccntmractAddres))
+	balances := make([]states.NativeTokenBalance, 0, len(ccntmractAddres))
 	for _, result := range results {
 		if result.State == 0 {
 			return nil, 0, fmt.Errorf("prepare invoke failed")
@@ -412,7 +446,7 @@ func GetCcntmractBalance(cVersion byte, ccntmractAddres []common.Address, accAdd
 		}
 
 		balance := common.BigIntFromNeoBytes(data)
-		balances = append(balances, balance.Uint64())
+		balances = append(balances, states.NativeTokenBalance{Balance: bigint.New(balance)})
 	}
 
 	return balances, height, nil
@@ -489,6 +523,40 @@ func GetCcntmractAllowance(cVersion byte, ccntmractAddr, fromAddr, toAddr common
 	}
 	allowance := common.BigIntFromNeoBytes(data)
 	return allowance.Uint64(), nil
+}
+
+func GetCcntmractAllowanceV2(cVersion byte, ccntmractAddr, fromAddr, toAddr common.Address) (string, error) {
+	type allowanceStruct struct {
+		From common.Address
+		To   common.Address
+	}
+	mutable, err := NewNativeInvokeTransaction(0, 0, ccntmractAddr, cVersion, "allowanceV2",
+		[]interface{}{&allowanceStruct{
+			From: fromAddr,
+			To:   toAddr,
+		}})
+	if err != nil {
+		return "", fmt.Errorf("NewNativeInvokeTransaction error:%s", err)
+	}
+
+	tx, err := mutable.IntoImmutable()
+	if err != nil {
+		return "", err
+	}
+
+	result, err := bactor.PreExecuteCcntmract(tx)
+	if err != nil {
+		return "", fmt.Errorf("PrepareInvokeCcntmract error:%s", err)
+	}
+	if result.State == 0 {
+		return "", fmt.Errorf("prepare invoke failed")
+	}
+	data, err := hex.DecodeString(result.Result.(string))
+	if err != nil {
+		return "", fmt.Errorf("hex.DecodeString error:%s", err)
+	}
+	allowance := common.BigIntFromNeoBytes(data)
+	return allowance.String(), nil
 }
 
 func GetGasPrice() (gasPrice uint64, height uint32, err error) {

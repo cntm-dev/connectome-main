@@ -81,9 +81,9 @@ func getCreateTxArgs(toChainID uint64, ccntmractHashBytes []byte, method string,
 	return sink.Bytes()
 }
 
-func getTransferInput(state cntm.State) []byte {
-	var transfers cntm.Transfers
-	transfers.States = []cntm.State{state}
+func getTransferInput(state cntm.TransferState) []byte {
+	var transfers cntm.TransferStates
+	transfers.States = []cntm.TransferState{state}
 	sink := common.NewZeroCopySink(nil)
 	transfers.Serialization(sink)
 	return sink.Bytes()
@@ -145,12 +145,8 @@ func getAllowanceInput() []byte {
 }
 
 func getTransferFromInput(toAddress common.Address, value uint64) []byte {
-	transferFromState := cntm.TransferFrom{
-		Sender: utils.LockProxyCcntmractAddress,
-		From:   utils.OntCcntmractAddress,
-		To:     toAddress,
-		Value:  value,
-	}
+	transferFromState := cntm.NewTransferFromState(utils.LockProxyCcntmractAddress,
+		utils.OntCcntmractAddress, toAddress, value)
 	sink := common.NewZeroCopySink(nil)
 	transferFromState.Serialization(sink)
 	return sink.Bytes()

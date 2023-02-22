@@ -20,6 +20,8 @@ package constants
 
 import (
 	"time"
+
+	"github.com/laizy/bigint"
 )
 
 // genesis constants
@@ -32,11 +34,15 @@ var (
 )
 
 // cntm constants
+const GWei = 1000000000
+
 const (
-	cntm_NAME         = "cntm Token"
-	cntm_SYMBOL       = "cntm"
-	cntm_DECIMALS     = 0
-	cntm_TOTAL_SUPPLY = uint64(1000000000)
+	cntm_NAME            = "cntm Token"
+	cntm_SYMBOL          = "cntm"
+	cntm_DECIMALS        = 0
+	cntm_DECIMALS_V2     = 9
+	cntm_TOTAL_SUPPLY    = 1000000000
+	cntm_TOTAL_SUPPLY_V2 = 1000000000000000000
 )
 
 // cntm constants
@@ -44,7 +50,12 @@ const (
 	cntm_NAME         = "cntm Token"
 	cntm_SYMBOL       = "cntm"
 	cntm_DECIMALS     = 9
-	cntm_TOTAL_SUPPLY = uint64(1000000000000000000)
+	cntm_DECIMALS_V2  = 18
+	cntm_TOTAL_SUPPLY = 1000000000000000000
+)
+
+var (
+	cntm_TOTAL_SUPPLY_V2 = bigint.New(10).ExpUint8(27)
 )
 
 // cntm/cntm unbound model constants
@@ -103,3 +114,6 @@ const BLOCKHEIGHT_NEW_PEER_COST_POLARIS = 13400000
 
 const BLOCKHEIGHT_TRACK_DESTROYED_CcntmRACT_MAINNET = 11700000
 const BLOCKHEIGHT_TRACK_DESTROYED_CcntmRACT_POLARIS = 14100000
+
+const BLOCKHEIGHT_ADD_DECIMALS_MAINNET = 13430000
+const BLOCKHEIGHT_ADD_DECIMALS_POLARIS = 0

@@ -50,12 +50,12 @@ func NewTxPoolActor(s *TXPoolServer) *TxPoolActor {
 
 // isBalanceEnough checks if the tranactor has enough to cover gas cost
 func isBalanceEnough(address common.Address, gas uint64) bool {
-	balance, _, err := hComm.GetCcntmractBalance(0, []common.Address{utils.OngCcntmractAddress}, address, false)
+	balance, _, err := hComm.GetNativeTokenBalance(0, []common.Address{utils.OngCcntmractAddress}, address, false)
 	if err != nil {
 		log.Debugf("failed to get ccntmract balance %s err %v", address.ToHexString(), err)
 		return false
 	}
-	return balance[0] >= gas
+	return balance[0].MustToInteger64() >= gas
 }
 
 func replyTxResult(txResultCh chan *tc.TxResult, hash common.Uint256, err errors.ErrCode, desc string) {
@@ -150,6 +150,11 @@ func (ta *TxPoolService) handleTransaction(sender tc.SenderType, txn *tx.Transac
 	}
 
 	if txn.IsEipTx() {
+		curBlkHeight := ledger.DefLedger.GetCurrentBlockHeight()
+		if curBlkHeight < config.GetAddDecimalsHeight() {
+			replyTxResult(txResultCh, txn.Hash(), errors.ErrUnknown, "block height is not reached, evm is not support")
+			return
+		}
 		if txn.GasLimit > config.DefConfig.Common.ETHTxGasLimit {
 			replyTxResult(txResultCh, txn.Hash(), errors.ErrUnknown, "EIP155 tx gaslimit exceed ")
 			return
@@ -161,7 +166,6 @@ func (ta *TxPoolService) handleTransaction(sender tc.SenderType, txn *tx.Transac
 			replyTxResult(txResultCh, txn.Hash(), errors.ErrUnknown, "Invalid EIP155 transaction format ")
 			return
 		}
-
 		currentNonce := ta.server.CurrentNonce(txn.Payer)
 		if eiptx.Nonce() < currentNonce {
 			replyTxResult(txResultCh, txn.Hash(), errors.ErrUnknown,

@@ -32,6 +32,7 @@ import (
 	utils2 "github.com/cntmio/cntmology/cmd/utils"
 	common2 "github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/types"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
@@ -130,12 +131,12 @@ func genBlock(database *ledger.Ledger, acct *account.Account, tx *types.Transact
 }
 
 func transferOng(database *ledger.Ledger, gasPrice, gasLimit uint64, acct *account.Account, toAddr common2.Address, amount int64) {
-	state := &cntm.State{
+	state := &cntm.TransferState{
 		From:  acct.Address,
 		To:    toAddr,
 		Value: uint64(amount),
 	}
-	mutable := newNativeTx(utils.OngCcntmractAddress, 0, gasPrice, gasLimit, "transfer", []interface{}{[]*cntm.State{state}})
+	mutable := newNativeTx(utils.OngCcntmractAddress, 0, gasPrice, gasLimit, "transfer", []interface{}{[]*cntm.TransferState{state}})
 	err := utils2.SignTransaction(acct, mutable)
 	checkErr(err)
 	tx, err := mutable.IntoImmutable()
@@ -158,10 +159,10 @@ func cntmBalanceOf(database *ledger.Ledger, acctAddr common2.Address) uint64 {
 func evmTransferOng(testPrivateKey *ecdsa.PrivateKey, gasPrice, gasLimit uint64, toEthAddr common.Address, nonce int64, value int64) *types.Transaction {
 	chainId := big.NewInt(int64(config.DefConfig.P2PNode.EVMChainId))
 	opts, err := bind.NewKeyedTransactorWithChainID(testPrivateKey, chainId)
-	opts.GasPrice = big.NewInt(int64(gasPrice))
+	opts.GasPrice = big.NewInt(int64(gasPrice * constants.GWei))
 	opts.Nonce = big.NewInt(nonce)
 	opts.GasLimit = gasLimit
-	opts.Value = big.NewInt(value)
+	opts.Value = big.NewInt(value * constants.GWei)
 
 	invokeTx := types2.NewTransaction(opts.Nonce.Uint64(), toEthAddr, opts.Value, opts.GasLimit, opts.GasPrice, []byte{})
 	signedTx, err := opts.Signer(opts.From, invokeTx)

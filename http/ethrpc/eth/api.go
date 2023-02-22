@@ -29,9 +29,12 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/laizy/bigint"
 	oComm "github.com/cntmio/cntmology/common"
 	"github.com/cntmio/cntmology/common/config"
+	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/common/log"
+	"github.com/cntmio/cntmology/core/states"
 	common2 "github.com/cntmio/cntmology/core/store/common"
 	otypes "github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
@@ -81,13 +84,16 @@ func (api *EthereumAPI) BlockNumber() (hexutil.Uint64, error) {
 func (api *EthereumAPI) GetBalance(address common.Address, _ rpc.BlockNumberOrHash) (*hexutil.Big, error) {
 	log.Debugf("eth_getBalance address %v", address.Hex())
 	balance, err := getOngBalance(address)
-	return (*hexutil.Big)(big.NewInt(int64(balance))), err
+	if err != nil {
+		return (*hexutil.Big)(big.NewInt(0)), err
+	}
+	return (*hexutil.Big)(balance.ToBigInt()), err
 }
 
-func getOngBalance(address common.Address) (uint64, error) {
-	balances, _, err := hComm.GetCcntmractBalance(0, []oComm.Address{utils.OngCcntmractAddress}, oComm.Address(address), true)
+func getOngBalance(address common.Address) (states.NativeTokenBalance, error) {
+	balances, _, err := hComm.GetNativeTokenBalance(0, []oComm.Address{utils.OngCcntmractAddress}, oComm.Address(address), true)
 	if err != nil {
-		return 0, fmt.Errorf("get cntm balance error:%s", err)
+		return states.NativeTokenBalance{}, fmt.Errorf("get cntm balance error:%s", err)
 	}
 	return balances[0], nil
 }
@@ -128,7 +134,7 @@ func (api *EthereumAPI) GasPrice() *hexutil.Big {
 	if err != nil {
 		return nil
 	}
-	return (*hexutil.Big)(new(big.Int).SetUint64(gasPrice))
+	return (*hexutil.Big)(bigint.New(gasPrice).Mul(constants.GWei).BigInt())
 }
 
 func (api *EthereumAPI) Accounts() ([]common.Address, error) {
@@ -326,7 +332,7 @@ func (api *EthereumAPI) EstimateGas(args types2.CallArgs) (hexutil.Uint64, error
 
 	if args.GasPrice != nil && args.GasPrice.ToInt().BitLen() != 0 {
 		balance, _ := getOngBalance(*args.From)
-		available := new(big.Int).SetUint64(balance)
+		available := balance.ToBigInt()
 		if args.Value != nil {
 			if args.Value.ToInt().Cmp(available) >= 0 {
 				return 0, errors.New("insufficient funds for transfer")

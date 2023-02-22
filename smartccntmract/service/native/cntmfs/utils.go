@@ -149,13 +149,13 @@ func GenFsSpaceKey(ccntmract common.Address, spaceOwner common.Address) []byte {
 }
 
 func appCallTransfer(native *native.NativeService, ccntmract common.Address, from common.Address, to common.Address, amount uint64) error {
-	var sts []cntm.State
-	sts = append(sts, cntm.State{
+	var sts []cntm.TransferState
+	sts = append(sts, cntm.TransferState{
 		From:  from,
 		To:    to,
 		Value: amount,
 	})
-	transfers := cntm.Transfers{
+	transfers := cntm.TransferStates{
 		States: sts,
 	}
 

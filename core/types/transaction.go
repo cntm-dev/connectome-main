@@ -96,12 +96,17 @@ func TransactionFromEIP155(eiptx *types.Transaction) (*Transaction, error) {
 	if eiptx.Nonce() > uint64(math.MaxUint32) || !eiptx.GasPrice().IsUint64() {
 		return nil, fmt.Errorf("nonce :%d or GasPrice :%d is too big", eiptx.Nonce(), eiptx.GasPrice())
 	}
+	gasPrice := eiptx.GasPrice().Uint64()
+	if gasPrice%constants.GWei != 0 {
+		return nil, fmt.Errorf("gasprice %d is not multiple of GWei", gasPrice)
+	}
+	gasPriceInGwei := gasPrice / constants.GWei
 
 	retTx := &Transaction{
 		Version:              byte(0),
 		TxType:               EIP155,
 		Nonce:                uint32(eiptx.Nonce()),
-		GasPrice:             eiptx.GasPrice().Uint64(),
+		GasPrice:             gasPriceInGwei,
 		GasLimit:             eiptx.Gas(),
 		Payer:                addr,
 		Payload:              &payload.EIP155Code{EIPTx: eiptx},
@@ -150,6 +155,9 @@ func isEip155TxBytes(source *common.ZeroCopySource) bool {
 func (tx *Transaction) decodeEip155(source *common.ZeroCopySource) error {
 	pstart := source.Pos()
 	tx.Version, _ = source.NextByte()
+	if tx.Version != 0 {
+		return fmt.Errorf("wrcntm transaction version: %d", tx.Version)
+	}
 	txtype, eof := source.NextByte()
 	if eof {
 		return io.ErrUnexpectedEOF
@@ -276,6 +284,9 @@ func (tx *Transaction) deserializeOntUnsigned(source *common.ZeroCopySource) err
 	tx.Version, eof = source.NextByte()
 	if eof {
 		return io.ErrUnexpectedEOF
+	}
+	if tx.Version != 0 {
+		return fmt.Errorf("wrcntm transaction version: %d", tx.Version)
 	}
 	var txtype byte
 	txtype, eof = source.NextByte()

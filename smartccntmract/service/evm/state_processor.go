@@ -68,7 +68,7 @@ func applyTransaction(msg types.Message, statedb *storage.StateDB, blockHeight u
 	receipt := otypes.NewReceipt(result.Failed(), *usedGas)
 	receipt.TxHash = tx.Hash()
 	receipt.GasUsed = result.UsedGas
-	receipt.GasPrice = tx.GasPrice().Uint64() // safe since cntm should be in uint64 range
+	receipt.GasPrice = tx.GasPrice().Uint64() // safe since tx's gasprice is checked in deserialization
 	// if the transaction created a ccntmract, store the creation address in the receipt.
 	if msg.To() == nil {
 		receipt.CcntmractAddress = crypto.CreateAddress(evm.TxCcntmext.Origin, tx.Nonce())

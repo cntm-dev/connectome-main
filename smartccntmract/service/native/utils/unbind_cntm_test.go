@@ -59,13 +59,13 @@ func TestCumulative(t *testing.T) {
 // test 1 balance will not get cntm_TOTAL_SUPPLY eventually
 func TestTotalcntm(t *testing.T) {
 	total := CalcUnbindOng(constants.cntm_TOTAL_SUPPLY, 0, TIME_INTERVAL*18) + CalcGovernanceUnbindOng(0, TIME_INTERVAL*18)
-	assert.Equal(t, total, constants.cntm_TOTAL_SUPPLY)
+	assert.Equal(t, total, uint64(constants.cntm_TOTAL_SUPPLY))
 
 	total = CalcUnbindOng(constants.cntm_TOTAL_SUPPLY, 0, TIME_INTERVAL*108) + CalcGovernanceUnbindOng(0, TIME_INTERVAL*108)
-	assert.Equal(t, total, constants.cntm_TOTAL_SUPPLY)
+	assert.Equal(t, total, uint64(constants.cntm_TOTAL_SUPPLY))
 
 	total = CalcUnbindOng(constants.cntm_TOTAL_SUPPLY, 0, ^uint32(0)) + CalcGovernanceUnbindOng(0, ^uint32(0))
-	assert.Equal(t, total, constants.cntm_TOTAL_SUPPLY)
+	assert.Equal(t, total, uint64(constants.cntm_TOTAL_SUPPLY))
 }
 
 func TestCalcGovernanceUnbindOng(t *testing.T) {

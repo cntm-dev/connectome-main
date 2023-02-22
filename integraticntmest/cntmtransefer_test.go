@@ -23,16 +23,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cntmio/cntmology/smartccntmract/event"
-
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	types2 "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/cntmio/cntmology/account"
+	"github.com/cntmio/cntmology/common/constants"
 	"github.com/cntmio/cntmology/core/ledger"
 	"github.com/cntmio/cntmology/core/types"
+	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -67,8 +67,9 @@ func checkEvmOngTransferEvent(t *testing.T, database *ledger.Ledger, acct *accou
 	logs := cntmEventToStorageLogs(evt)
 	assert.Equal(t, len(logs), 2)
 	fromEthAddr := crypto.PubkeyToAddress(fromPrivateKey.PublicKey)
-	checkOngTransferLog(t, logs[0], fromEthAddr, toEthAddr, uint64(amt))
-	checkOngTransferLog(t, logs[1], fromEthAddr, common.Address(utils.GovernanceCcntmractAddress), evt.GasConsumed)
+	checkOngTransferLog(t, logs[0], fromEthAddr, toEthAddr, uint64(amt*constants.GWei))
+
+	checkOngTransferLog(t, logs[1], fromEthAddr, common.Address(utils.GovernanceCcntmractAddress), evt.GasConsumed*constants.GWei)
 }
 
 func cntmEventToStorageLogs(evt *event.ExecuteNotify) []*types.StorageLog {

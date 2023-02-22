@@ -703,6 +703,7 @@ func opCall(pc *uint64, interpreter *EVMInterpreter, callCcntmext *callCtx) ([]b
 	}
 	stack.push(&temp)
 	if err == nil || err == errors.ErrExecutionReverted {
+		ret = common.CopyBytes(ret)
 		callCcntmext.memory.Set(retOffset.Uint64(), retSize.Uint64(), ret)
 	}
 	callCcntmext.ccntmract.Gas += returnGas
@@ -737,6 +738,7 @@ func opCallCode(pc *uint64, interpreter *EVMInterpreter, callCcntmext *callCtx) 
 	}
 	stack.push(&temp)
 	if err == nil || err == errors.ErrExecutionReverted {
+		ret = common.CopyBytes(ret)
 		callCcntmext.memory.Set(retOffset.Uint64(), retSize.Uint64(), ret)
 	}
 	callCcntmext.ccntmract.Gas += returnGas
@@ -764,6 +766,7 @@ func opDelegateCall(pc *uint64, interpreter *EVMInterpreter, callCcntmext *callC
 	}
 	stack.push(&temp)
 	if err == nil || err == errors.ErrExecutionReverted {
+		ret = common.CopyBytes(ret)
 		callCcntmext.memory.Set(retOffset.Uint64(), retSize.Uint64(), ret)
 	}
 	callCcntmext.ccntmract.Gas += returnGas
@@ -791,6 +794,7 @@ func opStaticCall(pc *uint64, interpreter *EVMInterpreter, callCcntmext *callCtx
 	}
 	stack.push(&temp)
 	if err == nil || err == errors.ErrExecutionReverted {
+		ret = common.CopyBytes(ret)
 		callCcntmext.memory.Set(retOffset.Uint64(), retSize.Uint64(), ret)
 	}
 	callCcntmext.ccntmract.Gas += returnGas

@@ -154,7 +154,7 @@ func Lock(native *native.NativeService) ([]byte, error) {
 	}
 
 	// transfer cntm or cntm from FromAddress to lockCcntmract
-	state := cntm.State{
+	state := cntm.TransferState{
 		From:  lockParam.FromAddress,
 		To:    ccntmract,
 		Value: lockParam.Value,
@@ -253,7 +253,7 @@ func Unlock(native *native.NativeService) ([]byte, error) {
 		return utils.BYTE_TRUE, nil
 	}
 	// unlock cntm or cntm from current proxy ccntmract into toAddress
-	transferInput := getTransferInput(cntm.State{ccntmract, toAddress, args.Value})
+	transferInput := getTransferInput(cntm.TransferState{ccntmract, toAddress, args.Value})
 	if _, err = native.NativeCall(assetAddress, cntm.TRANSFER_NAME, transferInput); err != nil {
 		return utils.BYTE_FALSE, fmt.Errorf("[Unlock] NativeCall ccntmract:%s 'transfer(%s, %s, %d)' error:%s", hex.EncodeToString(assetAddress[:]), hex.EncodeToString(ccntmract[:]), toAddress.ToBase58(), args.Value, err)
 	}

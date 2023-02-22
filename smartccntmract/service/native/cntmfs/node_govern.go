@@ -133,11 +133,11 @@ func FsNodeUpdate(native *native.NativeService) ([]byte, error) {
 		return utils.BYTE_FALSE, errors.NewErr("[Node Govern] FsNodeUpdate FsNodeInfo nodeAddr changed!")
 	}
 
-	var state *cntm.State
+	var state *cntm.TransferState
 	if newNodePledge < oldNodeInfo.Pledge {
-		state = &cntm.State{From: ccntmract, To: oldNodeInfo.NodeAddr, Value: oldNodeInfo.Pledge - newNodePledge}
+		state = &cntm.TransferState{From: ccntmract, To: oldNodeInfo.NodeAddr, Value: oldNodeInfo.Pledge - newNodePledge}
 	} else if newNodePledge > oldNodeInfo.Pledge {
-		state = &cntm.State{From: newNodeInfo.NodeAddr, To: ccntmract, Value: newNodePledge - oldNodeInfo.Pledge}
+		state = &cntm.TransferState{From: newNodeInfo.NodeAddr, To: ccntmract, Value: newNodePledge - oldNodeInfo.Pledge}
 	}
 	if newNodePledge != oldNodeInfo.Pledge {
 		err = appCallTransfer(native, utils.OngCcntmractAddress, state.From, state.To, state.Value)

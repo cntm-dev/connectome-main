@@ -44,27 +44,39 @@ func InitOnt() {
 
 func RegisterOntCcntmract(native *native.NativeService) {
 	native.Register(INIT_NAME, OntInit)
+	native.Register(NAME_NAME, OntName)
+	native.Register(SYMBOL_NAME, OntSymbol)
 	native.Register(TRANSFER_NAME, OntTransfer)
 	native.Register(APPROVE_NAME, OntApprove)
 	native.Register(TRANSFERFROM_NAME, OntTransferFrom)
-	native.Register(NAME_NAME, OntName)
-	native.Register(SYMBOL_NAME, OntSymbol)
 	native.Register(DECIMALS_NAME, OntDecimals)
-	native.Register(TOTALSUPPLY_NAME, OntTotalSupply)
+	native.Register(TOTAL_SUPPLY_NAME, OntTotalSupply)
 	native.Register(BALANCEOF_NAME, OntBalanceOf)
 	native.Register(ALLOWANCE_NAME, OntAllowance)
-	native.Register(TOTAL_ALLOWANCE_NAME, OntTotalAllowance)
+	native.Register(TOTAL_ALLOWANCE_NAME, TotalAllowance)
+
+	if native.Height >= config.GetAddDecimalsHeight() {
+		native.Register(TRANSFER_V2_NAME, OntTransferV2)
+		native.Register(APPROVE_V2_NAME, OntApproveV2)
+		native.Register(TRANSFERFROM_V2_NAME, OntTransferFromV2)
+		native.Register(DECIMALS_V2_NAME, OntDecimalsV2)
+		native.Register(TOTAL_SUPPLY_V2_NAME, OntTotalSupplyV2)
+		native.Register(BALANCEOF_V2_NAME, OntBalanceOfV2)
+		native.Register(ALLOWANCE_V2_NAME, OntAllowanceV2)
+		native.Register(TOTAL_ALLOWANCE_V2_NAME, TotalAllowanceV2)
+	}
+
 	native.Register(UNBOUND_cntm_TO_GOVERNANCE, UnboundOngToGovernance)
 }
 
 func OntInit(native *native.NativeService) ([]byte, error) {
 	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-	amount, err := utils.GetStorageUInt64(native.CacheDB, GenTotalSupplyKey(ccntmract))
+	amount, err := utils.GetNativeTokenBalance(native.CacheDB, GenTotalSupplyKey(ccntmract))
 	if err != nil {
 		return utils.BYTE_FALSE, err
 	}
 
-	if amount > 0 {
+	if amount.IsZero() == false {
 		return utils.BYTE_FALSE, errors.NewErr("Init cntm has been completed!")
 	}
 
@@ -186,6 +198,23 @@ func OntApprove(native *native.NativeService) ([]byte, error) {
 	return utils.BYTE_TRUE, nil
 }
 
+func OntApproveV2(native *native.NativeService) ([]byte, error) {
+	var state TransferStateV2
+	source := common.NewZeroCopySource(native.Input)
+	if err := state.Deserialization(source); err != nil {
+		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[OntApprove] state deserialize error!")
+	}
+	if bigint.New(constants.cntm_TOTAL_SUPPLY_V2).LessThan(state.Value.Balance) {
+		return utils.BYTE_FALSE, fmt.Errorf("approve cntm amount:%s over totalSupply:%d", state.Value, constants.cntm_TOTAL_SUPPLY)
+	}
+	if !native.CcntmextRef.CheckWitness(state.From) {
+		return utils.BYTE_FALSE, errors.NewErr("authentication failed!")
+	}
+	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
+	native.CacheDB.Put(GenApproveKey(ccntmract, state.From, state.To), state.Value.MustToStorageItemBytes())
+	return utils.BYTE_TRUE, nil
+}
+
 func OntName(native *native.NativeService) ([]byte, error) {
 	return []byte(constants.cntm_NAME), nil
 }
@@ -232,15 +261,39 @@ func GetBalanceValue(native *native.NativeService, flag byte) ([]byte, error) {
 	} else if flag == TRANSFER_FLAG {
 		key = GenBalanceKey(ccntmract, from)
 	}
-	amount, err := utils.GetStorageUInt64(native.CacheDB, key)
+	balance, err := utils.GetNativeTokenBalance(native.CacheDB, key)
 	if err != nil {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[GetBalanceValue] address parse error!")
 	}
-	return common.BigIntToNeoBytes(big.NewInt(int64(amount))), nil
+	amount := balance.ToBigInt()
+	if !scaleDecimal9 {
+		amount = balance.ToInteger().BigInt()
+	}
+	return common.BigIntToNeoBytes(amount), nil
 }
 
-func OntTotalAllowance(native *native.NativeService) ([]byte, error) {
-	return TotalAllowance(native)
+func getTotalAllowance(native *native.NativeService, from common.Address) (result cstates.NativeTokenBalance, err error) {
+	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
+	iter := native.CacheDB.NewIterator(utils.ConcatKey(ccntmract, from[:]))
+	defer iter.Release()
+	r := cstates.NativeTokenBalanceFromInteger(0)
+	for has := iter.First(); has; has = iter.Next() {
+		if bytes.Equal(iter.Key(), utils.ConcatKey(ccntmract, from[:])) {
+			ccntminue
+		}
+		item := new(cstates.StorageItem)
+		err = item.Deserialization(common.NewZeroCopySource(iter.Value()))
+		if err != nil {
+			return result, errors.NewDetailErr(err, errors.ErrNoCode, "[TotalAllowance] instance isn't StorageItem!")
+		}
+		balance, err := cstates.NativeTokenBalanceFromStorageItem(item)
+		if err != nil {
+			return result, errors.NewDetailErr(err, errors.ErrNoCode, "[TotalAllowance] get token allowance from storage value error!")
+		}
+		r = r.Add(balance)
+	}
+
+	return r, nil
 }
 
 func TotalAllowance(native *native.NativeService) ([]byte, error) {
@@ -249,27 +302,24 @@ func TotalAllowance(native *native.NativeService) ([]byte, error) {
 	if err != nil {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[TotalAllowance] get from address error!")
 	}
-	ccntmract := native.CcntmextRef.CurrentCcntmext().CcntmractAddress
-
-	iter := native.CacheDB.NewIterator(utils.ConcatKey(ccntmract, from[:]))
-	defer iter.Release()
-	var r uint64 = 0
-	for has := iter.First(); has; has = iter.Next() {
-		if bytes.Equal(iter.Key(), utils.ConcatKey(ccntmract, from[:])) {
-			ccntminue
-		}
-		item := new(cstates.StorageItem)
-		err = item.Deserialization(common.NewZeroCopySource(iter.Value()))
-		if err != nil {
-			return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[TotalAllowance] instance isn't StorageItem!")
-		}
-		v, err := serialization.ReadUint64(bytes.NewBuffer(item.Value))
-		if err != nil {
-			return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[TotalAllowance] get uint64 from value error!")
-		}
-		r = r + v
+	r, err := getTotalAllowance(native, from)
+	if err != nil {
+		return utils.BYTE_FALSE, err
 	}
-	return common.BigIntToNeoBytes(big.NewInt(int64(r))), nil
+	return common.BigIntToNeoBytes(r.ToInteger().BigInt()), nil
+}
+
+func TotalAllowanceV2(native *native.NativeService) ([]byte, error) {
+	source := common.NewZeroCopySource(native.Input)
+	from, err := utils.DecodeAddress(source)
+	if err != nil {
+		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[TotalAllowance] get from address error!")
+	}
+	r, err := getTotalAllowance(native, from)
+	if err != nil {
+		return utils.BYTE_FALSE, err
+	}
+	return common.BigIntToNeoBytes(r.ToBigInt()), nil
 }
 
 func UnboundOngToGovernance(native *native.NativeService) ([]byte, error) {

@@ -183,7 +183,7 @@ func ApproveTx(gasPrice, gasLimit uint64, asset string, from, to string, amount 
 	if err != nil {
 		return nil, fmt.Errorf("To address:%s invalid:%s", to, err)
 	}
-	var state = &cntm.State{
+	var state = &cntm.TransferState{
 		From:  fromAddr,
 		To:    toAddr,
 		Value: amount,
@@ -217,8 +217,8 @@ func TransferTx(gasPrice, gasLimit uint64, asset, from, to string, amount uint64
 	if err != nil {
 		return nil, fmt.Errorf("to address:%s invalid:%s", to, err)
 	}
-	var sts []*cntm.State
-	sts = append(sts, &cntm.State{
+	var sts []*cntm.TransferState
+	sts = append(sts, &cntm.TransferState{
 		From:  fromAddr,
 		To:    toAddr,
 		Value: amount,
@@ -256,12 +256,7 @@ func TransferFromTx(gasPrice, gasLimit uint64, asset, sender, from, to string, a
 	if err != nil {
 		return nil, fmt.Errorf("to address:%s invalid:%s", to, err)
 	}
-	transferFrom := &cntm.TransferFrom{
-		Sender: senderAddr,
-		From:   fromAddr,
-		To:     toAddr,
-		Value:  amount,
-	}
+	transferFrom := cntm.NewTransferFromState(senderAddr, fromAddr, toAddr, amount)
 	var version byte
 	var ccntmractAddr common.Address
 	switch strings.ToLower(asset) {
