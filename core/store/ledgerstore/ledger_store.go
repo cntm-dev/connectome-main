@@ -480,6 +480,21 @@ func (this *LedgerStoreImp) verifyHeader(header *types.Header) error {
 		} else {
 			chainConfigHeight = blkInfo.LastConfigBlockNum
 		}
+		chainConfigHeader, err := this.GetHeaderByHeight(chainConfigHeight)
+		if err != nil && err != scom.ErrNotFound {
+			return fmt.Errorf("get chain config header error %s,height:%d", err, chainConfigHeight)
+		}
+		if chainConfigHeader == nil {
+			return fmt.Errorf("cannot find chain config header by height:%d", chainConfigHeight)
+		}
+		chanConfigBlkInfo, err := vconfig.VbftBlock(chainConfigHeader)
+		if err != nil {
+			return err
+		}
+		if chanConfigBlkInfo.NewChainConfig == nil {
+			return fmt.Errorf("cannot find newchainconfig header by height:%d", chainConfigHeight)
+		}
+		c := chanConfigBlkInfo.NewChainConfig.C
 		this.lock.RLock()
 		vbftPeerInfo, ok := this.vbftPeerInfoMap[chainConfigHeight]
 		if !ok {
@@ -491,6 +506,7 @@ func (this *LedgerStoreImp) verifyHeader(header *types.Header) error {
 		if len(header.Bookkeepers) < m {
 			return fmt.Errorf("header Bookkeepers %d more than 6/7 len vbftPeerInfo%d", len(header.Bookkeepers), len(vbftPeerInfo))
 		}
+		usedPubKey := make(map[string]bool)
 		for _, bookkeeper := range header.Bookkeepers {
 			pubkey := vconfig.PubkeyID(bookkeeper)
 			_, present := vbftPeerInfo[pubkey]
@@ -500,6 +516,12 @@ func (this *LedgerStoreImp) verifyHeader(header *types.Header) error {
 					pubkey, header.Height, string(val))
 				return fmt.Errorf("verify header error: invalid pubkey : %v", pubkey)
 			}
+			usedPubKey[pubkey] = true
+		}
+		if uint32(len(usedPubKey)) < c+1 {
+			log.Errorf("verify header error:  height:%d,pubkey len:%d,c:%d",
+				header.Height, len(usedPubKey), c)
+			return fmt.Errorf("verify header error height:%d", header.Height)
 		}
 		hash := header.Hash()
 		err = signature.VerifyMultiSignature(hash[:], header.Bookkeepers, m, header.SigData)
