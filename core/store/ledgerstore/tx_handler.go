@@ -39,6 +39,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	evm2 "github.com/cntmio/cntmology/smartccntmract/service/evm"
 	types3 "github.com/cntmio/cntmology/smartccntmract/service/evm/types"
+	"github.com/cntmio/cntmology/smartccntmract/service/evm/witness"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/global_params"
 	ninit "github.com/cntmio/cntmology/smartccntmract/service/native/init"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
@@ -339,6 +340,37 @@ func chargeCostGas(payer common.Address, gas uint64, config *smartccntmract.Conf
 	return sc.Notifications, nil
 }
 
+func getEvmSystemWitnessAddress(config *smartccntmract.Config, cache *storage.CacheDB, store store.LedgerStore) common2.Address {
+	sink := common.NewZeroCopySink(nil)
+	utils.EncodeVarUint(sink, 1)
+	sink.WriteString(witness.WitnessGlobalParamKey)
+
+	sc := smartccntmract.SmartCcntmract{
+		Config:  config,
+		CacheDB: cache,
+		Store:   store,
+		Gas:     math.MaxUint64,
+	}
+
+	service, _ := sc.NewNativeService()
+	result, err := service.NativeCall(utils.ParamCcntmractAddress, "getGlobalParam", sink.Bytes())
+	if err != nil {
+		log.Errorf("get witness address error: %s", err)
+		return common2.Address{}
+	}
+	params := new(global_params.Params)
+	if err := params.Deserialization(common.NewZeroCopySource(result)); err != nil {
+		log.Errorf("deserialize global params error:%s", err)
+		return common2.Address{}
+	}
+	n, ps := params.GetParam(witness.WitnessGlobalParamKey)
+	if n != -1 && ps.Value != "" {
+		return common2.HexToAddress(ps.Value)
+	}
+
+	return common2.Address{}
+}
+
 func refreshGlobalParam(config *smartccntmract.Config, cache *storage.CacheDB, store store.LedgerStore) error {
 	sink := common.NewZeroCopySink(nil)
 	utils.EncodeVarUint(sink, uint64(len(neovm.GAS_TABLE_KEYS)))
@@ -420,7 +452,7 @@ type Eip155Ccntmext struct {
 }
 
 func (self *StateStore) HandleEIP155Transaction(store store.LedgerStore, cache *storage.CacheDB,
-	tx *types2.Transaction, ctx Eip155Ccntmext, notify *event.ExecuteNotify, checkNonce bool) (*types3.ExecutionResult, error) {
+	tx *types2.Transaction, ctx Eip155Ccntmext, notify *event.ExecuteNotify, checkNonce bool) (*types3.ExecutionResult, *types.Receipt, error) {
 	usedGas := uint64(0)
 	config := params.GetChainConfig(sysconfig.DefConfig.P2PNode.EVMChainId)
 	statedb := storage.NewStateDB(cache, tx.Hash(), common2.Hash(ctx.BlockHash), cntm.OngBalanceHandle{})
@@ -429,15 +461,15 @@ func (self *StateStore) HandleEIP155Transaction(store store.LedgerStore, cache *
 
 	if err != nil {
 		cache.SetDbErr(err)
-		return nil, err
+		return nil, nil, err
 	}
 	if err = statedb.DbErr(); err != nil {
 		cache.SetDbErr(err)
-		return nil, err
+		return nil, nil, err
 	}
 	receipt.TxIndex = ctx.TxIndex
 
 	*notify = *event.ExecuteNotifyFromEthReceipt(receipt)
 
-	return result, nil
+	return result, receipt, nil
 }

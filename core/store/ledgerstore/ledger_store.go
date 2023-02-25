@@ -54,6 +54,7 @@ import (
 	"github.com/cntmio/cntmology/smartccntmract/event"
 	"github.com/cntmio/cntmology/smartccntmract/service/evm"
 	types4 "github.com/cntmio/cntmology/smartccntmract/service/evm/types"
+	"github.com/cntmio/cntmology/smartccntmract/service/evm/witness"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
 	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
 	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
@@ -743,6 +744,7 @@ func (this *LedgerStoreImp) saveBlockToBlockStore(block *types.Block) error {
 
 func (this *LedgerStoreImp) executeBlock(block *types.Block) (result store.ExecuteResult, err error) {
 	overlay := this.stateStore.NewOverlayDB()
+	var evmWitness common2.Address
 	if block.Header.Height != 0 {
 		config := &smartccntmract.Config{
 			Time:   block.Header.Timestamp,
@@ -754,6 +756,7 @@ func (this *LedgerStoreImp) executeBlock(block *types.Block) (result store.Execu
 		if err != nil {
 			return
 		}
+		evmWitness = getEvmSystemWitnessAddress(config, storage.NewCacheDB(this.stateStore.NewOverlayDB()), this)
 	}
 	gasTable := make(map[string]uint64)
 	neovm.GAS_TABLE.Range(func(k, value interface{}) bool {
@@ -766,7 +769,7 @@ func (this *LedgerStoreImp) executeBlock(block *types.Block) (result store.Execu
 	cache := storage.NewCacheDB(overlay)
 	for i, tx := range block.Transactions {
 		cache.Reset()
-		notify, crossStateHashes, e := this.handleTransaction(overlay, cache, gasTable, block, tx, uint32(i))
+		notify, crossStateHashes, e := this.handleTransaction(overlay, cache, gasTable, block, tx, uint32(i), evmWitness)
 		if e != nil {
 			err = e
 			return
@@ -1067,6 +1070,10 @@ func (this *LedgerStoreImp) GetBlockRootWithNewTxRoots(startHeight uint32, txRoo
 	return this.stateStore.GetBlockRootWithNewTxRoots(needs)
 }
 
+func (this *LedgerStoreImp) GetCrossStates(height uint32) ([]common.Uint256, error) {
+	return this.stateStore.GetCrossStates(height)
+}
+
 func (this *LedgerStoreImp) GetCrossStatesRoot(height uint32) (common.Uint256, error) {
 	return this.stateStore.GetCrossStatesRoot(height)
 }
@@ -1204,7 +1211,7 @@ func (this *LedgerStoreImp) PreExecuteEIP155(tx *types3.Transaction, ctx Eip155C
 	cache := storage.NewCacheDB(overlay)
 
 	notify := &event.ExecuteNotify{State: event.CcntmRACT_STATE_FAIL, TxIndex: ctx.TxIndex}
-	result, err := this.stateStore.HandleEIP155Transaction(this, cache, tx, ctx, notify, false)
+	result, _, err := this.stateStore.HandleEIP155Transaction(this, cache, tx, ctx, notify, false)
 	return result, notify, err
 }
 

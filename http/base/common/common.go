@@ -104,6 +104,7 @@ type PreExecuteResult struct {
 type NotifyEventInfo struct {
 	CcntmractAddress string
 	States          interface{}
+	IsEvm           bool
 }
 
 type TxAttributeInfo struct {
@@ -130,6 +131,11 @@ type Sig struct {
 type CrossStatesProof struct {
 	Type      string
 	AuditPath string
+}
+
+type CrossStatesLeafHashes struct {
+	Height uint32
+	Hashes []string
 }
 
 type Transactions struct {
@@ -204,10 +210,10 @@ func GetLogEvent(obj *event.LogEventArgs) (map[string]bool, LogEventArgs) {
 }
 
 func GetExecuteNotify(obj *event.ExecuteNotify) (map[string]bool, ExecuteNotify) {
-	evts := []NotifyEventInfo{}
+	var evts []NotifyEventInfo
 	var ccntmractAddrs = make(map[string]bool)
 	for _, v := range obj.Notify {
-		evts = append(evts, NotifyEventInfo{v.CcntmractAddress.ToHexString(), v.States})
+		evts = append(evts, NotifyEventInfo{v.CcntmractAddress.ToHexString(), v.States, v.IsEvm})
 		ccntmractAddrs[v.CcntmractAddress.ToHexString()] = true
 	}
 	txhash := obj.TxHash.ToHexString()
@@ -216,9 +222,9 @@ func GetExecuteNotify(obj *event.ExecuteNotify) (map[string]bool, ExecuteNotify)
 }
 
 func ConvertPreExecuteResult(obj *cstate.PreExecResult) PreExecuteResult {
-	evts := []NotifyEventInfo{}
+	var evts []NotifyEventInfo
 	for _, v := range obj.Notify {
-		evts = append(evts, NotifyEventInfo{v.CcntmractAddress.ToHexString(), v.States})
+		evts = append(evts, NotifyEventInfo{v.CcntmractAddress.ToHexString(), v.States, v.IsEvm})
 	}
 	return PreExecuteResult{obj.State, obj.Gas, obj.Result, evts}
 }

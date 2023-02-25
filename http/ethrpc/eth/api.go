@@ -36,6 +36,7 @@ import (
 	"github.com/cntmio/cntmology/common/log"
 	"github.com/cntmio/cntmology/core/states"
 	common2 "github.com/cntmio/cntmology/core/store/common"
+	sCom "github.com/cntmio/cntmology/core/store/common"
 	otypes "github.com/cntmio/cntmology/core/types"
 	cntmErrors "github.com/cntmio/cntmology/errors"
 	bactor "github.com/cntmio/cntmology/http/base/actor"
@@ -201,7 +202,7 @@ func (api *EthereumAPI) GetCode(address common.Address, blockNumber types2.Block
 	if err != nil {
 		return nil, err
 	}
-	if account.IsEmpty() {
+	if account.IsEmptyCcntmract() {
 		return nil, nil
 	}
 	code, err := bactor.GetEthCode(account.CodeHash)
@@ -400,10 +401,13 @@ func (api *EthereumAPI) GetBlockByHash(hash common.Hash, fullTx bool) (interface
 	log.Debugf("eth_getBlockByHash hash %v, fullTx %v", hash, fullTx)
 	block, err := bactor.GetBlockFromStore(oComm.Uint256(hash))
 	if err != nil {
+		if err == sCom.ErrNotFound {
+			return nil, nil
+		}
 		return nil, err
 	}
 	if block == nil {
-		return nil, fmt.Errorf("block: %v not found", hash.String())
+		return nil, nil
 	}
 	return utils2.EthBlockFromOntology(block, fullTx), nil
 }
@@ -416,10 +420,13 @@ func (api *EthereumAPI) GetBlockByNumber(blockNum types2.BlockNumber, fullTx boo
 	}
 	block, err := bactor.GetBlockByHeight(height)
 	if err != nil {
+		if err == sCom.ErrNotFound {
+			return nil, nil
+		}
 		return nil, err
 	}
 	if block == nil {
-		return nil, fmt.Errorf("block: %v not found", blockNum.Int64())
+		return nil, nil
 	}
 	return utils2.EthBlockFromOntology(block, fullTx), nil
 }
@@ -461,16 +468,19 @@ func (api *EthereumAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx 
 	log.Debugf("eth_getTransactionByBlockHashAndIndex hash %v, idx %v", hash.Hex(), idx.String())
 	block, err := bactor.GetBlockFromStore(oComm.Uint256(hash))
 	if err != nil {
+		if err == sCom.ErrNotFound {
+			return nil, nil
+		}
 		return nil, err
 	}
 	if block == nil {
-		return nil, fmt.Errorf("block: %v not found", hash.Hex())
+		return nil, nil
 	}
 	header := block.Header
 	blockHash := header.Hash()
 	txs := block.Transactions
 	if len(txs) >= int(idx) {
-		return nil, fmt.Errorf("access block: %v overflow %v", hash.Hex(), idx)
+		return nil, nil
 	}
 	tx := txs[idx]
 	return utils2.OntTxToEthTx(*tx, common.Hash(blockHash), uint64(header.Height), uint64(idx))
@@ -484,16 +494,19 @@ func (api *EthereumAPI) GetTransactionByBlockNumberAndIndex(blockNum types2.Bloc
 	}
 	block, err := bactor.GetBlockByHeight(height)
 	if err != nil {
+		if err == sCom.ErrNotFound {
+			return nil, nil
+		}
 		return nil, err
 	}
 	if block == nil {
-		return nil, fmt.Errorf("block: %v not found", height)
+		return nil, nil
 	}
 	header := block.Header
 	blockHash := header.Hash()
 	txs := block.Transactions
 	if len(txs) >= int(idx) {
-		return nil, fmt.Errorf("access block: %v overflow %v", height, idx)
+		return nil, nil
 	}
 	tx := txs[idx]
 	return utils2.OntTxToEthTx(*tx, common.Hash(blockHash), uint64(header.Height), uint64(idx))
@@ -503,6 +516,9 @@ func (api *EthereumAPI) GetTransactionReceipt(hash common.Hash) (interface{}, er
 	log.Debugf("eth_getTransactionReceipt hash %d", hash.Hex())
 	notify, err := bactor.GetEventNotifyByTxHash(utils2.EthToOntHash(hash))
 	if err != nil {
+		if err == sCom.ErrNotFound {
+			return nil, nil
+		}
 		return nil, nil
 	}
 	if notify == nil {
@@ -577,7 +593,7 @@ func (api *EthereumAPI) PendingTransactionsByHash(target common.Hash) (*types2.T
 	log.Debugf("eth_pendingTransactionsByHash target %v", target.Hex())
 	ethTx := api.txpool.PendingTransactionsByHash(target)
 	if ethTx == nil {
-		return nil, fmt.Errorf("tx: %v not found", target.String())
+		return nil, nil
 	}
 	return utils2.NewTransaction(ethTx, ethTx.Hash(), common.Hash{}, 0, 0)
 }
