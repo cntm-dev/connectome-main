@@ -24,12 +24,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/big"
 	"math/rand"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/laizy/bigint"
 	"github.com/cntmio/cntmology-crypto/keypair"
 	sig "github.com/cntmio/cntmology-crypto/signature"
 	"github.com/cntmio/cntmology/account"
@@ -38,6 +40,7 @@ import (
 	"github.com/cntmio/cntmology/common/serialization"
 	"github.com/cntmio/cntmology/core/payload"
 	"github.com/cntmio/cntmology/core/signature"
+	"github.com/cntmio/cntmology/core/states"
 	"github.com/cntmio/cntmology/core/types"
 	cutils "github.com/cntmio/cntmology/core/utils"
 	httpcom "github.com/cntmio/cntmology/http/base/common"
@@ -50,6 +53,7 @@ const (
 	VERSION_CcntmRACT_cntm   = byte(0)
 	VERSION_CcntmRACT_cntm   = byte(0)
 	CcntmRACT_TRANSFER      = "transfer"
+	CcntmRACT_TRANSFER_V2   = "transferV2"
 	CcntmRACT_TRANSFER_FROM = "transferFrom"
 	CcntmRACT_APPROVE       = "approve"
 
@@ -236,6 +240,41 @@ func TransferTx(gasPrice, gasLimit uint64, asset, from, to string, amount uint64
 		return nil, fmt.Errorf("unsupport asset:%s", asset)
 	}
 	invokeCode, err := cutils.BuildNativeInvokeCode(ccntmractAddr, version, CcntmRACT_TRANSFER, []interface{}{sts})
+	if err != nil {
+		return nil, fmt.Errorf("build invoke code error:%s", err)
+	}
+	mutableTx := NewInvokeTransaction(gasPrice, gasLimit, invokeCode)
+	return mutableTx, nil
+}
+
+func TransferTxV2(gasPrice, gasLimit uint64, asset, from, to string, amount *big.Int) (*types.MutableTransaction, error) {
+	fromAddr, err := common.AddressFromBase58(from)
+	if err != nil {
+		return nil, fmt.Errorf("from address:%s invalid:%s", from, err)
+	}
+	toAddr, err := common.AddressFromBase58(to)
+	if err != nil {
+		return nil, fmt.Errorf("to address:%s invalid:%s", to, err)
+	}
+	var sts []*cntm.TransferStateV2
+	sts = append(sts, &cntm.TransferStateV2{
+		From:  fromAddr,
+		To:    toAddr,
+		Value: states.NativeTokenBalance{Balance: bigint.New(amount)},
+	})
+	var version byte
+	var ccntmractAddr common.Address
+	switch strings.ToLower(asset) {
+	case ASSET_cntm:
+		version = VERSION_CcntmRACT_cntm
+		ccntmractAddr = utils.OntCcntmractAddress
+	case ASSET_cntm:
+		version = VERSION_CcntmRACT_cntm
+		ccntmractAddr = utils.OngCcntmractAddress
+	default:
+		return nil, fmt.Errorf("unsupport asset:%s", asset)
+	}
+	invokeCode, err := cutils.BuildNativeInvokeCode(ccntmractAddr, version, CcntmRACT_TRANSFER_V2, []interface{}{sts})
 	if err != nil {
 		return nil, fmt.Errorf("build invoke code error:%s", err)
 	}
