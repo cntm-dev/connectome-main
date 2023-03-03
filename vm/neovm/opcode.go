@@ -1,54 +1,54 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package neovm
+package cntmvm
 
 type OpCode byte
 
 const (
 	// Constants
-	PUSH0       OpCode = 0x00 // An empty array of bytes is pushed cntmo the stack.
+	PUSH0       OpCode = 0x00 // An empty array of bytes is pushed onto the stack.
 	PUSHF       OpCode = PUSH0
-	PUSHBYTES1  OpCode = 0x01 // 0x01-0x4B The next opcode bytes is data to be pushed cntmo the stack
+	PUSHBYTES1  OpCode = 0x01 // 0x01-0x4B The next opcode bytes is data to be pushed onto the stack
 	PUSHBYTES75 OpCode = 0x4B
-	PUSHDATA1   OpCode = 0x4C // The next byte ccntmains the number of bytes to be pushed cntmo the stack.
-	PUSHDATA2   OpCode = 0x4D // The next two bytes ccntmain the number of bytes to be pushed cntmo the stack.
-	PUSHDATA4   OpCode = 0x4E // The next four bytes ccntmain the number of bytes to be pushed cntmo the stack.
-	PUSHM1      OpCode = 0x4F // The number -1 is pushed cntmo the stack.
-	PUSH1       OpCode = 0x51 // The number 1 is pushed cntmo the stack.
+	PUSHDATA1   OpCode = 0x4C // The next byte contains the number of bytes to be pushed onto the stack.
+	PUSHDATA2   OpCode = 0x4D // The next two bytes contain the number of bytes to be pushed onto the stack.
+	PUSHDATA4   OpCode = 0x4E // The next four bytes contain the number of bytes to be pushed onto the stack.
+	PUSHM1      OpCode = 0x4F // The number -1 is pushed onto the stack.
+	PUSH1       OpCode = 0x51 // The number 1 is pushed onto the stack.
 	PUSHT       OpCode = PUSH1
-	PUSH2       OpCode = 0x52 // The number 2 is pushed cntmo the stack.
-	PUSH3       OpCode = 0x53 // The number 3 is pushed cntmo the stack.
-	PUSH4       OpCode = 0x54 // The number 4 is pushed cntmo the stack.
-	PUSH5       OpCode = 0x55 // The number 5 is pushed cntmo the stack.
-	PUSH6       OpCode = 0x56 // The number 6 is pushed cntmo the stack.
-	PUSH7       OpCode = 0x57 // The number 7 is pushed cntmo the stack.
-	PUSH8       OpCode = 0x58 // The number 8 is pushed cntmo the stack.
-	PUSH9       OpCode = 0x59 // The number 9 is pushed cntmo the stack.
-	PUSH10      OpCode = 0x5A // The number 10 is pushed cntmo the stack.
-	PUSH11      OpCode = 0x5B // The number 11 is pushed cntmo the stack.
-	PUSH12      OpCode = 0x5C // The number 12 is pushed cntmo the stack.
-	PUSH13      OpCode = 0x5D // The number 13 is pushed cntmo the stack.
-	PUSH14      OpCode = 0x5E // The number 14 is pushed cntmo the stack.
-	PUSH15      OpCode = 0x5F // The number 15 is pushed cntmo the stack.
-	PUSH16      OpCode = 0x60 // The number 16 is pushed cntmo the stack.
+	PUSH2       OpCode = 0x52 // The number 2 is pushed onto the stack.
+	PUSH3       OpCode = 0x53 // The number 3 is pushed onto the stack.
+	PUSH4       OpCode = 0x54 // The number 4 is pushed onto the stack.
+	PUSH5       OpCode = 0x55 // The number 5 is pushed onto the stack.
+	PUSH6       OpCode = 0x56 // The number 6 is pushed onto the stack.
+	PUSH7       OpCode = 0x57 // The number 7 is pushed onto the stack.
+	PUSH8       OpCode = 0x58 // The number 8 is pushed onto the stack.
+	PUSH9       OpCode = 0x59 // The number 9 is pushed onto the stack.
+	PUSH10      OpCode = 0x5A // The number 10 is pushed onto the stack.
+	PUSH11      OpCode = 0x5B // The number 11 is pushed onto the stack.
+	PUSH12      OpCode = 0x5C // The number 12 is pushed onto the stack.
+	PUSH13      OpCode = 0x5D // The number 13 is pushed onto the stack.
+	PUSH14      OpCode = 0x5E // The number 14 is pushed onto the stack.
+	PUSH15      OpCode = 0x5F // The number 15 is pushed onto the stack.
+	PUSH16      OpCode = 0x60 // The number 16 is pushed onto the stack.
 
-	// Flow ccntmrol
+	// Flow control
 	NOP      OpCode = 0x61 // Does nothing.
 	JMP      OpCode = 0x62
 	JMPIF    OpCode = 0x63
@@ -61,13 +61,13 @@ const (
 
 	// Stack
 	DUPFROMALTSTACK OpCode = 0x6A
-	TOALTSTACK      OpCode = 0x6B // Puts the input cntmo the top of the alt stack. Removes it from the main stack.
-	FROMALTSTACK    OpCode = 0x6C // Puts the input cntmo the top of the main stack. Removes it from the alt stack.
+	TOALTSTACK      OpCode = 0x6B // Puts the input onto the top of the alt stack. Removes it from the main stack.
+	FROMALTSTACK    OpCode = 0x6C // Puts the input onto the top of the main stack. Removes it from the alt stack.
 	XDROP           OpCode = 0x6D
 	DCALL           OpCode = 0x6E
 	XSWAP           OpCode = 0x72
 	XTUCK           OpCode = 0x73
-	DEPTH           OpCode = 0x74 // Puts the number of stack items cntmo the stack.
+	DEPTH           OpCode = 0x74 // Puts the number of stack items onto the stack.
 	DROP            OpCode = 0x75 // Removes the top stack item.
 	DUP             OpCode = 0x76 // Duplicates the top stack item.
 	NIP             OpCode = 0x77 // Removes the second top stack item.

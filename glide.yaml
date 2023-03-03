@@ -1,9 +1,9 @@
-package: github.com/cntmio/cntmology
+package: github.com/conntectome/cntm
 import:
-- package: github.com/cntmio/cntmology-eventbus
+- package: github.com/conntectome/cntm-eventbus
   version: v0.9.1
-- package: github.com/cntmio/cntmology-crypto
-  version: v1.0.2
+- package: github.com/conntectome/cntm-crypto
+  version: v1.0.8
 - package: github.com/howeyc/gopass
 - package: github.com/gorilla/websocket
   version: v1.2.0
@@ -40,7 +40,7 @@ import:
   - unix
 - package: golang.org/x/net
   repo: https://github.com/golang/net.git
-- package: github.com/cntmio/wagon
+- package: github.com/conntectome/wagon
   version: v0.4.2
 ignore:
   - golang.org/x/sys/unix

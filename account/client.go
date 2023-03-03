@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package account
@@ -26,10 +26,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cntmio/cntmology-crypto/keypair"
-	s "github.com/cntmio/cntmology-crypto/signature"
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/core/types"
+	"github.com/conntectome/cntm-crypto/keypair"
+	s "github.com/conntectome/cntm-crypto/signature"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/core/types"
 )
 
 //Client of wallet
@@ -66,7 +66,7 @@ type Client interface {
 	GetUnlockAccount(address string) *Account
 	//Set a new account to default account
 	SetDefaultAccount(address string) error
-	//Set a new label to acccntm
+	//Set a new label to accont
 	SetLabel(address, label string) error
 	//Change pasword to account
 	ChangePassword(address string, oldPasswd, newPasswd []byte) error

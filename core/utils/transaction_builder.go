@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package utils
@@ -26,16 +26,14 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/laizy/bigint"
-
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/core/payload"
-	"github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology/smartccntmract/states"
-	vm "github.com/cntmio/cntmology/vm/neovm"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/core/payload"
+	"github.com/conntectome/cntm/core/types"
+	"github.com/conntectome/cntm/smartcontract/states"
+	vm "github.com/conntectome/cntm/vm/cntmvm"
 )
 
-const NATIVE_INVOKE_NAME = "Ontology.Native.Invoke" // copy from smartccntmract/service/neovm/config.go to avoid cycle dependences
+const NATIVE_INVOKE_NAME = "Cntm.Native.Invoke" // copy from smartcontract/service/cntmvm/config.go to avoid cycle dependences
 
 // NewDeployTransaction returns a deploy Transaction
 func NewDeployTransaction(code []byte, name, version, author, email, desp string, vmType payload.VmType) (*types.MutableTransaction, error) {
@@ -58,7 +56,7 @@ func NewInvokeTransaction(code []byte) *types.MutableTransaction {
 	}
 
 	return &types.MutableTransaction{
-		TxType:  types.InvokeNeo,
+		TxType:  types.InvokeCntm,
 		Payload: invokeCodePayload,
 	}
 }
@@ -78,37 +76,37 @@ func BuildNativeTransaction(addr common.Address, initMethod string, args []byte)
 	return tx
 }
 
-func BuildNativeInvokeCode(ccntmractAddress common.Address, version byte, method string, params []interface{}) ([]byte, error) {
+func BuildNativeInvokeCode(contractAddress common.Address, version byte, method string, params []interface{}) ([]byte, error) {
 	builder := vm.NewParamsBuilder(new(bytes.Buffer))
-	err := BuildNeoVMParam(builder, params)
+	err := BuildCntmVMParam(builder, params)
 	if err != nil {
 		return nil, err
 	}
 	builder.EmitPushByteArray([]byte(method))
-	builder.EmitPushByteArray(ccntmractAddress[:])
+	builder.EmitPushByteArray(contractAddress[:])
 	builder.EmitPushInteger(new(big.Int).SetInt64(int64(version)))
 	builder.Emit(vm.SYSCALL)
 	builder.EmitPushByteArray([]byte(NATIVE_INVOKE_NAME))
 	return builder.ToArray(), nil
 }
 
-//BuildNeoVMInvokeCode build NeoVM Invoke code for params
-func BuildNeoVMInvokeCode(smartCcntmractAddress common.Address, params []interface{}) ([]byte, error) {
+//BuildCntmVMInvokeCode build CntmVM Invoke code for params
+func BuildCntmVMInvokeCode(smartContractAddress common.Address, params []interface{}) ([]byte, error) {
 	builder := vm.NewParamsBuilder(new(bytes.Buffer))
-	err := BuildNeoVMParam(builder, params)
+	err := BuildCntmVMParam(builder, params)
 	if err != nil {
 		return nil, err
 	}
 	args := append(builder.ToArray(), 0x67)
-	args = append(args, smartCcntmractAddress[:]...)
+	args = append(args, smartContractAddress[:]...)
 	return args, nil
 }
 
-//buildNeoVMParamInter build neovm invoke param code
-func BuildNeoVMParam(builder *vm.ParamsBuilder, smartCcntmractParams []interface{}) error {
+//buildCntmVMParamInter build cntmvm invoke param code
+func BuildCntmVMParam(builder *vm.ParamsBuilder, smartContractParams []interface{}) error {
 	//VM load params in reverse order
-	for i := len(smartCcntmractParams) - 1; i >= 0; i-- {
-		switch v := smartCcntmractParams[i].(type) {
+	for i := len(smartContractParams) - 1; i >= 0; i-- {
+		switch v := smartContractParams[i].(type) {
 		case bool:
 			builder.EmitPushBool(v)
 		case byte:
@@ -132,8 +130,6 @@ func BuildNeoVMParam(builder *vm.ParamsBuilder, smartCcntmractParams []interface
 			builder.EmitPushByteArray([]byte(v))
 		case *big.Int:
 			builder.EmitPushInteger(v)
-		case bigint.Int:
-			builder.EmitPushInteger(v.BigInt())
 		case []byte:
 			builder.EmitPushByteArray(v)
 		case common.Address:
@@ -141,7 +137,7 @@ func BuildNeoVMParam(builder *vm.ParamsBuilder, smartCcntmractParams []interface
 		case common.Uint256:
 			builder.EmitPushByteArray(v.ToArray())
 		case []interface{}:
-			err := BuildNeoVMParam(builder, v)
+			err := BuildCntmVMParam(builder, v)
 			if err != nil {
 				return err
 			}
@@ -160,7 +156,7 @@ func BuildNeoVMParam(builder *vm.ParamsBuilder, smartCcntmractParams []interface
 				for i := 0; i < object.Len(); i++ {
 					ps = append(ps, object.Index(i).Interface())
 				}
-				err := BuildNeoVMParam(builder, []interface{}{ps})
+				err := BuildCntmVMParam(builder, []interface{}{ps})
 				if err != nil {
 					return err
 				}
@@ -170,7 +166,7 @@ func BuildNeoVMParam(builder *vm.ParamsBuilder, smartCcntmractParams []interface
 				builder.Emit(vm.TOALTSTACK)
 				for i := 0; i < object.NumField(); i++ {
 					field := object.Field(i)
-					err := BuildNeoVMParam(builder, []interface{}{field.Interface()})
+					err := BuildCntmVMParam(builder, []interface{}{field.Interface()})
 					if err != nil {
 						return err
 					}
@@ -187,22 +183,22 @@ func BuildNeoVMParam(builder *vm.ParamsBuilder, smartCcntmractParams []interface
 	return nil
 }
 
-//build param bytes for wasm ccntmract
-func BuildWasmVMInvokeCode(ccntmractAddress common.Address, params []interface{}) ([]byte, error) {
-	ccntmract := &states.WasmCcntmractParam{}
-	ccntmract.Address = ccntmractAddress
+//build param bytes for wasm contract
+func BuildWasmVMInvokeCode(contractAddress common.Address, params []interface{}) ([]byte, error) {
+	contract := &states.WasmContractParam{}
+	contract.Address = contractAddress
 	//bf := bytes.NewBuffer(nil)
-	argbytes, err := BuildWasmCcntmractParam(params)
+	argbytes, err := BuildWasmContractParam(params)
 	if err != nil {
-		return nil, fmt.Errorf("build wasm ccntmract param failed:%s", err)
+		return nil, fmt.Errorf("build wasm contract param failed:%s", err)
 	}
-	ccntmract.Args = argbytes
+	contract.Args = argbytes
 
-	return common.SerializeToBytes(ccntmract), nil
+	return common.SerializeToBytes(contract), nil
 }
 
-//build param bytes for wasm ccntmract
-func BuildWasmCcntmractParam(params []interface{}) ([]byte, error) {
+//build param bytes for wasm contract
+func BuildWasmContractParam(params []interface{}) ([]byte, error) {
 	bf := common.NewZeroCopySink(nil)
 	for _, param := range params {
 		switch val := param.(type) {
@@ -244,7 +240,7 @@ func BuildWasmCcntmractParam(params []interface{}) ([]byte, error) {
 			// actually if different type will pass tuple to wasm. or will pass array.
 			vnum := len(val)
 			bf.WriteVarUint(uint64(vnum))
-			value, err := BuildWasmCcntmractParam(val)
+			value, err := BuildWasmContractParam(val)
 			if err != nil {
 				return nil, err
 			}
@@ -256,15 +252,15 @@ func BuildWasmCcntmractParam(params []interface{}) ([]byte, error) {
 	return bf.Bytes(), nil
 }
 
-func NewWasmVMInvokeTransaction(gasPrice, gasLimit uint64, ccntmractAddress common.Address, params []interface{}) (*types.MutableTransaction, error) {
-	invokeCode, err := BuildWasmVMInvokeCode(ccntmractAddress, params)
+func NewWasmVMInvokeTransaction(gasPrice, gasLimit uint64, contractAddress common.Address, params []interface{}) (*types.MutableTransaction, error) {
+	invokeCode, err := BuildWasmVMInvokeCode(contractAddress, params)
 	if err != nil {
 		return nil, err
 	}
-	return NewWasmSmartCcntmractTransaction(gasPrice, gasLimit, invokeCode)
+	return NewWasmSmartContractTransaction(gasPrice, gasLimit, invokeCode)
 }
 
-func NewWasmSmartCcntmractTransaction(gasPrice, gasLimit uint64, invokeCode []byte) (*types.MutableTransaction, error) {
+func NewWasmSmartContractTransaction(gasPrice, gasLimit uint64, invokeCode []byte) (*types.MutableTransaction, error) {
 	invokePayload := &payload.InvokeCode{
 		Code: invokeCode,
 	}

@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package serialization
@@ -26,6 +26,7 @@ import (
 	"math"
 	"testing"
 
+	"crypto/rand"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -83,7 +84,7 @@ func BenchmarkSerialize(ben *testing.B) {
 	a6 := uint64(18446744073709551615)
 	a7 := uint64(18446744073709551615)
 	a8 := []byte{10, 11, 12}
-	a9 := "hello cntm."
+	a9 := "hello connectome."
 	for i := 0; i < ben.N; i++ {
 		b := new(bytes.Buffer)
 
@@ -124,7 +125,7 @@ func TestSerialize(t *testing.T) {
 	a6 := uint64(18446744073709551615)
 	a7 := uint64(18446744073709551615)
 	a8 := []byte{10, 11, 12}
-	a9 := "hello cntm."
+	a9 := "hello connectome."
 
 	WriteVarUint(b, uint64(a3))
 	WriteVarUint(b, uint64(a4))

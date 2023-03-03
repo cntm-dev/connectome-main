@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * alcntg with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package constants
@@ -34,35 +34,43 @@ var (
 )
 
 // cntm constants
-const GWei = 1000000000
-
 const (
-	cntm_NAME            = "cntm Token"
-	cntm_SYMBOL          = "cntm"
-	cntm_DECIMALS        = 0
-	cntm_DECIMALS_V2     = 9
-	cntm_TOTAL_SUPPLY    = 1000000000
-	cntm_TOTAL_SUPPLY_V2 = 1000000000000000000
+	CNTM_NAME         = "CNTM Token"
+	CNTM_SYMBOL       = "CNTM"
+	CNTM_DECIMALS     = 0
+	CNTM_TOTAL_SUPPLY = uint64(1000000000)
 )
 
-// cntm constants
+// cntg constants
 const (
-	cntm_NAME         = "cntm Token"
-	cntm_SYMBOL       = "cntm"
-	cntm_DECIMALS     = 9
-	cntm_DECIMALS_V2  = 18
-	cntm_TOTAL_SUPPLY = 1000000000000000000
+	CNTG_NAME         = "CNTG Token"
+	CNTG_SYMBOL       = "CNTG"
+	CNTG_DECIMALS     = 9
+	CNTG_TOTAL_SUPPLY = uint64(1000000000000000000)
 )
 
-var (
-	cntm_TOTAL_SUPPLY_V2 = bigint.New(10).ExpUint8(27)
-)
-
-// cntm/cntm unbound model constants
+// cntm/cntg unbound model constants
 const UNBOUND_TIME_INTERVAL = uint32(31536000)
 
 var UNBOUND_GENERATION_AMOUNT = [18]uint64{5, 4, 3, 3, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
-var NEW_UNBOUND_GENERATION_AMOUNT = [18]uint64{5, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3}
+
+// the end of unbound timestamp offset from genesis block's timestamp
+var UNBOUND_DEADLINE = (func() uint32 {
+	count := uint64(0)
+	for _, m := range UNBOUND_GENERATION_AMOUNT {
+		count += m
+	}
+	count *= uint64(UNBOUND_TIME_INTERVAL)
+
+	numInterval := len(UNBOUND_GENERATION_AMOUNT)
+
+	if UNBOUND_GENERATION_AMOUNT[numInterval-1] != 1 ||
+		!(count-uint64(UNBOUND_TIME_INTERVAL) < CNTM_TOTAL_SUPPLY && CNTM_TOTAL_SUPPLY <= count) {
+		panic("incompatible constants setting")
+	}
+
+	return UNBOUND_TIME_INTERVAL*uint32(numInterval) - uint32(count-uint64(CNTM_TOTAL_SUPPLY))
+})()
 
 // multi-sig constants
 const MULTI_SIG_MAX_PUBKEY_SIZE = 16
@@ -85,7 +93,7 @@ const (
 const STATE_HASH_HEIGHT_MAINNET = 3000000
 const STATE_HASH_HEIGHT_POLARIS = 850000
 
-// neovm opcode update check height
+// cntmvm opcode update check height
 const OPCODE_HEIGHT_UPDATE_FIRST_MAINNET = 6300000
 const OPCODE_HEIGHT_UPDATE_FIRST_POLARIS = 2100000
 

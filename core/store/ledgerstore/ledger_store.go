@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 //Storage of ledger
 package ledgerstore
@@ -21,7 +21,6 @@ package ledgerstore
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"hash"
 	"math"
@@ -31,39 +30,30 @@ import (
 	"sync"
 	"time"
 
-	common2 "github.com/ethereum/go-ethereum/common"
-	types3 "github.com/ethereum/go-ethereum/core/types"
-	"github.com/cntmio/cntmology-crypto/keypair"
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/config"
-	sysconfig "github.com/cntmio/cntmology/common/config"
-	"github.com/cntmio/cntmology/common/log"
-	vconfig "github.com/cntmio/cntmology/consensus/vbft/config"
-	"github.com/cntmio/cntmology/core/payload"
-	"github.com/cntmio/cntmology/core/signature"
-	"github.com/cntmio/cntmology/core/states"
-	"github.com/cntmio/cntmology/core/store"
-	scom "github.com/cntmio/cntmology/core/store/common"
-	"github.com/cntmio/cntmology/core/store/overlaydb"
-	"github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology/errors"
-	"github.com/cntmio/cntmology/events"
-	"github.com/cntmio/cntmology/events/message"
-	"github.com/cntmio/cntmology/merkle"
-	"github.com/cntmio/cntmology/smartccntmract"
-	"github.com/cntmio/cntmology/smartccntmract/event"
-	"github.com/cntmio/cntmology/smartccntmract/service/evm"
-	types4 "github.com/cntmio/cntmology/smartccntmract/service/evm/types"
-	"github.com/cntmio/cntmology/smartccntmract/service/evm/witness"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
-	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
-	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
-	sstate "github.com/cntmio/cntmology/smartccntmract/states"
-	"github.com/cntmio/cntmology/smartccntmract/storage"
-	evm2 "github.com/cntmio/cntmology/vm/evm"
-	"github.com/cntmio/cntmology/vm/evm/params"
-	types2 "github.com/cntmio/cntmology/vm/neovm/types"
+	"github.com/conntectome/cntm-crypto/keypair"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/common/config"
+	"github.com/conntectome/cntm/common/log"
+	vconfig "github.com/conntectome/cntm/consensus/Cbft/config"
+	"github.com/conntectome/cntm/core/payload"
+	"github.com/conntectome/cntm/core/signature"
+	"github.com/conntectome/cntm/core/states"
+	"github.com/conntectome/cntm/core/store"
+	scom "github.com/conntectome/cntm/core/store/common"
+	"github.com/conntectome/cntm/core/store/overlaydb"
+	"github.com/conntectome/cntm/core/types"
+	"github.com/conntectome/cntm/errors"
+	"github.com/conntectome/cntm/events"
+	"github.com/conntectome/cntm/events/message"
+	"github.com/conntectome/cntm/merkle"
+	"github.com/conntectome/cntm/smartcontract"
+	"github.com/conntectome/cntm/smartcontract/event"
+	"github.com/conntectome/cntm/smartcontract/service/native/utils"
+	"github.com/conntectome/cntm/smartcontract/service/cntmvm"
+	"github.com/conntectome/cntm/smartcontract/service/wasmvm"
+	sstate "github.com/conntectome/cntm/smartcontract/states"
+	"github.com/conntectome/cntm/smartcontract/storage"
+	types2 "github.com/conntectome/cntm/vm/cntmvm/types"
 )
 
 const (
@@ -88,21 +78,20 @@ type PrexecuteParam struct {
 //LedgerStoreImp is main store struct fo ledger
 type LedgerStoreImp struct {
 	blockStore           *BlockStore                      //BlockStore for saving block & transaction data
-	stateStore           *StateStore                      //StateStore for saving state data, like balance, smart ccntmract execution result, and so on.
-	eventStore           *EventStore                      //EventStore for saving log those gen after smart ccntmract executed.
+	stateStore           *StateStore                      //StateStore for saving state data, like balance, smart contract execution result, and so on.
+	eventStore           *EventStore                      //EventStore for saving log those gen after smart contract executed.
 	crossChainStore      *CrossChainStore                 //crossChainStore for saving cross chain msg.
 	storedIndexCount     uint32                           //record the count of have saved block index
 	currBlockHeight      uint32                           //Current block height
 	currBlockHash        common.Uint256                   //Current block hash
 	headerCache          map[common.Uint256]*types.Header //BlockHash => Header
 	headerIndex          map[uint32]common.Uint256        //Header index, Mapping header height => block hash
-	vbftPeerInfoMap      map[uint32]map[string]uint32     //key:block height,value:peerInfo
+	savingBlockSemaphore chan bool
+	closing              bool
+	CbftPeerInfoheader   map[string]uint32 //pubInfo save pubkey,peerindex
+	CbftPeerInfoblock    map[string]uint32 //pubInfo save pubkey,peerindex
 	lock                 sync.RWMutex
 	stateHashCheckHeight uint32
-
-	savingBlockSemaphore       chan bool
-	closing                    bool
-	preserveBlockHistoryLength uint32 // block could be pruned if blockHeight + preserveBlockHistoryLength < currHeight , disable prune if equals 0
 }
 
 //NewLedgerStore return LedgerStoreImp instance
@@ -110,7 +99,8 @@ func NewLedgerStore(dataDir string, stateHashHeight uint32) (*LedgerStoreImp, er
 	ledgerStore := &LedgerStoreImp{
 		headerIndex:          make(map[uint32]common.Uint256),
 		headerCache:          make(map[common.Uint256]*types.Header, 0),
-		vbftPeerInfoMap:      make(map[uint32]map[string]uint32),
+		CbftPeerInfoheader:   make(map[string]uint32),
+		CbftPeerInfoblock:    make(map[string]uint32),
 		savingBlockSemaphore: make(chan bool, 1),
 		stateHashCheckHeight: stateHashHeight,
 	}
@@ -189,7 +179,7 @@ func (this *LedgerStoreImp) InitLedgerStoreWithGenesisBlock(genesisBlock *types.
 		log.Infof("GenesisBlock init success. GenesisBlock hash:%s\n", genHash.ToHexString())
 	} else {
 		genesisHash := genesisBlock.Hash()
-		exist, err := this.blockStore.CcntmainBlock(genesisHash)
+		exist, err := this.blockStore.ContainBlock(genesisHash)
 		if err != nil {
 			return fmt.Errorf("HashBlockExist error %s", err)
 		}
@@ -201,14 +191,14 @@ func (this *LedgerStoreImp) InitLedgerStoreWithGenesisBlock(genesisBlock *types.
 			return fmt.Errorf("init error %s", err)
 		}
 	}
-	//load vbft peerInfo
+	//load Cbft peerInfo
 	consensusType := strings.ToLower(config.DefConfig.Genesis.ConsensusType)
-	if consensusType == "vbft" {
+	if consensusType == "Cbft" {
 		header, err := this.GetHeaderByHash(this.currBlockHash)
 		if err != nil {
 			return err
 		}
-		blkInfo, err := vconfig.VbftBlock(header)
+		blkInfo, err := vconfig.CbftBlock(header)
 		if err != nil {
 			return err
 		}
@@ -222,7 +212,7 @@ func (this *LedgerStoreImp) InitLedgerStoreWithGenesisBlock(genesisBlock *types.
 			if err != nil {
 				return err
 			}
-			Info, err := vconfig.VbftBlock(cfgHeader)
+			Info, err := vconfig.CbftBlock(cfgHeader)
 			if err != nil {
 				return err
 			}
@@ -230,18 +220,15 @@ func (this *LedgerStoreImp) InitLedgerStoreWithGenesisBlock(genesisBlock *types.
 				return fmt.Errorf("getNewChainConfig error block num:%d", blkInfo.LastConfigBlockNum)
 			}
 			cfg = Info.NewChainConfig
-			chainConfigHeight = cfgHeader.Height
 		}
 		this.lock.Lock()
-		vbftPeerInfo := make(map[string]uint32)
-		this.vbftPeerInfoMap = make(map[uint32]map[string]uint32)
+		this.CbftPeerInfoheader = make(map[string]uint32)
+		this.CbftPeerInfoblock = make(map[string]uint32)
 		for _, p := range cfg.Peers {
-			vbftPeerInfo[p.ID] = p.Index
+			this.CbftPeerInfoheader[p.ID] = p.Index
+			this.CbftPeerInfoblock[p.ID] = p.Index
 		}
-		this.vbftPeerInfoMap[chainConfigHeight] = vbftPeerInfo
 		this.lock.Unlock()
-		val, _ := json.Marshal(vbftPeerInfo)
-		log.Infof("loading vbftPeerInfo at height: %s : %s", header.Height, string(val))
 	}
 	// check and fix imcompatible states
 	err = this.stateStore.CheckStorage()
@@ -394,6 +381,7 @@ func (this *LedgerStoreImp) setCurrentBlock(height uint32, blockHash common.Uint
 	defer this.lock.Unlock()
 	this.currBlockHash = blockHash
 	this.currBlockHeight = height
+	return
 }
 
 //GetCurrentBlock return the current block height, and block hash.
@@ -440,131 +428,86 @@ func (this *LedgerStoreImp) getHeaderCache(blockHash common.Uint256) *types.Head
 	return header
 }
 
-func (this *LedgerStoreImp) verifyHeader(header *types.Header) error {
+func (this *LedgerStoreImp) verifyHeader(header *types.Header, CbftPeerInfo map[string]uint32) (map[string]uint32, error) {
 	if header.Height == 0 {
-		return nil
+		return CbftPeerInfo, nil
 	}
 	var prevHeader *types.Header
 	prevHeaderHash := header.PrevBlockHash
 	prevHeader, err := this.GetHeaderByHash(prevHeaderHash)
 	if err != nil && err != scom.ErrNotFound {
-		return fmt.Errorf("get prev header error %s", err)
+		return CbftPeerInfo, fmt.Errorf("get prev header error %s", err)
 	}
 	if prevHeader == nil {
-		return fmt.Errorf("cannot find pre header by blockHash %s", prevHeaderHash.ToHexString())
+		return CbftPeerInfo, fmt.Errorf("cannot find pre header by blockHash %s", prevHeaderHash.ToHexString())
 	}
 
 	if prevHeader.Height+1 != header.Height {
-		return fmt.Errorf("block height is incorrect")
+		return CbftPeerInfo, fmt.Errorf("block height is incorrect")
 	}
 
 	if prevHeader.Timestamp >= header.Timestamp {
-		return fmt.Errorf("block timestamp is incorrect")
+		return CbftPeerInfo, fmt.Errorf("block timestamp is incorrect")
 	}
 	consensusType := strings.ToLower(config.DefConfig.Genesis.ConsensusType)
-	if consensusType == "vbft" {
-		blkInfo, err := vconfig.VbftBlock(header)
-		if err != nil {
-			return err
-		}
-		var chainConfigHeight uint32
-		if blkInfo.NewChainConfig != nil {
-			prevBlockInfo, err := vconfig.VbftBlock(prevHeader)
-			if err != nil {
-				return err
-			}
-			if prevBlockInfo.NewChainConfig != nil {
-				chainConfigHeight = prevHeader.Height
-			} else {
-				chainConfigHeight = prevBlockInfo.LastConfigBlockNum
-			}
-		} else {
-			chainConfigHeight = blkInfo.LastConfigBlockNum
-		}
-		chainConfigHeader, err := this.GetHeaderByHeight(chainConfigHeight)
-		if err != nil && err != scom.ErrNotFound {
-			return fmt.Errorf("get chain config header error %s,height:%d", err, chainConfigHeight)
-		}
-		if chainConfigHeader == nil {
-			return fmt.Errorf("cannot find chain config header by height:%d", chainConfigHeight)
-		}
-		chanConfigBlkInfo, err := vconfig.VbftBlock(chainConfigHeader)
-		if err != nil {
-			return err
-		}
-		if chanConfigBlkInfo.NewChainConfig == nil {
-			return fmt.Errorf("cannot find newchainconfig header by height:%d", chainConfigHeight)
-		}
-		c := chanConfigBlkInfo.NewChainConfig.C
-		this.lock.RLock()
-		vbftPeerInfo, ok := this.vbftPeerInfoMap[chainConfigHeight]
-		if !ok {
-			this.lock.RUnlock()
-			return fmt.Errorf("chainconfig height:%d not found", chainConfigHeight)
-		}
-		this.lock.RUnlock()
-		m := len(vbftPeerInfo) - (len(vbftPeerInfo)*6)/7
+	if consensusType == "Cbft" {
+		//check bookkeeppers
+		m := len(CbftPeerInfo) - (len(CbftPeerInfo)*6)/7
 		if len(header.Bookkeepers) < m {
-			return fmt.Errorf("header Bookkeepers %d more than 6/7 len vbftPeerInfo%d", len(header.Bookkeepers), len(vbftPeerInfo))
+			return CbftPeerInfo, fmt.Errorf("header Bookkeepers %d more than 6/7 len CbftPeerInfo%d", len(header.Bookkeepers), len(CbftPeerInfo))
 		}
-		usedPubKey := make(map[string]bool)
 		for _, bookkeeper := range header.Bookkeepers {
 			pubkey := vconfig.PubkeyID(bookkeeper)
-			_, present := vbftPeerInfo[pubkey]
+			_, present := CbftPeerInfo[pubkey]
 			if !present {
-				val, _ := json.Marshal(vbftPeerInfo)
-				log.Errorf("verify header error: invalid pubkey :%v, height:%d, current vbftPeerInfo :%s",
-					pubkey, header.Height, string(val))
-				return fmt.Errorf("verify header error: invalid pubkey : %v", pubkey)
+				log.Errorf("invalid pubkey :%v,height:%d", pubkey, header.Height)
+				return CbftPeerInfo, fmt.Errorf("invalid pubkey :%v", pubkey)
 			}
-			usedPubKey[pubkey] = true
-		}
-		if uint32(len(usedPubKey)) < c+1 {
-			log.Errorf("verify header error:  height:%d,pubkey len:%d,c:%d",
-				header.Height, len(usedPubKey), c)
-			return fmt.Errorf("verify header error height:%d", header.Height)
 		}
 		hash := header.Hash()
 		err = signature.VerifyMultiSignature(hash[:], header.Bookkeepers, m, header.SigData)
 		if err != nil {
-			log.Errorf("VerifyMultiSignature:%s,Bookkeepers:%d,pubkey:%d,heigh:%d", err, len(header.Bookkeepers), len(vbftPeerInfo), header.Height)
-			return err
+			log.Errorf("VerifyMultiSignature:%s,Bookkeepers:%d,pubkey:%d,heigh:%d", err, len(header.Bookkeepers), len(CbftPeerInfo), header.Height)
+			return CbftPeerInfo, err
+		}
+		blkInfo, err := vconfig.CbftBlock(header)
+		if err != nil {
+			return CbftPeerInfo, err
 		}
 		if blkInfo.NewChainConfig != nil {
 			peerInfo := make(map[string]uint32)
 			for _, p := range blkInfo.NewChainConfig.Peers {
 				peerInfo[p.ID] = p.Index
 			}
-			this.lock.Lock()
-			this.vbftPeerInfoMap[header.Height] = peerInfo
-			this.lock.Unlock()
+			return peerInfo, nil
 		}
+		return CbftPeerInfo, nil
 	} else {
 		address, err := types.AddressFromBookkeepers(header.Bookkeepers)
 		if err != nil {
-			return err
+			return CbftPeerInfo, err
 		}
 		if prevHeader.NextBookkeeper != address {
-			return fmt.Errorf("bookkeeper address error")
+			return CbftPeerInfo, fmt.Errorf("bookkeeper address error")
 		}
 
 		m := len(header.Bookkeepers) - (len(header.Bookkeepers)-1)/3
 		hash := header.Hash()
 		err = signature.VerifyMultiSignature(hash[:], header.Bookkeepers, m, header.SigData)
 		if err != nil {
-			return err
+			return CbftPeerInfo, err
 		}
 	}
-	return nil
+	return CbftPeerInfo, nil
 }
 
 func (this *LedgerStoreImp) verifyCrossChainMsg(crossChainMsg *types.CrossChainMsg, bookkeepers []keypair.PublicKey) error {
 	consensusType := strings.ToLower(config.DefConfig.Genesis.ConsensusType)
 	hash := crossChainMsg.Hash()
-	if consensusType == "vbft" {
+	if consensusType == "Cbft" {
 		err := signature.VerifyMultiSignature(hash[:], bookkeepers, len(bookkeepers), crossChainMsg.SigData)
 		if err != nil {
-			log.Errorf("vbft VerifyMultiSignature:%s,heigh:%d", err, crossChainMsg.Height)
+			log.Errorf("Cbft VerifyMultiSignature:%s,heigh:%d", err, crossChainMsg.Height)
 			return err
 		}
 	} else {
@@ -584,8 +527,8 @@ func (this *LedgerStoreImp) AddHeader(header *types.Header) error {
 	if header.Height != nextHeaderHeight {
 		return fmt.Errorf("header height %d not equal next header height %d", header.Height, nextHeaderHeight)
 	}
-	err := this.verifyHeader(header)
-	//this.vbftPeerInfoheader, err = this.verifyHeader(header, this.vbftPeerInfoheader)
+	var err error
+	this.CbftPeerInfoheader, err = this.verifyHeader(header, this.CbftPeerInfoheader)
 	if err != nil {
 		return fmt.Errorf("verifyHeader error %s", err)
 	}
@@ -648,7 +591,8 @@ func (this *LedgerStoreImp) SubmitBlock(block *types.Block, ccMsg *types.CrossCh
 		return fmt.Errorf("block height %d not equal next block height %d", blockHeight, nextBlockHeight)
 	}
 
-	err := this.verifyHeader(block.Header)
+	var err error
+	this.CbftPeerInfoblock, err = this.verifyHeader(block.Header, this.CbftPeerInfoblock)
 	if err != nil {
 		return fmt.Errorf("verifyHeader error %s", err)
 	}
@@ -691,7 +635,8 @@ func (this *LedgerStoreImp) AddBlock(block *types.Block, ccMsg *types.CrossChain
 	if blockHeight != nextBlockHeight {
 		return fmt.Errorf("block height %d not equal next block height %d", blockHeight, nextBlockHeight)
 	}
-	err := this.verifyHeader(block.Header)
+	var err error
+	this.CbftPeerInfoblock, err = this.verifyHeader(block.Header, this.CbftPeerInfoblock)
 	if err != nil {
 		return fmt.Errorf("verifyHeader error %s", err)
 	}
@@ -744,9 +689,8 @@ func (this *LedgerStoreImp) saveBlockToBlockStore(block *types.Block) error {
 
 func (this *LedgerStoreImp) executeBlock(block *types.Block) (result store.ExecuteResult, err error) {
 	overlay := this.stateStore.NewOverlayDB()
-	var evmWitness common2.Address
 	if block.Header.Height != 0 {
-		config := &smartccntmract.Config{
+		config := &smartcontract.Config{
 			Time:   block.Header.Timestamp,
 			Height: block.Header.Height,
 			Tx:     &types.Transaction{},
@@ -756,10 +700,9 @@ func (this *LedgerStoreImp) executeBlock(block *types.Block) (result store.Execu
 		if err != nil {
 			return
 		}
-		evmWitness = getEvmSystemWitnessAddress(config, storage.NewCacheDB(this.stateStore.NewOverlayDB()), this)
 	}
 	gasTable := make(map[string]uint64)
-	neovm.GAS_TABLE.Range(func(k, value interface{}) bool {
+	cntmvm.GAS_TABLE.Range(func(k, value interface{}) bool {
 		key := k.(string)
 		val := value.(uint64)
 		gasTable[key] = val
@@ -809,17 +752,25 @@ func (this *LedgerStoreImp) executeBlock(block *types.Block) (result store.Execu
 
 func calculateTotalStateHash(overlay *overlaydb.OverlayDB) (result common.Uint256, err error) {
 	stateDiff := sha256.New()
+	iter := overlay.NewIterator([]byte{byte(scom.ST_CCNTMRACT)})
+	err = accumulateHash(stateDiff, iter)
+	iter.Release()
+	if err != nil {
+		return
+	}
 
-	prefix := []scom.DataEntryPrefix{scom.ST_CcntmRACT, scom.ST_STORAGE, scom.ST_DESTROYED, scom.ST_ETH_CODE,
-		scom.ST_ETH_ACCOUNT}
+	iter = overlay.NewIterator([]byte{byte(scom.ST_STORAGE)})
+	err = accumulateHash(stateDiff, iter)
+	iter.Release()
+	if err != nil {
+		return
+	}
 
-	for _, v := range prefix {
-		iter := overlay.NewIterator([]byte{byte(v)})
-		err = accumulateHash(stateDiff, iter)
-		iter.Release()
-		if err != nil {
-			return
-		}
+	iter = overlay.NewIterator([]byte{byte(scom.ST_DESTROYED)})
+	err = accumulateHash(stateDiff, iter)
+	iter.Release()
+	if err != nil {
+		return
 	}
 
 	stateDiff.Sum(result[:0])
@@ -841,9 +792,7 @@ func (this *LedgerStoreImp) saveBlockToStateStore(block *types.Block, result sto
 	blockHeight := block.Header.Height
 
 	for _, notify := range result.Notify {
-		if err := SaveNotify(this.eventStore, notify.TxHash, notify); err != nil {
-			return err
-		}
+		SaveNotify(this.eventStore, notify.TxHash, notify)
 	}
 
 	err := this.stateStore.AddStateMerkleTreeRoot(blockHeight, result.Hash)
@@ -915,41 +864,13 @@ func (this *LedgerStoreImp) releaseSavingBlockLock() {
 	}
 }
 
-const pruneBatchSize = 10
-
-func (this *LedgerStoreImp) tryPruneBlock(header *types.Header) bool {
-	if this.preserveBlockHistoryLength == 0 {
-		return false
-	}
-	height := this.maxAllowedPruneHeight(header)
-	if height+this.preserveBlockHistoryLength >= header.Height {
-		height = header.Height - this.preserveBlockHistoryLength
-	}
-	pruned, err := this.blockStore.GetBlockPrunedHeight()
-	if err != nil {
-		return false
-	}
-	if pruned+1 >= height {
-		return false
-	}
-
-	pruneHeight := pruned + 1
-	for ; pruneHeight-pruned < pruneBatchSize && pruneHeight < height; pruneHeight++ {
-		hash := this.GetBlockHash(pruneHeight)
-		txHashes := this.blockStore.PruneBlock(hash)
-		this.eventStore.PruneBlock(pruneHeight, txHashes)
-	}
-	this.blockStore.SaveBlockPrunedHeight(pruneHeight)
-	return true
-}
-
-//saveBlock do the job of execution samrt ccntmract and commit block to store.
+//saveBlock do the job of execution samrt contract and commit block to store.
 func (this *LedgerStoreImp) submitBlock(block *types.Block, crossChainMsg *types.CrossChainMsg, result store.ExecuteResult) error {
 	blockHash := block.Hash()
 	blockHeight := block.Header.Height
 	blockRoot := this.GetBlockRootWithNewTxRoots(block.Header.Height, []common.Uint256{block.Header.TransactionsRoot})
 	if block.Header.Height != 0 && blockRoot != block.Header.BlockRoot {
-		return fmt.Errorf("wrcntm block root at height:%d, expected:%s, got:%s",
+		return fmt.Errorf("wrong block root at height:%d, expected:%s, got:%s",
 			block.Header.Height, blockRoot.ToHexString(), block.Header.BlockRoot.ToHexString())
 	}
 
@@ -960,7 +881,6 @@ func (this *LedgerStoreImp) submitBlock(block *types.Block, crossChainMsg *types
 	if err != nil {
 		return fmt.Errorf("save to block store height:%d error:%s", blockHeight, err)
 	}
-	this.tryPruneBlock(block.Header)
 	err = this.crossChainStore.SaveMsgToCrossChainStore(crossChainMsg)
 	if err != nil {
 		return fmt.Errorf("save to msg cross chain store height:%d error:%s", blockHeight, err)
@@ -995,25 +915,60 @@ func (this *LedgerStoreImp) submitBlock(block *types.Block, crossChainMsg *types
 	return nil
 }
 
-func (this *LedgerStoreImp) handleTransaction(stateBatch *statestore.StateBatch, block *types.Block, tx *types.Transaction) error {
-	var err error
+//saveBlock do the job of execution samrt contract and commit block to store.
+func (this *LedgerStoreImp) saveBlock(block *types.Block, ccMsg *types.CrossChainMsg, stateMerkleRoot common.Uint256) error {
+	blockHeight := block.Header.Height
+	if blockHeight > 0 && blockHeight <= this.GetCurrentBlockHeight() {
+		return nil
+	}
+	this.getSavingBlockLock()
+	defer this.releaseSavingBlockLock()
+	if this.closing {
+		return errors.NewErr("save block error: ledger is closing")
+	}
+	if blockHeight > 0 && blockHeight != (this.GetCurrentBlockHeight()+1) {
+		return nil
+	}
+
+	result, err := this.executeBlock(block)
+	if err != nil {
+		return err
+	}
+
+	//empty block does not check stateMerkleRoot
+	if len(block.Transactions) != 0 && result.MerkleRoot != stateMerkleRoot {
+		return fmt.Errorf("state merkle root mismatch. expected: %s, got: %s",
+			result.MerkleRoot.ToHexString(), stateMerkleRoot.ToHexString())
+	}
+
+	return this.submitBlock(block, ccMsg, result)
+}
+
+func (this *LedgerStoreImp) handleTransaction(overlay *overlaydb.OverlayDB, cache *storage.CacheDB, gasTable map[string]uint64,
+	block *types.Block, tx *types.Transaction) (*event.ExecuteNotify, []common.Uint256, error) {
 	txHash := tx.Hash()
+	notify := &event.ExecuteNotify{TxHash: txHash, State: event.CCNTMRACT_STATE_FAIL}
+	var crossStateHashes []common.Uint256
+	var err error
 	switch tx.TxType {
 	case types.Deploy:
-		err = this.stateStore.HandleDeployTransaction(stateBatch, tx)
-		if err != nil {
-			return fmt.Errorf("HandleDeployTransaction tx %x error %s", txHash, err)
+		err = this.stateStore.HandleDeployTransaction(this, overlay, gasTable, cache, tx, block, notify)
+		if overlay.Error() != nil {
+			return nil, nil, fmt.Errorf("HandleDeployTransaction tx %s error %s", txHash.ToHexString(), overlay.Error())
 		}
-	case types.Invoke:
-		err = this.stateStore.HandleInvokeTransaction(this, stateBatch, tx, block, this.eventStore)
 		if err != nil {
-			fmt.Printf("HandleInvokeTransaction tx %x error %s \n", txHash, err)
+			log.Debugf("HandleDeployTransaction tx %s error %s", txHash.ToHexString(), err)
 		}
-	case types.Claim:
-	case types.Enrollment:
-	case types.Vote:
+	case types.InvokeCntm, types.InvokeWasm:
+		crossStateHashes, err = this.stateStore.HandleInvokeTransaction(this, overlay, gasTable, cache, tx, block, notify)
+		if overlay.Error() != nil {
+			return nil, nil, fmt.Errorf("HandleInvokeTransaction tx %s error %s", txHash.ToHexString(), overlay.Error())
+		}
+		if err != nil {
+			log.Debugf("HandleInvokeTransaction tx %s error %s", txHash.ToHexString(), err)
+		}
 	}
-	return nil
+	return notify, crossStateHashes, nil
 }
 
 func (this *LedgerStoreImp) saveHeaderIndexList() error {
@@ -1040,14 +995,14 @@ func (this *LedgerStoreImp) saveHeaderIndexList() error {
 	return nil
 }
 
-//IsCcntmainBlock return whether the block is in store
-func (this *LedgerStoreImp) IsCcntmainBlock(blockHash common.Uint256) (bool, error) {
-	return this.blockStore.CcntmainBlock(blockHash)
+//IsContainBlock return whether the block is in store
+func (this *LedgerStoreImp) IsContainBlock(blockHash common.Uint256) (bool, error) {
+	return this.blockStore.ContainBlock(blockHash)
 }
 
-//IsCcntmainTransaction return whether the transaction is in store. Wrap function of BlockStore.CcntmainTransaction
-func (this *LedgerStoreImp) IsCcntmainTransaction(txHash common.Uint256) (bool, error) {
-	return this.blockStore.CcntmainTransaction(txHash)
+//IsContainTransaction return whether the transaction is in store. Wrap function of BlockStore.ContainTransaction
+func (this *LedgerStoreImp) IsContainTransaction(txHash common.Uint256) (bool, error) {
+	return this.blockStore.ContainTransaction(txHash)
 }
 
 //GetBlockRootWithNewTxRoots return the block root(merkle root of blocks) after add a new tx root of block
@@ -1070,10 +1025,6 @@ func (this *LedgerStoreImp) GetBlockRootWithNewTxRoots(startHeight uint32, txRoo
 	return this.stateStore.GetBlockRootWithNewTxRoots(needs)
 }
 
-func (this *LedgerStoreImp) GetCrossStates(height uint32) ([]common.Uint256, error) {
-	return this.stateStore.GetCrossStates(height)
-}
-
 func (this *LedgerStoreImp) GetCrossStatesRoot(height uint32) (common.Uint256, error) {
 	return this.stateStore.GetCrossStatesRoot(height)
 }
@@ -1087,7 +1038,7 @@ func (this *LedgerStoreImp) GetCrossStatesProof(height uint32, key []byte) ([]by
 	if err != nil {
 		return nil, fmt.Errorf("GetCrossStates:%s", err)
 	}
-	item, err := this.stateStore.GetStorageState(&states.StorageKey{CcntmractAddress: utils.CrossChainCcntmractAddress, Key: key})
+	item, err := this.stateStore.GetStorageState(&states.StorageKey{ContractAddress: utils.CrossChainContractAddress, Key: key})
 	if err != nil {
 		return nil, fmt.Errorf("GetStorageState key:%x", key)
 	}
@@ -1161,33 +1112,28 @@ func (this *LedgerStoreImp) GetMerkleProof(proofHeight, rootHeight uint32) ([]co
 	return this.stateStore.GetMerkleProof(proofHeight, rootHeight)
 }
 
-//GetCcntmractState return ccntmract by ccntmract address. Wrap function of StateStore.GetCcntmractState
-func (this *LedgerStoreImp) GetCcntmractState(ccntmractHash common.Address) (*payload.DeployCode, error) {
-	return this.stateStore.GetCcntmractState(ccntmractHash)
+//GetContractState return contract by contract address. Wrap function of StateStore.GetContractState
+func (this *LedgerStoreImp) GetContractState(contractHash common.Address) (*payload.DeployCode, error) {
+	return this.stateStore.GetContractState(contractHash)
 }
 
-//GetStorageItem return the storage value of the key in smart ccntmract. Wrap function of StateStore.GetStorageState
+//GetStorageItem return the storage value of the key in smart contract. Wrap function of StateStore.GetStorageState
 func (this *LedgerStoreImp) GetStorageItem(key *states.StorageKey) (*states.StorageItem, error) {
 	return this.stateStore.GetStorageState(key)
 }
 
-//FindStorageItem return the storage value of the key in smart ccntmract. Wrap function of StateStore.GetStorageState
-func (this *LedgerStoreImp) FindStorageItem(key *states.StorageKey) ([]*states.StorageItem, error) {
-	return this.stateStore.FindStorageState(key)
-}
-
-//GetEventNotifyByTx return the events notify gen by executing of smart ccntmract.  Wrap function of EventStore.GetEventNotifyByTx
+//GetEventNotifyByTx return the events notify gen by executing of smart contract.  Wrap function of EventStore.GetEventNotifyByTx
 func (this *LedgerStoreImp) GetEventNotifyByTx(tx common.Uint256) (*event.ExecuteNotify, error) {
 	return this.eventStore.GetEventNotifyByTx(tx)
 }
 
-//GetEventNotifyByBlock return the transaction hash which have event notice after execution of smart ccntmract. Wrap function of EventStore.GetEventNotifyByBlock
+//GetEventNotifyByBlock return the transaction hash which have event notice after execution of smart contract. Wrap function of EventStore.GetEventNotifyByBlock
 func (this *LedgerStoreImp) GetEventNotifyByBlock(height uint32) ([]*event.ExecuteNotify, error) {
 	return this.eventStore.GetEventNotifyByBlock(height)
 }
 
-//PreExecuteCcntmract return the result of smart ccntmract execution without commit to store
-func (this *LedgerStoreImp) PreExecuteCcntmractBatch(txes []*types.Transaction, atomic bool) ([]*sstate.PreExecResult, uint32, error) {
+//PreExecuteContract return the result of smart contract execution without commit to store
+func (this *LedgerStoreImp) PreExecuteContractBatch(txes []*types.Transaction, atomic bool) ([]*sstate.PreExecResult, uint32, error) {
 	if atomic {
 		this.getSavingBlockLock()
 		defer this.releaseSavingBlockLock()
@@ -1195,7 +1141,7 @@ func (this *LedgerStoreImp) PreExecuteCcntmractBatch(txes []*types.Transaction, 
 	height := this.GetCurrentBlockHeight()
 	results := make([]*sstate.PreExecResult, 0, len(txes))
 	for _, tx := range txes {
-		res, err := this.PreExecuteCcntmract(tx)
+		res, err := this.PreExecuteContract(tx)
 		if err != nil {
 			return nil, height, err
 		}
@@ -1206,59 +1152,17 @@ func (this *LedgerStoreImp) PreExecuteCcntmractBatch(txes []*types.Transaction, 
 	return results, height, nil
 }
 
-func (this *LedgerStoreImp) PreExecuteEIP155(tx *types3.Transaction, ctx Eip155Ccntmext) (*types4.ExecutionResult, *event.ExecuteNotify, error) {
-	overlay := this.stateStore.NewOverlayDB()
-	cache := storage.NewCacheDB(overlay)
-
-	notify := &event.ExecuteNotify{State: event.CcntmRACT_STATE_FAIL, TxIndex: ctx.TxIndex}
-	result, _, err := this.stateStore.HandleEIP155Transaction(this, cache, tx, ctx, notify, false)
-	return result, notify, err
-}
-
-func (this *LedgerStoreImp) GetEthCode(hash common2.Hash) ([]byte, error) {
-	return this.stateStore.GetEthCode(hash)
-}
-
-func (this *LedgerStoreImp) GetEthState(address common2.Address, key common2.Hash) ([]byte, error) {
-	return this.stateStore.GetEthState(address, key)
-}
-
-func (this *LedgerStoreImp) GetEthAccount(address common2.Address) (*storage.EthAccount, error) {
-	return this.stateStore.GetEthAccount(address)
-}
-
-//PreExecuteCcntmract return the result of smart ccntmract execution without commit to store
-func (this *LedgerStoreImp) PreExecuteCcntmractWithParam(tx *types.Transaction, preParam PrexecuteParam) (*sstate.PreExecResult, error) {
+//PreExecuteContract return the result of smart contract execution without commit to store
+func (this *LedgerStoreImp) PreExecuteContractWithParam(tx *types.Transaction, preParam PrexecuteParam) (*sstate.PreExecResult, error) {
 	height := this.GetCurrentBlockHeight()
 	// use previous block time to make it predictable for easy test
 	blockTime := uint32(time.Now().Unix())
 	if header, err := this.GetHeaderByHeight(height); err == nil {
 		blockTime = header.Timestamp + 1
 	}
-	blockHash := this.GetBlockHash(height)
-	stf := &sstate.PreExecResult{State: event.CcntmRACT_STATE_FAIL, Gas: neovm.MIN_TRANSACTION_GAS, Result: nil}
+	stf := &sstate.PreExecResult{State: event.CCNTMRACT_STATE_FAIL, Gas: cntmvm.MIN_TRANSACTION_GAS, Result: nil}
 
-	if tx.IsEipTx() {
-		invoke := tx.Payload.(*payload.EIP155Code)
-		ctx := Eip155Ccntmext{
-			BlockHash: blockHash,
-			TxIndex:   0,
-			Height:    height,
-			Timestamp: blockTime,
-		}
-
-		result, notify, err := this.PreExecuteEIP155(invoke.EIPTx, ctx)
-		if err != nil {
-			return nil, err
-		}
-		stf.State = notify.State
-		stf.Notify = notify.Notify
-		stf.Result = result.ReturnData
-		stf.Gas = result.UsedGas
-		return stf, nil
-	}
-
-	sconfig := &smartccntmract.Config{
+	sconfig := &smartcontract.Config{
 		Time:      blockTime,
 		Height:    height + 1,
 		Tx:        tx,
@@ -1268,7 +1172,7 @@ func (this *LedgerStoreImp) PreExecuteCcntmractWithParam(tx *types.Transaction, 
 	overlay := this.stateStore.NewOverlayDB()
 	cache := storage.NewCacheDB(overlay)
 	gasTable := make(map[string]uint64)
-	neovm.GAS_TABLE.Range(func(k, value interface{}) bool {
+	cntmvm.GAS_TABLE.Range(func(k, value interface{}) bool {
 		key := k.(string)
 		val := value.(uint64)
 		if key == config.WASM_GAS_FACTOR && preParam.WasmFactor != 0 {
@@ -1280,20 +1184,20 @@ func (this *LedgerStoreImp) PreExecuteCcntmractWithParam(tx *types.Transaction, 
 		return true
 	})
 
-	if tx.TxType == types.InvokeNeo || tx.TxType == types.InvokeWasm {
+	if tx.TxType == types.InvokeCntm || tx.TxType == types.InvokeWasm {
 		invoke := tx.Payload.(*payload.InvokeCode)
 
-		sc := smartccntmract.SmartCcntmract{
+		sc := smartcontract.SmartContract{
 			Config:       sconfig,
 			Store:        this,
 			CacheDB:      cache,
 			GasTable:     gasTable,
-			Gas:          math.MaxUint64 - calcGasByCodeLen(len(invoke.Code), gasTable[neovm.UINT_INVOKE_CODE_LEN_NAME]),
+			Gas:          math.MaxUint64 - calcGasByCodeLen(len(invoke.Code), gasTable[cntmvm.UINT_INVOKE_CODE_LEN_NAME]),
 			WasmExecStep: config.DEFAULT_WASM_MAX_STEPCOUNT,
 			JitMode:      preParam.JitMode,
 			PreExec:      true,
 		}
-		//start the smart ccntmract executive function
+		//start the smart contract executive function
 		engine, _ := sc.NewExecuteEngine(invoke.Code, tx.TxType)
 
 		result, err := engine.Invoke()
@@ -1303,18 +1207,18 @@ func (this *LedgerStoreImp) PreExecuteCcntmractWithParam(tx *types.Transaction, 
 		gasCost := math.MaxUint64 - sc.Gas
 
 		if preParam.MinGas {
-			mixGas := neovm.MIN_TRANSACTION_GAS
+			mixGas := cntmvm.MIN_TRANSACTION_GAS
 			if gasCost < mixGas {
 				gasCost = mixGas
 			}
-			gasCost = tuneGasFeeByHeight(sconfig.Height, gasCost, neovm.MIN_TRANSACTION_GAS, math.MaxUint64)
+			gasCost = tuneGasFeeByHeight(sconfig.Height, gasCost, cntmvm.MIN_TRANSACTION_GAS, math.MaxUint64)
 		}
 
 		var cv interface{}
-		if tx.TxType == types.InvokeNeo { //neovm
+		if tx.TxType == types.InvokeCntm { //cntmvm
 			if result != nil {
 				val := result.(*types2.VmValue)
-				cv, err = val.ConvertNeoVmValueHexString()
+				cv, err = val.ConvertCntmVmValueHexString()
 				if err != nil {
 					return stf, err
 				}
@@ -1323,7 +1227,7 @@ func (this *LedgerStoreImp) PreExecuteCcntmractWithParam(tx *types.Transaction, 
 			cv = common.ToHexString(result.([]byte))
 		}
 
-		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_SUCCESS, Gas: gasCost, Result: cv, Notify: sc.Notifications}, nil
+		return &sstate.PreExecResult{State: event.CCNTMRACT_STATE_SUCCESS, Gas: gasCost, Result: cv, Notify: sc.Notifications}, nil
 	} else if tx.TxType == types.Deploy {
 		deploy := tx.Payload.(*payload.DeployCode)
 
@@ -1338,50 +1242,26 @@ func (this *LedgerStoreImp) PreExecuteCcntmractWithParam(tx *types.Transaction, 
 
 			if len(deploy.GetRawCode()) >= len(wasmMagicversion) {
 				if bytes.Compare(wasmMagicversion, deploy.GetRawCode()[:8]) == 0 {
-					return stf, errors.NewErr("this code is wasm binary. can not deployed as neo ccntmract")
+					return stf, errors.NewErr("this code is wasm binary. can not deployed as cntm contract")
 				}
 			}
 		}
 
-		return &sstate.PreExecResult{State: event.CcntmRACT_STATE_SUCCESS, Gas: gasTable[neovm.CcntmRACT_CREATE_NAME] + calcGasByCodeLen(len(deploy.GetRawCode()), gasTable[neovm.UINT_DEPLOY_CODE_LEN_NAME]), Result: nil}, nil
+		return &sstate.PreExecResult{State: event.CCNTMRACT_STATE_SUCCESS, Gas: gasTable[cntmvm.CCNTMRACT_CREATE_NAME] + calcGasByCodeLen(len(deploy.GetRawCode()), gasTable[cntmvm.UINT_DEPLOY_CODE_LEN_NAME]), Result: nil}, nil
 	} else {
 		return stf, errors.NewErr("transaction type error")
 	}
 }
 
-//PreExecuteCcntmract return the result of smart ccntmract execution without commit to store
-func (this *LedgerStoreImp) PreExecuteCcntmract(tx *types.Transaction) (*sstate.PreExecResult, error) {
+//PreExecuteContract return the result of smart contract execution without commit to store
+func (this *LedgerStoreImp) PreExecuteContract(tx *types.Transaction) (*sstate.PreExecResult, error) {
 	param := PrexecuteParam{
 		JitMode:    false,
 		WasmFactor: 0,
 		MinGas:     true,
 	}
 
-	return this.PreExecuteCcntmractWithParam(tx, param)
-}
-
-func (this *LedgerStoreImp) PreExecuteEip155Tx(msg types3.Message) (*types4.ExecutionResult, error) {
-	height := this.GetCurrentBlockHeight()
-	// use previous block time to make it predictable for easy test
-	blockTime := uint32(time.Now().Unix())
-	if header, err := this.GetHeaderByHeight(height); err == nil {
-		blockTime = header.Timestamp + 1
-	}
-	blockHash := this.GetBlockHash(height)
-	ctx := Eip155Ccntmext{
-		BlockHash: blockHash,
-		TxIndex:   0,
-		Height:    height,
-		Timestamp: blockTime,
-	}
-	config := params.GetChainConfig(sysconfig.DefConfig.P2PNode.EVMChainId)
-	txCcntmext := evm.NewEVMTxCcntmext(msg)
-	blockCcntmext := evm.NewEVMBlockCcntmext(height, blockTime, this)
-	cache := this.GetCacheDB()
-	statedb := storage.NewStateDB(cache, common2.Hash{}, common2.Hash(ctx.BlockHash), cntm.OngBalanceHandle{})
-	vmenv := evm2.NewEVM(blockCcntmext, txCcntmext, statedb, config, evm2.Config{})
-	res, err := evm.ApplyMessage(vmenv, msg, common2.Address(utils.GovernanceCcntmractAddress))
-	return res, err
+	return this.PreExecuteContractWithParam(tx, param)
 }
 
 //Close ledger store.
@@ -1405,41 +1285,4 @@ func (this *LedgerStoreImp) Close() error {
 		return fmt.Errorf("stateStore close error %s", err)
 	}
 	return nil
-}
-
-const minPruneBlocksBeforeCurr = 1000
-
-func (this *LedgerStoreImp) EnableBlockPrune(numBeforeCurr uint32) {
-	if numBeforeCurr < minPruneBlocksBeforeCurr {
-		numBeforeCurr = minPruneBlocksBeforeCurr
-	}
-	this.getSavingBlockLock()
-	defer this.releaseSavingBlockLock()
-
-	this.preserveBlockHistoryLength = numBeforeCurr
-}
-
-func (this *LedgerStoreImp) maxAllowedPruneHeight(currHeader *types.Header) uint32 {
-	if currHeader.Height <= config.GetCcntmractApiDeprecateHeight() {
-		return 0
-	}
-	info, err := vconfig.VbftBlock(currHeader)
-	if err != nil {
-		return 0
-	}
-	lastReferHeight := info.LastConfigBlockNum
-	if info.NewChainConfig != nil {
-		lastReferHeight = currHeader.Height
-	}
-
-	if lastReferHeight == 0 {
-		return 0
-	}
-	return lastReferHeight - 1
-}
-
-func (this *LedgerStoreImp) GetCacheDB() *storage.CacheDB {
-	overlay := this.stateStore.NewOverlayDB()
-	return storage.NewCacheDB(overlay)
-
 }

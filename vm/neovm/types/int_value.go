@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package types
@@ -23,9 +23,9 @@ import (
 	"math/big"
 
 	"github.com/JohnCGriffin/overflow"
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/vm/neovm/constants"
-	"github.com/cntmio/cntmology/vm/neovm/errors"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/vm/cntmvm/constants"
+	"github.com/conntectome/cntm/vm/cntmvm/errors"
 )
 
 type IntValue struct {
@@ -36,14 +36,14 @@ type IntValue struct {
 
 func (self IntValue) Rsh(other IntValue) (result IntValue, err error) {
 	var val uint64
-	if !other.isbig {
+	if other.isbig == false {
 		if other.integer < 0 {
 			err = errors.ERR_SHIFT_BY_NEG
 			return
 		}
 		val = uint64(other.integer)
 	} else {
-		if !other.bigint.IsUint64() {
+		if other.bigint.IsUint64() == false {
 			return IntValue{}, errors.ERR_SHIFT_BY_NEG
 		}
 		val = other.bigint.Uint64()
@@ -71,14 +71,14 @@ func (self IntValue) Rsh(other IntValue) (result IntValue, err error) {
 
 func (self IntValue) Lsh(other IntValue) (result IntValue, err error) {
 	var val uint64
-	if !other.isbig {
+	if other.isbig == false {
 		if other.integer < 0 {
 			err = errors.ERR_SHIFT_BY_NEG
 			return
 		}
 		val = uint64(other.integer)
 	} else {
-		if !other.bigint.IsUint64() {
+		if other.bigint.IsUint64() == false {
 			return IntValue{}, errors.ERR_SHIFT_BY_NEG
 		}
 		val = other.bigint.Uint64()
@@ -120,17 +120,17 @@ func IntValFromBigInt(val *big.Int) (result IntValue, err error) {
 	return
 }
 
-func IntValFromNeoBytes(val []byte) (IntValue, error) {
-	value := common.BigIntFromNeoBytes(val)
+func IntValFromCntmBytes(val []byte) (IntValue, error) {
+	value := common.BigIntFromCntmBytes(val)
 	return IntValFromBigInt(value)
 }
 
-func (self *IntValue) ToNeoBytes() []byte {
+func (self *IntValue) ToCntmBytes() []byte {
 	val := self.bigint
-	if !self.isbig {
+	if self.isbig == false {
 		val = big.NewInt(self.integer)
 	}
-	value := common.BigIntToNeoBytes(val)
+	value := common.BigIntToCntmBytes(val)
 	return value
 }
 
@@ -221,7 +221,7 @@ func (self IntValue) Or(other IntValue) (IntValue, error) {
 }
 
 func (self IntValue) Cmp(other IntValue) int {
-	if !self.isbig && !other.isbig {
+	if self.isbig == false && other.isbig == false {
 		if self.integer < other.integer {
 			return -1
 		} else if self.integer == other.integer {
@@ -231,12 +231,12 @@ func (self IntValue) Cmp(other IntValue) int {
 		}
 	}
 	var left, right *big.Int
-	if !self.isbig {
+	if self.isbig == false {
 		left = big.NewInt(self.integer)
 	} else {
 		left = self.bigint
 	}
-	if !other.isbig {
+	if other.isbig == false {
 		right = big.NewInt(other.integer)
 	} else {
 		right = other.bigint
@@ -321,19 +321,19 @@ type overflowFn func(a, b int64) (result int64, ok bool)
 type bigintFn func(a, b *big.Int) (IntValue, error)
 
 func (self IntValue) intOp(other IntValue, littleintFunc overflowFn, bigintFunc bigintFn) (IntValue, error) {
-	if !self.isbig && !other.isbig {
+	if self.isbig == false && other.isbig == false {
 		val, ok := littleintFunc(self.integer, other.integer)
 		if ok {
 			return IntValFromInt(val), nil
 		}
 	}
 	var left, right *big.Int
-	if !self.isbig {
+	if self.isbig == false {
 		left = big.NewInt(self.integer)
 	} else {
 		left = self.bigint
 	}
-	if !other.isbig {
+	if other.isbig == false {
 		right = big.NewInt(other.integer)
 	} else {
 		right = other.bigint

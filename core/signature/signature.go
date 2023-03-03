@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package signature
@@ -21,8 +21,8 @@ package signature
 import (
 	"errors"
 
-	"github.com/cntmio/cntmology-crypto/keypair"
-	s "github.com/cntmio/cntmology-crypto/signature"
+	"github.com/conntectome/cntm-crypto/keypair"
+	s "github.com/conntectome/cntm-crypto/signature"
 )
 
 // Sign returns the signature of data using privKey
@@ -67,7 +67,7 @@ func VerifyMultiSignature(data []byte, keys []keypair.PublicKey, m int, sigs [][
 		}
 		for j := 0; j < n; j++ {
 			if mask[j] {
-				ccntminue
+				continue
 			}
 			if s.Verify(keys[j], data, sig) {
 				mask[j] = true
@@ -76,7 +76,7 @@ func VerifyMultiSignature(data []byte, keys []keypair.PublicKey, m int, sigs [][
 			}
 		}
 
-		if !valid {
+		if valid == false {
 			return errors.New("multi-signature verification failed")
 		}
 	}

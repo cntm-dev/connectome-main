@@ -1,22 +1,22 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package neovm
+package cntmvm
 
 import (
 	"crypto/rand"
@@ -26,8 +26,8 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/vm/neovm/types"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/vm/cntmvm/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,16 +42,16 @@ func randInt64() *big.Int {
 func genBBInt() (*big.Int, *big.Int) {
 	buf := make([]byte, 32)
 	_, _ = rand.Read(buf)
-	left := common.BigIntFromNeoBytes(buf)
+	left := common.BigIntFromCntmBytes(buf)
 	_, _ = rand.Read(buf)
-	right := common.BigIntFromNeoBytes(buf)
+	right := common.BigIntFromCntmBytes(buf)
 	return left, right
 }
 
 func genBLInt() (*big.Int, *big.Int) {
 	buf := make([]byte, 32)
 	_, _ = rand.Read(buf)
-	left := common.BigIntFromNeoBytes(buf)
+	left := common.BigIntFromCntmBytes(buf)
 	right := randInt64()
 	return left, right
 }
@@ -97,13 +97,13 @@ func compareIntOp(t *testing.T, func1, func2 IntOp) {
 func TestIntValue_Abs(t *testing.T) {
 	compareIntOp(t, func(left, right *big.Int) ([]byte, error) {
 		abs := big.NewInt(0).Abs(left)
-		return common.BigIntToNeoBytes(abs), nil
+		return common.BigIntToCntmBytes(abs), nil
 	}, func(left, right *big.Int) ([]byte, error) {
 		val, err := types.IntValFromBigInt(left)
 		assert.Nil(t, err)
 		val = val.Abs()
 
-		return val.ToNeoBytes(), nil
+		return val.ToCntmBytes(), nil
 	})
 }
 
@@ -154,7 +154,7 @@ func compareFuncIntValue(left, right *big.Int, opcode OpCode) ([]byte, error) {
 	case MAX:
 		val, err = lhs.Max(rhs)
 	}
-	return val.ToNeoBytes(), err
+	return val.ToCntmBytes(), err
 }
 
 func compareFuncBigInt(left, right *big.Int, opcode OpCode) ([]byte, error) {
@@ -173,14 +173,14 @@ func compareFuncBigInt(left, right *big.Int, opcode OpCode) ([]byte, error) {
 		}
 	}
 	nb := BigIntZip(left, right, opcode)
-	return common.BigIntToNeoBytes(nb), nil
+	return common.BigIntToCntmBytes(nb), nil
 }
 
 func CheckBigInteger(value *big.Int) bool {
 	if value == nil {
 		return false
 	}
-	if len(common.BigIntToNeoBytes(value)) > MAX_SIZE_FOR_BIGINTEGER {
+	if len(common.BigIntToCntmBytes(value)) > MAX_SIZE_FOR_BIGINTEGER {
 		return false
 	}
 	return true
@@ -216,9 +216,9 @@ func TestCmp(t *testing.T) {
 	assert.Equal(t, val_a.Not(), res)
 }
 
-func TestIntValFromNeoBytes(t *testing.T) {
-	bs := common.BigIntToNeoBytes(new(big.Int).SetUint64(math.MaxUint64))
-	val, err := types.IntValFromNeoBytes(bs)
+func TestIntValFromCntmBytes(t *testing.T) {
+	bs := common.BigIntToCntmBytes(new(big.Int).SetUint64(math.MaxUint64))
+	val, err := types.IntValFromCntmBytes(bs)
 	assert.Nil(t, err)
 	val2, err := types.IntValFromBigInt(new(big.Int).SetUint64(math.MaxUint64))
 	assert.Nil(t, err)

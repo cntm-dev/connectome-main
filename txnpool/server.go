@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 // Package txnpool provides a function to start micro service txPool for
@@ -23,12 +23,12 @@ package txnpool
 import (
 	"fmt"
 
-	"github.com/cntmio/cntmology-eventbus/actor"
-	"github.com/cntmio/cntmology-eventbus/mailbox"
-	"github.com/cntmio/cntmology/events"
-	"github.com/cntmio/cntmology/events/message"
-	tc "github.com/cntmio/cntmology/txnpool/common"
-	tp "github.com/cntmio/cntmology/txnpool/proc"
+	"github.com/conntectome/cntm-eventbus/actor"
+	"github.com/conntectome/cntm-eventbus/mailbox"
+	"github.com/conntectome/cntm/events"
+	"github.com/conntectome/cntm/events/message"
+	tc "github.com/conntectome/cntm/txnpool/common"
+	tp "github.com/conntectome/cntm/txnpool/proc"
 )
 
 // startActor starts an actor with the proxy and unique id,
@@ -53,8 +53,18 @@ func startActor(obj interface{}, id string) (*actor.PID, error) {
 func StartTxnPoolServer(disablePreExec, disableBroadcastNetTx bool) (*tp.TXPoolServer, error) {
 	var s *tp.TXPoolServer
 
-	// Start txnpool server to receive msgs from p2p, consensus and valdiators
-	s = tp.NewTxPoolServer(disablePreExec, disableBroadcastNetTx)
+	/* Start txnpool server to receive msgs from p2p,
+	 * consensus and valdiators
+	 */
+	s = tp.NewTxPoolServer(tc.MAX_WORKER_NUM, disablePreExec, disableBroadcastNetTx)
+
+	// Initialize an actor to handle the msgs from valdiators
+	rspActor := tp.NewVerifyRspActor(s)
+	rspPid, err := startActor(rspActor, "txVerifyRsp")
+	if rspPid == nil {
+		return nil, err
+	}
+	s.RegisterActor(tc.VerifyRspActor, rspPid)
 
 	// Initialize an actor to handle the msgs from consensus
 	tpa := tp.NewTxPoolActor(s)
@@ -62,7 +72,15 @@ func StartTxnPoolServer(disablePreExec, disableBroadcastNetTx bool) (*tp.TXPoolS
 	if txPoolPid == nil {
 		return nil, err
 	}
-	s.RegisterActor(txPoolPid)
+	s.RegisterActor(tc.TxPoolActor, txPoolPid)
+
+	// Initialize an actor to handle the msgs from p2p and api
+	ta := tp.NewTxActor(s)
+	txPid, err := startActor(ta, "tx")
+	if txPid == nil {
+		return nil, err
+	}
+	s.RegisterActor(tc.TxActor, txPid)
 
 	// Subscribe the block complete event
 	var sub = events.NewActorSubscriber(txPoolPid)

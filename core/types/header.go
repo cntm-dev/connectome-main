@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package types
@@ -22,8 +22,8 @@ import (
 	"crypto/sha256"
 	"io"
 
-	"github.com/cntmio/cntmology-crypto/keypair"
-	"github.com/cntmio/cntmology/common"
+	"github.com/conntectome/cntm-crypto/keypair"
+	"github.com/conntectome/cntm/common"
 )
 
 type RawHeader struct {
@@ -93,10 +93,6 @@ func (self *RawHeader) deserializationUnsigned(source *common.ZeroCopySource) er
 	source.Skip(8)
 	// ConsensusPayload
 	_, _, irregular, eof := source.NextVarBytes()
-	if eof {
-		return io.ErrUnexpectedEOF
-	}
-
 	if irregular {
 		return common.ErrIrregularData
 	}
@@ -228,43 +224,14 @@ func (bd *Header) deserializationUnsigned(source *common.ZeroCopySource) error {
 	var irregular, eof bool
 
 	bd.Version, eof = source.NextUint32()
-	if eof {
-		return io.ErrUnexpectedEOF
-	}
 	bd.PrevBlockHash, eof = source.NextHash()
-	if eof {
-		return io.ErrUnexpectedEOF
-	}
 	bd.TransactionsRoot, eof = source.NextHash()
-	if eof {
-		return io.ErrUnexpectedEOF
-	}
-
 	bd.BlockRoot, eof = source.NextHash()
-	if eof {
-		return io.ErrUnexpectedEOF
-	}
-
 	bd.Timestamp, eof = source.NextUint32()
-	if eof {
-		return io.ErrUnexpectedEOF
-	}
-
 	bd.Height, eof = source.NextUint32()
-	if eof {
-		return io.ErrUnexpectedEOF
-	}
-
 	bd.ConsensusData, eof = source.NextUint64()
-	if eof {
-		return io.ErrUnexpectedEOF
-	}
 
 	bd.ConsensusPayload, _, irregular, eof = source.NextVarBytes()
-	if eof {
-		return io.ErrUnexpectedEOF
-	}
-
 	if irregular {
 		return common.ErrIrregularData
 	}

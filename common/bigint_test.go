@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package common
@@ -39,12 +39,12 @@ func TestBigIntFromBytes(t *testing.T) {
 	}
 	for _, cs := range cases {
 		buf, _ := hex.DecodeString(cs)
-		v := BigIntFromNeoBytes(buf)
-		buf2 := BigIntToNeoBytes(v)
-		v2 := BigIntFromNeoBytes(buf2)
+		v := BigIntFromCntmBytes(buf)
+		buf2 := BigIntToCntmBytes(v)
+		v2 := BigIntFromCntmBytes(buf2)
 
 		assert.Equal(t, v.Cmp(v2), 0, fmt.Sprintf("message:%d, %d, %x", v, v2, buf))
-		assert.Equal(t, bytes.Equal(simplifyNeoBytes(buf), buf2), true)
+		assert.Equal(t, bytes.Equal(simplifyCntmBytes(buf), buf2), true)
 	}
 }
 
@@ -64,7 +64,7 @@ func TestBigInt(t *testing.T) {
 	for _, cs := range cases {
 		v, b := big.NewInt(0).SetString(cs[0], 10)
 		assert.True(t, b)
-		buf := BigIntToNeoBytes(v)
+		buf := BigIntToCntmBytes(v)
 		orig, _ := hex.DecodeString(cs[1])
 
 		assert.Equal(t, string(buf), string(orig))
@@ -78,12 +78,12 @@ func TestRandBigIntFromBytes(t *testing.T) {
 		buf := make([]byte, length)
 		_, _ = crand.Read(buf)
 
-		v := BigIntFromNeoBytes(buf)
-		buf2 := BigIntToNeoBytes(v)
-		v2 := BigIntFromNeoBytes(buf2)
+		v := BigIntFromCntmBytes(buf)
+		buf2 := BigIntToCntmBytes(v)
+		v2 := BigIntFromCntmBytes(buf2)
 
 		assert.Equal(t, v.Cmp(v2), 0, fmt.Sprintf("message:%d, %d, %x", v, v2, buf))
-		assert.Equal(t, bytes.Equal(simplifyNeoBytes(buf), buf2), true, fmt.Sprintf("buff: %x, %x", buf, buf2))
+		assert.Equal(t, bytes.Equal(simplifyCntmBytes(buf), buf2), true, fmt.Sprintf("buff: %x, %x", buf, buf2))
 	}
 }
 
@@ -125,7 +125,7 @@ func trim00(buf []byte) []byte {
 	return buf
 }
 
-func simplifyNeoBytes(buf []byte) []byte {
+func simplifyCntmBytes(buf []byte) []byte {
 	if len(buf) <= 1 {
 		if bytes.Equal(buf, []byte{0}) {
 			return nil
@@ -146,16 +146,16 @@ func simplifyNeoBytes(buf []byte) []byte {
 	return buf
 }
 
-func TestSimplifyNeoBytes(t *testing.T) {
-	assert.Equal(t, simplifyNeoBytes([]byte{255}), []byte{255})
-	assert.Equal(t, simplifyNeoBytes([]byte{1, 2, 255}), []byte{1, 2, 255})
-	assert.Equal(t, simplifyNeoBytes([]byte{1, 2, 255, 255}), []byte{1, 2, 255})
-	assert.Equal(t, simplifyNeoBytes([]byte{1, 2, 255, 255, 255}), []byte{1, 2, 255})
-	assert.Equal(t, simplifyNeoBytes([]byte{1, 128, 255, 255, 255}), []byte{1, 128})
+func TestSimplifyCntmBytes(t *testing.T) {
+	assert.Equal(t, simplifyCntmBytes([]byte{255}), []byte{255})
+	assert.Equal(t, simplifyCntmBytes([]byte{1, 2, 255}), []byte{1, 2, 255})
+	assert.Equal(t, simplifyCntmBytes([]byte{1, 2, 255, 255}), []byte{1, 2, 255})
+	assert.Equal(t, simplifyCntmBytes([]byte{1, 2, 255, 255, 255}), []byte{1, 2, 255})
+	assert.Equal(t, simplifyCntmBytes([]byte{1, 128, 255, 255, 255}), []byte{1, 128})
 
-	assert.Equal(t, simplifyNeoBytes([]byte{0, 0, 0}), []byte(nil))
-	assert.Equal(t, simplifyNeoBytes([]byte{0, 1, 0}), []byte{0, 1})
-	assert.Equal(t, simplifyNeoBytes([]byte{0, 234, 0}), []byte{0, 234, 0})
-	assert.Equal(t, simplifyNeoBytes([]byte{0, 234, 0, 0}), []byte{0, 234, 0})
+	assert.Equal(t, simplifyCntmBytes([]byte{0, 0, 0}), []byte(nil))
+	assert.Equal(t, simplifyCntmBytes([]byte{0, 1, 0}), []byte{0, 1})
+	assert.Equal(t, simplifyCntmBytes([]byte{0, 234, 0}), []byte{0, 234, 0})
+	assert.Equal(t, simplifyCntmBytes([]byte{0, 234, 0, 0}), []byte{0, 234, 0})
 
 }

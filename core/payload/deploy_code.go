@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package payload
@@ -22,14 +22,14 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/errors"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/errors"
 )
 
 type VmType byte
 
 const (
-	NEOVM_TYPE  VmType = 1
+	CNTMVM_TYPE  VmType = 1
 	WASMVM_TYPE VmType = 3
 )
 
@@ -42,10 +42,10 @@ func VmTypeFromByte(ty byte) (VmType, error) {
 	}
 }
 
-// DeployCode is an implementation of transaction payload for deploy smartccntmract
+// DeployCode is an implementation of transaction payload for deploy smartcontract
 type DeployCode struct {
 	code []byte
-	//0, 1 means NEOVM_TYPE, 3 means WASMVM_TYPE
+	//0, 1 means CNTMVM_TYPE, 3 means WASMVM_TYPE
 	vmFlags     byte
 	Name        string
 	Version     string
@@ -88,15 +88,15 @@ func (dc *DeployCode) GetWasmCode() ([]byte, error) {
 	if dc.VmType() == WASMVM_TYPE {
 		return dc.code, nil
 	} else {
-		return nil, errors.NewErr("not wasm ccntmract")
+		return nil, errors.NewErr("not wasm contract")
 	}
 }
 
-func (dc *DeployCode) GetNeoCode() ([]byte, error) {
-	if dc.VmType() == NEOVM_TYPE {
+func (dc *DeployCode) GetCntmCode() ([]byte, error) {
+	if dc.VmType() == CNTMVM_TYPE {
 		return dc.code, nil
 	} else {
-		return nil, errors.NewErr("not neo ccntmract")
+		return nil, errors.NewErr("not cntm contract")
 	}
 }
 
@@ -112,7 +112,7 @@ func checkVmFlags(vmFlags byte) error {
 func (dc *DeployCode) VmType() VmType {
 	switch dc.vmFlags {
 	case 0, 1:
-		return NEOVM_TYPE
+		return CNTMVM_TYPE
 	case 3:
 		return WASMVM_TYPE
 	default:
@@ -140,51 +140,27 @@ func (dc *DeployCode) Serialization(sink *common.ZeroCopySink) {
 func (dc *DeployCode) Deserialization(source *common.ZeroCopySource) error {
 	var eof, irregular bool
 	dc.code, _, irregular, eof = source.NextVarBytes()
-	if eof {
-		return io.ErrUnexpectedEOF
-	}
-
 	if irregular {
 		return common.ErrIrregularData
 	}
 
 	dc.vmFlags, eof = source.NextByte()
-	if eof {
-		return io.ErrUnexpectedEOF
-	}
-
 	dc.Name, _, irregular, eof = source.NextString()
-	if eof {
-		return io.ErrUnexpectedEOF
-	}
-
 	if irregular {
 		return common.ErrIrregularData
 	}
 
 	dc.Version, _, irregular, eof = source.NextString()
-	if eof {
-		return io.ErrUnexpectedEOF
-	}
-
 	if irregular {
 		return common.ErrIrregularData
 	}
 
 	dc.Author, _, irregular, eof = source.NextString()
-	if eof {
-		return io.ErrUnexpectedEOF
-	}
-
 	if irregular {
 		return common.ErrIrregularData
 	}
 
 	dc.Email, _, irregular, eof = source.NextString()
-	if eof {
-		return io.ErrUnexpectedEOF
-	}
-
 	if irregular {
 		return common.ErrIrregularData
 	}
@@ -216,32 +192,32 @@ func validateDeployCode(dep *DeployCode) error {
 
 	if dep.VmType() == WASMVM_TYPE {
 		if len(dep.code) > maxWasmCodeSize {
-			return errors.NewErr("[ccntmract] Code too lcntm!")
+			return errors.NewErr("[contract] Code too long!")
 		}
 	} else {
 		if len(dep.code) > 1024*1024 {
-			return errors.NewErr("[ccntmract] Code too lcntm!")
+			return errors.NewErr("[contract] Code too long!")
 		}
 	}
 
 	if len(dep.Name) > 252 {
-		return errors.NewErr("[ccntmract] name too lcntm!")
+		return errors.NewErr("[contract] name too long!")
 	}
 
 	if len(dep.Version) > 252 {
-		return errors.NewErr("[ccntmract] version too lcntm!")
+		return errors.NewErr("[contract] version too long!")
 	}
 
 	if len(dep.Author) > 252 {
-		return errors.NewErr("[ccntmract] version too lcntm!")
+		return errors.NewErr("[contract] version too long!")
 	}
 
 	if len(dep.Email) > 252 {
-		return errors.NewErr("[ccntmract] email too lcntm!")
+		return errors.NewErr("[contract] email too long!")
 	}
 
 	if len(dep.Description) > 65536 {
-		return errors.NewErr("[ccntmract] description too lcntm!")
+		return errors.NewErr("[contract] description too long!")
 	}
 
 	return nil
@@ -255,10 +231,10 @@ func CreateDeployCode(code []byte,
 	email []byte,
 	desc []byte) (*DeployCode, error) {
 	if vmType > 255 {
-		return nil, fmt.Errorf("wrcntm vm flags: %d", vmType)
+		return nil, fmt.Errorf("wrong vm flags: %d", vmType)
 	}
 
-	ccntmract := &DeployCode{
+	contract := &DeployCode{
 		code:        code,
 		vmFlags:     byte(vmType),
 		Name:        string(name),
@@ -268,9 +244,9 @@ func CreateDeployCode(code []byte,
 		Description: string(desc),
 	}
 
-	err := validateDeployCode(ccntmract)
+	err := validateDeployCode(contract)
 	if err != nil {
 		return nil, err
 	}
-	return ccntmract, nil
+	return contract, nil
 }

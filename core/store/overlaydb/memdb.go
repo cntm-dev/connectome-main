@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 // this implementation is based on goleveldb "https://github.com/syndtr/goleveldb"
@@ -200,21 +200,6 @@ type MemDB struct {
 	kvSize    int
 }
 
-func (self *MemDB) DeepClone() *MemDB {
-	cloned := &MemDB{
-		cmp:       self.cmp,
-		rnd:       self.rnd,
-		kvData:    append([]byte{}, self.kvData...),
-		nodeData:  append([]int{}, self.nodeData...),
-		prevNode:  self.prevNode,
-		maxHeight: self.maxHeight,
-		n:         self.n,
-		kvSize:    self.kvSize,
-	}
-
-	return cloned
-}
-
 func (p *MemDB) randHeight() (h int) {
 	const branching = 4
 	h = 1
@@ -290,7 +275,7 @@ func (p *MemDB) findLast() int {
 // Put sets the value for the given key. It overwrites any previous value
 // for that key; a MemDB is not a multi-map.
 //
-// It is safe to modify the ccntments of the arguments after Put returns.
+// It is safe to modify the contents of the arguments after Put returns.
 func (p *MemDB) Put(key []byte, value []byte) {
 	if node, exact := p.findGE(key, true); exact {
 		if len(value) != 0 {
@@ -331,16 +316,16 @@ func (p *MemDB) Put(key []byte, value []byte) {
 
 // Delete deletes the value for the given key.
 //
-// It is safe to modify the ccntments of the arguments after Delete returns.
+// It is safe to modify the contents of the arguments after Delete returns.
 func (p *MemDB) Delete(key []byte) {
 	p.Put(key, nil)
 }
 
 // Get gets the value for the given key. It returns unkown == true if the
-// MemDB does not ccntmain the key. It returns nil, false if MemDB has deleted the key
+// MemDB does not contain the key. It returns nil, false if MemDB has deleted the key
 //
-// The caller should not modify the ccntments of the returned slice, but
-// it is safe to modify the ccntments of the argument after Get returns.
+// The caller should not modify the contents of the returned slice, but
+// it is safe to modify the contents of the argument after Get returns.
 func (p *MemDB) Get(key []byte) (value []byte, unkown bool) {
 	if node, exact := p.findGE(key, false); exact {
 		valen := p.nodeData[node+nVal]
@@ -355,11 +340,11 @@ func (p *MemDB) Get(key []byte) (value []byte, unkown bool) {
 }
 
 // Find finds key/value pair whose key is greater than or equal to the
-// given key. It returns ErrNotFound if the table doesn't ccntmain
+// given key. It returns ErrNotFound if the table doesn't contain
 // such pair.
 //
-// The caller should not modify the ccntments of the returned slice, but
-// it is safe to modify the ccntments of the argument after Find returns.
+// The caller should not modify the contents of the returned slice, but
+// it is safe to modify the contents of the argument after Find returns.
 func (p *MemDB) Find(key []byte) (rkey, value []byte, err error) {
 	if node, _ := p.findGE(key, false); node != 0 {
 		n := p.nodeData[node]
@@ -393,7 +378,7 @@ func (p *MemDB) ForEach(f func(key, val []byte)) {
 // underlying MemDB. However, the resultant key/value pairs are not guaranteed
 // to be a consistent snapshot of the MemDB at a particular point in time.
 //
-// Slice allows slicing the iterator to only ccntmains keys in the given
+// Slice allows slicing the iterator to only contains keys in the given
 // range. A nil Range.Start is treated as a key before all keys in the
 // MemDB. And a nil Range.Limit is treated as a key after all keys in
 // the MemDB.

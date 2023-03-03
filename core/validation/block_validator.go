@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package validation
@@ -22,10 +22,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/cntmio/cntmology/core/ledger"
-	"github.com/cntmio/cntmology/core/signature"
-	"github.com/cntmio/cntmology/core/types"
-	cntmErrors "github.com/cntmio/cntmology/errors"
+	"github.com/conntectome/cntm/core/ledger"
+	"github.com/conntectome/cntm/core/signature"
+	"github.com/conntectome/cntm/core/types"
+	ontErrors "github.com/conntectome/cntm/errors"
 )
 
 // VerifyBlock checks whether the block is valid
@@ -65,12 +65,12 @@ func VerifyBlock(block *types.Block, ld *ledger.Ledger, completely bool) error {
 			}
 		*/
 		for _, txVerify := range block.Transactions {
-			if errCode := VerifyTransaction(txVerify); errCode != cntmErrors.ErrNoError {
-				return errors.New("VerifyTransaction failed when verifiy block")
+			if errCode := VerifyTransaction(txVerify); errCode != ontErrors.ErrNoError {
+				return errors.New(fmt.Sprintf("VerifyTransaction failed when verifiy block"))
 			}
 
-			if errCode := VerifyTransactionWithLedger(txVerify, ld); errCode != cntmErrors.ErrNoError {
-				return errors.New("VerifyTransaction failed when verifiy block")
+			if errCode := VerifyTransactionWithLedger(txVerify, ld); errCode != ontErrors.ErrNoError {
+				return errors.New(fmt.Sprintf("VerifyTransaction failed when verifiy block"))
 			}
 		}
 	}

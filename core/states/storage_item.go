@@ -1,28 +1,28 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package states
 
 import (
-	"bytes"
 	"io"
 
-	"github.com/cntmio/cntmology/common/serialization"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/errors"
 )
 
 type StorageItem struct {
@@ -30,37 +30,34 @@ type StorageItem struct {
 	Value []byte
 }
 
-func (this *StorageItem) Serialize(w io.Writer) error {
-	this.StateBase.Serialize(w)
-	serialization.WriteVarBytes(w, this.Value)
-	return nil
+func (this *StorageItem) Serialization(sink *common.ZeroCopySink) {
+	this.StateBase.Serialization(sink)
+	sink.WriteVarBytes(this.Value)
 }
 
-func (this *StorageItem) Deserialize(r io.Reader) error {
-	if this == nil {
-		this = new(StorageItem)
-	}
-	err := this.StateBase.Deserialize(r)
+func (this *StorageItem) Deserialization(source *common.ZeroCopySource) error {
+	err := this.StateBase.Deserialization(source)
 	if err != nil {
-		return err
+		return errors.NewDetailErr(err, errors.ErrNoCode, "[StorageItem], StateBase Deserialize failed.")
 	}
-	value, err := serialization.ReadVarBytes(r)
-	if err != nil {
-		return err
+	value, _, irregular, eof := source.NextVarBytes()
+	if irregular {
+		return errors.NewDetailErr(common.ErrIrregularData, errors.ErrNoCode, "[StorageItem], Value Deserialize failed.")
+	}
+	if eof {
+		return errors.NewDetailErr(io.ErrUnexpectedEOF, errors.ErrNoCode, "[StorageItem], Value Deserialize failed.")
 	}
 	this.Value = value
 	return nil
 }
 
 func (storageItem *StorageItem) ToArray() []byte {
-	b := new(bytes.Buffer)
-	storageItem.Serialize(b)
-	return b.Bytes()
+	return common.SerializeToBytes(storageItem)
 }
 
 func GetValueFromRawStorageItem(raw []byte) ([]byte, error) {
 	item := StorageItem{}
-	err := item.Deserialize(bytes.NewBuffer(raw))
+	err := item.Deserialization(common.NewZeroCopySource(raw))
 	if err != nil {
 		return nil, err
 	}

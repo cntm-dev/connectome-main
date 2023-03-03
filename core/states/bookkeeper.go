@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package states
@@ -21,8 +21,8 @@ package states
 import (
 	"io"
 
-	"github.com/cntmio/cntmology-crypto/keypair"
-	"github.com/cntmio/cntmology/common"
+	"github.com/conntectome/cntm-crypto/keypair"
+	"github.com/conntectome/cntm/common"
 )
 
 type BookkeeperState struct {
@@ -31,65 +31,64 @@ type BookkeeperState struct {
 	NextBookkeeper []keypair.PublicKey
 }
 
-func (this *BookkeeperState) Serialize(w io.Writer) error {
-	this.StateBase.Serialize(w)
-	serialization.WriteUint32(w, uint32(len(this.CurrBookkeeper)))
+func (this *BookkeeperState) Serialization(sink *common.ZeroCopySink) {
+	this.StateBase.Serialization(sink)
+	sink.WriteUint32(uint32(len(this.CurrBookkeeper)))
 	for _, v := range this.CurrBookkeeper {
 		buf := keypair.SerializePublicKey(v)
-		err := serialization.WriteVarBytes(w, buf)
-		if err != nil {
-			return err
-		}
+		sink.WriteVarBytes(buf)
 	}
-	serialization.WriteUint32(w, uint32(len(this.NextBookkeeper)))
+	sink.WriteUint32(uint32(len(this.NextBookkeeper)))
 	for _, v := range this.NextBookkeeper {
 		buf := keypair.SerializePublicKey(v)
-		err := serialization.WriteVarBytes(w, buf)
-		if err != nil {
-			return err
-		}
+		sink.WriteVarBytes(buf)
 	}
-	return nil
 }
 
-func (this *BookkeeperState) Deserialize(r io.Reader) error {
-	if this == nil {
-		this = new(BookkeeperState)
-	}
-	err := this.StateBase.Deserialize(r)
+func (this *BookkeeperState) Deserialization(source *common.ZeroCopySource) error {
+	err := this.StateBase.Deserialization(source)
 	if err != nil {
 		return err
 	}
-	n, err := serialization.ReadUint32(r)
-	if err != nil {
-		return err
+	n, eof := source.NextUint32()
+	if eof {
+		return io.ErrUnexpectedEOF
 	}
 	for i := 0; i < int(n); i++ {
-		buf, err := serialization.ReadVarBytes(r)
+		buf, _, irregular, eof := source.NextVarBytes()
+		if irregular {
+			return common.ErrIrregularData
+		}
+		if eof {
+			return io.ErrUnexpectedEOF
+		}
+		key, err := keypair.DeserializePublicKey(buf)
 		if err != nil {
 			return err
 		}
-		key, err := keypair.DeserializePublicKey(buf)
 		this.CurrBookkeeper = append(this.CurrBookkeeper, key)
 	}
-
-	n, err = serialization.ReadUint32(r)
-	if err != nil {
-		return err
+	n, eof = source.NextUint32()
+	if eof {
+		return io.ErrUnexpectedEOF
 	}
 	for i := 0; i < int(n); i++ {
-		buf, err := serialization.ReadVarBytes(r)
+		buf, _, irregular, eof := source.NextVarBytes()
+		if irregular {
+			return common.ErrIrregularData
+		}
+		if eof {
+			return io.ErrUnexpectedEOF
+		}
+		key, err := keypair.DeserializePublicKey(buf)
 		if err != nil {
 			return err
 		}
-		key, err := keypair.DeserializePublicKey(buf)
 		this.NextBookkeeper = append(this.NextBookkeeper, key)
 	}
 	return nil
 }
 
 func (v *BookkeeperState) ToArray() []byte {
-	b := new(bytes.Buffer)
-	v.Serialize(b)
-	return b.Bytes()
+	return common.SerializeToBytes(v)
 }

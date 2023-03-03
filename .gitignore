@@ -10,7 +10,6 @@ wsl/*
 *.patch
 .idea/
 Debug/
-GoOnchain.iml
 .log
 .DS_Store
 *.orig
@@ -18,12 +17,10 @@ GoOnchain.iml
 *.tlog
 vendor/*
 .vs/
-!vendor/github.com/cntmio/cntmology-crypto/*
 Chain/*
 Chain
 /config/*
 nodectl
-cntmology
 wallet.dat
 cscope*
 *.exe

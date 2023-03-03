@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package errors
@@ -40,19 +40,19 @@ func NewDetailErr(err error, errcode ErrCode, errmsg string) DetailError {
 		return nil
 	}
 
-	cntmerr, ok := err.(cntmError)
+	onterr, ok := err.(ontError)
 	if !ok {
-		cntmerr.root = err
-		cntmerr.errmsg = err.Error()
-		cntmerr.callstack = getCallStack(0, callStackDepth)
-		cntmerr.code = errcode
+		onterr.root = err
+		onterr.errmsg = err.Error()
+		onterr.callstack = getCallStack(0, callStackDepth)
+		onterr.code = errcode
 
 	}
 	if errmsg != "" {
-		cntmerr.errmsg = errmsg + ": " + cntmerr.errmsg
+		onterr.errmsg = errmsg + ": " + onterr.errmsg
 	}
 
-	return cntmerr
+	return onterr
 }
 
 func RootErr(err error) error {

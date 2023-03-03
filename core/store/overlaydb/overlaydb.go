@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package overlaydb
@@ -21,8 +21,8 @@ package overlaydb
 import (
 	"crypto/sha256"
 
-	comm "github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/core/store/common"
+	comm "github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/core/store/common"
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
@@ -58,7 +58,7 @@ func (self *OverlayDB) SetError(err error) {
 func (self *OverlayDB) Get(key []byte) (value []byte, err error) {
 	var unknown bool
 	value, unknown = self.memdb.Get(key)
-	if !unknown {
+	if unknown == false {
 		return value, nil
 	}
 

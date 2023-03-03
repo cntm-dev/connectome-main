@@ -1,36 +1,32 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package store
 
 import (
-	common2 "github.com/ethereum/go-ethereum/common"
-	types2 "github.com/ethereum/go-ethereum/core/types"
-	"github.com/cntmio/cntmology-crypto/keypair"
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/core/payload"
-	"github.com/cntmio/cntmology/core/states"
-	"github.com/cntmio/cntmology/core/store/overlaydb"
-	"github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology/smartccntmract/event"
-	types3 "github.com/cntmio/cntmology/smartccntmract/service/evm/types"
-	cstates "github.com/cntmio/cntmology/smartccntmract/states"
-	"github.com/cntmio/cntmology/smartccntmract/storage"
+	"github.com/conntectome/cntm-crypto/keypair"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/core/payload"
+	"github.com/conntectome/cntm/core/states"
+	"github.com/conntectome/cntm/core/store/overlaydb"
+	"github.com/conntectome/cntm/core/types"
+	"github.com/conntectome/cntm/smartcontract/event"
+	cstates "github.com/conntectome/cntm/smartcontract/states"
 )
 
 type ExecuteResult struct {
@@ -62,15 +58,20 @@ type LedgerStore interface {
 	GetBlockByHash(blockHash common.Uint256) (*types.Block, error)
 	GetBlockByHeight(height uint32) (*types.Block, error)
 	GetTransaction(txHash common.Uint256) (*types.Transaction, uint32, error)
-	IsCcntmainBlock(blockHash common.Uint256) (bool, error)
-	IsCcntmainTransaction(txHash common.Uint256) (bool, error)
+	IsContainBlock(blockHash common.Uint256) (bool, error)
+	IsContainTransaction(txHash common.Uint256) (bool, error)
 	GetBlockRootWithNewTxRoots(startHeight uint32, txRoots []common.Uint256) common.Uint256
 	GetMerkleProof(m, n uint32) ([]common.Uint256, error)
-	GetCcntmractState(ccntmractHash common.Address) (*payload.DeployCode, error)
+	GetContractState(contractHash common.Address) (*payload.DeployCode, error)
 	GetBookkeeperState() (*states.BookkeeperState, error)
 	GetStorageItem(key *states.StorageKey) (*states.StorageItem, error)
-	FindStorageItem(key *states.StorageKey) ([]*states.StorageItem, error)
-	PreExecuteCcntmract(tx *types.Transaction) (interface{}, error)
+	PreExecuteContract(tx *types.Transaction) (*cstates.PreExecResult, error)
+	PreExecuteContractBatch(txes []*types.Transaction, atomic bool) ([]*cstates.PreExecResult, uint32, error)
 	GetEventNotifyByTx(tx common.Uint256) (*event.ExecuteNotify, error)
-	GetEventNotifyByBlock(height uint32) ([]common.Uint256, error)
+	GetEventNotifyByBlock(height uint32) ([]*event.ExecuteNotify, error)
+
+	//cross chain states root
+	GetCrossStatesRoot(height uint32) (common.Uint256, error)
+	GetCrossChainMsg(height uint32) (*types.CrossChainMsg, error)
+	GetCrossStatesProof(height uint32, key []byte) ([]byte, error)
 }

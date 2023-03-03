@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package ledger
@@ -21,16 +21,16 @@ package ledger
 import (
 	"fmt"
 
-	"github.com/cntmio/cntmology-crypto/keypair"
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/core/payload"
-	"github.com/cntmio/cntmology/core/states"
-	"github.com/cntmio/cntmology/core/store"
-	"github.com/cntmio/cntmology/core/store/ledgerstore"
-	"github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology/smartccntmract/event"
-	cstate "github.com/cntmio/cntmology/smartccntmract/states"
+	"github.com/conntectome/cntm-crypto/keypair"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/common/log"
+	"github.com/conntectome/cntm/core/payload"
+	"github.com/conntectome/cntm/core/states"
+	"github.com/conntectome/cntm/core/store"
+	"github.com/conntectome/cntm/core/store/ledgerstore"
+	"github.com/conntectome/cntm/core/types"
+	"github.com/conntectome/cntm/smartcontract/event"
+	cstate "github.com/conntectome/cntm/smartcontract/states"
 )
 
 var DefLedger *Ledger
@@ -141,12 +141,16 @@ func (self *Ledger) GetCurrentHeaderHash() common.Uint256 {
 	return self.ldgStore.GetCurrentHeaderHash()
 }
 
-func (self *Ledger) IsCcntmainTransaction(txHash common.Uint256) (bool, error) {
-	return self.ldgStore.IsCcntmainTransaction(txHash)
+func (self *Ledger) IsContainTransaction(txHash common.Uint256) (bool, error) {
+	return self.ldgStore.IsContainTransaction(txHash)
 }
 
-func (self *Ledger) IsCcntmainBlock(blockHash common.Uint256) (bool, error) {
-	return self.ldgStore.IsCcntmainBlock(blockHash)
+func (self *Ledger) IsContainBlock(blockHash common.Uint256) (bool, error) {
+	return self.ldgStore.IsContainBlock(blockHash)
+}
+
+func (self *Ledger) GetCurrentStateRoot() (common.Uint256, error) {
+	return common.Uint256{}, nil
 }
 
 func (self *Ledger) GetBookkeeperState() (*states.BookkeeperState, error) {
@@ -155,7 +159,7 @@ func (self *Ledger) GetBookkeeperState() (*states.BookkeeperState, error) {
 
 func (self *Ledger) GetStorageItem(codeHash common.Address, key []byte) ([]byte, error) {
 	storageKey := &states.StorageKey{
-		CcntmractAddress: codeHash,
+		ContractAddress: codeHash,
 		Key:             key,
 	}
 	storageItem, err := self.ldgStore.GetStorageItem(storageKey)
@@ -168,36 +172,20 @@ func (self *Ledger) GetStorageItem(codeHash common.Address, key []byte) ([]byte,
 	return storageItem.Value, nil
 }
 
-func (self *Ledger) FindStorageItem(codeHash common.Address, key []byte) ([][]byte, error) {
-	storageKey := &states.StorageKey{
-		CodeHash: codeHash,
-		Key:      key,
-	}
-	storageItem, err := self.ldgStore.FindStorageItem(storageKey)
-	if err != nil {
-		return nil, fmt.Errorf("FindStorageItem error %s", err)
-	}
-	var value [][]byte
-	for _, storageitem := range storageItem {
-		value = append(value, storageitem.Value)
-	}
-	return value, nil
-}
-
-func (self *Ledger) GetCcntmractState(ccntmractHash common.Address) (*payload.DeployCode, error) {
-	return self.ldgStore.GetCcntmractState(ccntmractHash)
+func (self *Ledger) GetContractState(contractHash common.Address) (*payload.DeployCode, error) {
+	return self.ldgStore.GetContractState(contractHash)
 }
 
 func (self *Ledger) GetMerkleProof(proofHeight, rootHeight uint32) ([]common.Uint256, error) {
 	return self.ldgStore.GetMerkleProof(proofHeight, rootHeight)
 }
 
-func (self *Ledger) PreExecuteCcntmract(tx *types.Transaction) (*cstate.PreExecResult, error) {
-	return self.ldgStore.PreExecuteCcntmract(tx)
+func (self *Ledger) PreExecuteContract(tx *types.Transaction) (*cstate.PreExecResult, error) {
+	return self.ldgStore.PreExecuteContract(tx)
 }
 
-func (self *Ledger) PreExecuteCcntmractBatch(txes []*types.Transaction, atomic bool) ([]*cstate.PreExecResult, uint32, error) {
-	return self.ldgStore.PreExecuteCcntmractBatch(txes, atomic)
+func (self *Ledger) PreExecuteContractBatch(txes []*types.Transaction, atomic bool) ([]*cstate.PreExecResult, uint32, error) {
+	return self.ldgStore.PreExecuteContractBatch(txes, atomic)
 }
 
 func (self *Ledger) GetEventNotifyByTx(tx common.Uint256) (*event.ExecuteNotify, error) {
@@ -218,8 +206,4 @@ func (self *Ledger) GetCrossStatesProof(height uint32, key []byte) ([]byte, erro
 
 func (self *Ledger) Close() error {
 	return self.ldgStore.Close()
-}
-
-func (self *Ledger) EnableBlockPrune(numBeforeCurr uint32) {
-	self.ldgStore.EnableBlockPrune(numBeforeCurr)
 }

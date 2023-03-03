@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package errors
@@ -28,10 +28,6 @@ type ErrCoder interface {
 
 type ErrCode int32
 
-func (s ErrCode) Success() bool {
-	return s == ErrNoError
-}
-
 const (
 	ErrNoCode               ErrCode = -2
 	ErrNoError              ErrCode = 0
@@ -41,7 +37,7 @@ const (
 	ErrAssetPrecision       ErrCode = 45004
 	ErrTransactionBalance   ErrCode = 45005
 	ErrAttributeProgram     ErrCode = 45006
-	ErrTransactionCcntmracts ErrCode = 45007
+	ErrTransactionContracts ErrCode = 45007
 	ErrTransactionPayload   ErrCode = 45008
 	ErrDoubleSpend          ErrCode = 45009
 	ErrTxHashDuplicate      ErrCode = 45010
@@ -56,10 +52,6 @@ const (
 	ErrNetVerifyFail        ErrCode = 45019
 	ErrGasPrice             ErrCode = 45020
 	ErrVerifySignature      ErrCode = 45021
-	ErrHigherNonceExist     ErrCode = 45022
-	ErrETHTxGaslimitExceed  ErrCode = 45023
-	ErrSameNonceExist       ErrCode = 45024
-	ErrETHTxNonceToobig     ErrCode = 45025
 )
 
 func (err ErrCode) Error() string {
@@ -80,8 +72,8 @@ func (err ErrCode) Error() string {
 		return "transaction balance unmatched"
 	case ErrAttributeProgram:
 		return "attribute program error"
-	case ErrTransactionCcntmracts:
-		return "invalid transaction ccntmract"
+	case ErrTransactionContracts:
+		return "invalid transaction contract"
 	case ErrTransactionPayload:
 		return "invalid transaction payload"
 	case ErrDoubleSpend:
@@ -108,14 +100,7 @@ func (err ErrCode) Error() string {
 		return "invalid gas price"
 	case ErrVerifySignature:
 		return "transaction verify signature fail"
-	case ErrHigherNonceExist:
-		return "higher nonce exist"
-	case ErrETHTxGaslimitExceed:
-		return "eth transaction gaslimit exceeded"
-	case ErrSameNonceExist:
-		return "eth transaction with same nonce existed"
-	case ErrETHTxNonceToobig:
-		return "eth transaction nonce is much greater than tx pool"
+
 	}
 
 	return fmt.Sprintf("Unknown error? Error code = %d", err)

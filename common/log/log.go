@@ -1,32 +1,32 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package log
 
 import (
-	"GoOnchain/common"
-	"GoOnchain/config"
 	"bytes"
+	"errors"
 	"fmt"
-	"path/filepath"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -36,38 +36,46 @@ import (
 )
 
 const (
-	PRINTLEVEL = 0
+	Blue   = "0;34"
+	Red    = "0;31"
+	Green  = "0;32"
+	Yellow = "0;33"
+	Cyan   = "0;36"
+	Pink   = "1;35"
 )
 
+func Color(code, msg string) string {
+	return fmt.Sprintf("\033[%sm%s\033[m", code, msg)
+}
+
 const (
-	debugLog = iota
-	infoLog
-	warnLog
-	errorLog
-	fatalLog
-	printLog
-	maxLevelLog
+	TraceLog = iota
+	DebugLog
+	InfoLog
+	WarnLog
+	ErrorLog
+	FatalLog
+	MaxLevelLog
 )
 
 var (
 	levels = map[int]string{
-		debugLog: Color(Green, "[DEBUG]"),
-		infoLog:  Color(Green, "[INFO ]"),
-		warnLog:  Color(Yellow, "[WARN ]"),
-		errorLog: Color(Red, "[ERROR]"),
-		fatalLog: Color(Red, "[FATAL]"),
-		traceLog: Color(Pink, "[TRACE]"),
+		DebugLog: Color(Green, "[DEBUG]"),
+		InfoLog:  Color(Cyan, "[INFO ]"),
+		WarnLog:  Color(Yellow, "[WARN ]"),
+		ErrorLog: Color(Red, "[ERROR]"),
+		FatalLog: Color(Red, "[FATAL]"),
+		TraceLog: Color(Pink, "[TRACE]"),
 	}
 	Stdout = os.Stdout
 )
 
 const (
-	namePrefix = "LEVEL"
-	callDepth = 2
-	defaultMaxLogSize = 20
-	byteToMb = 1024 * 1024
-	byteToKb = 1024
-	Path = "./Log/"
+	NAME_PREFIX          = "LEVEL"
+	CALL_DEPTH           = 2
+	DEFAULT_MAX_LOG_SIZE = 20
+	BYTE_TO_MB           = 1024 * 1024
+	PATH                 = "./Log/"
 )
 
 func GetGID() uint64 {
@@ -79,19 +87,7 @@ func GetGID() uint64 {
 	return n
 }
 
-var globalLogger unsafe.Pointer
-
-func Log() *Logger {
-	logger := atomic.LoadPointer(&globalLogger)
-
-	return (*Logger)(logger)
-}
-
-func swapGlobalLogger(logger *Logger) *Logger {
-	old := atomic.SwapPointer(&globalLogger, unsafe.Pointer(logger))
-
-	return (*Logger)(old)
-}
+var Log *Logger
 
 func init() {
 	//Default print to console
@@ -103,6 +99,19 @@ func LevelName(level int) string {
 		return name
 	}
 	return NAME_PREFIX + strconv.Itoa(level)
+}
+
+func NameLevel(name string) int {
+	for k, v := range levels {
+		if v == name {
+			return k
+		}
+	}
+	var level int
+	if strings.HasPrefix(name, NAME_PREFIX) {
+		level, _ = strconv.Atoi(name[len(NAME_PREFIX):])
+	}
+	return level
 }
 
 type Logger struct {
@@ -119,70 +128,112 @@ func New(out io.Writer, prefix string, flag, level int, file *os.File) *Logger {
 	}
 }
 
-func (l *Logger) output(level int, s string) error {
-	// FIXME enable print GID for all log, should be disable as it effect performance
-	if (level == 0) || (level == 1) || (level == 2) || (level == 3) {
-		gid := common.GetGID()
-		gidStr := strconv.FormatUint(gid, 10)
-
-		// Get file information only
-		pc := make([]uintptr, 10)
-		runtime.Callers(2, pc)
-		f := runtime.FuncForPC(pc[0])
-		file, line := f.FileLine(pc[0])
-		fileName := filepath.Base(file)
-		lineStr := strconv.FormatUint(uint64(line), 10)
-		return l.logger.Output(callDepth, AddBracket(LevelName(level))+" "+"GID"+
-			" "+gidStr+", "+s+" "+fileName+":"+lineStr)
-	} else {
-		return l.logger.Output(callDepth, AddBracket(LevelName(level))+" "+s)
+func (l *Logger) SetDebugLevel(level int) error {
+	if level > MaxLevelLog || level < 0 {
+		return errors.New("Invalid Debug Level")
 	}
+
+	l.level = level
+	return nil
 }
 
 func (l *Logger) Output(level int, a ...interface{}) error {
 	if level >= l.level {
-		return l.output(level, fmt.Sprintln(a...))
+		gid := GetGID()
+		gidStr := strconv.FormatUint(gid, 10)
+
+		a = append([]interface{}{LevelName(level), "GID",
+			gidStr + ","}, a...)
+
+		return l.logger.Output(CALL_DEPTH, fmt.Sprintln(a...))
+	}
+	return nil
+}
+
+func (l *Logger) Outputf(level int, format string, v ...interface{}) error {
+	if level >= l.level {
+		gid := GetGID()
+		v = append([]interface{}{LevelName(level), "GID",
+			gid}, v...)
+
+		return l.logger.Output(CALL_DEPTH, fmt.Sprintf("%s %s %d, "+format+"\n", v...))
 	}
 	return nil
 }
 
 func (l *Logger) Trace(a ...interface{}) {
-	l.Lock()
-	defer l.Unlock()
-	l.Output(traceLog, a...)
+	l.Output(TraceLog, a...)
+}
+
+func (l *Logger) Tracef(format string, a ...interface{}) {
+	l.Outputf(TraceLog, format, a...)
 }
 
 func (l *Logger) Debug(a ...interface{}) {
-	l.Lock()
-	defer l.Unlock()
-	l.Output(debugLog, a...)
+	l.Output(DebugLog, a...)
+}
+
+func (l *Logger) Debugf(format string, a ...interface{}) {
+	l.Outputf(DebugLog, format, a...)
 }
 
 func (l *Logger) Info(a ...interface{}) {
-	l.Lock()
-	defer l.Unlock()
-	l.Output(infoLog, a...)
+	l.Output(InfoLog, a...)
+}
+
+func (l *Logger) Infof(format string, a ...interface{}) {
+	l.Outputf(InfoLog, format, a...)
 }
 
 func (l *Logger) Warn(a ...interface{}) {
-	l.Lock()
-	defer l.Unlock()
-	l.Output(warnLog, a...)
+	l.Output(WarnLog, a...)
+}
+
+func (l *Logger) Warnf(format string, a ...interface{}) {
+	l.Outputf(WarnLog, format, a...)
 }
 
 func (l *Logger) Error(a ...interface{}) {
-	l.Lock()
-	defer l.Unlock()
-	l.Output(errorLog, a...)
+	l.Output(ErrorLog, a...)
+}
+
+func (l *Logger) Errorf(format string, a ...interface{}) {
+	l.Outputf(ErrorLog, format, a...)
 }
 
 func (l *Logger) Fatal(a ...interface{}) {
-	l.Lock()
-	defer l.Unlock()
-	l.Output(fatalLog, a...)
+	l.Output(FatalLog, a...)
+}
+
+func (l *Logger) Fatalf(format string, a ...interface{}) {
+	l.Outputf(FatalLog, format, a...)
 }
 
 func Trace(a ...interface{}) {
+	if TraceLog < Log.level {
+		return
+	}
+
+	pc := make([]uintptr, 10)
+	runtime.Callers(2, pc)
+	f := runtime.FuncForPC(pc[0])
+	file, line := f.FileLine(pc[0])
+	fileName := filepath.Base(file)
+
+	nameFull := f.Name()
+	nameEnd := filepath.Ext(nameFull)
+	funcName := strings.TrimPrefix(nameEnd, ".")
+
+	a = append([]interface{}{funcName + "()", fileName + ":" + strconv.Itoa(line)}, a...)
+
+	Log.Trace(a...)
+}
+
+func Tracef(format string, a ...interface{}) {
+	if TraceLog < Log.level {
+		return
+	}
+
 	pc := make([]uintptr, 10)
 	runtime.Callers(2, pc)
 	f := runtime.FuncForPC(pc[0])
@@ -195,11 +246,11 @@ func Trace(a ...interface{}) {
 
 	a = append([]interface{}{funcName, fileName, line}, a...)
 
-	Log().Tracef("%s() %s:%d "+format, a...)
+	Log.Tracef("%s() %s:%d "+format, a...)
 }
 
 func Debug(a ...interface{}) {
-	if DebugLog < Log().level {
+	if DebugLog < Log.level {
 		return
 	}
 
@@ -211,11 +262,11 @@ func Debug(a ...interface{}) {
 
 	a = append([]interface{}{f.Name(), fileName + ":" + strconv.Itoa(line)}, a...)
 
-	Log().Debug(a...)
+	Log.Debug(a...)
 }
 
 func Debugf(format string, a ...interface{}) {
-	if DebugLog < Log().level {
+	if DebugLog < Log.level {
 		return
 	}
 
@@ -227,39 +278,39 @@ func Debugf(format string, a ...interface{}) {
 
 	a = append([]interface{}{f.Name(), fileName, line}, a...)
 
-	Log().Debugf("%s %s:%d "+format, a...)
+	Log.Debugf("%s %s:%d "+format, a...)
 }
 
 func Info(a ...interface{}) {
-	Log().Info(a...)
+	Log.Info(a...)
 }
 
 func Warn(a ...interface{}) {
-	Log().Warn(a...)
+	Log.Warn(a...)
 }
 
 func Error(a ...interface{}) {
-	Log().Error(a...)
+	Log.Error(a...)
 }
 
 func Fatal(a ...interface{}) {
-	Log().Fatal(a...)
+	Log.Fatal(a...)
 }
 
 func Infof(format string, a ...interface{}) {
-	Log().Infof(format, a...)
+	Log.Infof(format, a...)
 }
 
 func Warnf(format string, a ...interface{}) {
-	Log().Warnf(format, a...)
+	Log.Warnf(format, a...)
 }
 
 func Errorf(format string, a ...interface{}) {
-	Log().Errorf(format, a...)
+	Log.Errorf(format, a...)
 }
 
 func Fatalf(format string, a ...interface{}) {
-	Log().Fatalf(format, a...)
+	Log.Fatalf(format, a...)
 }
 
 // used for develop stage and not allowed in production enforced by CI
@@ -294,8 +345,8 @@ func Init(a ...interface{}) {
 	InitLog(InfoLog, a...)
 }
 
-func createLog(logLevel int, a ...interface{}) *Logger {
-	var writers []io.Writer
+func InitLog(logLevel int, a ...interface{}) {
+	writers := []io.Writer{}
 	var logFile *os.File
 	var err error
 	if len(a) == 0 {
@@ -304,10 +355,6 @@ func createLog(logLevel int, a ...interface{}) *Logger {
 		for _, o := range a {
 			switch o.(type) {
 			case string:
-				if logFile != nil {
-					fmt.Println("warn: only support one log file")
-					ccntminue
-				}
 				logFile, err = FileOpen(o.(string))
 				if err != nil {
 					fmt.Println("error: open log file failed")
@@ -323,23 +370,11 @@ func createLog(logLevel int, a ...interface{}) *Logger {
 		}
 	}
 	fileAndStdoutWrite := io.MultiWriter(writers...)
-
-	logger := New(fileAndStdoutWrite, "", log.LUTC|log.Ldate|log.Lmicroseconds, logLevel, logFile)
-
-	return logger
-}
-
-func InitLog(logLevel int, a ...interface{}) {
-	logger := createLog(logLevel, a...)
-
-	old := swapGlobalLogger(logger)
-	if old != nil {
-		_ = old.logFile.Close()
-	}
+	Log = New(fileAndStdoutWrite, "", log.LUTC|log.Ldate|log.Lmicroseconds, logLevel, logFile)
 }
 
 func GetLogFileSize() (int64, error) {
-	f, e := Log().logFile.Stat()
+	f, e := Log.logFile.Stat()
 	if e != nil {
 		return 0, e
 	}
@@ -354,7 +389,7 @@ func GetMaxLogChangeInterval(maxLogSize int64) int64 {
 	}
 }
 
-func checkIfNeedNewFile() bool {
+func CheckIfNeedNewFile() bool {
 	logFileSize, err := GetLogFileSize()
 	maxLogFileSize := GetMaxLogChangeInterval(0)
 	if err != nil {
@@ -369,18 +404,8 @@ func checkIfNeedNewFile() bool {
 
 func ClosePrintLog() error {
 	var err error
-	if Log().logFile != nil {
-		err = Log().logFile.Close()
+	if Log.logFile != nil {
+		err = Log.logFile.Close()
 	}
 	return err
-}
-
-func CheckRotateLogFile() {
-	isNeedNewFile := checkIfNeedNewFile()
-	if isNeedNewFile {
-		old := swapGlobalLogger(createLog(Log().level, PATH, Stdout))
-		if old.logFile != nil {
-			_ = old.logFile.Close()
-		}
-	}
 }

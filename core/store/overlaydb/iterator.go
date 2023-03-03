@@ -1,24 +1,24 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 package overlaydb
 
 import (
-	"github.com/cntmio/cntmology/core/store/common"
+	"github.com/conntectome/cntm/core/store/common"
 	"github.com/syndtr/goleveldb/leveldb/comparer"
 )
 
@@ -50,11 +50,11 @@ func NewJoinIter(memIter, backendIter common.StoreIterator) *JoinIter {
 
 func (iter *JoinIter) First() bool {
 	f := iter.first()
-	if !f {
+	if f == false {
 		return false
 	}
 	for len(iter.value) == 0 {
-		if !iter.next() {
+		if iter.next() == false {
 			return false
 		}
 	}
@@ -73,7 +73,7 @@ func (iter *JoinIter) first() bool {
 	if back {
 		bkey = iter.backend.Key()
 		bval = iter.backend.Value()
-		if !mem {
+		if mem == false {
 			iter.key = bkey
 			iter.value = bval
 			iter.keyOrigin = FromBack
@@ -117,12 +117,12 @@ func (iter *JoinIter) Value() []byte {
 
 func (iter *JoinIter) Next() bool {
 	f := iter.next()
-	if !f {
+	if f == false {
 		return false
 	}
 
 	for len(iter.value) == 0 {
-		if !iter.next() {
+		if iter.next() == false {
 			return false
 		}
 	}
@@ -131,10 +131,10 @@ func (iter *JoinIter) Next() bool {
 }
 
 func (iter *JoinIter) next() bool {
-	if (iter.keyOrigin == FromMem || iter.keyOrigin == FromBoth) && !iter.nextMemEnd {
+	if (iter.keyOrigin == FromMem || iter.keyOrigin == FromBoth) && iter.nextMemEnd == false {
 		iter.nextMemEnd = !iter.memdb.Next()
 	}
-	if (iter.keyOrigin == FromBack || iter.keyOrigin == FromBoth) && !iter.nextBackEnd {
+	if (iter.keyOrigin == FromBack || iter.keyOrigin == FromBoth) && iter.nextBackEnd == false {
 		iter.nextBackEnd = !iter.backend.Next()
 	}
 

@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package solo
@@ -23,25 +23,25 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/cntmio/cntmology-crypto/keypair"
-	"github.com/cntmio/cntmology-eventbus/actor"
-	"github.com/cntmio/cntmology/account"
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/config"
-	"github.com/cntmio/cntmology/common/log"
-	actorTypes "github.com/cntmio/cntmology/consensus/actor"
-	"github.com/cntmio/cntmology/core/ledger"
-	"github.com/cntmio/cntmology/core/signature"
-	"github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology/events"
-	"github.com/cntmio/cntmology/events/message"
-	"github.com/cntmio/cntmology/validator/increment"
+	"github.com/conntectome/cntm-crypto/keypair"
+	"github.com/conntectome/cntm-eventbus/actor"
+	"github.com/conntectome/cntm/account"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/common/config"
+	"github.com/conntectome/cntm/common/log"
+	actorTypes "github.com/conntectome/cntm/consensus/actor"
+	"github.com/conntectome/cntm/core/ledger"
+	"github.com/conntectome/cntm/core/signature"
+	"github.com/conntectome/cntm/core/types"
+	"github.com/conntectome/cntm/events"
+	"github.com/conntectome/cntm/events/message"
+	"github.com/conntectome/cntm/validator/increment"
 )
 
 /*
 *Simple consensus for solo node in test environment.
  */
-const CcntmextVersion uint32 = 0
+const ContextVersion uint32 = 0
 
 type SoloService struct {
 	Account          *account.Account
@@ -72,8 +72,8 @@ func NewSoloService(bkAccount *account.Account, txpool *actor.PID) (*SoloService
 	return service, err
 }
 
-func (self *SoloService) Receive(ccntmext actor.Ccntmext) {
-	switch msg := ccntmext.Message().(type) {
+func (self *SoloService) Receive(context actor.Context) {
+	switch msg := context.Message().(type) {
 	case *actor.Restarting:
 		log.Info("solo actor restarting")
 	case *actor.Stopping:
@@ -200,16 +200,11 @@ func (self *SoloService) makeBlock() (*types.Block, error) {
 	txs := self.poolActor.GetTxnPool(true, validHeight)
 
 	transactions := make([]*types.Transaction, 0, len(txs))
-	nonceCtx := make(map[common.Address]uint64)
 	for _, txEntry := range txs {
 		// TODO optimize to use height in txentry
-		err := self.incrValidator.Verify(txEntry.Tx, validHeight, nonceCtx)
-		if err == nil {
+		if err := self.incrValidator.Verify(txEntry.Tx, validHeight); err == nil {
 			transactions = append(transactions, txEntry.Tx)
-		} else {
-			log.Errorf("increment verify failed: %s", err.Error())
 		}
-
 	}
 
 	txHash := []common.Uint256{}
@@ -220,7 +215,7 @@ func (self *SoloService) makeBlock() (*types.Block, error) {
 
 	blockRoot := ledger.DefLedger.GetBlockRootWithNewTxRoots(height+1, []common.Uint256{txRoot})
 	header := &types.Header{
-		Version:          CcntmextVersion,
+		Version:          ContextVersion,
 		PrevBlockHash:    prevHash,
 		TransactionsRoot: txRoot,
 		BlockRoot:        blockRoot,

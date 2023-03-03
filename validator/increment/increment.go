@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package increment
@@ -22,12 +22,9 @@ import (
 	"fmt"
 	"sync"
 
-	ethcomm "github.com/ethereum/go-ethereum/common"
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/config"
-	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/core/ledger"
-	"github.com/cntmio/cntmology/core/types"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/common/log"
+	"github.com/conntectome/cntm/core/types"
 )
 
 // IncrementValidator do increment check of transaction
@@ -36,7 +33,6 @@ type IncrementValidator struct {
 	blocks     []map[common.Uint256]bool
 	baseHeight uint32
 	maxBlocks  int
-	nonces     []map[common.Address]uint64
 }
 
 func NewIncrementValidator(maxBlocks int) *IncrementValidator {
@@ -52,7 +48,6 @@ func (self *IncrementValidator) Clean() {
 	self.mutex.Lock()
 	self.blocks = nil
 	self.baseHeight = 0
-	self.nonces = nil
 	self.mutex.Unlock()
 }
 
@@ -77,7 +72,7 @@ func (self *IncrementValidator) AddBlock(block *types.Block) {
 
 	if self.baseHeight+uint32(len(self.blocks)) != block.Header.Height {
 		start, end := self.blockRange()
-		log.Errorf("disccntminue block is not allowed: [start, end)=[%d, %d), block height= %d",
+		log.Errorf("discontinue block is not allowed: [start, end)=[%d, %d), block height= %d",
 			start, end, block.Header.Height)
 		return
 	}
@@ -85,67 +80,26 @@ func (self *IncrementValidator) AddBlock(block *types.Block) {
 	if len(self.blocks) >= self.maxBlocks {
 		self.blocks = self.blocks[1:]
 		self.baseHeight += 1
-
-		self.nonces = self.nonces[1:]
 	}
 	txHashes := make(map[common.Uint256]bool)
-	nonceMap := make(map[common.Address]uint64)
 	for _, tx := range block.Transactions {
-		txhash := tx.Hash()
-		txHashes[txhash] = true
-		if tx.IsEipTx() {
-			nonceMap[tx.Payer] = uint64(tx.Nonce) + 1
-		}
+		txHashes[tx.Hash()] = true
 	}
-	self.nonces = append(self.nonces, nonceMap)
 	self.blocks = append(self.blocks, txHashes)
 }
 
 // Verfiy does increment check start at startHeight
-func (self *IncrementValidator) Verify(tx *types.Transaction, startHeight uint32, nonceCtx map[common.Address]uint64) error {
+func (self *IncrementValidator) Verify(tx *types.Transaction, startHeight uint32) error {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 	if startHeight < self.baseHeight {
 		return fmt.Errorf("can not do increment validation: startHeight %v < self.baseHeight %v", startHeight, self.baseHeight)
 	}
+
 	for i := int(startHeight - self.baseHeight); i < len(self.blocks); i++ {
 		if _, ok := self.blocks[i][tx.Hash()]; ok {
 			return fmt.Errorf("tx duplicated")
 		}
-	}
-	//check nonce
-	if tx.IsEipTx() {
-		//1st tx for account
-		if nonceCtx[tx.Payer] == 0 {
-			//get the nonce from cache
-			for i := 0; i < len(self.blocks); i++ {
-				latestNonce := self.nonces[i][tx.Payer]
-				if latestNonce != 0 {
-					nonceCtx[tx.Payer] = latestNonce
-				}
-			}
-			//still empty, load from ledger store
-			if nonceCtx[tx.Payer] == 0 {
-				acct, err := ledger.DefLedger.GetEthAccount(ethcomm.BytesToAddress(tx.Payer[:]))
-				if err != nil {
-					return err
-				}
-				nonceCtx[tx.Payer] = acct.Nonce
-			}
-		}
-
-		if uint64(tx.Nonce) != nonceCtx[tx.Payer] {
-			trace := log.Debugf
-			if config.DefConfig.Common.TraceTxPool {
-				trace = log.Infof
-			}
-			trace("wrcntm nonce for %s, tx: %s, exptected: %d, got: %d", tx.Payer.ToBase58(),
-				tx.Hash().ToHexString(), nonceCtx[tx.Payer], tx.Nonce)
-			return fmt.Errorf("wrcntm nonce for %s, exptected: %d, got: %d", tx.Payer.ToBase58(),
-				nonceCtx[tx.Payer], tx.Nonce)
-		}
-
-		nonceCtx[tx.Payer] = uint64(tx.Nonce) + 1
 	}
 
 	return nil

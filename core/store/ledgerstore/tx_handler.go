@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * alcntg with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package ledgerstore
@@ -24,32 +24,24 @@ import (
 	"math"
 	"strconv"
 
-	common2 "github.com/ethereum/go-ethereum/common"
-	types2 "github.com/ethereum/go-ethereum/core/types"
-	"github.com/cntmio/cntmology/common"
-	sysconfig "github.com/cntmio/cntmology/common/config"
-	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/core/payload"
-	"github.com/cntmio/cntmology/core/store"
-	scommon "github.com/cntmio/cntmology/core/store/common"
-	"github.com/cntmio/cntmology/core/store/overlaydb"
-	"github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology/errors"
-	"github.com/cntmio/cntmology/smartccntmract"
-	"github.com/cntmio/cntmology/smartccntmract/event"
-	evm2 "github.com/cntmio/cntmology/smartccntmract/service/evm"
-	types3 "github.com/cntmio/cntmology/smartccntmract/service/evm/types"
-	"github.com/cntmio/cntmology/smartccntmract/service/evm/witness"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/global_params"
-	ninit "github.com/cntmio/cntmology/smartccntmract/service/native/init"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
-	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
-	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
-	"github.com/cntmio/cntmology/smartccntmract/storage"
-	"github.com/cntmio/cntmology/vm/evm"
-	"github.com/cntmio/cntmology/vm/evm/params"
+	"github.com/conntectome/cntm/common"
+	sysconfig "github.com/conntectome/cntm/common/config"
+	"github.com/conntectome/cntm/common/log"
+	"github.com/conntectome/cntm/core/payload"
+	"github.com/conntectome/cntm/core/store"
+	scommon "github.com/conntectome/cntm/core/store/common"
+	"github.com/conntectome/cntm/core/store/overlaydb"
+	"github.com/conntectome/cntm/core/types"
+	"github.com/conntectome/cntm/errors"
+	"github.com/conntectome/cntm/smartcontract"
+	"github.com/conntectome/cntm/smartcontract/event"
+	"github.com/conntectome/cntm/smartcontract/service/native/global_params"
+	ninit "github.com/conntectome/cntm/smartcontract/service/native/init"
+	"github.com/conntectome/cntm/smartcontract/service/native/cntm"
+	"github.com/conntectome/cntm/smartcontract/service/native/utils"
+	"github.com/conntectome/cntm/smartcontract/service/cntmvm"
+	"github.com/conntectome/cntm/smartcontract/service/wasmvm"
+	"github.com/conntectome/cntm/smartcontract/storage"
 )
 
 func tuneGasFeeByHeight(height uint32, gas uint64, gasRound uint64, curBalance uint64) uint64 {
@@ -72,7 +64,7 @@ func tuneGasFeeByHeight(height uint32, gas uint64, gasRound uint64, curBalance u
 	return gas
 }
 
-//HandleDeployTransaction deal with smart ccntmract deploy transaction
+//HandleDeployTransaction deal with smart contract deploy transaction
 func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay *overlaydb.OverlayDB, gasTable map[string]uint64, cache *storage.CacheDB,
 	tx *types.Transaction, block *types.Block, notify *event.ExecuteNotify) error {
 	deploy := tx.Payload.(*payload.DeployCode)
@@ -90,20 +82,20 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 	}
 
 	if tx.GasPrice != 0 {
-		// init smart ccntmract configuration info
-		config := &smartccntmract.Config{
+		// init smart contract configuration info
+		config := &smartcontract.Config{
 			Time:      block.Header.Timestamp,
 			Height:    block.Header.Height,
 			Tx:        tx,
 			BlockHash: block.Hash(),
 		}
-		createGasPrice, ok := gasTable[neovm.CcntmRACT_CREATE_NAME]
+		createGasPrice, ok := gasTable[cntmvm.CCNTMRACT_CREATE_NAME]
 		if !ok {
-			overlay.SetError(errors.NewErr("[HandleDeployTransaction] get CcntmRACT_CREATE_NAME gas failed"))
+			overlay.SetError(errors.NewErr("[HandleDeployTransaction] get CCNTMRACT_CREATE_NAME gas failed"))
 			return nil
 		}
 
-		uintCodePrice, ok := gasTable[neovm.UINT_DEPLOY_CODE_LEN_NAME]
+		uintCodePrice, ok := gasTable[cntmvm.UINT_DEPLOY_CODE_LEN_NAME]
 		if !ok {
 			overlay.SetError(errors.NewErr("[HandleDeployTransaction] get UINT_DEPLOY_CODE_LEN_NAME gas failed"))
 			return nil
@@ -122,6 +114,7 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 				return err
 			}
 			return fmt.Errorf("gasLimit insufficient, need:%d actual:%d", gasLimit, tx.GasLimit)
+
 		}
 		gasConsumed = gasLimit * tx.GasPrice
 		notifies, err = chargeCostGas(tx.Payer, gasConsumed, config, cache, store)
@@ -132,28 +125,24 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 	}
 
 	address := deploy.Address()
-	// store ccntmract message
-	dep, destroyed, err := cache.GetCcntmract(address)
+	log.Infof("deploy contract address:%s", address.ToHexString())
+	// store contract message
+	dep, err := cache.GetCcntmract(address)
 	if err != nil {
 		return err
 	}
-	if destroyed {
-		return fmt.Errorf("can not redeploy destroyed ccntmract: %s", address.ToHexString())
-	}
 	if dep == nil {
-		log.Infof("deploy ccntmract address:%s", address.ToHexString())
 		cache.PutCcntmract(deploy)
-		notify.CreatedCcntmract = address
 	}
 	cache.Commit()
 
 	notify.Notify = append(notify.Notify, notifies...)
 	notify.GasConsumed = gasConsumed
-	notify.State = event.CcntmRACT_STATE_SUCCESS
+	notify.State = event.CCNTMRACT_STATE_SUCCESS
 	return nil
 }
 
-//HandleInvokeTransaction deal with smart ccntmract invoke transaction
+//HandleInvokeTransaction deal with smart contract invoke transaction
 func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay *overlaydb.OverlayDB, gasTable map[string]uint64, cache *storage.CacheDB,
 	tx *types.Transaction, block *types.Block, notify *event.ExecuteNotify) ([]common.Uint256, error) {
 	invoke := tx.Payload.(*payload.InvokeCode)
@@ -162,8 +151,8 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 
 	isCharge := !sysTransFlag && tx.GasPrice != 0
 
-	// init smart ccntmract configuration info
-	config := &smartccntmract.Config{
+	// init smart contract configuration info
+	config := &smartcontract.Config{
 		Time:      block.Header.Timestamp,
 		Height:    block.Header.Height,
 		Tx:        tx,
@@ -183,7 +172,7 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 
 	availableGasLimit = tx.GasLimit
 	if isCharge {
-		uintCodeGasPrice, ok := gasTable[neovm.UINT_INVOKE_CODE_LEN_NAME]
+		uintCodeGasPrice, ok := gasTable[cntmvm.UINT_INVOKE_CODE_LEN_NAME]
 		if !ok {
 			overlay.SetError(errors.NewErr("[HandleInvokeTransaction] get UINT_INVOKE_CODE_LEN_NAME gas failed"))
 			return nil, nil
@@ -194,7 +183,7 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 			return nil, err
 		}
 
-		minGas = neovm.MIN_TRANSACTION_GAS * tx.GasPrice
+		minGas = cntmvm.MIN_TRANSACTION_GAS * tx.GasPrice
 
 		if oldBalance < minGas {
 			if err := costInvalidGas(tx.Payer, oldBalance, config, overlay, store, notify); err != nil {
@@ -226,8 +215,8 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 		}
 	}
 
-	//init smart ccntmract info
-	sc := smartccntmract.SmartCcntmract{
+	//init smart contract info
+	sc := smartcontract.SmartCcntmract{
 		Config:       config,
 		CacheDB:      cache,
 		Store:        store,
@@ -237,7 +226,7 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 		PreExec:      false,
 	}
 
-	//start the smart ccntmract executive function
+	//start the smart contract executive function
 	engine, _ := sc.NewExecuteEngine(invoke.Code, tx.TxType)
 
 	_, err = engine.Invoke()
@@ -247,14 +236,14 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 	}
 
 	costGasLimit = availableGasLimit - sc.Gas
-	if costGasLimit < neovm.MIN_TRANSACTION_GAS {
-		costGasLimit = neovm.MIN_TRANSACTION_GAS
+	if costGasLimit < cntmvm.MIN_TRANSACTION_GAS {
+		costGasLimit = cntmvm.MIN_TRANSACTION_GAS
 	}
 
 	costGas = costGasLimit * tx.GasPrice
 	if err != nil {
 		if isCharge {
-			costGas = tuneGasFeeByHeight(config.Height, costGas, tx.GasPrice*neovm.MIN_TRANSACTION_GAS, oldBalance)
+			costGas = tuneGasFeeByHeight(config.Height, costGas, tx.GasPrice*cntmvm.MIN_TRANSACTION_GAS, oldBalance)
 			if err := costInvalidGas(tx.Payer, costGas, config, overlay, store, notify); err != nil {
 				return nil, err
 			}
@@ -270,14 +259,14 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 		}
 
 		if newBalance < costGas {
-			costGas = tuneGasFeeByHeight(config.Height, costGas, tx.GasPrice*neovm.MIN_TRANSACTION_GAS, oldBalance)
+			costGas = tuneGasFeeByHeight(config.Height, costGas, tx.GasPrice*cntmvm.MIN_TRANSACTION_GAS, oldBalance)
 			if err := costInvalidGas(tx.Payer, costGas, config, overlay, store, notify); err != nil {
 				return nil, err
 			}
 			return nil, fmt.Errorf("gas insufficient, balance:%d < costGas:%d", newBalance, costGas)
 		}
 
-		costGas = tuneGasFeeByHeight(config.Height, costGas, tx.GasPrice*neovm.MIN_TRANSACTION_GAS, newBalance)
+		costGas = tuneGasFeeByHeight(config.Height, costGas, tx.GasPrice*cntmvm.MIN_TRANSACTION_GAS, newBalance)
 		notifies, err = chargeCostGas(tx.Payer, costGas, config, sc.CacheDB, store)
 		if err != nil {
 			return nil, err
@@ -287,7 +276,7 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 	notify.Notify = append(notify.Notify, sc.Notifications...)
 	notify.Notify = append(notify.Notify, notifies...)
 	notify.GasConsumed = costGas
-	notify.State = event.CcntmRACT_STATE_SUCCESS
+	notify.State = event.CCNTMRACT_STATE_SUCCESS
 	sc.CacheDB.Commit()
 	return sc.CrossHashes, nil
 }
@@ -308,8 +297,8 @@ func genNativeTransferCode(from, to common.Address, value uint64) []byte {
 	return common.SerializeToBytes(transfer)
 }
 
-// check whether payer cntm balance sufficient
-func isBalanceSufficient(payer common.Address, cache *storage.CacheDB, config *smartccntmract.Config, store store.LedgerStore, gas uint64) (uint64, error) {
+// check whether payer cntg balance sufficient
+func isBalanceSufficient(payer common.Address, cache *storage.CacheDB, config *smartcontract.Config, store store.LedgerStore, gas uint64) (uint64, error) {
 	balance, err := getBalanceFromNative(config, cache, store, payer)
 	if err != nil {
 		return 0, err
@@ -320,12 +309,12 @@ func isBalanceSufficient(payer common.Address, cache *storage.CacheDB, config *s
 	return balance, nil
 }
 
-func chargeCostGas(payer common.Address, gas uint64, config *smartccntmract.Config,
+func chargeCostGas(payer common.Address, gas uint64, config *smartcontract.Config,
 	cache *storage.CacheDB, store store.LedgerStore) ([]*event.NotifyEventInfo, error) {
 
 	params := genNativeTransferCode(payer, utils.GovernanceCcntmractAddress, gas)
 
-	sc := smartccntmract.SmartCcntmract{
+	sc := smartcontract.SmartCcntmract{
 		Config:  config,
 		CacheDB: cache,
 		Store:   store,
@@ -333,52 +322,21 @@ func chargeCostGas(payer common.Address, gas uint64, config *smartccntmract.Conf
 	}
 
 	service, _ := sc.NewNativeService()
-	_, err := service.NativeCall(utils.OngCcntmractAddress, "transfer", params)
+	_, err := service.NativeCall(utils.CntgCcntmractAddress, "transfer", params)
 	if err != nil {
 		return nil, err
 	}
 	return sc.Notifications, nil
 }
 
-func getEvmSystemWitnessAddress(config *smartccntmract.Config, cache *storage.CacheDB, store store.LedgerStore) common2.Address {
+func refreshGlobalParam(config *smartcontract.Config, cache *storage.CacheDB, store store.LedgerStore) error {
 	sink := common.NewZeroCopySink(nil)
-	utils.EncodeVarUint(sink, 1)
-	sink.WriteString(witness.WitnessGlobalParamKey)
-
-	sc := smartccntmract.SmartCcntmract{
-		Config:  config,
-		CacheDB: cache,
-		Store:   store,
-		Gas:     math.MaxUint64,
-	}
-
-	service, _ := sc.NewNativeService()
-	result, err := service.NativeCall(utils.ParamCcntmractAddress, "getGlobalParam", sink.Bytes())
-	if err != nil {
-		log.Errorf("get witness address error: %s", err)
-		return common2.Address{}
-	}
-	params := new(global_params.Params)
-	if err := params.Deserialization(common.NewZeroCopySource(result)); err != nil {
-		log.Errorf("deserialize global params error:%s", err)
-		return common2.Address{}
-	}
-	n, ps := params.GetParam(witness.WitnessGlobalParamKey)
-	if n != -1 && ps.Value != "" {
-		return common2.HexToAddress(ps.Value)
-	}
-
-	return common2.Address{}
-}
-
-func refreshGlobalParam(config *smartccntmract.Config, cache *storage.CacheDB, store store.LedgerStore) error {
-	sink := common.NewZeroCopySink(nil)
-	utils.EncodeVarUint(sink, uint64(len(neovm.GAS_TABLE_KEYS)))
-	for _, value := range neovm.GAS_TABLE_KEYS {
+	utils.EncodeVarUint(sink, uint64(len(cntmvm.GAS_TABLE_KEYS)))
+	for _, value := range cntmvm.GAS_TABLE_KEYS {
 		sink.WriteString(value)
 	}
 
-	sc := smartccntmract.SmartCcntmract{
+	sc := smartcontract.SmartCcntmract{
 		Config:  config,
 		CacheDB: cache,
 		Store:   store,
@@ -394,14 +352,14 @@ func refreshGlobalParam(config *smartccntmract.Config, cache *storage.CacheDB, s
 	if err := params.Deserialization(common.NewZeroCopySource(result)); err != nil {
 		return fmt.Errorf("deserialize global params error:%s", err)
 	}
-	neovm.GAS_TABLE.Range(func(key, value interface{}) bool {
+	cntmvm.GAS_TABLE.Range(func(key, value interface{}) bool {
 		n, ps := params.GetParam(key.(string))
 		if n != -1 && ps.Value != "" {
 			pu, err := strconv.ParseUint(ps.Value, 10, 64)
 			if err != nil {
 				log.Errorf("[refreshGlobalParam] failed to parse uint %v\n", ps.Value)
 			} else {
-				neovm.GAS_TABLE.Store(key, pu)
+				cntmvm.GAS_TABLE.Store(key, pu)
 			}
 		}
 		return true
@@ -409,10 +367,10 @@ func refreshGlobalParam(config *smartccntmract.Config, cache *storage.CacheDB, s
 	return nil
 }
 
-func getBalanceFromNative(config *smartccntmract.Config, cache *storage.CacheDB, store store.LedgerStore, address common.Address) (uint64, error) {
+func getBalanceFromNative(config *smartcontract.Config, cache *storage.CacheDB, store store.LedgerStore, address common.Address) (uint64, error) {
 	bf := common.NewZeroCopySink(nil)
 	utils.EncodeAddress(bf, address)
-	sc := smartccntmract.SmartCcntmract{
+	sc := smartcontract.SmartCcntmract{
 		Config:  config,
 		CacheDB: cache,
 		Store:   store,
@@ -420,14 +378,14 @@ func getBalanceFromNative(config *smartccntmract.Config, cache *storage.CacheDB,
 	}
 
 	service, _ := sc.NewNativeService()
-	result, err := service.NativeCall(utils.OngCcntmractAddress, cntm.BALANCEOF_NAME, bf.Bytes())
+	result, err := service.NativeCall(utils.CntgCcntmractAddress, cntm.BALANCEOF_NAME, bf.Bytes())
 	if err != nil {
 		return 0, err
 	}
-	return common.BigIntFromNeoBytes(result).Uint64(), nil
+	return common.BigIntFromCntmBytes(result).Uint64(), nil
 }
 
-func costInvalidGas(address common.Address, gas uint64, config *smartccntmract.Config, overlay *overlaydb.OverlayDB,
+func costInvalidGas(address common.Address, gas uint64, config *smartcontract.Config, overlay *overlaydb.OverlayDB,
 	store store.LedgerStore, notify *event.ExecuteNotify) error {
 	cache := storage.NewCacheDB(overlay)
 	notifies, err := chargeCostGas(address, gas, config, cache, store)
@@ -441,35 +399,5 @@ func costInvalidGas(address common.Address, gas uint64, config *smartccntmract.C
 }
 
 func calcGasByCodeLen(codeLen int, codeGas uint64) uint64 {
-	return uint64(codeLen/neovm.PER_UNIT_CODE_LEN) * codeGas
-}
-
-type Eip155Ccntmext struct {
-	BlockHash common.Uint256
-	TxIndex   uint32
-	Height    uint32
-	Timestamp uint32
-}
-
-func (self *StateStore) HandleEIP155Transaction(store store.LedgerStore, cache *storage.CacheDB,
-	tx *types2.Transaction, ctx Eip155Ccntmext, notify *event.ExecuteNotify, checkNonce bool) (*types3.ExecutionResult, *types.Receipt, error) {
-	usedGas := uint64(0)
-	config := params.GetChainConfig(sysconfig.DefConfig.P2PNode.EVMChainId)
-	statedb := storage.NewStateDB(cache, tx.Hash(), common2.Hash(ctx.BlockHash), cntm.OngBalanceHandle{})
-	result, receipt, err := evm2.ApplyTransaction(config, store, statedb, ctx.Height, ctx.Timestamp, tx, &usedGas,
-		utils.GovernanceCcntmractAddress, evm.Config{}, checkNonce)
-
-	if err != nil {
-		cache.SetDbErr(err)
-		return nil, nil, err
-	}
-	if err = statedb.DbErr(); err != nil {
-		cache.SetDbErr(err)
-		return nil, nil, err
-	}
-	receipt.TxIndex = ctx.TxIndex
-
-	*notify = *event.ExecuteNotifyFromEthReceipt(receipt)
-
-	return result, receipt, nil
+	return uint64(codeLen/cntmvm.PER_UNIT_CODE_LEN) * codeGas
 }

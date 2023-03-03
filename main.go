@@ -1,322 +1,462 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package main
 
 import (
-	"DNA/account"
-	"DNA/common/config"
-	"DNA/common/log"
-	"DNA/consensus/dbft"
-	"DNA/core/ledger"
-	"DNA/core/store/ChainStore"
-	"DNA/core/transaction"
-	"DNA/crypto"
-	"DNA/net"
-	"DNA/net/httpjsonrpc"
-	"DNA/net/protocol"
+	"encoding/hex"
 	"fmt"
 	"os"
+	"os/signal"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
+
+	"github.com/ethereum/go-ethereum/common/fdlimit"
+	"github.com/conntectome/cntm-crypto/keypair"
+	"github.com/conntectome/cntm-eventbus/actor"
+	alog "github.com/conntectome/cntm-eventbus/log"
+	"github.com/conntectome/cntm/account"
+	"github.com/conntectome/cntm/cmd"
+	cmdcom "github.com/conntectome/cntm/cmd/common"
+	"github.com/conntectome/cntm/cmd/utils"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/common/config"
+	"github.com/conntectome/cntm/common/log"
+	"github.com/conntectome/cntm/consensus"
+	"github.com/conntectome/cntm/core/genesis"
+	"github.com/conntectome/cntm/core/ledger"
+	"github.com/conntectome/cntm/events"
+	bactor "github.com/conntectome/cntm/http/base/actor"
+	hserver "github.com/conntectome/cntm/http/base/actor"
+	"github.com/conntectome/cntm/http/jsonrpc"
+	"github.com/conntectome/cntm/http/localrpc"
+	"github.com/conntectome/cntm/http/nodeinfo"
+	"github.com/conntectome/cntm/http/restful"
+	"github.com/conntectome/cntm/http/websocket"
+	"github.com/conntectome/cntm/p2pserver"
+	netreqactor "github.com/conntectome/cntm/p2pserver/actor/req"
+	p2pactor "github.com/conntectome/cntm/p2pserver/actor/server"
+	"github.com/conntectome/cntm/txnpool"
+	tc "github.com/conntectome/cntm/txnpool/common"
+	"github.com/conntectome/cntm/txnpool/proc"
+	"github.com/conntectome/cntm/validator/stateful"
+	"github.com/conntectome/cntm/validator/stateless"
+	"github.com/urfave/cli"
 )
 
-const (
-	// The number of the CPU cores for parallel optimization,TODO set from config file
-	NCPU                   = 4
-	DefaultBookKeeperCount = 4
-)
-
-var Version string
-
-func init() {
-	runtime.GOMAXPROCS(NCPU)
-	var path string = "./Log/"
-	log.CreatePrintLog(path)
+func setupAPP() *cli.App {
+	app := cli.NewApp()
+	app.Usage = "Cntm CLI"
+	app.Action = startCntm
+	app.Version = config.Version
+	app.Copyright = "Copyright in 2018 The Cntm Authors"
+	app.Commands = []cli.Command{
+		cmd.AccountCommand,
+		cmd.InfoCommand,
+		cmd.AssetCommand,
+		cmd.ContractCommand,
+		cmd.ImportCommand,
+		cmd.ExportCommand,
+		cmd.TxCommond,
+		cmd.SigTxCommand,
+		cmd.MultiSigAddrCommand,
+		cmd.MultiSigTxCommand,
+		cmd.SendTxCommand,
+		cmd.ShowTxCommand,
+	}
+	app.Flags = []cli.Flag{
+		//common setting
+		utils.ConfigFlag,
+		utils.LogLevelFlag,
+		utils.DisableLogFileFlag,
+		utils.DisableEventLogFlag,
+		utils.DataDirFlag,
+		utils.WasmVerifyMethodFlag,
+		//account setting
+		utils.WalletFileFlag,
+		utils.AccountAddressFlag,
+		utils.AccountPassFlag,
+		//consensus setting
+		utils.EnableConsensusFlag,
+		utils.MaxTxInBlockFlag,
+		//txpool setting
+		utils.GasPriceFlag,
+		utils.GasLimitFlag,
+		utils.TxpoolPreExecDisableFlag,
+		utils.DisableSyncVerifyTxFlag,
+		utils.DisableBroadcastNetTxFlag,
+		//p2p setting
+		utils.ReservedPeersOnlyFlag,
+		utils.ReservedPeersFileFlag,
+		utils.NetworkIdFlag,
+		utils.NodePortFlag,
+		utils.HttpInfoPortFlag,
+		utils.MaxConnInBoundFlag,
+		utils.MaxConnOutBoundFlag,
+		utils.MaxConnInBoundForSingleIPFlag,
+		//test mode setting
+		utils.EnableTestModeFlag,
+		utils.TestModeGenBlockTimeFlag,
+		//rpc setting
+		utils.RPCDisabledFlag,
+		utils.RPCPortFlag,
+		utils.RPCLocalEnableFlag,
+		utils.RPCLocalProtFlag,
+		//rest setting
+		utils.RestfulEnableFlag,
+		utils.RestfulPortFlag,
+		utils.RestfulMaxConnsFlag,
+		//ws setting
+		utils.WsEnabledFlag,
+		utils.WsPortFlag,
+	}
+	app.Before = func(context *cli.Context) error {
+		runtime.GOMAXPROCS(runtime.NumCPU())
+		return nil
+	}
+	return app
 }
 
 func main() {
-	var path string = "./Log/"
-	log.CreatePrintLog(path)
-	fmt.Printf("Node version: %s\n", Version)
-	fmt.Println("//**************************************************************************")
-	fmt.Println("//*** 0. Client open                                                     ***")
-	fmt.Println("//**************************************************************************")
-	ledger.DefaultLedger = new(ledger.Ledger)
-	ledger.DefaultLedger.Store = ChainStore.NewLedgerStore()
-	ledger.DefaultLedger.Store.InitLedgerStore(ledger.DefaultLedger)
-	transaction.TxStore = ledger.DefaultLedger.Store
-	crypto.SetAlg(crypto.P256R1)
-	fmt.Println("  Client set completed. Test Start...")
-	fmt.Println("//**************************************************************************")
-	fmt.Println("//*** 1. Generate [Account]                                              ***")
-	fmt.Println("//**************************************************************************")
-
-	localClient, nodeType := OpenClientAndGetAccount()
-	if localClient == nil {
-		fmt.Println("Can't get local client.")
+	if err := setupAPP().Run(os.Args); err != nil {
+		cmd.PrintErrorMsg(err.Error())
 		os.Exit(1)
 	}
-
-	issuer, err := localClient.GetDefaultAccount()
-	if err != nil {
-		fmt.Println(err)
-	}
-	//admin := issuer
-
-	fmt.Println("//**************************************************************************")
-	fmt.Println("//*** 2. Set Miner                                                     ***")
-	fmt.Println("//**************************************************************************")
-	miner := []*crypto.PubKey{}
-	var i uint32
-	for i = 0; i < minerCount; i++ {
-		miner = append(miner, getMiner(i+1).PublicKey)
-	}
-	ledger.StandbyMiners = miner
-	fmt.Println("miner1.PublicKey", issuer.PublicKey)
-
-	fmt.Println("//**************************************************************************")
-	fmt.Println("//*** 3. BlockChain init                                                 ***")
-	fmt.Println("//**************************************************************************")
-	sampleBlockchain := InitBlockChain()
-	ledger.DefaultLedger.Blockchain = &sampleBlockchain
-
-	time.Sleep(2 * time.Second)
-	neter, noder := net.StartProtocol()
-	httpjsonrpc.RegistRpcNode(noder)
-	time.Sleep(1 * time.Minute)
-
-	fmt.Println("//**************************************************************************")
-	fmt.Println("//*** 5. Start DBFT Services                                             ***")
-	fmt.Println("//**************************************************************************")
-	dbftServices := dbft.NewDbftService(localclient, "logdbft", neter)
-	httpjsonrpc.RegistDbftService(dbftServices)
-	go dbftServices.Start()
-	time.Sleep(5 * time.Second)
-	fmt.Println("DBFT Services start completed.")
-	fmt.Println("//**************************************************************************")
-	fmt.Println("//*** Init Complete                                                      ***")
-	fmt.Println("//**************************************************************************")
-	//go httpjsonrpc.StartRPCServer()
-	//go httpjsonrpc.StartLocalServer()
-
-	time.Sleep(2 * time.Second)
-	// if config.Parameters.MinerName == "c4" {
-	// 	time.Sleep(2 * time.Second)
-	// 	tx := sampleTransaction(issuer, admin)
-	// 	fmt.Println("//**************************************************************************")
-	// 	fmt.Println("//*** transaction gen complete, neter Xmit start                         ***")
-	// 	fmt.Println("//**************************************************************************")
-	// 	neter.Xmit(tx)
-	// 	time.Sleep(10 * time.Second)
-	// 	fmt.Println("//**************************************************************************")
-	// 	fmt.Println("//*** neter Xmit completed                                               ***")
-	// 	fmt.Println("//**************************************************************************")
-	// 	//for {
-	// 		fmt.Println("ledger.DefaultLedger.Blockchain.BlockHeight", ledger.DefaultLedger.Blockchain.BlockHeight)
-	// 		genesisBlockHash, _ := ledger.DefaultLedger.Store.GetBlockHash(0)
-	// 		fmt.Println("gensisBlockGet =", genesisBlockHash)
-	// 		firstblock, _ := ledger.DefaultLedger.Store.GetBlockHash(1)
-	// 		fmt.Println("FirstBlockGet =", firstblock)
-	// 		time.Sleep(10 * time.Second)
-	// 	//}
-
-	// }
-
-	for {
-		log.Debug("ledger.DefaultLedger.Blockchain.BlockHeight= ", ledger.DefaultLedger.Blockchain.BlockHeight)
-		time.Sleep(15 * time.Second)
-	}
-}
-func InitBlockChain() ledger.Blockchain {
-	blockchain, err := ledger.NewBlockchainWithGenesisBlock()
-	if err != nil {
-		fmt.Println(err, "  BlockChain generate failed")
-	}
-	fmt.Println("  BlockChain generate completed. Func test Start...")
-	return *blockchain
 }
 
-func sampleTransaction(issuer *Account, admin *Account) *transaction.Transaction {
-	fmt.Println("//**************************************************************************")
-	fmt.Println("//*** A-1. Generate [Asset] Test                                           ***")
-	fmt.Println("//**************************************************************************")
-	a1 := SampleAsset()
+func startCntm(ctx *cli.Context) {
+	initLog(ctx)
 
-	fmt.Println("//**************************************************************************")
-	fmt.Println("//*** A-2. [ccntmrollerPGM] Generate Test                                   ***")
-	fmt.Println("//**************************************************************************")
-	ccntmrollerPGM, _ := ccntmract.CreateSignatureCcntmract(admin.PubKey())
+	log.Infof("cntm version %s", config.Version)
 
-	fmt.Println("//**************************************************************************")
-	fmt.Println("//*** A-3. Generate [Transaction] Test                                     ***")
-	fmt.Println("//**************************************************************************")
-	ammount := Fixed64(10)
-	tx, _ := transaction.NewAssetRegistrationTransaction(a1, &ammount, issuer.PubKey(), &ccntmrollerPGM.ProgramHash)
-	fmt.Println("//**************************************************************************")
-	fmt.Println("//*** A-4. Generate [signature],[sign],set transaction [Program]           ***")
-	fmt.Println("//**************************************************************************")
+	setMaxOpenFiles()
 
-	//1.Transaction [Ccntmract]
-	transactionCcntmract, _ := ccntmract.CreateSignatureCcntmract(issuer.PubKey())
-	//2.Transaction Signdate
-	signdate, err := signature.SignBySigner(tx, issuer)
+	cfg, err := initConfig(ctx)
 	if err != nil {
-		fmt.Println(err, "signdate SignBySigner failed")
+		log.Errorf("initConfig error: %s", err)
+		return
 	}
-	//3.Transaction [ccntmractCcntmext]
-	fmt.Println("11111 transactionCcntmract.Code", transactionCcntmract.Code)
-	fmt.Println("11111 transactionCcntmract.Parameters", transactionCcntmract.Parameters)
-	fmt.Println("11111 transactionCcntmract.ProgramHash", transactionCcntmract.ProgramHash)
-	transactionCcntmractCcntmext := ccntmract.NewCcntmractCcntmext(tx)
-	//4.add  Ccntmract , public key, signdate to CcntmractCcntmext
-	transactionCcntmractCcntmext.AddCcntmract(transactionCcntmract, issuer.PublicKey, signdate)
-	fmt.Println("22222 transactionCcntmract.Code=", transactionCcntmractCcntmext.Codes)
-	fmt.Println("22222 ", transactionCcntmractCcntmext.GetPrograms()[0])
-
-	//5.get CcntmractCcntmext Programs & setinto transaction
-	tx.SetPrograms(transactionCcntmractCcntmext.GetPrograms())
-
-	fmt.Println("//**************************************************************************")
-	fmt.Println("//*** A-5. Transaction [Validation]                                       ***")
-	fmt.Println("//**************************************************************************")
-	//1.validate transaction ccntment
-	err = validation.VerifyTransaction(tx, ledger.DefaultLedger, nil)
+	acc, err := initAccount(ctx)
 	if err != nil {
-		fmt.Println("Transaction Verify error.", err)
+		log.Errorf("initWallet error: %s", err)
+		return
+	}
+	stateHashHeight := config.GetStateHashCheckHeight(cfg.P2PNode.NetworkId)
+	ldg, err := initLedger(ctx, stateHashHeight)
+	if err != nil {
+		log.Errorf("%s", err)
+		return
+	}
+	txpool, err := initTxPool(ctx)
+	if err != nil {
+		log.Errorf("initTxPool error: %s", err)
+		return
+	}
+	p2pSvr, p2pPid, err := initP2PNode(ctx, txpool)
+	if err != nil {
+		log.Errorf("initP2PNode error: %s", err)
+		return
+	}
+	_, err = initConsensus(ctx, p2pPid, txpool, acc)
+	if err != nil {
+		log.Errorf("initConsensus error: %s", err)
+		return
+	}
+	err = initRpc(ctx)
+	if err != nil {
+		log.Errorf("initRpc error: %s", err)
+		return
+	}
+	err = initLocalRpc(ctx)
+	if err != nil {
+		log.Errorf("initLocalRpc error: %s", err)
+		return
+	}
+	initRestful(ctx)
+	initWs(ctx)
+	initNodeInfo(ctx, p2pSvr)
+
+	go logCurrBlockHeight()
+	waitToExit(ldg)
+}
+
+func initLog(ctx *cli.Context) {
+	//init log module
+	logLevel := ctx.GlobalInt(utils.GetFlagName(utils.LogLevelFlag))
+	//if true, the log will not be output to the file
+	disableLogFile := ctx.GlobalBool(utils.GetFlagName(utils.DisableLogFileFlag))
+	if disableLogFile {
+		log.InitLog(logLevel, log.Stdout)
 	} else {
-		fmt.Println("Transaction Verify Normal Completed.")
+		alog.InitLog(log.PATH)
+		log.InitLog(logLevel, log.PATH, log.Stdout)
 	}
-	//2.validate transaction signdate
-	_, err = validation.VerifySignature(tx, issuer.PubKey(), signdate)
-	if err != nil {
-		fmt.Println("Transaction Signature Verify error.", err)
-	} else {
-		fmt.Println("Transaction Signature Verify Normal Completed.")
-	}
-	return tx
-}
-func SampleAsset() *Asset {
-	var x string = "Onchain"
-	a1 := Asset{Uint256(sha256.Sum256([]byte("a"))), x, byte(0x00), AssetType(Share), UTXO}
-	fmt.Println("  Asset generate complete. Func test Start...")
-	return &a1
 }
 
-func OpenClientAndGetAccount() Client {
-	clientName := config.Parameters.MinerName
-	fmt.Printf("The Miner name is %s\n", clientName)
-	if clientName == "" {
-		fmt.Printf("Miner name not be set at config file protocol.json, which schould be c1,c2,c3,c4. Now is %s\n", clientName)
+func initConfig(ctx *cli.Context) (*config.CntmConfig, error) {
+	//init cntm config from cli
+	cfg, err := cmd.SetCntmConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+	log.Infof("Config init success")
+	return cfg, nil
+}
+
+func initAccount(ctx *cli.Context) (*account.Account, error) {
+	if !config.DefConfig.Consensus.EnableConsensus {
+		return nil, nil
+	}
+	walletFile := ctx.GlobalString(utils.GetFlagName(utils.WalletFileFlag))
+	if walletFile == "" {
+		return nil, fmt.Errorf("Please config wallet file using --wallet flag")
+	}
+	if !common.FileExisted(walletFile) {
+		return nil, fmt.Errorf("Cannot find wallet file: %s. Please create a wallet first", walletFile)
+	}
+
+	acc, err := cmdcom.GetAccount(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get account error: %s", err)
+	}
+	log.Infof("Using account: %s", acc.Address.ToBase58())
+
+	if config.DefConfig.Genesis.ConsensusType == config.CONSENSUS_TYPE_SOLO {
+		curPk := hex.EncodeToString(keypair.SerializePublicKey(acc.PublicKey))
+		config.DefConfig.Genesis.SOLO.Bookkeepers = []string{curPk}
+	}
+
+	log.Infof("Account init success")
+	return acc, nil
+}
+
+func initLedger(ctx *cli.Context, stateHashHeight uint32) (*ledger.Ledger, error) {
+	events.Init() //Init event hub
+
+	var err error
+	dbDir := utils.GetStoreDirPath(config.DefConfig.Common.DataDir, config.DefConfig.P2PNode.NetworkName)
+	ledger.DefLedger, err = ledger.NewLedger(dbDir, stateHashHeight)
+	if err != nil {
+		return nil, fmt.Errorf("NewLedger error: %s", err)
+	}
+	bookKeepers, err := config.DefConfig.GetBookkeepers()
+	if err != nil {
+		return nil, fmt.Errorf("GetBookkeepers error: %s", err)
+	}
+	genesisConfig := config.DefConfig.Genesis
+	genesisBlock, err := genesis.BuildGenesisBlock(bookKeepers, genesisConfig)
+	if err != nil {
+		return nil, fmt.Errorf("genesisBlock error %s", err)
+	}
+	err = ledger.DefLedger.Init(bookKeepers, genesisBlock)
+	if err != nil {
+		return nil, fmt.Errorf("Init ledger error: %s", err)
+	}
+
+	log.Infof("Ledger init success")
+	return ledger.DefLedger, nil
+}
+
+func initTxPool(ctx *cli.Context) (*proc.TXPoolServer, error) {
+	disablePreExec := ctx.GlobalBool(utils.GetFlagName(utils.TxpoolPreExecDisableFlag))
+	bactor.DisableSyncVerifyTx = ctx.GlobalBool(utils.GetFlagName(utils.DisableSyncVerifyTxFlag))
+	disableBroadcastNetTx := ctx.GlobalBool(utils.GetFlagName(utils.DisableBroadcastNetTxFlag))
+	txPoolServer, err := txnpool.StartTxnPoolServer(disablePreExec, disableBroadcastNetTx)
+	if err != nil {
+		return nil, fmt.Errorf("Init txpool error: %s", err)
+	}
+	stlValidator, _ := stateless.NewValidator("stateless_validator")
+	stlValidator.Register(txPoolServer.GetPID(tc.VerifyRspActor))
+	stlValidator2, _ := stateless.NewValidator("stateless_validator2")
+	stlValidator2.Register(txPoolServer.GetPID(tc.VerifyRspActor))
+	stfValidator, _ := stateful.NewValidator("stateful_validator")
+	stfValidator.Register(txPoolServer.GetPID(tc.VerifyRspActor))
+
+	hserver.SetTxnPoolPid(txPoolServer.GetPID(tc.TxPoolActor))
+	hserver.SetTxPid(txPoolServer.GetPID(tc.TxActor))
+
+	log.Infof("TxPool init success")
+	return txPoolServer, nil
+}
+
+func initP2PNode(ctx *cli.Context, txpoolSvr *proc.TXPoolServer) (*p2pserver.P2PServer, *actor.PID, error) {
+	if config.DefConfig.Genesis.ConsensusType == config.CONSENSUS_TYPE_SOLO {
+		return nil, nil, nil
+	}
+	p2p := p2pserver.NewServer()
+
+	p2pActor := p2pactor.NewP2PActor(p2p)
+	p2pPID, err := p2pActor.Start()
+	if err != nil {
+		return nil, nil, fmt.Errorf("p2pActor init error %s", err)
+	}
+	p2p.SetPID(p2pPID)
+	err = p2p.Start()
+	if err != nil {
+		return nil, nil, fmt.Errorf("p2p service start error %s", err)
+	}
+	netreqactor.SetTxnPoolPid(txpoolSvr.GetPID(tc.TxActor))
+	txpoolSvr.RegisterActor(tc.NetActor, p2pPID)
+	hserver.SetNetServerPID(p2pPID)
+	p2p.WaitForPeersStart()
+	log.Infof("P2P init success")
+	return p2p, p2pPID, nil
+}
+
+func initConsensus(ctx *cli.Context, p2pPid *actor.PID, txpoolSvr *proc.TXPoolServer, acc *account.Account) (consensus.ConsensusService, error) {
+	if !config.DefConfig.Consensus.EnableConsensus {
+		return nil, nil
+	}
+	pool := txpoolSvr.GetPID(tc.TxPoolActor)
+
+	consensusType := strings.ToLower(config.DefConfig.Genesis.ConsensusType)
+	consensusService, err := consensus.NewConsensusService(consensusType, acc, pool, nil, p2pPid)
+	if err != nil {
+		return nil, fmt.Errorf("NewConsensusService %s error: %s", consensusType, err)
+	}
+	consensusService.Start()
+
+	netreqactor.SetConsensusPid(consensusService.GetPID())
+	hserver.SetConsensusPid(consensusService.GetPID())
+
+	log.Infof("Consensus init success")
+	return consensusService, nil
+}
+
+func initRpc(ctx *cli.Context) error {
+	if !config.DefConfig.Rpc.EnableHttpJsonRpc {
 		return nil
 	}
-	var c1 Client
-	var c2 Client
-	var c3 Client
-	var c4 Client
+	var err error
+	exitCh := make(chan interface{}, 0)
+	go func() {
+		err = jsonrpc.StartRPCServer()
+		close(exitCh)
+	}()
 
-	if fileExisted("wallet1.txt") {
-		c1 = OpenClient("wallet1.txt", []byte("\x12\x34\x56"))
-	} else {
-		c1 = CreateClient("wallet1.txt", []byte("\x12\x34\x56"))
-	}
-
-	if fileExisted("wallet2.txt") {
-		c2 = OpenClient("wallet2.txt", []byte("\x12\x34\x56"))
-	} else {
-		c2 = CreateClient("wallet2.txt", []byte("\x12\x34\x56"))
-	}
-
-	if fileExisted("wallet3.txt") {
-		c3 = OpenClient("wallet3.txt", []byte("\x12\x34\x56"))
-	} else {
-		c3 = CreateClient("wallet3.txt", []byte("\x12\x34\x56"))
-	}
-
-	if fileExisted("wallet4.txt") {
-		c4 = OpenClient("wallet4.txt", []byte("\x12\x34\x56"))
-	} else {
-		c4 = CreateClient("wallet4.txt", []byte("\x12\x34\x56"))
-	}
-
-	switch clientName {
-	case "c1":
-		return c1
-	case "c2":
-		return c2
-	case "c3":
-		return c3
-	case "c4":
-		return c4
-	case "c":
-		var c Client
-		if fileExisted("wallet.txt") {
-			c = OpenClient("wallet.txt", []byte("\x12\x34\x56"))
-		} else {
-			c = CreateClient("wallet.txt", []byte("\x12\x34\x56"))
+	flag := false
+	select {
+	case <-exitCh:
+		if !flag {
+			return err
 		}
+	case <-time.After(time.Millisecond * 5):
+		flag = true
+	}
+	log.Infof("Rpc init success")
+	return nil
+}
 
-		return c
-	default:
-		fmt.Printf("Please Check your client's ENV SET, if you are standby miners schould be c1,c2,c3,c4.If not, should be c. Now is %s.\n", clientName)
+func initLocalRpc(ctx *cli.Context) error {
+	if !ctx.GlobalBool(utils.GetFlagName(utils.RPCLocalEnableFlag)) {
 		return nil
 	}
-}
+	var err error
+	exitCh := make(chan interface{}, 0)
+	go func() {
+		err = localrpc.StartLocalServer()
+		close(exitCh)
+	}()
 
-func fileExisted(filename string) bool {
-	_, err := os.Stat(filename)
-	return err == nil || os.IsExist(err)
-}
-
-func getMiner1() *Account {
-	c4 := OpenClient("wallet1.txt", []byte("\x12\x34\x56"))
-	account, err := c4.GetDefaultAccount()
-	if err != nil {
-		fmt.Println("GetDefaultAccount failed.")
+	flag := false
+	select {
+	case <-exitCh:
+		if !flag {
+			return err
+		}
+	case <-time.After(time.Millisecond * 5):
+		flag = true
 	}
-	return account
 
+	log.Infof("Local rpc init success")
+	return nil
 }
-func getMiner2() *Account {
-	c4 := OpenClient("wallet2.txt", []byte("\x12\x34\x56"))
-	account, err := c4.GetDefaultAccount()
-	if err != nil {
-		fmt.Println("GetDefaultAccount failed.")
-	}
-	return account
 
+func initRestful(ctx *cli.Context) {
+	if !config.DefConfig.Restful.EnableHttpRestful {
+		return
+	}
+	go restful.StartServer()
+
+	log.Infof("Restful init success")
 }
-func getMiner3() *Account {
-	c4 := OpenClient("wallet3.txt", []byte("\x12\x34\x56"))
-	account, err := c4.GetDefaultAccount()
-	if err != nil {
-		fmt.Println("GetDefaultAccount failed.")
-	}
-	return account
 
+func initWs(ctx *cli.Context) {
+	if !config.DefConfig.Ws.EnableHttpWs {
+		return
+	}
+	websocket.StartServer()
+
+	log.Infof("Ws init success")
 }
-func getMiner4() *Account {
-	c4 := OpenClient("wallet4.txt", []byte("\x12\x34\x56"))
-	account, err := c4.GetDefaultAccount()
-	if err != nil {
-		fmt.Println("GetDefaultAccount failed.")
-	}
-	return account
 
+func initNodeInfo(ctx *cli.Context, p2pSvr *p2pserver.P2PServer) {
+	if config.DefConfig.P2PNode.HttpInfoPort == 0 {
+		return
+	}
+	go nodeinfo.StartServer(p2pSvr.GetNetWork())
+
+	log.Infof("Nodeinfo init success")
+}
+
+func logCurrBlockHeight() {
+	ticker := time.NewTicker(config.DEFAULT_GEN_BLOCK_TIME * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			log.Infof("CurrentBlockHeight = %d", ledger.DefLedger.GetCurrentBlockHeight())
+			isNeedNewFile := log.CheckIfNeedNewFile()
+			if isNeedNewFile {
+				log.ClosePrintLog()
+				log.InitLog(int(config.DefConfig.Common.LogLevel), log.PATH, log.Stdout)
+			}
+		}
+	}
+}
+
+func setMaxOpenFiles() {
+	max, err := fdlimit.Maximum()
+	if err != nil {
+		log.Errorf("failed to get maximum open files: %v", err)
+		return
+	}
+	_, err = fdlimit.Raise(uint64(max))
+	if err != nil {
+		log.Errorf("failed to set maximum open files: %v", err)
+		return
+	}
+}
+
+func waitToExit(db *ledger.Ledger) {
+	exit := make(chan bool, 0)
+	sc := make(chan os.Signal, 1)
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	go func() {
+		for sig := range sc {
+			log.Infof("Cntm received exit signal: %v.", sig.String())
+			log.Infof("closing ledger...")
+			db.Close()
+			close(exit)
+			break
+		}
+	}()
+	<-exit
 }

@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package ledgerstore
@@ -24,14 +24,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cntmio/cntmology-crypto/keypair"
-	"github.com/cntmio/cntmology/account"
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/core/payload"
-	"github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology/core/utils"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
-	nutils "github.com/cntmio/cntmology/smartccntmract/service/native/utils"
+	"github.com/conntectome/cntm-crypto/keypair"
+	"github.com/conntectome/cntm/account"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/core/payload"
+	"github.com/conntectome/cntm/core/types"
+	"github.com/conntectome/cntm/core/utils"
+	"github.com/conntectome/cntm/smartcontract/service/native/cntm"
+	nutils "github.com/conntectome/cntm/smartcontract/service/native/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -129,7 +129,7 @@ func TestBlockHash(t *testing.T) {
 func TestSaveTransaction(t *testing.T) {
 	invoke := &payload.InvokeCode{}
 	txTemp := &types.MutableTransaction{
-		TxType:  types.InvokeNeo,
+		TxType:  types.InvokeCntm,
 		Payload: invoke,
 	}
 	tx, err := txTemp.IntoImmutable()
@@ -373,17 +373,17 @@ func transferTx(from, to common.Address, amount uint64) (*types.Transaction, err
 		Value: amount,
 	})
 	var cversion byte
-	return invokeSmartCcntmractTx(0, 30000, cversion, nutils.OntCcntmractAddress, "transfer", []interface{}{sts})
+	return invokeSmartCcntmractTx(0, 30000, cversion, nutils.CntmCcntmractAddress, "transfer", []interface{}{sts})
 }
 
 func invokeSmartCcntmractTx(gasPrice,
 	gasLimit uint64,
 	cversion byte,
-	ccntmractAddress common.Address,
+	contractAddress common.Address,
 	method string,
 	args []interface{}) (*types.Transaction, error) {
 
-	invokCode, err := utils.BuildNativeInvokeCode(ccntmractAddress, cversion, method, args)
+	invokCode, err := utils.BuildNativeInvokeCode(contractAddress, cversion, method, args)
 	if err != nil {
 		return nil, err
 	}
@@ -398,7 +398,7 @@ func newInvokeTransaction(gasPirce, gasLimit uint64, code []byte) *types.Transac
 		Version:  0,
 		GasPrice: gasPirce,
 		GasLimit: gasLimit,
-		TxType:   types.InvokeNeo,
+		TxType:   types.InvokeCntm,
 		Nonce:    uint32(time.Now().Unix()),
 		Payload:  invokePayload,
 		Sigs:     make([]types.Sig, 0, 0),

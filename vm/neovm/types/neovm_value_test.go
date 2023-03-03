@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package types
@@ -24,7 +24,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/cntmio/cntmology/common"
+	"github.com/conntectome/cntm/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -101,21 +101,21 @@ func TestSerialize(t *testing.T) {
 	assert.Nil(t, err)
 	arr.Append(bi)
 	val_arr := VmValueFromArrayVal(arr)
-	res_t, err := val_arr.ConvertNeoVmValueHexString()
+	res_t, err := val_arr.ConvertCntmVmValueHexString()
 	assert.Nil(t, err)
 	fmt.Println("res_t:", res_t)
 	assert.Equal(t, "ffffc58e4ae6b68900", res_t.([]interface{})[0])
 
 }
 
-func TestVmValue_ConvertNeoVmValueHexString(t *testing.T) {
+func TestVmValue_ConvertCntmVmValueHexString(t *testing.T) {
 	bs := make([]byte, 0, 64*1024)
 	for i := 0; i < 64*1024; i++ {
 		bs = append(bs, byte(1))
 	}
 	vm, err := VmValueFromBytes(bs)
 	assert.Nil(t, err)
-	_, err = vm.ConvertNeoVmValueHexString()
+	_, err = vm.ConvertCntmVmValueHexString()
 	assert.Nil(t, err)
 
 	bs2 := make([]byte, 0, 64*1024)
@@ -124,7 +124,7 @@ func TestVmValue_ConvertNeoVmValueHexString(t *testing.T) {
 	}
 	vm2, err := VmValueFromBytes(bs2)
 	assert.Nil(t, err)
-	_, err = vm2.ConvertNeoVmValueHexString()
+	_, err = vm2.ConvertCntmVmValueHexString()
 	assert.NotNil(t, err)
 }
 
@@ -373,7 +373,7 @@ func TestVmValue_AsBool(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, true, res)
 
-	val_bs, err := VmValueFromBytes(common.BigIntToNeoBytes(b))
+	val_bs, err := VmValueFromBytes(common.BigIntToCntmBytes(b))
 	assert.Nil(t, err)
 	val_b, err := VmValueFromBigInt(b)
 	assert.Nil(t, err)

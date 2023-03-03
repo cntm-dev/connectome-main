@@ -8,8 +8,8 @@
     "13.57.184.209:20838",
     "13.57.184.209:20938"
   ],
-  "ConsensusType":"vbft",
-  "VBFT":{
+  "ConsensusType":"Cbft",
+  "Cbft":{
     "n":70,
     "c":2,
     "k":7,

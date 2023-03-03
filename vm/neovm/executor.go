@@ -1,34 +1,34 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package neovm
+package cntmvm
 
 import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"fmt"
 
-	"github.com/cntmio/cntmology-crypto/keypair"
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/core/signature"
-	"github.com/cntmio/cntmology/vm/neovm/constants"
-	"github.com/cntmio/cntmology/vm/neovm/errors"
-	"github.com/cntmio/cntmology/vm/neovm/types"
+	"github.com/conntectome/cntm-crypto/keypair"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/core/signature"
+	"github.com/conntectome/cntm/vm/cntmvm/constants"
+	"github.com/conntectome/cntm/vm/cntmvm/errors"
+	"github.com/conntectome/cntm/vm/cntmvm/types"
 	"golang.org/x/crypto/ripemd160"
 )
 
@@ -41,8 +41,8 @@ func NewExecutor(code []byte, feature VmFeatureFlag) *Executor {
 	var engine Executor
 	engine.EvalStack = NewValueStack(STACK_LIMIT)
 	engine.AltStack = NewValueStack(STACK_LIMIT)
-	ccntmext := NewExecutionCcntmext(code, feature)
-	engine.Ccntmext = ccntmext
+	context := NewExecutionContext(code, feature)
+	engine.Context = context
 	engine.State = BREAK
 	engine.Features = feature
 	return &engine
@@ -53,45 +53,45 @@ type Executor struct {
 	AltStack  *ValueStack
 	State     VMState
 	Features  VmFeatureFlag
-	Callers   []*ExecutionCcntmext
-	Ccntmext   *ExecutionCcntmext
+	Callers   []*ExecutionContext
+	Context   *ExecutionContext
 }
 
-func (self *Executor) PopCcntmext() (*ExecutionCcntmext, error) {
+func (self *Executor) PopContext() (*ExecutionContext, error) {
 	total := len(self.Callers)
 	if total == 0 {
 		return nil, errors.ERR_INDEX_OUT_OF_BOUND
 	}
-	ccntmext := self.Callers[total-1]
+	context := self.Callers[total-1]
 	self.Callers = self.Callers[:total-1]
-	return ccntmext, nil
+	return context, nil
 }
 
-func (self *Executor) PushCcntmext(ccntmext *ExecutionCcntmext) error {
+func (self *Executor) PushContext(context *ExecutionContext) error {
 	if len(self.Callers) >= constants.MAX_INVOCATION_STACK_SIZE {
 		return errors.ERR_OVER_STACK_LEN
 	}
-	self.Callers = append(self.Callers, ccntmext)
+	self.Callers = append(self.Callers, context)
 	return nil
 }
 
 func (self *Executor) Execute() error {
 	self.State = self.State & (^BREAK)
-	for self.Ccntmext != nil {
+	for self.Context != nil {
 		if self.State == FAULT || self.State == HALT || self.State == BREAK {
 			break
 		}
-		if self.Ccntmext == nil {
+		if self.Context == nil {
 			break
 		}
 
-		opcode, eof := self.Ccntmext.ReadOpCode()
+		opcode, eof := self.Context.ReadOpCode()
 		if eof {
 			break
 		}
 
 		var err error
-		self.State, err = self.ExecuteOp(opcode, self.Ccntmext)
+		self.State, err = self.ExecuteOp(opcode, self.Context)
 		if err != nil {
 			return err
 		}
@@ -110,13 +110,13 @@ func (self *Executor) checkFeaturesEnabled(opcode OpCode) error {
 	return nil
 }
 
-func (self *Executor) ExecuteOp(opcode OpCode, ccntmext *ExecutionCcntmext) (VMState, error) {
+func (self *Executor) ExecuteOp(opcode OpCode, context *ExecutionContext) (VMState, error) {
 	if err := self.checkFeaturesEnabled(opcode); err != nil {
 		return FAULT, err
 	}
 
 	if opcode >= PUSHBYTES1 && opcode <= PUSHBYTES75 {
-		buf, err := ccntmext.OpReader.ReadBytes(int(opcode))
+		buf, err := context.OpReader.ReadBytes(int(opcode))
 		if err != nil {
 			return FAULT, err
 		}
@@ -140,27 +140,27 @@ func (self *Executor) ExecuteOp(opcode OpCode, ccntmext *ExecutionCcntmext) (VMS
 	case PUSHDATA1, PUSHDATA2, PUSHDATA4:
 		var numBytes int
 		if opcode == PUSHDATA1 {
-			d, err := ccntmext.OpReader.ReadByte()
+			d, err := context.OpReader.ReadByte()
 			if err != nil {
 				return FAULT, err
 			}
 
 			numBytes = int(d)
 		} else if opcode == PUSHDATA2 {
-			num, err := ccntmext.OpReader.ReadUint16()
+			num, err := context.OpReader.ReadUint16()
 			if err != nil {
 				return FAULT, err
 			}
 			numBytes = int(num)
 		} else {
-			num, err := ccntmext.OpReader.ReadUint32()
+			num, err := context.OpReader.ReadUint32()
 			if err != nil {
 				return FAULT, err
 			}
 			numBytes = int(num)
 		}
 
-		data, err := ccntmext.OpReader.ReadBytes(numBytes)
+		data, err := context.OpReader.ReadBytes(numBytes)
 		if err != nil {
 			return FAULT, err
 		}
@@ -178,31 +178,31 @@ func (self *Executor) ExecuteOp(opcode OpCode, ccntmext *ExecutionCcntmext) (VMS
 		if err != nil {
 			return FAULT, err
 		}
-		// Flow ccntmrol
+		// Flow control
 	case NOP:
 		return NONE, nil
 	case JMP, JMPIF, JMPIFNOT, CALL:
 		if opcode == CALL {
-			caller := ccntmext.Clone()
+			caller := context.Clone()
 			err := caller.SetInstructionPointer(int64(caller.GetInstructionPointer() + 2))
 			if err != nil {
 				return FAULT, err
 			}
-			err = self.PushCcntmext(caller)
+			err = self.PushContext(caller)
 			if err != nil {
 				return FAULT, err
 			}
 			opcode = JMP
 		}
 
-		num, err := ccntmext.OpReader.ReadInt16()
+		num, err := context.OpReader.ReadInt16()
 		if err != nil {
 			return FAULT, err
 		}
 		offset := int(num)
-		offset = ccntmext.GetInstructionPointer() + offset - 3
+		offset = context.GetInstructionPointer() + offset - 3
 
-		if offset < 0 || offset > len(ccntmext.Code) {
+		if offset < 0 || offset > len(context.Code) {
 			return FAULT, errors.ERR_FAULT
 		}
 		var needJmp = true
@@ -219,14 +219,14 @@ func (self *Executor) ExecuteOp(opcode OpCode, ccntmext *ExecutionCcntmext) (VMS
 		}
 
 		if needJmp {
-			err := ccntmext.SetInstructionPointer(int64(offset))
+			err := context.SetInstructionPointer(int64(offset))
 			if err != nil {
 				return FAULT, err
 			}
 		}
 	case DCALL:
-		caller := ccntmext.Clone()
-		err := self.PushCcntmext(caller)
+		caller := context.Clone()
+		err := self.PushContext(caller)
 		if err != nil {
 			return FAULT, errors.ERR_OVER_STACK_LEN
 		}
@@ -234,17 +234,17 @@ func (self *Executor) ExecuteOp(opcode OpCode, ccntmext *ExecutionCcntmext) (VMS
 		if err != nil {
 			return FAULT, err
 		}
-		if target < 0 || target >= int64(len(self.Ccntmext.Code)) {
+		if target < 0 || target >= int64(len(self.Context.Code)) {
 			return FAULT, errors.ERR_DCALL_OFFSET_ERROR
 		}
-		err = self.Ccntmext.SetInstructionPointer(target)
+		err = self.Context.SetInstructionPointer(target)
 		if err != nil {
 			return FAULT, err
 		}
 	case RET:
-		// omit handle error is ok, if ccntmext stack is empty, self.Ccntmext will be nil
+		// omit handle error is ok, if context stack is empty, self.Context will be nil
 		// which will be checked outside before the next opcode call
-		self.Ccntmext, _ = self.PopCcntmext()
+		self.Context, _ = self.PopContext()
 	case DUPFROMALTSTACK:
 		val, err := self.AltStack.Peek(0)
 		if err != nil {
@@ -580,6 +580,22 @@ func (self *Executor) ExecuteOp(opcode OpCode, ccntmext *ExecutionCcntmext) (VMS
 		if err != nil {
 			return FAULT, err
 		}
+	case NZ:
+		x, err := self.EvalStack.PopAsIntValue()
+		if err != nil {
+			return FAULT, err
+		}
+
+		cmp := x.Cmp(types.IntValFromInt(0))
+		if cmp == 0 {
+			err = self.EvalStack.PushBool(false)
+		} else {
+			err = self.EvalStack.PushBool(true)
+		}
+
+		if err != nil {
+			return FAULT, err
+		}
 	case ADD, SUB, MUL, DIV, MOD, MAX, MIN:
 		left, right, err := self.EvalStack.PopPairAsIntVal()
 		if err != nil {
@@ -647,8 +663,8 @@ func (self *Executor) ExecuteOp(opcode OpCode, ccntmext *ExecutionCcntmext) (VMS
 		if err != nil {
 			return FAULT, err
 		}
-		l := common.BigIntFromNeoBytes(left)
-		r := common.BigIntFromNeoBytes(right)
+		l := common.BigIntFromCntmBytes(left)
+		r := common.BigIntFromCntmBytes(right)
 		var val bool
 		switch opcode {
 		case NUMEQUAL:
@@ -877,7 +893,7 @@ func (self *Executor) ExecuteOp(opcode OpCode, ccntmext *ExecutionCcntmext) (VMS
 			value, ok, err := mapVal.Get(index)
 			if err != nil {
 				return FAULT, err
-			} else if !ok {
+			} else if ok == false {
 				// todo: suply a nil value in vm?
 				return FAULT, errors.ERR_MAP_NOT_EXIST
 			}

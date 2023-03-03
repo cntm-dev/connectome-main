@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package proc
@@ -22,73 +22,49 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/log"
-	tx "github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology/errors"
-	tc "github.com/cntmio/cntmology/txnpool/common"
-	"github.com/cntmio/cntmology/validator/stateful"
-	"github.com/cntmio/cntmology/validator/stateless"
-	"github.com/cntmio/cntmology/validator/types"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/common/log"
+	tx "github.com/conntectome/cntm/core/types"
+	"github.com/conntectome/cntm/errors"
+	tc "github.com/conntectome/cntm/txnpool/common"
+	"github.com/conntectome/cntm/validator/types"
 )
 
-// pendingTx ccntmains the transaction, the time of starting verifying,
-// the cache of check request, the verified result and retry mechanism
+// pendingTx contains the transaction, the time of starting verifying,
+// the cache of check request, the flag indicating the verified status,
+// the verified result and retry mechanism
 type pendingTx struct {
-	tx              *tx.Transaction // That is unverified or on the verifying process
-	valTime         time.Time       // The start time
-	passedStateless bool
-	passedStateful  bool
-	CheckHeight     uint32
-}
-
-func (self *pendingTx) GetTxAttr() []*tc.TXAttr {
-	var res []*tc.TXAttr
-	if self.passedStateless {
-		res = append(res,
-			&tc.TXAttr{
-				Height:  0,
-				Type:    types.Stateless,
-				ErrCode: errors.ErrNoError,
-			})
-	}
-	if self.passedStateful {
-		res = append(res,
-			&tc.TXAttr{
-				Height:  self.CheckHeight,
-				Type:    types.Stateful,
-				ErrCode: errors.ErrNoError,
-			})
-	}
-
-	return res
+	tx      *tx.Transaction // That is unverified or on the verifying process
+	valTime time.Time       // The start time
+	req     *types.CheckTx  // Req cache
+	flag    uint8           // For different types of verification
+	retries uint8           // For resend to validator when time out before verified
+	ret     []*tc.TXAttr    // verified results
 }
 
 // txPoolWorker handles the tasks scheduled by server
 type txPoolWorker struct {
 	mu            sync.RWMutex
+	workId        uint8                         // Worker ID
 	rcvTXCh       chan *tx.Transaction          // The channel of receive transaction
 	stfTxCh       chan *tx.Transaction          // The channel of txs to be re-verified stateful
 	rspCh         chan *types.CheckResponse     // The channel of verified response
 	server        *TXPoolServer                 // The txn pool server pointer
+	timer         *time.Timer                   // The timer of reverifying
 	stopCh        chan bool                     // stop routine
 	pendingTxList map[common.Uint256]*pendingTx // The transaction on the verifying process
-	stateless     *stateless.ValidatorPool
-	stateful      *stateful.ValidatorPool
+	pendingTxLen  int64                         // atomic accessed by other routine
 }
 
-func NewTxPoolWoker(s *TXPoolServer) *txPoolWorker {
-	worker := &txPoolWorker{}
+// init initializes the worker with the configured settings
+func (worker *txPoolWorker) init(workID uint8, s *TXPoolServer) {
 	worker.rcvTXCh = make(chan *tx.Transaction, tc.MAX_PENDING_TXN)
 	worker.stfTxCh = make(chan *tx.Transaction, tc.MAX_PENDING_TXN)
 	worker.pendingTxList = make(map[common.Uint256]*pendingTx)
 	worker.rspCh = make(chan *types.CheckResponse, tc.MAX_PENDING_TXN)
 	worker.stopCh = make(chan bool)
+	worker.workId = workID
 	worker.server = s
-	worker.stateless = stateless.NewValidatorPool(2)
-	worker.stateful = stateful.NewValidatorPool(1)
-
-	return worker
 }
 
 // GetTxStatus returns the status in the pending list with the transaction hash
@@ -103,7 +79,7 @@ func (worker *txPoolWorker) GetTxStatus(hash common.Uint256) *tc.TxStatus {
 
 	txStatus := &tc.TxStatus{
 		Hash:  hash,
-		Attrs: pt.GetTxAttr(),
+		Attrs: pt.ret,
 	}
 	return txStatus
 }
@@ -112,6 +88,10 @@ func (worker *txPoolWorker) GetTxStatus(hash common.Uint256) *tc.TxStatus {
 // the tx is valid, add it to the tx pool, or remove it from the pending
 // list
 func (worker *txPoolWorker) handleRsp(rsp *types.CheckResponse) {
+	if rsp.WorkerId != worker.workId {
+		return
+	}
+
 	worker.mu.Lock()
 	defer worker.mu.Unlock()
 
@@ -124,8 +104,14 @@ func (worker *txPoolWorker) handleRsp(rsp *types.CheckResponse) {
 		log.Debugf("handleRsp: validator %d transaction %x invalid: %s",
 			rsp.Type, rsp.Hash, rsp.ErrCode.Error())
 		delete(worker.pendingTxList, rsp.Hash)
-		atomic.StoreInt64(&worker.pendingTxLen, int64(len(worker.pendingTxList)))
 		worker.server.removePendingTx(rsp.Hash, rsp.ErrCode)
+		return
+	}
+
+	if tc.STATEFUL_MASK&(0x1<<rsp.Type) != 0 && rsp.Height < worker.server.getHeight() {
+		// If validator's height is less than the required one, re-validate it.
+		worker.sendReq2StatefulV(pt.req)
+		pt.valTime = time.Now()
 		return
 	}
 
@@ -156,7 +142,7 @@ func (worker *txPoolWorker) handleRsp(rsp *types.CheckResponse) {
 /* Check if the transaction need to be sent to validator to verify
  * when time out.
  * Todo: Going through the list will take time if the list is too
- * lcntm, need to change the algorithm later
+ * long, need to change the algorithm later
  */
 func (worker *txPoolWorker) handleTimeoutEvent() {
 	if len(worker.pendingTxList) <= 0 {
@@ -173,8 +159,7 @@ func (worker *txPoolWorker) handleTimeoutEvent() {
 				worker.reVerifyTx(k)
 				v.retries++
 			} else {
-				// Todo: Retry exhausted, remove it from pendingTxnList
-				log.Infof("Retry to verify transaction exhausted %x", k.ToArray())
+				log.Debugf("retry to verify transaction exhausted %x", k.ToArray())
 				worker.mu.Lock()
 				delete(worker.pendingTxList, k)
 				worker.mu.Unlock()
@@ -182,7 +167,6 @@ func (worker *txPoolWorker) handleTimeoutEvent() {
 			}
 		}
 	}
-	atomic.StoreInt64(&worker.pendingTxLen, int64(len(worker.pendingTxList)))
 }
 
 // putTxPool adds a valid transaction to the tx pool and removes it from
@@ -235,8 +219,8 @@ func (worker *txPoolWorker) verifyTx(tx *tx.Transaction) {
 	pt.valTime = time.Now()
 }
 
+// reVerifyTx re-sends a check request to the validators.
 func (worker *txPoolWorker) reVerifyTx(txHash common.Uint256) {
-	// Todo: add retry logic
 	pt, ok := worker.pendingTxList[txHash]
 	if !ok {
 		return
@@ -316,7 +300,6 @@ func (worker *txPoolWorker) verifyStateful(tx *tx.Transaction) {
 	// Add it to the pending transaction list
 	worker.mu.Lock()
 	worker.pendingTxList[tx.Hash()] = pt
-	atomic.StoreInt64(&worker.pendingTxLen, int64(len(worker.pendingTxList)))
 	worker.mu.Unlock()
 
 	worker.sendReq2StatefulV(req)
@@ -339,16 +322,26 @@ func (worker *txPoolWorker) start() {
 			if ok {
 				worker.verifyStateful(stfTx)
 			}
+		case <-worker.timer.C:
+			worker.handleTimeoutEvent()
+			worker.timer.Stop()
+			worker.timer.Reset(time.Second * tc.EXPIRE_INTERVAL)
 		case rsp, ok := <-worker.rspCh:
 			if ok {
+				/* Handle the response from validator, if all of cases
+				 * are verified, put it to txnPool
+				 */
 				worker.handleRsp(rsp)
 			}
 		}
 	}
 }
 
-// stop closes/releases channels
+// stop closes/releases channels and stops timer
 func (worker *txPoolWorker) stop() {
+	if worker.timer != nil {
+		worker.timer.Stop()
+	}
 	if worker.rcvTXCh != nil {
 		close(worker.rcvTXCh)
 	}

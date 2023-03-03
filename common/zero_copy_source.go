@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package common
@@ -21,7 +21,6 @@ package common
 import (
 	"encoding/binary"
 	"errors"
-	"io"
 )
 
 var ErrIrregularData = errors.New("irregular data")
@@ -134,24 +133,6 @@ func (self *ZeroCopySource) NextUint32() (data uint32, eof bool) {
 	return binary.LittleEndian.Uint32(buf), eof
 }
 
-func (self *ZeroCopySource) ReadUint32() (data uint32, err error) {
-	data, eof := self.NextUint32()
-	if eof {
-		return 0, io.ErrUnexpectedEOF
-	}
-
-	return data, nil
-}
-
-func (self *ZeroCopySource) ReadUint64() (data uint64, err error) {
-	data, eof := self.NextUint64()
-	if eof {
-		return 0, io.ErrUnexpectedEOF
-	}
-
-	return data, nil
-}
-
 func (self *ZeroCopySource) NextUint64() (data uint64, eof bool) {
 	var buf []byte
 	buf, eof = self.NextBytes(UINT64_SIZE)
@@ -192,38 +173,20 @@ func (self *ZeroCopySource) NextVarBytes() (data []byte, size uint64, irregular 
 	return
 }
 
-func (self *ZeroCopySource) ReadString() (string, error) {
-	d, err := self.ReadVarBytes()
-	return string(d), err
-}
-
-func (self *ZeroCopySource) ReadVarBytes() (data []byte, err error) {
-	data, _, irr, eof := self.NextVarBytes()
-	if irr {
-		return nil, ErrIrregularData
-	}
-	if eof {
-		return nil, io.ErrUnexpectedEOF
-	}
-
-	return data, nil
-}
-
-func (self *ZeroCopySource) ReadVarUint() (uint64, error) {
-	length, _, irregular, eof := self.NextVarUint()
-	if irregular {
-		return 0, ErrIrregularData
-	}
-	if eof {
-		return 0, io.ErrUnexpectedEOF
-	}
-
-	return length, nil
-}
-
 func (self *ZeroCopySource) NextAddress() (data Address, eof bool) {
 	var buf []byte
 	buf, eof = self.NextBytes(ADDR_LEN)
+	if eof {
+		return
+	}
+	copy(data[:], buf)
+
+	return
+}
+
+func (self *ZeroCopySource) NextI128() (data I128, eof bool) {
+	var buf []byte
+	buf, eof = self.NextBytes(I128_SIZE)
 	if eof {
 		return
 	}

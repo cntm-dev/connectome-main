@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * alcntg with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package genesis
@@ -24,19 +24,19 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cntmio/cntmology-crypto/keypair"
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/config"
-	"github.com/cntmio/cntmology/common/constants"
-	vconfig "github.com/cntmio/cntmology/consensus/vbft/config"
-	"github.com/cntmio/cntmology/core/payload"
-	"github.com/cntmio/cntmology/core/types"
-	"github.com/cntmio/cntmology/core/utils"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/global_params"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/governance"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/cntm"
-	nutils "github.com/cntmio/cntmology/smartccntmract/service/native/utils"
-	"github.com/cntmio/cntmology/smartccntmract/service/neovm"
+	"github.com/conntectome/cntm-crypto/keypair"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/common/config"
+	"github.com/conntectome/cntm/common/constants"
+	vconfig "github.com/conntectome/cntm/consensus/Cbft/config"
+	"github.com/conntectome/cntm/core/payload"
+	"github.com/conntectome/cntm/core/types"
+	"github.com/conntectome/cntm/core/utils"
+	"github.com/conntectome/cntm/smartcontract/service/native/global_params"
+	"github.com/conntectome/cntm/smartcontract/service/native/governance"
+	"github.com/conntectome/cntm/smartcontract/service/native/cntm"
+	nutils "github.com/conntectome/cntm/smartcontract/service/native/utils"
+	"github.com/conntectome/cntm/smartcontract/service/cntmvm"
 )
 
 const (
@@ -45,10 +45,10 @@ const (
 )
 
 var (
-	cntmToken   = newGoverningToken()
-	cntmToken   = newUtilityToken()
-	cntmTokenID = cntmToken.Hash()
-	cntmTokenID = cntmToken.Hash()
+	CNTMToken   = newGoverningToken()
+	CNTGToken   = newUtilityToken()
+	CNTMTokenID = CNTMToken.Hash()
+	CNTGTokenID = CNTGToken.Hash()
 )
 
 var GenBlockTime = config.DEFAULT_GEN_BLOCK_TIME * time.Second
@@ -68,8 +68,8 @@ func BuildGenesisBlock(defaultBookkeeper []keypair.PublicKey, genesisConfig *con
 		return nil, fmt.Errorf("[Block],BuildGenesisBlock err with GetBookkeeperAddress: %s", err)
 	}
 	conf := common.NewZeroCopySink(nil)
-	if genesisConfig.VBFT != nil {
-		err := genesisConfig.VBFT.Serialization(conf)
+	if genesisConfig.Cbft != nil {
+		err := genesisConfig.Cbft.Serialization(conf)
 		if err != nil {
 			return nil, err
 		}
@@ -96,9 +96,9 @@ func BuildGenesisBlock(defaultBookkeeper []keypair.PublicKey, genesisConfig *con
 
 	//block
 	cntm := newGoverningToken()
-	cntm := newUtilityToken()
+	cntg := newUtilityToken()
 	param := newParamCcntmract()
-	oid := deployOntIDCcntmract()
+	oid := deploycntmidCcntmract()
 	auth := deployAuthCcntmract()
 	govConfigTx := newGovConfigTx()
 
@@ -106,7 +106,7 @@ func BuildGenesisBlock(defaultBookkeeper []keypair.PublicKey, genesisConfig *con
 		Header: genesisHeader,
 		Transactions: []*types.Transaction{
 			cntm,
-			cntm,
+			cntg,
 			param,
 			oid,
 			auth,
@@ -114,6 +114,7 @@ func BuildGenesisBlock(defaultBookkeeper []keypair.PublicKey, genesisConfig *con
 			newGoverningInit(),
 			newUtilityInit(),
 			newParamInit(),
+			govConfig,
 		},
 	}
 	genesisBlock.RebuildMerkleRoot()
@@ -121,8 +122,8 @@ func BuildGenesisBlock(defaultBookkeeper []keypair.PublicKey, genesisConfig *con
 }
 
 func newGoverningToken() *types.Transaction {
-	mutable, err := utils.NewDeployTransaction(nutils.OntCcntmractAddress[:], "cntm", "1.0",
-		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", payload.NEOVM_TYPE)
+	mutable, err := utils.NewDeployTransaction(nutils.CntmCcntmractAddress[:], "CNTM", "1.0",
+		"Cntm Team", "ccntmact@cntm.io", "Cntm Network CNTM Token", payload.CNTMVM_TYPE)
 	if err != nil {
 		panic("[NewDeployTransaction] construct genesis governing token transaction error ")
 	}
@@ -134,8 +135,8 @@ func newGoverningToken() *types.Transaction {
 }
 
 func newUtilityToken() *types.Transaction {
-	mutable, err := utils.NewDeployTransaction(nutils.OngCcntmractAddress[:], "cntm", "1.0",
-		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm Token", payload.NEOVM_TYPE)
+	mutable, err := utils.NewDeployTransaction(nutils.CntgCcntmractAddress[:], "CNTG", "1.0",
+		"Cntm Team", "ccntmact@cntm.io", "Cntm Network CNTG Token", payload.CNTMVM_TYPE)
 	if err != nil {
 		panic("[NewDeployTransaction] construct genesis governing token transaction error ")
 	}
@@ -148,8 +149,8 @@ func newUtilityToken() *types.Transaction {
 
 func newParamCcntmract() *types.Transaction {
 	mutable, err := utils.NewDeployTransaction(nutils.ParamCcntmractAddress[:],
-		"ParamConfig", "1.0", "Ontology Team", "ccntmact@cntm.io",
-		"Chain Global Environment Variables Manager ", payload.NEOVM_TYPE)
+		"ParamConfig", "1.0", "Cntm Team", "ccntmact@cntm.io",
+		"Chain Global Environment Variables Manager ", payload.CNTMVM_TYPE)
 	if err != nil {
 		panic("[NewDeployTransaction] construct genesis governing token transaction error ")
 	}
@@ -162,7 +163,7 @@ func newParamCcntmract() *types.Transaction {
 
 func newGovConfigTx() *types.Transaction {
 	mutable, err := utils.NewDeployTransaction(nutils.GovernanceCcntmractAddress[:], "CONFIG", "1.0",
-		"Ontology Team", "ccntmact@cntm.io", "Ontology Network Consensus Config", payload.NEOVM_TYPE)
+		"Cntm Team", "ccntmact@cntm.io", "Cntm Network Consensus Config", payload.CNTMVM_TYPE)
 	if err != nil {
 		panic("[NewDeployTransaction] construct genesis governing token transaction error ")
 	}
@@ -175,7 +176,7 @@ func newGovConfigTx() *types.Transaction {
 
 func deployAuthCcntmract() *types.Transaction {
 	mutable, err := utils.NewDeployTransaction(nutils.AuthCcntmractAddress[:], "AuthCcntmract", "1.0",
-		"Ontology Team", "ccntmact@cntm.io", "Ontology Network Authorization Ccntmract", payload.NEOVM_TYPE)
+		"Cntm Team", "ccntmact@cntm.io", "Cntm Network Authorization Ccntmract", payload.CNTMVM_TYPE)
 	if err != nil {
 		panic("[NewDeployTransaction] construct genesis governing token transaction error ")
 	}
@@ -186,9 +187,9 @@ func deployAuthCcntmract() *types.Transaction {
 	return tx
 }
 
-func deployOntIDCcntmract() *types.Transaction {
-	mutable, err := utils.NewDeployTransaction(nutils.OntIDCcntmractAddress[:], "OID", "1.0",
-		"Ontology Team", "ccntmact@cntm.io", "Ontology Network cntm ID", payload.NEOVM_TYPE)
+func deploycntmidCcntmract() *types.Transaction {
+	mutable, err := utils.NewDeployTransaction(nutils.cntmidCcntmractAddress[:], "OID", "1.0",
+		"Cntm Team", "ccntmact@cntm.io", "Cntm Network CNTM ID", payload.CNTMVM_TYPE)
 	if err != nil {
 		panic("[NewDeployTransaction] construct genesis governing token transaction error ")
 	}
@@ -209,7 +210,7 @@ func newGoverningInit() *types.Transaction {
 		m := (5*len(bookkeepers) + 6) / 7
 		temp, err := types.AddressFromMultiPubKeys(bookkeepers, m)
 		if err != nil {
-			panic(fmt.Sprint("wrcntm bookkeeper config, caused by", err))
+			panic(fmt.Sprint("wrcntg bookkeeper config, caused by", err))
 		}
 		addr = temp
 	}
@@ -217,7 +218,7 @@ func newGoverningInit() *types.Transaction {
 	distribute := []struct {
 		addr  common.Address
 		value uint64
-	}{{addr, constants.cntm_TOTAL_SUPPLY}}
+	}{{addr, constants.CNTM_TOTAL_SUPPLY}}
 
 	args := common.NewZeroCopySink(nil)
 	nutils.EncodeVarUint(args, uint64(len(distribute)))
@@ -226,7 +227,7 @@ func newGoverningInit() *types.Transaction {
 		nutils.EncodeVarUint(args, part.value)
 	}
 
-	mutable := utils.BuildNativeTransaction(nutils.OntCcntmractAddress, cntm.INIT_NAME, args.Bytes())
+	mutable := utils.BuildNativeTransaction(nutils.CntmCcntmractAddress, cntm.INIT_NAME, args.Bytes())
 	tx, err := mutable.IntoImmutable()
 	if err != nil {
 		panic("construct genesis governing token transaction error ")
@@ -235,7 +236,7 @@ func newGoverningInit() *types.Transaction {
 }
 
 func newUtilityInit() *types.Transaction {
-	mutable := utils.BuildNativeTransaction(nutils.OngCcntmractAddress, cntm.INIT_NAME, []byte{})
+	mutable := utils.BuildNativeTransaction(nutils.CntgCcntmractAddress, cntm.INIT_NAME, []byte{})
 	tx, err := mutable.IntoImmutable()
 	if err != nil {
 		panic("construct genesis utility token transaction error ")
@@ -251,7 +252,7 @@ func newParamInit() *types.Transaction {
 		s = append(s, k)
 	}
 
-	for k, v := range neovm.INIT_GAS_TABLE {
+	for k, v := range cntmvm.INIT_GAS_TABLE {
 		INIT_PARAM[k] = strconv.FormatUint(v, 10)
 		s = append(s, k)
 	}
@@ -271,7 +272,7 @@ func newParamInit() *types.Transaction {
 		m := (5*len(bookkeepers) + 6) / 7
 		temp, err := types.AddressFromMultiPubKeys(bookkeepers, m)
 		if err != nil {
-			panic(fmt.Sprint("wrcntm bookkeeper config, caused by", err))
+			panic(fmt.Sprint("wrcntg bookkeeper config, caused by", err))
 		}
 		addr = temp
 	}

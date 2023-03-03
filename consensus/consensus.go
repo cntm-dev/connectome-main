@@ -1,31 +1,30 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package consensus
 
 import (
-	"github.com/cntmio/cntmology-eventbus/actor"
-	"github.com/cntmio/cntmology/account"
-	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/consensus/dbft"
-	"github.com/cntmio/cntmology/consensus/solo"
-	"github.com/cntmio/cntmology/consensus/vbft"
-	p2p "github.com/cntmio/cntmology/p2pserver/net/protocol"
+	"github.com/conntectome/cntm-eventbus/actor"
+	"github.com/conntectome/cntm/account"
+	"github.com/conntectome/cntm/common/log"
+	"github.com/conntectome/cntm/consensus/dbft"
+	"github.com/conntectome/cntm/consensus/solo"
+	"github.com/conntectome/cntm/consensus/Cbft"
 )
 
 type ConsensusService interface {
@@ -37,10 +36,10 @@ type ConsensusService interface {
 const (
 	CONSENSUS_DBFT = "dbft"
 	CONSENSUS_SOLO = "solo"
-	CONSENSUS_VBFT = "vbft"
+	CONSENSUS_Cbft = "Cbft"
 )
 
-func NewConsensusService(consensusType string, account *account.Account, txpool *actor.PID, ledger *actor.PID, p2p p2p.P2P) (ConsensusService, error) {
+func NewConsensusService(consensusType string, account *account.Account, txpool *actor.PID, ledger *actor.PID, p2p *actor.PID) (ConsensusService, error) {
 	if consensusType == "" {
 		consensusType = CONSENSUS_DBFT
 	}
@@ -51,8 +50,8 @@ func NewConsensusService(consensusType string, account *account.Account, txpool 
 		consensus, err = dbft.NewDbftService(account, txpool, p2p)
 	case CONSENSUS_SOLO:
 		consensus, err = solo.NewSoloService(account, txpool)
-	case CONSENSUS_VBFT:
-		consensus, err = vbft.NewVbftServer(account, txpool, p2p)
+	case CONSENSUS_Cbft:
+		consensus, err = Cbft.NewCbftServer(account, txpool, p2p)
 	}
 	log.Infof("ConsensusType:%s", consensusType)
 	return consensus, err

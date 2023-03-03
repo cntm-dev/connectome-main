@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package config
@@ -26,14 +26,14 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/cntmio/cntmology-crypto/keypair"
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/constants"
-	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/errors"
+	"github.com/conntectome/cntm-crypto/keypair"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/common/constants"
+	"github.com/conntectome/cntm/common/log"
+	"github.com/conntectome/cntm/errors"
 )
 
-var Version = "v2.0.0" //Set value when build project
+var Version = "" //Set value when build project
 
 type VerifyMethod int
 
@@ -50,27 +50,28 @@ const (
 	DEFAULT_GEN_BLOCK_TIME   = 6
 	DBFT_MIN_NODE_NUM        = 4 //min node number of dbft consensus
 	SOLO_MIN_NODE_NUM        = 1 //min node number of solo consensus
-	VBFT_MIN_NODE_NUM        = 4 //min node number of vbft consensus
+	Cbft_MIN_NODE_NUM        = 4 //min node number of Cbft consensus
 
 	CONSENSUS_TYPE_DBFT = "dbft"
 	CONSENSUS_TYPE_SOLO = "solo"
-	CONSENSUS_TYPE_VBFT = "vbft"
+	CONSENSUS_TYPE_Cbft = "Cbft"
 
 	DEFAULT_LOG_LEVEL                       = log.InfoLog
-	DEFAULT_ETH_RPC_PORT                    = 20339
-	DEFAULT_NODE_PORT                       = 20338
-	DEFAULT_RPC_PORT                        = 20336
-	DEFAULT_RPC_LOCAL_PORT                  = 20337
-	DEFAULT_GRAPHQL_PORT                    = 20333
-	DEFAULT_REST_PORT                       = 20334
-	DEFAULT_WS_PORT                         = 20335
-	DEFAULT_HTTP_MAX_CONN                   = 1024
-	DEFAULT_MAX_CONN_IN_BOUND               = 1024
-	DEFAULT_MAX_CONN_OUT_BOUND              = 1024
-	DEFAULT_MAX_CONN_IN_BOUND_FOR_SINGLE_IP = 16
-	DEFAULT_HTTP_INFO_PORT                  = 0
+	DEFAULT_MAX_LOG_SIZE                    = 100 //MByte
+	DEFAULT_NODE_PORT                       = uint(20338)
+	DEFAULT_CONSENSUS_PORT                  = uint(20339)
+	DEFAULT_RPC_PORT                        = uint(20336)
+	DEFAULT_RPC_LOCAL_PORT                  = uint(20337)
+	DEFAULT_REST_PORT                       = uint(20334)
+	DEFAULT_WS_PORT                         = uint(20335)
+	DEFAULT_REST_MAX_CONN                   = uint(1024)
+	DEFAULT_MAX_CONN_IN_BOUND               = uint(1024)
+	DEFAULT_MAX_CONN_OUT_BOUND              = uint(1024)
+	DEFAULT_MAX_CONN_IN_BOUND_FOR_SINGLE_IP = uint(16)
+	DEFAULT_HTTP_INFO_PORT                  = uint(0)
 	DEFAULT_MAX_TX_IN_BLOCK                 = 60000
 	DEFAULT_MAX_SYNC_HEADER                 = 500
+	DEFAULT_ENABLE_CONSENSUS                = true
 	DEFAULT_ENABLE_EVENT_LOG                = true
 	DEFAULT_CLI_RPC_PORT                    = uint(20000)
 	DEFUALT_CLI_RPC_ADDRESS                 = "127.0.0.1"
@@ -94,7 +95,7 @@ const (
 	NETWORK_ID_MAIN_NET      = 1
 	NETWORK_ID_POLARIS_NET   = 2
 	NETWORK_ID_SOLO_NET      = 3
-	NETWORK_NAME_MAIN_NET    = "cntmology"
+	NETWORK_NAME_MAIN_NET    = "cntm"
 	NETWORK_NAME_POLARIS_NET = "polaris"
 	NETWORK_NAME_SOLO_NET    = "testmode"
 )
@@ -117,21 +118,6 @@ func GetNetworkMagic(id uint32) uint32 {
 		return nid
 	}
 	return id
-}
-
-var Eip155ChainID = map[uint32]uint32{
-	NETWORK_ID_MAIN_NET:    constants.EIP155_CHAINID_MAINNET, //Network main
-	NETWORK_ID_POLARIS_NET: constants.EIP155_CHAINID_POLARIS, //Network polaris
-	NETWORK_ID_SOLO_NET:    12345,                            //Network solo
-}
-
-func GetEip155ChainID(id uint32) uint32 {
-	nid, ok := Eip155ChainID[id]
-	if ok {
-		return nid
-	}
-
-	return 12345
 }
 
 var STATE_HASH_CHECK_HEIGHT = map[uint32]uint32{
@@ -164,129 +150,6 @@ func GetGasRoundTuneHeight(id uint32) uint32 {
 	return GAS_ROUND_TUNE_HEIGHT[id]
 }
 
-func GetCcntmractApiDeprecateHeight() uint32 {
-	switch DefConfig.P2PNode.NetworkId {
-	case NETWORK_ID_MAIN_NET:
-		return constants.CcntmRACT_DEPRECATE_API_HEIGHT_MAINNET
-	case NETWORK_ID_POLARIS_NET:
-		return constants.CcntmRACT_DEPRECATE_API_HEIGHT_POLARIS
-	default:
-		return 0
-	}
-}
-
-func GetSelfGovRegisterHeight() uint32 {
-	switch DefConfig.P2PNode.NetworkId {
-	case NETWORK_ID_MAIN_NET:
-		return constants.BLOCKHEIGHT_SELFGOV_REGISTER_MAINNET
-	case NETWORK_ID_POLARIS_NET:
-		return constants.BLOCKHEIGHT_SELFGOV_REGISTER_POLARIS
-	default:
-		return 0
-	}
-}
-
-func GetOntFsHeight() uint32 {
-	switch DefConfig.P2PNode.NetworkId {
-	case NETWORK_ID_MAIN_NET:
-		return constants.BLOCKHEIGHT_cntmFS_MAINNET
-	case NETWORK_ID_POLARIS_NET:
-		return constants.BLOCKHEIGHT_cntmFS_POLARIS
-	default:
-		return 0
-	}
-}
-
-func GetNewOntIdHeight() uint32 {
-	switch DefConfig.P2PNode.NetworkId {
-	case NETWORK_ID_MAIN_NET:
-		return constants.BLOCKHEIGHT_NEW_cntmID_MAINNET
-	case NETWORK_ID_POLARIS_NET:
-		return constants.BLOCKHEIGHT_NEW_cntmID_POLARIS
-	default:
-		return 0
-	}
-}
-
-func GetCrossChainHeight() uint32 {
-	switch DefConfig.P2PNode.NetworkId {
-	case NETWORK_ID_POLARIS_NET:
-		return constants.BLOCKHEIGHT_CC_POLARIS
-	default:
-		return 0
-	}
-}
-
-func GetOntHolderUnboundDeadline() uint32 {
-	switch DefConfig.P2PNode.NetworkId {
-	case NETWORK_ID_MAIN_NET:
-		return constants.CHANGE_UNBOUND_TIMESTAMP_MAINNET - constants.GENESIS_BLOCK_TIMESTAMP
-	case NETWORK_ID_POLARIS_NET:
-		return constants.CHANGE_UNBOUND_TIMESTAMP_POLARIS - constants.GENESIS_BLOCK_TIMESTAMP
-	default:
-		return 0
-	}
-}
-
-func GetNewPeerCostHeight() uint32 {
-	switch DefConfig.P2PNode.NetworkId {
-	case NETWORK_ID_MAIN_NET:
-		return constants.BLOCKHEIGHT_NEW_PEER_COST_MAINNET
-	case NETWORK_ID_POLARIS_NET:
-		return constants.BLOCKHEIGHT_NEW_PEER_COST_POLARIS
-	default:
-		return 0
-	}
-}
-
-func GetTrackDestroyedCcntmractHeight() uint32 {
-	switch DefConfig.P2PNode.NetworkId {
-	case NETWORK_ID_MAIN_NET:
-		return constants.BLOCKHEIGHT_TRACK_DESTROYED_CcntmRACT_MAINNET
-	case NETWORK_ID_POLARIS_NET:
-		return constants.BLOCKHEIGHT_TRACK_DESTROYED_CcntmRACT_POLARIS
-	default:
-		return 0
-	}
-}
-
-func GetAddDecimalsHeight() uint32 {
-	switch DefConfig.P2PNode.NetworkId {
-	case NETWORK_ID_MAIN_NET:
-		return constants.BLOCKHEIGHT_ADD_DECIMALS_MAINNET
-	case NETWORK_ID_POLARIS_NET:
-		return constants.BLOCKHEIGHT_ADD_DECIMALS_POLARIS
-	default:
-		return 0
-	}
-}
-
-// the end of unbound timestamp offset from genesis block's timestamp
-func GetGovUnboundDeadline() (uint32, uint64) {
-	count := uint64(0)
-	index := int(GetOntHolderUnboundDeadline() / constants.UNBOUND_TIME_INTERVAL)
-	for i := 0; i < index; i++ {
-		count += constants.UNBOUND_GENERATION_AMOUNT[i] * uint64(constants.UNBOUND_TIME_INTERVAL)
-	}
-	gap := uint64(GetOntHolderUnboundDeadline()) - uint64(index)*uint64(constants.UNBOUND_TIME_INTERVAL)
-	count += constants.UNBOUND_GENERATION_AMOUNT[index]*gap +
-		constants.NEW_UNBOUND_GENERATION_AMOUNT[index]*(uint64(constants.UNBOUND_TIME_INTERVAL)-gap)
-
-	for i := index + 1; i < len(constants.NEW_UNBOUND_GENERATION_AMOUNT); i++ {
-		count += constants.NEW_UNBOUND_GENERATION_AMOUNT[i] * uint64(constants.UNBOUND_TIME_INTERVAL)
-	}
-
-	numInterval := len(constants.NEW_UNBOUND_GENERATION_AMOUNT)
-
-	if constants.NEW_UNBOUND_GENERATION_AMOUNT[numInterval-1] != 3 ||
-		!(count-3*uint64(constants.UNBOUND_TIME_INTERVAL) < constants.cntm_TOTAL_SUPPLY && constants.cntm_TOTAL_SUPPLY <= count) {
-		panic("incompatible constants setting")
-	}
-
-	return constants.UNBOUND_TIME_INTERVAL*uint32(numInterval) - uint32(count-uint64(constants.cntm_TOTAL_SUPPLY))/3 - 1,
-		uint64(3 - (count-uint64(constants.cntm_TOTAL_SUPPLY))%3)
-}
-
 func GetNetworkName(id uint32) string {
 	name, ok := NETWORK_NAME[id]
 	if ok {
@@ -301,8 +164,8 @@ var PolarisConfig = &GenesisConfig{
 		"polaris2.cntm.io:20338",
 		"polaris3.cntm.io:20338",
 		"polaris4.cntm.io:20338"},
-	ConsensusType: CONSENSUS_TYPE_VBFT,
-	VBFT: &VBFTConfig{
+	ConsensusType: CONSENSUS_TYPE_Cbft,
+	Cbft: &CbftConfig{
 		N:                    7,
 		C:                    2,
 		K:                    7,
@@ -311,11 +174,11 @@ var PolarisConfig = &GenesisConfig{
 		HashMsgDelay:         10000,
 		PeerHandshakeTimeout: 10,
 		MaxBlockChangeView:   3000,
-		AdminOntID:           "did:cntm:AMAx993nE6NEqZjwBssUfopxnnvTdob9ij",
+		Admincntmid:           "did:cntm:AMAx993nE6NEqZjwBssUfopxnnvTdob9ij",
 		MinInitStake:         10000,
 		VrfValue:             "1c9810aa9822e511d5804a9c4db9dd08497c31087b0daafa34d768a3253441fa20515e2f30f81741102af0ca3cefc4818fef16adb825fbaa8cad78647f3afb590e",
 		VrfProof:             "c57741f934042cb8d8b087b44b161db56fc3ffd4ffb675d36cd09f83935be853d8729f3f5298d12d6fd28d45dde515a4b9d7f67682d182ba5118abf451ff1988",
-		Peers: []*VBFTPeerStakeInfo{
+		Peers: []*CbftPeerStakeInfo{
 			{
 				Index:      1,
 				PeerPubkey: "037c9e6c6a446b6b296f89b722cbf686b81e0a122444ef05f0f87096777663284b",
@@ -371,8 +234,8 @@ var MainNetConfig = &GenesisConfig{
 		"seed3.cntm.io:20338",
 		"seed4.cntm.io:20338",
 		"seed5.cntm.io:20338"},
-	ConsensusType: CONSENSUS_TYPE_VBFT,
-	VBFT: &VBFTConfig{
+	ConsensusType: CONSENSUS_TYPE_Cbft,
+	Cbft: &CbftConfig{
 		N:                    7,
 		C:                    2,
 		K:                    7,
@@ -381,11 +244,11 @@ var MainNetConfig = &GenesisConfig{
 		HashMsgDelay:         10000,
 		PeerHandshakeTimeout: 10,
 		MaxBlockChangeView:   120000,
-		AdminOntID:           "did:cntm:AdjfcJgwru2FD8kotCPvLDXYzRjqFjc9Tb",
+		Admincntmid:           "did:cntm:AdjfcJgwru2FD8kotCPvLDXYzRjqFjc9Tb",
 		MinInitStake:         100000,
 		VrfValue:             "1c9810aa9822e511d5804a9c4db9dd08497c31087b0daafa34d768a3253441fa20515e2f30f81741102af0ca3cefc4818fef16adb825fbaa8cad78647f3afb590e",
 		VrfProof:             "c57741f934042cb8d8b087b44b161db56fc3ffd4ffb675d36cd09f83935be853d8729f3f5298d12d6fd28d45dde515a4b9d7f67682d182ba5118abf451ff1988",
-		Peers: []*VBFTPeerStakeInfo{
+		Peers: []*CbftPeerStakeInfo{
 			{
 				Index:      1,
 				PeerPubkey: "03348c8fe64e1defb408676b6e320038bd2e592c802e27c3d7e88e68270076c2f7",
@@ -427,12 +290,12 @@ var MainNetConfig = &GenesisConfig{
 	SOLO: &SOLOConfig{},
 }
 
-var DefConfig = NewOntologyConfig()
+var DefConfig = NewCntmConfig()
 
 type GenesisConfig struct {
 	SeedList      []string
 	ConsensusType string
-	VBFT          *VBFTConfig
+	Cbft          *CbftConfig
 	DBFT          *DBFTConfig
 	SOLO          *SOLOConfig
 }
@@ -441,16 +304,16 @@ func NewGenesisConfig() *GenesisConfig {
 	return &GenesisConfig{
 		SeedList:      make([]string, 0),
 		ConsensusType: CONSENSUS_TYPE_DBFT,
-		VBFT:          &VBFTConfig{},
+		Cbft:          &CbftConfig{},
 		DBFT:          &DBFTConfig{},
 		SOLO:          &SOLOConfig{},
 	}
 }
 
 //
-// VBFT genesis config, from local config file
+// Cbft genesis config, from local config file
 //
-type VBFTConfig struct {
+type CbftConfig struct {
 	N                    uint32               `json:"n"` // network size
 	C                    uint32               `json:"c"` // consensus quorum
 	K                    uint32               `json:"k"`
@@ -460,13 +323,13 @@ type VBFTConfig struct {
 	PeerHandshakeTimeout uint32               `json:"peer_handshake_timeout"`
 	MaxBlockChangeView   uint32               `json:"max_block_change_view"`
 	MinInitStake         uint32               `json:"min_init_stake"`
-	AdminOntID           string               `json:"admin_cntm_id"`
+	Admincntmid           string               `json:"admin_cntm_id"`
 	VrfValue             string               `json:"vrf_value"`
 	VrfProof             string               `json:"vrf_proof"`
-	Peers                []*VBFTPeerStakeInfo `json:"peers"`
+	Peers                []*CbftPeerStakeInfo `json:"peers"`
 }
 
-func (self *VBFTConfig) Serialization(sink *common.ZeroCopySink) error {
+func (self *CbftConfig) Serialization(sink *common.ZeroCopySink) error {
 	sink.WriteUint32(self.N)
 	sink.WriteUint32(self.C)
 	sink.WriteUint32(self.K)
@@ -476,7 +339,7 @@ func (self *VBFTConfig) Serialization(sink *common.ZeroCopySink) error {
 	sink.WriteUint32(self.PeerHandshakeTimeout)
 	sink.WriteUint32(self.MaxBlockChangeView)
 	sink.WriteUint32(self.MinInitStake)
-	sink.WriteString(self.AdminOntID)
+	sink.WriteString(self.Admincntmid)
 	sink.WriteString(self.VrfValue)
 	sink.WriteString(self.VrfProof)
 	sink.WriteVarUint(uint64(len(self.Peers)))
@@ -489,7 +352,7 @@ func (self *VBFTConfig) Serialization(sink *common.ZeroCopySink) error {
 	return nil
 }
 
-func (this *VBFTConfig) Deserialization(source *common.ZeroCopySource) error {
+func (this *CbftConfig) Deserialization(source *common.ZeroCopySource) error {
 	n, eof := source.NextUint32()
 	if eof {
 		return errors.NewDetailErr(io.ErrUnexpectedEOF, errors.ErrNoCode, "serialization.ReadUint32, deserialize n error!")
@@ -526,12 +389,12 @@ func (this *VBFTConfig) Deserialization(source *common.ZeroCopySource) error {
 	if eof {
 		return errors.NewDetailErr(io.ErrUnexpectedEOF, errors.ErrNoCode, "serialization.ReadUint32, deserialize minInitStake error!")
 	}
-	adminOntID, _, irregular, eof := source.NextString()
+	admincntmid, _, irregular, eof := source.NextString()
 	if irregular {
-		return errors.NewDetailErr(common.ErrIrregularData, errors.ErrNoCode, "serialization.ReadString, deserialize adminOntID error!")
+		return errors.NewDetailErr(common.ErrIrregularData, errors.ErrNoCode, "serialization.ReadString, deserialize admincntmid error!")
 	}
 	if eof {
-		return errors.NewDetailErr(io.ErrUnexpectedEOF, errors.ErrNoCode, "serialization.ReadString, deserialize adminOntID error!")
+		return errors.NewDetailErr(io.ErrUnexpectedEOF, errors.ErrNoCode, "serialization.ReadString, deserialize admincntmid error!")
 	}
 	vrfValue, _, irregular, eof := source.NextString()
 	if irregular {
@@ -554,9 +417,9 @@ func (this *VBFTConfig) Deserialization(source *common.ZeroCopySource) error {
 	if eof {
 		return errors.NewDetailErr(io.ErrUnexpectedEOF, errors.ErrNoCode, "serialization.ReadVarUint, deserialize peer length error!")
 	}
-	peers := make([]*VBFTPeerStakeInfo, 0)
+	peers := make([]*CbftPeerStakeInfo, 0)
 	for i := 0; uint64(i) < length; i++ {
-		peer := new(VBFTPeerStakeInfo)
+		peer := new(CbftPeerStakeInfo)
 		err := peer.Deserialization(source)
 		if err != nil {
 			return errors.NewDetailErr(err, errors.ErrNoCode, "deserialize peer error!")
@@ -572,34 +435,34 @@ func (this *VBFTConfig) Deserialization(source *common.ZeroCopySource) error {
 	this.PeerHandshakeTimeout = peerHandshakeTimeout
 	this.MaxBlockChangeView = maxBlockChangeView
 	this.MinInitStake = minInitStake
-	this.AdminOntID = adminOntID
+	this.Admincntmid = admincntmid
 	this.VrfValue = vrfValue
 	this.VrfProof = vrfProof
 	this.Peers = peers
 	return nil
 }
 
-type VBFTPeerStakeInfo struct {
+type CbftPeerStakeInfo struct {
 	Index      uint32 `json:"index"`
 	PeerPubkey string `json:"peerPubkey"`
 	Address    string `json:"address"`
 	InitPos    uint64 `json:"initPos"`
 }
 
-func (this *VBFTPeerStakeInfo) Serialization(sink *common.ZeroCopySink) error {
+func (this *CbftPeerStakeInfo) Serialization(sink *common.ZeroCopySink) error {
 	sink.WriteUint32(this.Index)
 	sink.WriteString(this.PeerPubkey)
 
 	address, err := common.AddressFromBase58(this.Address)
 	if err != nil {
-		return fmt.Errorf("serialize VBFTPeerStackInfo error: %v", err)
+		return fmt.Errorf("serialize CbftPeerStackInfo error: %v", err)
 	}
 	address.Serialization(sink)
 	sink.WriteUint64(this.InitPos)
 	return nil
 }
 
-func (this *VBFTPeerStakeInfo) Deserialization(source *common.ZeroCopySource) error {
+func (this *CbftPeerStakeInfo) Deserialization(source *common.ZeroCopySource) error {
 	index, eof := source.NextUint32()
 	if eof {
 		return errors.NewDetailErr(io.ErrUnexpectedEOF, errors.ErrNoCode, "serialization.ReadUint32, deserialize index error!")
@@ -638,17 +501,14 @@ type SOLOConfig struct {
 }
 
 type CommonConfig struct {
-	LogLevel       uint
-	NodeType       string
-	EnableEventLog bool
-	SystemFee      map[string]int64
-	MinGasLimit    uint64
-	GasPrice       uint64
-	DataDir        string
-	ETHTxGasLimit  uint64
-	//NGasLimit        uint64
+	LogLevel         uint
+	NodeType         string
+	EnableEventLog   bool
+	SystemFee        map[string]int64
+	GasLimit         uint64
+	GasPrice         uint64
+	DataDir          string
 	WasmVerifyMethod VerifyMethod
-	TraceTxPool      bool
 }
 
 type ConsensusConfig struct {
@@ -667,24 +527,22 @@ type P2PNodeConfig struct {
 	NetworkMagic              uint32
 	NetworkId                 uint32
 	NetworkName               string
-	NodePort                  uint16
+	NodePort                  uint
 	IsTLS                     bool
 	CertPath                  string
 	KeyPath                   string
 	CAPath                    string
-	HttpInfoPort              uint16
+	HttpInfoPort              uint
 	MaxHdrSyncReqs            uint
 	MaxConnInBound            uint
 	MaxConnOutBound           uint
 	MaxConnInBoundForSingleIP uint
-	EVMChainId                uint32
 }
 
 type RpcConfig struct {
 	EnableHttpJsonRpc bool
 	HttpJsonPort      uint
 	HttpLocalPort     uint
-	EthJsonPort       uint
 }
 
 type RestfulConfig struct {
@@ -695,12 +553,6 @@ type RestfulConfig struct {
 	HttpKeyPath        string
 }
 
-type GraphQLConfig struct {
-	EnableGraphQL  bool
-	GraphQLPort    uint
-	MaxConnections uint
-}
-
 type WebSocketConfig struct {
 	EnableHttpWs bool
 	HttpWsPort   uint
@@ -708,7 +560,7 @@ type WebSocketConfig struct {
 	HttpKeyPath  string
 }
 
-type OntologyConfig struct {
+type CntmConfig struct {
 	Genesis   *GenesisConfig
 	Common    *CommonConfig
 	Consensus *ConsensusConfig
@@ -719,8 +571,8 @@ type OntologyConfig struct {
 	Ws        *WebSocketConfig
 }
 
-func NewOntologyConfig() *OntologyConfig {
-	return &OntologyConfig{
+func NewCntmConfig() *CntmConfig {
+	return &CntmConfig{
 		Genesis: MainNetConfig,
 		Common: &CommonConfig{
 			LogLevel:         DEFAULT_LOG_LEVEL,
@@ -741,7 +593,6 @@ func NewOntologyConfig() *OntologyConfig {
 			NetworkId:                 NETWORK_ID_MAIN_NET,
 			NetworkName:               GetNetworkName(NETWORK_ID_MAIN_NET),
 			NetworkMagic:              GetNetworkMagic(NETWORK_ID_MAIN_NET),
-			EVMChainId:                GetEip155ChainID(NETWORK_ID_MAIN_NET),
 			NodePort:                  DEFAULT_NODE_PORT,
 			IsTLS:                     false,
 			CertPath:                  "",
@@ -762,10 +613,6 @@ func NewOntologyConfig() *OntologyConfig {
 			EnableHttpRestful: true,
 			HttpRestPort:      DEFAULT_REST_PORT,
 		},
-		GraphQL: &GraphQLConfig{
-			EnableGraphQL: false,
-			GraphQLPort:   DEFAULT_GRAPHQL_PORT,
-		},
 		Ws: &WebSocketConfig{
 			EnableHttpWs: true,
 			HttpWsPort:   DEFAULT_WS_PORT,
@@ -773,11 +620,11 @@ func NewOntologyConfig() *OntologyConfig {
 	}
 }
 
-func (this *OntologyConfig) GetBookkeepers() ([]keypair.PublicKey, error) {
+func (this *CntmConfig) GetBookkeepers() ([]keypair.PublicKey, error) {
 	var bookKeepers []string
 	switch this.Genesis.ConsensusType {
-	case CONSENSUS_TYPE_VBFT:
-		for _, peer := range this.Genesis.VBFT.Peers {
+	case CONSENSUS_TYPE_Cbft:
+		for _, peer := range this.Genesis.Cbft.Peers {
 			bookKeepers = append(bookKeepers, peer.PeerPubkey)
 		}
 	case CONSENSUS_TYPE_DBFT:
@@ -791,9 +638,6 @@ func (this *OntologyConfig) GetBookkeepers() ([]keypair.PublicKey, error) {
 	pubKeys := make([]keypair.PublicKey, 0, len(bookKeepers))
 	for _, key := range bookKeepers {
 		pubKey, err := hex.DecodeString(key)
-		if err != nil {
-			return nil, err
-		}
 		k, err := keypair.DeserializePublicKey(pubKey)
 		if err != nil {
 			return nil, fmt.Errorf("Incorrectly book keepers key:%s", key)
@@ -804,7 +648,7 @@ func (this *OntologyConfig) GetBookkeepers() ([]keypair.PublicKey, error) {
 	return pubKeys, nil
 }
 
-func (this *OntologyConfig) GetDefaultNetworkId() (uint32, error) {
+func (this *CntmConfig) GetDefaultNetworkId() (uint32, error) {
 	defaultNetworkId, err := this.getDefNetworkIDFromGenesisConfig(this.Genesis)
 	if err != nil {
 		return 0, err
@@ -826,12 +670,12 @@ func (this *OntologyConfig) GetDefaultNetworkId() (uint32, error) {
 	return defaultNetworkId, nil
 }
 
-func (this *OntologyConfig) getDefNetworkIDFromGenesisConfig(genCfg *GenesisConfig) (uint32, error) {
+func (this *CntmConfig) getDefNetworkIDFromGenesisConfig(genCfg *GenesisConfig) (uint32, error) {
 	var configData []byte
 	var err error
 	switch this.Genesis.ConsensusType {
-	case CONSENSUS_TYPE_VBFT:
-		configData, err = json.Marshal(genCfg.VBFT)
+	case CONSENSUS_TYPE_Cbft:
+		configData, err = json.Marshal(genCfg.Cbft)
 	case CONSENSUS_TYPE_DBFT:
 		configData, err = json.Marshal(genCfg.DBFT)
 	case CONSENSUS_TYPE_SOLO:

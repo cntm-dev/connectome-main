@@ -1,22 +1,22 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package neovm
+package cntmvm
 
 import (
 	"crypto/sha1"
@@ -27,10 +27,10 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/cntmio/cntmology-crypto/keypair"
-	s "github.com/cntmio/cntmology-crypto/signature"
-	"github.com/cntmio/cntmology/vm/neovm/interfaces"
-	"github.com/cntmio/cntmology/vm/neovm/types"
+	"github.com/conntectome/cntm-crypto/keypair"
+	s "github.com/conntectome/cntm-crypto/signature"
+	"github.com/conntectome/cntm/vm/cntmvm/interfaces"
+	"github.com/conntectome/cntm/vm/cntmvm/types"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/ripemd160"
 )
@@ -38,7 +38,7 @@ import (
 type Value interface{}
 
 func value2json(t *testing.T, expect types.VmValue) string {
-	//e, err := expect.ConvertNeoVmValueHexString()
+	//e, err := expect.ConvertCntmVmValueHexString()
 	e, err := expect.Stringify()
 	assert.Nil(t, err)
 	exp, err := json.Marshal(e)
@@ -405,7 +405,7 @@ func TestPUSHDATA(t *testing.T) {
 	checkStackOpCode(t, PUSH16, []Value{9999}, []Value{9999, 16})
 }
 
-func TestFlowCcntmrol(t *testing.T) {
+func TestFlowControl(t *testing.T) {
 	checkMultiStackOpCode(t, []OpCode{PUSH3, DCALL, PUSH0, PUSH1, RET}, nil, []Value{1, 0, 1})
 	checkMultiOpCode(t, []byte{byte(CALL), byte(0x03), byte(0x00), byte(PUSH2), byte(RET)}, nil, []Value{2, 2})
 	checkMultiOpCode(t, []byte{byte(JMP), byte(0x03), byte(0x00), byte(PUSH2), byte(RET)}, nil, []Value{2})

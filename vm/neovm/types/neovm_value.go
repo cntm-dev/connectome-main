@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package types
@@ -27,11 +27,11 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/vm/crossvm_codec"
-	"github.com/cntmio/cntmology/vm/neovm/constants"
-	"github.com/cntmio/cntmology/vm/neovm/errors"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/common/log"
+	"github.com/conntectome/cntm/vm/crossvm_codec"
+	"github.com/conntectome/cntm/vm/cntmvm/constants"
+	"github.com/conntectome/cntm/vm/cntmvm/errors"
 )
 
 const (
@@ -139,9 +139,9 @@ func (self *VmValue) AsBytes() ([]byte, error) {
 			return []byte{1}, nil
 		}
 	case integerType:
-		return common.BigIntToNeoBytes(big.NewInt(self.integer)), nil
+		return common.BigIntToCntmBytes(big.NewInt(self.integer)), nil
 	case bigintType:
-		return common.BigIntToNeoBytes(self.bigInt), nil
+		return common.BigIntToCntmBytes(self.bigInt), nil
 	case bytearrayType:
 		return self.byteArray, nil
 	case arrayType, mapType, structType, interopType:
@@ -179,7 +179,7 @@ func (self *VmValue) buildParamToNative(sink *common.ZeroCopySink) error {
 		}
 		sink.WriteVarBytes(bs)
 	case arrayType:
-		sink.WriteVarBytes(common.BigIntToNeoBytes(big.NewInt(int64(len(self.array.Data)))))
+		sink.WriteVarBytes(common.BigIntToCntmBytes(big.NewInt(int64(len(self.array.Data)))))
 		for _, v := range self.array.Data {
 			err := v.BuildParamToNative(sink)
 			if err != nil {
@@ -203,10 +203,10 @@ func (self *VmValue) buildParamToNative(sink *common.ZeroCopySink) error {
 	}
 	return nil
 }
-func (self *VmValue) ConvertNeoVmValueHexString() (interface{}, error) {
+func (self *VmValue) ConvertCntmVmValueHexString() (interface{}, error) {
 	var count int
 	var length int
-	res, err := self.convertNeoVmValueHexString(&count, &length)
+	res, err := self.convertCntmVmValueHexString(&count, &length)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +216,7 @@ func (self *VmValue) ConvertNeoVmValueHexString() (interface{}, error) {
 	return res, nil
 }
 
-func (self *VmValue) convertNeoVmValueHexString(count *int, length *int) (interface{}, error) {
+func (self *VmValue) convertCntmVmValueHexString(count *int, length *int) (interface{}, error) {
 	if *count > MAX_COUNT {
 		return nil, fmt.Errorf("over max parameters convert length")
 	}
@@ -243,7 +243,7 @@ func (self *VmValue) convertNeoVmValueHexString(count *int, length *int) (interf
 		if self.integer == 0 {
 			bs = []byte{0}
 		} else {
-			bs = common.BigIntToNeoBytes(big.NewInt(self.integer))
+			bs = common.BigIntToCntmBytes(big.NewInt(self.integer))
 		}
 		*length += len(bs)
 		return common.ToHexString(bs), nil
@@ -252,7 +252,7 @@ func (self *VmValue) convertNeoVmValueHexString(count *int, length *int) (interf
 		if self.bigInt.Sign() == 0 {
 			bs = []byte{0}
 		} else {
-			bs = common.BigIntToNeoBytes(self.bigInt)
+			bs = common.BigIntToCntmBytes(self.bigInt)
 		}
 		*length += len(bs)
 		return common.ToHexString(bs), nil
@@ -260,7 +260,7 @@ func (self *VmValue) convertNeoVmValueHexString(count *int, length *int) (interf
 		var sstr []interface{}
 		for i := 0; i < len(self.structval.Data); i++ {
 			*count++
-			t, err := self.structval.Data[i].convertNeoVmValueHexString(count, length)
+			t, err := self.structval.Data[i].convertCntmVmValueHexString(count, length)
 			if err != nil {
 				return nil, err
 			}
@@ -271,7 +271,7 @@ func (self *VmValue) convertNeoVmValueHexString(count *int, length *int) (interf
 		var sstr []interface{}
 		for i := 0; i < len(self.array.Data); i++ {
 			*count++
-			t, err := self.array.Data[i].convertNeoVmValueHexString(count, length)
+			t, err := self.array.Data[i].convertCntmVmValueHexString(count, length)
 			if err != nil {
 				return nil, err
 			}
@@ -330,7 +330,7 @@ func (self *VmValue) deserialize(source *common.ZeroCopySource, depth int) error
 		if irregular {
 			return common.ErrIrregularData
 		}
-		value, err := VmValueFromBigInt(common.BigIntFromNeoBytes(data))
+		value, err := VmValueFromBigInt(common.BigIntFromCntmBytes(data))
 		if err != nil {
 			return err
 		}
@@ -430,11 +430,410 @@ func (self *VmValue) Serialize(sink *common.ZeroCopySink) error {
 		sink.WriteVarBytes(self.byteArray)
 	case bigintType:
 		sink.WriteByte(integerType)
-		sink.WriteVarBytes(common.BigIntToNeoBytes(self.bigInt))
+		sink.WriteVarBytes(common.BigIntToCntmBytes(self.bigInt))
 	case integerType:
 		sink.WriteByte(integerType)
 		t := big.NewInt(self.integer)
-		sink.WriteVarBytes(common.BigIntToNeoBytes(t))
+		sink.WriteVarBytes(common.BigIntToCntmBytes(t))
+	case arrayType:
+		sink.WriteByte(arrayType)
+		sink.WriteVarUint(uint64(len(self.array.Data)))
+		for i := 0; i < len(self.array.Data); i++ {
+			err := self.array.Data[i].Serialize(sink)
+			if err != nil {
+				return err
+			}
+
+		}
+	case mapType:
+		sink.WriteByte(mapType)
+		sink.WriteVarUint(uint64(len(self.mapval.Data)))
+		keys := self.mapval.getMapSortedKey()
+		for _, key := range keys {
+			val := self.mapval.Data[key]
+			keyVal := val[0]
+			err = keyVal.Serialize(sink)
+			if err != nil {
+				return err
+			}
+			value := val[1]
+			err = value.Serialize(sink)
+			if err != nil {
+				return err
+			}
+		}
+	case structType:
+		sink.WriteByte(structType)
+		sink.WriteVarUint(uint64(len(self.structval.Data)))
+		for _, item := range self.structval.Data {
+			err := item.Serialize(sink)
+			if err != nil {
+				return err
+			}
+		}
+	case interopType:
+		return fmt.Errorf("not support type: interopType")
+	default:
+		panic("unreachable!")
+	}
+	if sink.Size() > constants.MAX_BYTEARRAY_SIZE {
+		return fmt.Errorf("runtime serialize: can not serialize length over the uplimit")
+	}
+	return nil
+}
+
+func (self *VmValue) CircularRefAndDepthDetection() (bool, error) {
+	return self.circularRefAndDepthDetection(make(map[uintptr]bool), 0)
+}
+
+func (self *VmValue) circularRefAndDepthDetection(visited map[uintptr]bool, depth int) (bool, error) {
+	if depth > MAX_STRUCT_DEPTH {
+		return true, nil
+	}
+	switch self.valType {
+	case arrayType:
+		arr, err := self.AsArrayValue()
+		if err != nil {
+			return true, err
+		}
+		if len(arr.Data) == 0 {
+			return false, nil
+		}
+		p := reflect.ValueOf(arr.Data).Pointer()
+		if visited[p] {
+			return true, nil
+		}
+		visited[p] = true
+		for _, v := range arr.Data {
+			return v.circularRefAndDepthDetection(visited, depth+1)
+		}
+		delete(visited, p)
+		return false, nil
+	case structType:
+		s, err := self.AsStructValue()
+		if err != nil {
+			return true, err
+		}
+		if len(s.Data) == 0 {
+			return false, nil
+		}
+
+		p := reflect.ValueOf(s.Data).Pointer()
+		if visited[p] {
+			return true, nil
+		}
+		visited[p] = true
+
+		for _, v := range s.Data {
+			return v.circularRefAndDepthDetection(visited, depth+1)
+		}
+
+		delete(visited, p)
+		return false, nil
+	case mapType:
+		mp, err := self.AsMapValue()
+		if err != nil {
+			return true, err
+		}
+		p := reflect.ValueOf(mp.Data).Pointer()
+		if visited[p] {
+			return true, nil
+		}
+		visited[p] = true
+		for _, v := range mp.Data {
+			return v[1].circularRefAndDepthDetection(visited, depth+1)
+		}
+		delete(visited, p)
+		return false, nil
+	default:
+		return false, nil
+	}
+}
+
+func (self *VmValue) BuildParamToNative(sink *common.ZeroCopySink) error {
+	b, err := self.CircularRefAndDepthDetection()
+	if err != nil {
+		return err
+	}
+	if b {
+		return fmt.Errorf("runtime serialize: can not serialize circular reference data")
+	}
+	return self.buildParamToNative(sink)
+}
+
+func (self *VmValue) buildParamToNative(sink *common.ZeroCopySink) error {
+	switch self.valType {
+	case bytearrayType:
+		sink.WriteVarBytes(self.byteArray)
+	case boolType:
+		b, err := self.AsBool()
+		if err != nil {
+			return err
+		}
+		sink.WriteBool(b)
+	case integerType, bigintType:
+		bs, err := self.AsBytes()
+		if err != nil {
+			return err
+		}
+		sink.WriteVarBytes(bs)
+	case arrayType:
+		sink.WriteVarBytes(common.BigIntToCntmBytes(big.NewInt(int64(len(self.array.Data)))))
+		for _, v := range self.array.Data {
+			err := v.BuildParamToNative(sink)
+			if err != nil {
+				return err
+			}
+		}
+	case structType:
+		for _, v := range self.structval.Data {
+			err := v.BuildParamToNative(sink)
+			if err != nil {
+				return err
+			}
+		}
+	case mapType:
+		//TODO
+		return errors.ERR_BAD_TYPE
+	case interopType:
+		return errors.ERR_BAD_TYPE
+	default:
+		panic("unreachable!")
+	}
+	return nil
+}
+func (self *VmValue) ConvertCntmVmValueHexString() (interface{}, error) {
+	var count int
+	var length int
+	res, err := self.convertCntmVmValueHexString(&count, &length)
+	if err != nil {
+		return nil, err
+	}
+	if length > MAX_NOTIFY_LENGTH {
+		return nil, fmt.Errorf("length over max parameters convert length")
+	}
+	return res, nil
+}
+
+func (self *VmValue) convertCntmVmValueHexString(count *int, length *int) (interface{}, error) {
+	if *count > MAX_COUNT {
+		return nil, fmt.Errorf("over max parameters convert length")
+	}
+	if *length > MAX_NOTIFY_LENGTH {
+		return nil, fmt.Errorf("length over max parameters convert length")
+	}
+	switch self.valType {
+	case boolType:
+		boo, err := self.AsBool()
+		if err != nil {
+			return nil, err
+		}
+		*length++
+		if boo {
+			return common.ToHexString([]byte{1}), nil
+		} else {
+			return common.ToHexString([]byte{0}), nil
+		}
+	case bytearrayType:
+		*length += len(self.byteArray)
+		return common.ToHexString(self.byteArray), nil
+	case integerType:
+		var bs []byte
+		if self.integer == 0 {
+			bs = []byte{0}
+		} else {
+			bs = common.BigIntToCntmBytes(big.NewInt(self.integer))
+		}
+		*length += len(bs)
+		return common.ToHexString(bs), nil
+	case bigintType:
+		var bs []byte
+		if self.bigInt.Sign() == 0 {
+			bs = []byte{0}
+		} else {
+			bs = common.BigIntToCntmBytes(self.bigInt)
+		}
+		*length += len(bs)
+		return common.ToHexString(bs), nil
+	case structType:
+		var sstr []interface{}
+		for i := 0; i < len(self.structval.Data); i++ {
+			*count++
+			t, err := self.structval.Data[i].convertCntmVmValueHexString(count, length)
+			if err != nil {
+				return nil, err
+			}
+			sstr = append(sstr, t)
+		}
+		return sstr, nil
+	case arrayType:
+		var sstr []interface{}
+		for i := 0; i < len(self.array.Data); i++ {
+			*count++
+			t, err := self.array.Data[i].convertCntmVmValueHexString(count, length)
+			if err != nil {
+				return nil, err
+			}
+			sstr = append(sstr, t)
+		}
+		return sstr, nil
+	case interopType:
+		bs := self.interop.Data.ToArray()
+		*length += len(bs)
+		return common.ToHexString(bs), nil
+	default:
+		log.Errorf("[ConvertTypes] Invalid Types!, %x", self.valType)
+		return nil, fmt.Errorf("[ConvertTypes] Invalid Types!, %x", self.valType)
+	}
+}
+func (self *VmValue) Deserialize(source *common.ZeroCopySource) error {
+	return self.deserialize(source, 0)
+}
+
+func (self *VmValue) deserialize(source *common.ZeroCopySource, depth int) error {
+	if depth > MAX_COUNT {
+		return fmt.Errorf("vmvalue depth over the uplimit")
+	}
+	t, eof := source.NextByte()
+	if eof {
+		return io.ErrUnexpectedEOF
+	}
+	switch t {
+	case boolType:
+		b, irregular, eof := source.NextBool()
+		if eof {
+			return io.ErrUnexpectedEOF
+		}
+		if irregular {
+			return common.ErrIrregularData
+		}
+		*self = VmValueFromBool(b)
+	case bytearrayType:
+		data, _, irregular, eof := source.NextVarBytes()
+		if eof {
+			return io.ErrUnexpectedEOF
+		}
+		if irregular {
+			return common.ErrIrregularData
+		}
+		value, err := VmValueFromBytes(data)
+		if err != nil {
+			return err
+		}
+		*self = value
+	case integerType:
+		data, _, irregular, eof := source.NextVarBytes()
+		if eof {
+			return io.ErrUnexpectedEOF
+		}
+		if irregular {
+			return common.ErrIrregularData
+		}
+		value, err := VmValueFromBigInt(common.BigIntFromCntmBytes(data))
+		if err != nil {
+			return err
+		}
+		*self = value
+	case arrayType:
+		l, _, irregular, eof := source.NextVarUint()
+		if eof {
+			return io.ErrUnexpectedEOF
+		}
+		if irregular {
+			return common.ErrIrregularData
+		}
+		arr := new(ArrayValue)
+		for i := 0; i < int(l); i++ {
+			v := VmValue{}
+			err := v.deserialize(source, depth+1)
+			if err != nil {
+				return err
+			}
+			err = arr.Append(v)
+			if err != nil {
+				return err
+			}
+		}
+		*self = VmValueFromArrayVal(arr)
+	case mapType:
+		l, _, irregular, eof := source.NextVarUint()
+		if eof {
+			return io.ErrUnexpectedEOF
+		}
+		if irregular {
+			return common.ErrIrregularData
+		}
+		mapValue := NewMapValue()
+		for i := 0; i < int(l); i++ {
+			keyValue := VmValue{}
+			err := keyValue.deserialize(source, depth+1)
+			if err != nil {
+				return err
+			}
+			v := VmValue{}
+			err = v.deserialize(source, depth+1)
+			if err != nil {
+				return err
+			}
+			err = mapValue.Set(keyValue, v)
+			if err != nil {
+				return err
+			}
+		}
+		*self = VmValueFromMapValue(mapValue)
+	case structType:
+		l, _, irregular, eof := source.NextVarUint()
+		if eof {
+			return io.ErrUnexpectedEOF
+		}
+		if irregular {
+			return common.ErrIrregularData
+		}
+		structValue := NewStructValue()
+		for i := 0; i < int(l); i++ {
+			v := VmValue{}
+			err := v.deserialize(source, depth+1)
+			if err != nil {
+				return err
+			}
+			err = structValue.Append(v)
+			if err != nil {
+				return err
+			}
+		}
+		*self = VmValueFromStructVal(structValue)
+	default:
+		return errors.ERR_BAD_TYPE
+	}
+	return nil
+}
+
+func (self *VmValue) Serialize(sink *common.ZeroCopySink) error {
+	b, err := self.CircularRefAndDepthDetection()
+	if err != nil {
+		return err
+	}
+	if b {
+		return fmt.Errorf("runtime serialize: can not serialize circular reference data")
+	}
+	switch self.valType {
+	case boolType:
+		sink.WriteByte(boolType)
+		boo, err := self.AsBool()
+		if err != nil {
+			return err
+		}
+		sink.WriteBool(boo)
+	case bytearrayType:
+		sink.WriteByte(bytearrayType)
+		sink.WriteVarBytes(self.byteArray)
+	case bigintType:
+		sink.WriteByte(integerType)
+		sink.WriteVarBytes(common.BigIntToCntmBytes(self.bigInt))
+	case integerType:
+		sink.WriteByte(integerType)
+		t := big.NewInt(self.integer)
+		sink.WriteVarBytes(common.BigIntToCntmBytes(t))
 	case arrayType:
 		sink.WriteByte(arrayType)
 		sink.WriteVarUint(uint64(len(self.array.Data)))
@@ -556,7 +955,7 @@ func (self *VmValue) AsInt64() (int64, error) {
 		return 0, err
 	}
 	if val.isbig {
-		if !val.bigint.IsInt64() {
+		if val.bigint.IsInt64() == false {
 			return 0, errors.ERR_INTEGER_UNDERFLOW
 		}
 		return val.bigint.Int64(), nil
@@ -573,7 +972,7 @@ func (self *VmValue) AsBigInt() (*big.Int, error) {
 	case bigintType:
 		return self.bigInt, nil
 	case bytearrayType:
-		value := common.BigIntFromNeoBytes(self.byteArray)
+		value := common.BigIntFromCntmBytes(self.byteArray)
 		return value, nil
 	case arrayType, mapType, structType, interopType:
 		return nil, errors.ERR_BAD_TYPE
@@ -589,7 +988,7 @@ func (self *VmValue) AsIntValue() (IntValue, error) {
 	case bigintType:
 		return IntValFromBigInt(self.bigInt)
 	case bytearrayType:
-		return IntValFromNeoBytes(self.byteArray)
+		return IntValFromCntmBytes(self.byteArray)
 	case arrayType, mapType, structType, interopType:
 		return IntValue{}, errors.ERR_BAD_TYPE
 	default:
@@ -657,6 +1056,15 @@ func (self *VmValue) AsInteropValue() (InteropValue, error) {
 	}
 }
 
+func (self *VmValue) AsInteropValue() (InteropValue, error) {
+	switch self.valType {
+	case interopType:
+		return self.interop, nil
+	default:
+		return InteropValue{}, errors.ERR_BAD_TYPE
+	}
+}
+
 func (self *VmValue) Equals(other VmValue) bool {
 	v1, e1 := self.AsBytes()
 	v2, e2 := other.AsBytes()
@@ -681,6 +1089,15 @@ func (self *VmValue) Equals(other VmValue) bool {
 		return self.interop.Equals(other.interop)
 	default:
 		panic("unreachable!")
+	}
+}
+
+func (self *VmValue) GetType() byte {
+	switch self.valType {
+	case integerType, bigintType:
+		return IntegerType
+	default:
+		return self.valType
 	}
 }
 
@@ -805,11 +1222,11 @@ func (self *VmValue) dump() string {
 	return ""
 }
 
-//encode the neovm return vmval
-//transform neovm ccntmract result to encoded byte array
-func BuildResultFromNeo(item VmValue, bf *common.ZeroCopySink) error {
+//encode the cntmvm return vmval
+//transform cntmvm contract result to encoded byte array
+func BuildResultFromCntm(item VmValue, bf *common.ZeroCopySink) error {
 	if len(bf.Bytes()) > crossvm_codec.MAX_PARAM_LENGTH {
-		return fmt.Errorf("parameter buf is too lcntm")
+		return fmt.Errorf("parameter buf is too long")
 	}
 	switch item.valType {
 	case bytearrayType:
@@ -838,7 +1255,7 @@ func BuildResultFromNeo(item VmValue, bf *common.ZeroCopySink) error {
 		bf.WriteByte(crossvm_codec.ListType)
 		bf.WriteUint32(uint32(len(val.Data)))
 		for _, si := range val.Data {
-			err := BuildResultFromNeo(si, bf)
+			err := BuildResultFromCntm(si, bf)
 			if err != nil {
 				return err
 			}

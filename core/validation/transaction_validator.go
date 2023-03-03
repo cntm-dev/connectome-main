@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package validation
@@ -22,36 +22,36 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/config"
-	"github.com/cntmio/cntmology/common/constants"
-	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/core/ledger"
-	"github.com/cntmio/cntmology/core/payload"
-	"github.com/cntmio/cntmology/core/signature"
-	"github.com/cntmio/cntmology/core/types"
-	cntmErrors "github.com/cntmio/cntmology/errors"
-	"github.com/cntmio/cntmology/smartccntmract/service/wasmvm"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/common/config"
+	"github.com/conntectome/cntm/common/constants"
+	"github.com/conntectome/cntm/common/log"
+	"github.com/conntectome/cntm/core/ledger"
+	"github.com/conntectome/cntm/core/payload"
+	"github.com/conntectome/cntm/core/signature"
+	"github.com/conntectome/cntm/core/types"
+	ontErrors "github.com/conntectome/cntm/errors"
+	"github.com/conntectome/cntm/smartcontract/service/wasmvm"
 )
 
 // VerifyTransaction verifys received single transaction
-func VerifyTransaction(tx *types.Transaction) cntmErrors.ErrCode {
+func VerifyTransaction(tx *types.Transaction) ontErrors.ErrCode {
 	if err := checkTransactionSignatures(tx); err != nil {
 		log.Info("transaction verify error:", err)
-		return cntmErrors.ErrVerifySignature
+		return ontErrors.ErrVerifySignature
 	}
 
 	if err := checkTransactionPayload(tx); err != nil {
 		log.Warn("[VerifyTransaction],", err)
-		return cntmErrors.ErrTransactionPayload
+		return ontErrors.ErrTransactionPayload
 	}
 
-	return cntmErrors.ErrNoError
+	return ontErrors.ErrNoError
 }
 
-func VerifyTransactionWithLedger(tx *types.Transaction, ledger *ledger.Ledger) cntmErrors.ErrCode {
+func VerifyTransactionWithLedger(tx *types.Transaction, ledger *ledger.Ledger) ontErrors.ErrCode {
 	//TODO: replay check
-	return cntmErrors.ErrNoError
+	return ontErrors.ErrNoError
 }
 
 func checkTransactionSignatures(tx *types.Transaction) error {
@@ -79,7 +79,7 @@ func checkTransactionSignatures(tx *types.Transaction) error {
 		sn := len(sig.SigData)
 
 		if kn > constants.MULTI_SIG_MAX_PUBKEY_SIZE || sn < m || m > kn || m <= 0 {
-			return errors.New("wrcntm tx sig param length")
+			return errors.New("wrong tx sig param length")
 		}
 
 		if kn == 1 {
@@ -103,7 +103,7 @@ func checkTransactionSignatures(tx *types.Transaction) error {
 	}
 
 	// check payer in address
-	if !address[tx.Payer] {
+	if address[tx.Payer] == false {
 		return errors.New("signature missing for payer: " + tx.Payer.ToBase58())
 	}
 
@@ -118,6 +118,7 @@ func checkTransactionSignatures(tx *types.Transaction) error {
 }
 
 func checkTransactionPayload(tx *types.Transaction) error {
+
 	switch pld := tx.Payload.(type) {
 	case *payload.DeployCode:
 		deploy := tx.Payload.(*payload.DeployCode)
@@ -129,8 +130,6 @@ func checkTransactionPayload(tx *types.Transaction) error {
 		}
 		return nil
 	case *payload.InvokeCode:
-		return nil
-	case *payload.EIP155Code:
 		return nil
 	default:
 		return errors.New(fmt.Sprint("[txValidator], unimplemented transaction payload type.", pld))

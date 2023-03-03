@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package ledgerstore
@@ -25,26 +25,24 @@ import (
 	"fmt"
 	"io"
 
-	common2 "github.com/ethereum/go-ethereum/common"
-	"github.com/cntmio/cntmology/common"
-	"github.com/cntmio/cntmology/common/log"
-	"github.com/cntmio/cntmology/common/serialization"
-	"github.com/cntmio/cntmology/core/payload"
-	"github.com/cntmio/cntmology/core/states"
-	scom "github.com/cntmio/cntmology/core/store/common"
-	"github.com/cntmio/cntmology/core/store/leveldbstore"
-	"github.com/cntmio/cntmology/core/store/overlaydb"
-	"github.com/cntmio/cntmology/merkle"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/cntmid"
-	"github.com/cntmio/cntmology/smartccntmract/service/native/utils"
-	"github.com/cntmio/cntmology/smartccntmract/storage"
+	"github.com/conntectome/cntm/common"
+	"github.com/conntectome/cntm/common/log"
+	"github.com/conntectome/cntm/common/serialization"
+	"github.com/conntectome/cntm/core/payload"
+	"github.com/conntectome/cntm/core/states"
+	scom "github.com/conntectome/cntm/core/store/common"
+	"github.com/conntectome/cntm/core/store/leveldbstore"
+	"github.com/conntectome/cntm/core/store/overlaydb"
+	"github.com/conntectome/cntm/merkle"
+	"github.com/conntectome/cntm/smartcontract/service/native/cntmid"
+	"github.com/conntectome/cntm/smartcontract/service/native/utils"
 )
 
 var (
 	BOOKKEEPER = []byte("Bookkeeper") //Bookkeeper store key
 )
 
-//StateStore saving the data of ledger states. Like balance of account, and the execution result of smart ccntmract
+//StateStore saving the data of ledger states. Like balance of account, and the execution result of smart contract
 type StateStore struct {
 	dbDir                string                    //Store file path
 	store                scom.PersistStore         //Store handler
@@ -81,7 +79,7 @@ func NewStateStore(dbDir, merklePath string, stateHashCheckHeight uint32) (*Stat
 
 // for test
 func NewMemStateStore(stateHashHeight uint32) *StateStore {
-	store := leveldbstore.NewMemLevelDBStore()
+	store, _ := leveldbstore.NewMemLevelDBStore()
 	stateStore := &StateStore{
 		store:                store,
 		merkleTree:           merkle.NewTree(0, nil, nil),
@@ -178,9 +176,6 @@ func (self *StateStore) GetStateMerkleRoot(height uint32) (result common.Uint256
 	}
 	source := common.NewZeroCopySource(value)
 	_, eof := source.NextHash()
-	if eof {
-		err = io.ErrUnexpectedEOF
-	}
 	result, eof = source.NextHash()
 	if eof {
 		err = io.ErrUnexpectedEOF
@@ -245,9 +240,9 @@ func (self *StateStore) CommitTo() error {
 	return self.store.BatchCommit()
 }
 
-//GetCcntmractState return ccntmract by ccntmract address
-func (self *StateStore) GetCcntmractState(ccntmractHash common.Address) (*payload.DeployCode, error) {
-	key, err := self.getCcntmractStateKey(ccntmractHash)
+//GetContractState return contract by contract address
+func (self *StateStore) GetContractState(contractHash common.Address) (*payload.DeployCode, error) {
+	key, err := self.getContractStateKey(contractHash)
 	if err != nil {
 		return nil, err
 	}
@@ -257,12 +252,12 @@ func (self *StateStore) GetCcntmractState(ccntmractHash common.Address) (*payloa
 		return nil, err
 	}
 	source := common.NewZeroCopySource(value)
-	ccntmractState := new(payload.DeployCode)
-	err = ccntmractState.Deserialization(source)
+	contractState := new(payload.DeployCode)
+	err = contractState.Deserialization(source)
 	if err != nil {
 		return nil, err
 	}
-	return ccntmractState, nil
+	return contractState, nil
 }
 
 //GetBookkeeperState return current book keeper states
@@ -297,77 +292,13 @@ func (self *StateStore) SaveBookkeeperState(bookkeeperState *states.BookkeeperSt
 	return self.store.Put(key, value.Bytes())
 }
 
-func (self *StateStore) GetEthCode(codeHash common2.Hash) ([]byte, error) {
-	key := genEthCodeKey(codeHash)
-	value, err := self.store.Get(key)
-	if err != nil {
-		return nil, err
-	}
-	return value, nil
-}
-
-func (self *StateStore) GetEthAccount(address common2.Address) (*storage.EthAccount, error) {
-	key := genEthAccountKey(address)
-	value, err := self.store.Get(key)
-	if err != nil {
-		if err == scom.ErrNotFound {
-			return &storage.EthAccount{}, nil
-		}
-		return nil, err
-	}
-	reader := common.NewZeroCopySource(value)
-	account := new(storage.EthAccount)
-	err = account.Deserialization(reader)
-	if err != nil {
-		return nil, err
-	}
-	return account, nil
-}
-
-func (self *StateStore) GetEthState(addr common2.Address, stateKey common2.Hash) ([]byte, error) {
-	key := genStateKey(addr, stateKey)
-	value, err := self.store.Get(key)
-	if err != nil {
-		if err == scom.ErrNotFound {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return value, nil
-}
-
-func genEthCodeKey(codeHash common2.Hash) []byte {
-	key := make([]byte, 1+len(codeHash))
-	key[0] = byte(scom.ST_ETH_CODE)
-	copy(key[1:], codeHash[:])
-	return key
-}
-
-func genStateKey(ccntmract common2.Address, stateKey common2.Hash) []byte {
-	suffixKey := genKey(ccntmract, stateKey)
-	key := make([]byte, 1+len(suffixKey))
-	key[0] = byte(scom.ST_STORAGE)
-	copy(key[1:], suffixKey)
-	return key
-}
-
-func genKey(ccntmract common2.Address, key common2.Hash) []byte {
-	var result []byte
-	result = append(result, ccntmract.Bytes()...)
-	result = append(result, key.Bytes()...)
-	return result
-}
-
-func genEthAccountKey(addr common2.Address) []byte {
-	key := make([]byte, 1+len(addr))
-	key[0] = byte(scom.ST_ETH_ACCOUNT)
-	copy(key[1:], addr[:])
-	return key
-}
-
-//GetStorageItem return the storage value of the key in smart ccntmract.
+//GetStorageItem return the storage value of the key in smart contract.
 func (self *StateStore) GetStorageState(key *states.StorageKey) (*states.StorageItem, error) {
-	storeKey := self.genStorageKey(key)
+	storeKey, err := self.getStorageKey(key)
+	if err != nil {
+		return nil, err
+	}
+
 	data, err := self.store.Get(storeKey)
 	if err != nil {
 		return nil, err
@@ -379,53 +310,6 @@ func (self *StateStore) GetStorageState(key *states.StorageKey) (*states.Storage
 		return nil, err
 	}
 	return storageState, nil
-}
-
-//FindStorageItem return the storage value of the key in smart ccntmract.
-func (self *StateStore) FindStorageState(key *states.StorageKey) ([]*states.StorageItem, error) {
-	storeKey, err := self.getStorageKey(key)
-	if err != nil {
-		return nil, err
-	}
-	var storage []*states.StorageItem
-	iter := self.store.NewIterator(storeKey)
-	for iter.Next() {
-		reader := bytes.NewReader(iter.Value())
-		storageState := new(states.StorageItem)
-		err = storageState.Deserialize(reader)
-		if err != nil {
-			return nil, err
-		}
-		storage = append(storage, storageState)
-	}
-	iter.Release()
-	return storage, nil
-}
-
-//GetVoteStates return vote states
-func (self *StateStore) GetVoteStates() (map[common.Address]*states.VoteState, error) {
-	votes := make(map[common.Address]*states.VoteState)
-	iter := self.store.NewIterator([]byte{byte(scom.ST_VOTE)})
-	defer iter.Release()
-	for iter.Next() {
-		rk := bytes.NewReader(iter.Key())
-		// read prefix
-		_, err := serialization.ReadBytes(rk, 1)
-		if err != nil {
-			return nil, fmt.Errorf("ReadBytes error %s", err)
-		}
-		var programHash common.Address
-		if err := programHash.Deserialize(rk); err != nil {
-			return nil, err
-		}
-		vote := new(states.VoteState)
-		r := bytes.NewReader(iter.Value())
-		if err := vote.Deserialize(r); err != nil {
-			return nil, err
-		}
-		votes[programHash] = vote
-	}
-	return votes, nil
 }
 
 //GetCurrentBlock return current block height and current hash in state store
@@ -520,20 +404,20 @@ func (self *StateStore) getBookkeeperKey() ([]byte, error) {
 	return key, nil
 }
 
-func (self *StateStore) getCcntmractStateKey(ccntmractHash common.Address) ([]byte, error) {
-	data := ccntmractHash[:]
+func (self *StateStore) getContractStateKey(contractHash common.Address) ([]byte, error) {
+	data := contractHash[:]
 	key := make([]byte, 1+len(data))
-	key[0] = byte(scom.ST_CcntmRACT)
+	key[0] = byte(scom.ST_CCNTMRACT)
 	copy(key[1:], data)
 	return key, nil
 }
 
-func (self *StateStore) genStorageKey(key *states.StorageKey) []byte {
+func (self *StateStore) getStorageKey(key *states.StorageKey) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 	buf.WriteByte(byte(scom.ST_STORAGE))
-	buf.Write(key.CcntmractAddress[:])
+	buf.Write(key.ContractAddress[:])
 	buf.Write(key.Key)
-	return buf.Bytes()
+	return buf.Bytes(), nil
 }
 
 func (self *StateStore) GetStateMerkleRootWithNewHash(writeSetHash common.Uint256) common.Uint256 {
@@ -583,7 +467,7 @@ func (self *StateStore) Close() error {
 func (self *StateStore) CheckStorage() error {
 	db := self.store
 
-	prefix := append([]byte{byte(scom.ST_STORAGE)}, utils.OntIDCcntmractAddress[:]...) //prefix of new storage key
+	prefix := append([]byte{byte(scom.ST_STORAGE)}, utils.cntmidContractAddress[:]...) //prefix of new storage key
 	flag := append(prefix, cntmid.FIELD_VERSION)
 	val, err := db.Get(flag)
 	if err == nil {

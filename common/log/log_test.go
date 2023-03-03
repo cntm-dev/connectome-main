@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2018 The cntmology Authors
- * This file is part of The cntmology library.
+ * Copyright (C) 2018 The cntm Authors
+ * This file is part of The cntm library.
  *
- * The cntmology is free software: you can redistribute it and/or modify
+ * The cntm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * The cntmology is distributed in the hope that it will be useful,
+ * The cntm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * alcntm with The cntmology.  If not, see <http://www.gnu.org/licenses/>.
+ * along with The cntm.  If not, see <http://www.gnu.org/licenses/>.
  */
 package log
 
@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"sync"
 	"testing"
 	"time"
 
@@ -51,10 +50,10 @@ func TestLog(t *testing.T) {
 	}()
 
 	InitLog(InfoLog, PATH, Stdout)
-	Log().SetDebugLevel(DebugLog)
+	Log.SetDebugLevel(DebugLog)
 	logPrint()
 
-	Log().SetDebugLevel(WarnLog)
+	Log.SetDebugLevel(WarnLog)
 
 	logPrint()
 
@@ -73,6 +72,8 @@ func TestNewLogFile(t *testing.T) {
 		return
 	}
 	logPrint()
+	isNeedNewFile := CheckIfNeedNewFile()
+	assert.NotEqual(t, isNeedNewFile, true)
 	ClosePrintLog()
 	time.Sleep(time.Second * 2)
 	InitLog(InfoLog, PATH, Stdout)
@@ -82,21 +83,4 @@ func TestNewLogFile(t *testing.T) {
 		return
 	}
 	assert.Equal(t, len(logfileNum1), len(logfileNum2)-1)
-}
-
-func TestDataRace(t *testing.T) {
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for i := 0; i < 1000; i++ {
-			InitLog(DebugLog)
-		}
-	}()
-
-	for i := 0; i < 10; i++ {
-		Debug("aaaa")
-	}
-
-	wg.Wait()
 }

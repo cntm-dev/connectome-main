@@ -1,222 +1,174 @@
-<h1 align="center">Ontology</h1>
-<h4 align="center">Version 2.2.0(Bin) 1.13.0(Lib)</h4>
 
-[![GoDoc](https://godoc.org/github.com/cntmio/cntmology?status.svg)](https://godoc.org/github.com/cntmio/cntmology)
-[![Go Report Card](https://goreportcard.com/badge/github.com/cntmio/cntmology)](https://goreportcard.com/report/github.com/cntmio/cntmology)
-[![Travis](https://travis-ci.com/cntmio/cntmology.svg?branch=master)](https://travis-ci.com/cntmio/cntmology)
-[![Discord](https://img.shields.io/discord/102860784329052160.svg)](https://discord.gg/gDkuCAq)
+<h1 align="center">Connectome</h1>
+<h4 align="center">Version 1.7.0</h4>
 
-English | [中文](README_CN.md)
+## 1. Description of blockchain;
+
+Connectome is dedicated to building a distributed VHA intelligent brain multi-ecosystem based on the bottom technology of the blockchain.Connectome will use blockchain technology to build an intelligent brain multi-ecosystem that can connect VHA users, VHA enterprises, and VHA applications. using CNTM Network, C-VHA intelligent brain platform, decentralized VHA market, CNTM open intelligent cloud, the four core modules that aggregate each human, VHA data source, VHA application, AI manufacturer, AI service provider, AI resource provider, and AI consumer, to break th21e data monopoly, so that everyone can participate in innovation and contribute data and VHA. It allows AI service providers and applications to efficiently collaborate and reach cooperation, thereby creating a diverse ecosystem of VHA and promoting the rapid development of Artificial Intelligence.
 
-Welcome to the official Go implementation of the [Ontology](https://cntm.io) blockchain!
+Connectome's detrust, non-tamperable, and secure consensus structure on blockchain technology, participants in various roles in the Artificial Intelligence industry (various types of AI companies), and demanders of Artificial Intelligence services (individual / traditional enterprises), both of them can achieve more efficient collaboration and cooperation through the blockchain; while decentralized data exchange and asset exchange can enable Artificial Intelligence data resources, model resources, computing power resources, and various applications and services to realize value circulation on blockchain. At the same time, the openness of the blockchain can also allow more users and ordinary people to participate in the ecosystem of Artificial Intelligence, and contribute more data and resources for the development of Artificial Intelligence.
+
 
-Ontology is a high-performance public blockchain project and distributed trust collaboration platform. It is highly customizable and suitable for all kinds of business requirements. The Ontology MainNet was launched on June 30th, 2018.
+## 2. Imagination of blockchain;
 
-As a public blockchain project, Ontology is currently maintained by both the Ontology core tech team and community members who can all support you in development. There are many available tools for use for development - SDKs, the SmartX IDE, Ontology blockchain explorer and more.
-
-New features are still being rapidly developed, therefore the master branch may be unstable. Stable versions can be found in the [releases section](https://github.com/cntmio/cntmology/releases).
-
-## Features
-
-- Scalable lightweight universal smart ccntmracts
-- Scalable WASM ccntmract support
-- Cross-chain interactive protocol
-- Multiple encryption algorithms supported
-- Highly optimized transaction processing speed
-- P2P link layer encryption (optional module)
-- Multiple consensus algorithms supported (VBFT/DBFT/RBFT/SBFT/PoW)
-- Quick block generation time (1-30 seconds)
-
-
-## Install from Binaries
-You can download a stable compiled version of the Ontology node software by either:
-
-- Downloading the latest Ontology binary file with `curl https://dev.cntm.io/cntmology_install | sh`.
-- Downloading a specific version from the [release section](https://github.com/cntmio/cntmology/releases).
-
-## Build From Source
-
-### Prerequisites
-
-- [Golang](https://golang.org/doc/install) version 1.15 or later
-
-
-### Build
-
-Note that the code in the `master` branch may not be stable.
-
-```
-$ git clone https://github.com/cntmio/cntmology.git
-$ cd cntmology
-$ make all
-```
-
-After building the source code successfully, you should see two executable programs:
-
-- `cntmology`: The primary Ontology node application and CLI.
-- `tools/sigsvr`: The Ontology Signature Server, `sigsvr` - an RPC server for signing transactions. Detailed documentation can be found [here](https://github.com/cntmio/documentation/blob/master/docs/pages/doc_en/Ontology/sigsvr_en.md).
-
-## Run Ontology
-
-The Ontology CLI can run nodes for the MainNet, TestNet and local PrivateNet. Check out the [Ontology CLI user guide](https://github.com/cntmio/cntmology/blob/master/docs/specifications/cli_user_guide.md) for a full list of commands.
-
-### MainNet Sync Node
-
-You can run an Ontology MainNet node built from the source code with:
-
-```shell
-./cntmology                          # Linux
-./cntmology-darwin-amd64             # MacOS
-start cntmology-windows-amd64.exe    # Windows
-```
-
-### TestNet Sync Node
-
-You can run an Ontology TestNet node built from the source code with:
-
-```shell
-./cntmology --networkid 2                        # Linux
-./cntmology-darwin-amd64 --networkid 2           # MacOS
- start cntmology-windows-amd64.exe --networkid 2 # Windows
-```
-
-### Local PrivateNet
-
-The Ontology CLI allows you to run a local PrivateNet on your computer. Before you can run the PrivateNet you will need to create a wallet file. A wallet file named `wallet.dat` can be generated by running
-
-``` shell
-./cntmology account add -d
-```
-
-To start the PrivateNet built from the source code with:
-
-```shell
-./cntmology --testmode                       # Linux
-./cntmology-darwin-amd64 --testmode          # MacOS
-start cntmology-windows-amd64.exe --testmode # Windows
-```
-
-Here's an example of the directory structure
-
-``` shell
-$ tree
-└── cntmology
-    ├── cntmology
-    └── wallet.dat
-```
-
-
-### Run with Docker
-
-You can run the Ontology node software with Docker.
-
-1. Setup Docker-compose on your computer
-  - You will need the latest version of [Docker Compose](https://docs.docker.com/compose/install/).
-
-2. Make a Docker image
-  - In the root directory of the source code, run `make docker` to make an Ontology image.
-
-3. Run the Ontology image
-  - Run the command `docker run cntmio/cntmology` to start Ontology
-  - Run the command `docker run -ti cntmio/cntmology` to start Ontology and allow interactive keyboard input
-  - If you need to keep the data generated by the image, refer to Docker's data persistence function
-  - You can add arguments to the Ontology command, such as with `docker run cntmio/cntmology --networkid 2`.
-
-## Examples
-
-### cntm transfer sample
- -- from: transfer from； -- to: transfer to； -- amount: cntm amount；
-```shell
- ./cntmology asset transfer  --from=ARVVxBPGySL56CvSSWfjRVVyZYpNZ7zp48 --to=AaCe8nVkMRABnp5YgEjYZ9E5KYCxks2uce --amount=10
-```
-If the asset transfer is successful, the result will display as follows:
-
-```shell
-Transfer cntm
-  From:ARVVxBPGySL56CvSSWfjRVVyZYpNZ7zp48
-  To:AaCe8nVkMRABnp5YgEjYZ9E5KYCxks2uce
-  Amount:10
-  TxHash:437bff5dee9a1894ad421d55b8c70a2b7f34c574de0225046531e32faa1f94ce
-```
-TxHash is the transfer transaction hash, and we can query a transfer result by the TxHash.
-Due to block time, the transfer transaction will not be executed before the block is generated and added.
-
-If you want to transfer cntm, just add --asset=cntm flag.
-
-Note that cntm is an integer and has no decimals, whereas cntm has 9 decimals. For detailed info please read [Everything you need to know about cntm](https://medium.com/cntmologynetwork/everything-you-need-to-know-about-cntm-582ed216b870).
-
-```shell
-./cntmology asset transfer --from=ARVVxBPGySL56CvSSWfjRVVyZYpNZ7zp48 --to=ARVVxBPGySL56CvSSWfjRVVyZYpNZ7zp48 --amount=95.479777254 --asset=cntm
-```
-If transfer of the asset succeeds, the result will display as follows:
-
-```shell
-Transfer cntm
-  From:ARVVxBPGySL56CvSSWfjRVVyZYpNZ7zp48
-  To:AaCe8nVkMRABnp5YgEjYZ9E5KYCxks2uce
-  Amount:95.479777254
-  TxHash:e4245d83607e6644c360b6007045017b5c5d89d9f0f5a9c3b37801018f789cc3
-```
-
-Please note, when you use the address of an account, you can use the index or label of the account instead. Index is the sequence number of a particular account in the wallet. The index starts from 1, and the label is the unique alias of an account in the wallet.
-
-```shell
-./cntmology asset transfer --from=1 --to=2 --amount=10
-```
-
-### Query transfer status sample
-
-```shell
-./cntmology info status <TxHash>
-```
-
-For Example:
-
-```shell
-./cntmology info status 10dede8b57ce0b272b4d51ab282aaf0988a4005e980d25bd49685005cc76ba7f
-```
-
-Result:
-
-```shell
-Transaction:transfer success
-From:AXkDGfr9thEqWmCKpTtQYaazJRwQzH48eC
-To:AYiToLDT2yZuNs3PZieXcdTpyC5VWQmfaN
-Amount:10
-```
-
-### Query account balance sample
-
-```shell
-./cntmology asset balance <address|index|label>
-```
-
-For Example:
-
-```shell
-./cntmology asset balance ARVVxBPGySL56CvSSWfjRVVyZYpNZ7zp48
-```
-
-or
-
-```shell
-./cntmology asset balance 1
-```
-Result:
-```shell
-BalanceOf:ARVVxBPGySL56CvSSWfjRVVyZYpNZ7zp48
-  cntm:989979697
-  cntm:28165900
-```
-
-For further examples, please refer to the [CLI User Guide](https://cntmio.github.io/documentation/cli_user_guide_en.html).
-
-## Ccntmributions
-
-Ccntmributors to Ontology are very welcome! Before beginning, please take a look at our [ccntmributing guidelines](CcntmRIBUTING.md). You can open an issue by [clicking here](https://github.com/cntmio/cntmology/issues/new).
-
-If you have any issues getting setup, open an issue or reach out in the [Ontology Discord](https://discordapp.com/invite/4TQujHj).
+In order to promote the development of VHA, Connectome will use blockchain technology to build an intelligent brain multi-ecosystem that can connect VHA users, VHA enterprises, and VHA applications. using CNTM Network, C-VHA intelligent brain platform, decentralized VHA market, CNTM open intelligent cloud, the four core modules that aggregate each human, VHA data source, VHA application, AI manufacturer, AI service provider, AI resource provider, and AI consumer, to break th21e data monopoly, so that everyone can participate in innovation and contribute data and VHA. It allows AI service providers and applications to efficiently collaborate and reach cooperation, 
+thereby creating a diverse ecosystem of VHA and promoting the rapid development of Artificial Intelligence.
+Through the Connectome ecosystem, everyone can become the creator of VHA, where their own innovations and production data can be stored and processed privately, thereby being protected and precipitated, and fair, orderly, and barrier-free interaction of their own data transaction.
+Through the Connectome ecosystem, various types of VHA-related data parties, AI resource parties, AI service providers, AI consumers, AI manufacturers and applications, and AI / blockchain developers can break existing monopolies and realize decentralized and efficient interactions, exchange values with each other, and jointly access Connectome to provide corresponding VHA services and obtain support, 
+thereby forming an open VHA diversified ecosystem and creating better VHA and Artificial Intelligence. Through Connectome, blockchain smart contracts are empowered to make smart contracts more “smart"; to connect the real world and 
+virtual world and humanize the interactive interface; to combine blockchain and Artificial Intelligence and create a smart ecosystem of the 
+AI.
+
+- VHA Market Application
+
+#### 1）Receptionist 
+After purchasing a VHA and define the role as “receptionist" in the steps mentioned above, usersetups a camera in a room, gather the information, and send it as to IoT devices. By doing this, the VHA recognizes the state of the room, communicate with the users, and make a suggestion. 
+Also, the personality and skills of VHA can be customized with editing tools. 
+When user wants to change the appearance and motion of VHA, they can buy a VHA interface with Connectome market. Even if you want to sell or share Brain or appearance you created, you register it in Connectome market. 
+
+#### 2 )Automotive Application Guide 
+VHA will plays as a guide to drivers and directs them to destination. 
+
+#### 3 )Game/Entertainment 
+VHA plays as a friend for kids, single or elderly people who need psychological supports or for entertainment purposes. 
+
+- Application of AI 
+
+#### 1 )Intelligent investment advisor 
+The main technologies used in smart investment research are big data and cloud computing, machine learning including deep learning, and knowledge maps. Through the Connectome platform, a large amount of data can be obtained, such as technical analysis data, fundamental data, dynamic macroeconomic data, social media, corporate behavior data, news media's real-time data, and so on. Developers can integrate this information into the knowledge map, provide users with relevant investment advice, and implement intelligent investment advisory applications, such as whether to invest in the stock or cryptocurrency; even develop intelligent investment robots for exchange 
+services to complete automatic quantitative transactions and smart investment services. 
+
+#### 2 )Accurate marketing 
+Connectome combines a variety of data sources to analyze the relationships between entities to better understand user behavior. Connectome can help companies to know the needs of users well, help companies to do marketing better, and develop marketing tools targeted at the crowd. 
+
+3 )Smart Q&A 
+Connectome implements an intelligent automatic Q&A system through a knowledge graph. Jarvis + knowledge graph engine can understand the entities and their attributes involved in user sentences and the semantic information corresponding to the query. To find subgraphs connecting these entities and attributes in the knowledge graph and convert them into corresponding graph queries through the graph search. These translated graph queries are further submitted to the graph database for answers and the corresponding answers are returned. 
+
+4 )Various types of human interaction 
+The virtual human agent trained and created by Connectome can become a new generation of human-machine interaction in the fields of games, customer service, and medical care through AR / VR, and it can also be a new generation of humanized services built into various application operating systems to improve human Interactive experience, creating a new generation of human-computer interaction interface. 
+
+· Application in blockchain 
+1 )Decentralized governance of AI-based smart contracts 
+The smart contract of the blockchain needs to be written by humans. However, due to the rigor of the computer, there must be loopholes or errors as long as they are written by humans. Leading AI writing and later simulation technology into the writing process of blockchain contracts can effectively prevent errors. In addition, the introduction of AI writing machines for reasonable integration can be improved to meet the basic needs of universally written contracts. And in the future, the governance of the Decentralized Autonomous Organization (DAO) will likely be replaced by Artificial Intelligence. Through the CN-VHA intelligent brain platform + C-Oracle of the CNTM VHA-AI system, more intelligent and decentralized economic incentives can be realized. In the smart contract of CNTM CHAIN, AI services can be used to analyze the data on-chain and off-chain, and do further implementation. In this way, Connectome can meet the needs of AI service consumers like smart contracts on the chain well, helping to solve the problems and make smart contracts more "smart". 
+
+2 )Energy saving, avoiding "stagnation" of the blockchain and realizing automated processes.
+The three core components of AI: data, algorithms, and computing power. With the help of AI intelligent algorithms, the computing power of the blockchain can be saved, so as to save electricity or energy consumption in the mining process. At the same time, due to decentralized blockchain, the confirmation of each transaction is usually delayed. AI can help to reduce the computing power required to confirm all transactions. This means that businesses can implement AI to eliminate the need for manual confirmation and keep the whole system running automatically. 
+
+
+3. The technical description of blockchain;
+
+Connectome system technology architecture ：
+
+Network Infrastructure --CNTM Network 
+
+"CNTM Network" is the bottom layer of Connectome's infrastructure. It will be composed of CNTM CHAIN and AI resource collaborative repository. In order to realize the launch of VHA / AI business application, and consider the requirements of AI data and the high throughput and high concurrency, we will adopt the Layer 2 technology solution. We put a lot of work offff the chain, and only submit the most important content to the Layer 1 chain (On Chain) for verifification, and Layer 1 can ensure the security of Layer 2.
+
+1. CNTM CHAIN 
+CNTM CHAIN will be used as the Layer 1-the On Chain layer, to solve the problem of trust and consensus in a distributed scenario. CNTM CHAIN has functions such as asset issuance, asset transmission / storage / destruction, cross-chain interoperation, contract deployment, consensus confirmation off-chain , data verification on-chain , network voting, encrypted storage of account data, and smart contract environment. CNTM CHAIN will use the cBFT hybrid consensus algorithm based on the dBFT, Verifiable Random Function, Verifiable Random Function, CVO (C-VHA Oracle), and Pos algorithm. 
+The cBFT algorithm will be fully applicable to the Layer 2 solution, and has the characteristics of infinite expansion. The verifiable random function VRF guarantees the randomness and fairness generated by each consensus group. The consensus nodes selected by VRF will form a BFT consensus network, which is responsible for the transactions, Oracle data, contract execution results and other information in the network, and generate blocks, record the ledger, and distribute the deterministic information to the CNTM CHAIN network. 
+C-VHA Oracle will select nodes by VRF, complete the processing of the off-chain data, AI service requests and consensus through smart contracts and voting governance, and then distribute the reliable results after confirming the consensus to the on-chain network for the double check, solved the problems of communication and cross-chain interoperability between smart contracts and AI services. 
+CNTM CHAIN will support a variety of virtual machines such as HVM, NeoVM, WAVM, and the basic applications of virtual machines, can choose the programming languages such as Java, C #, Python, Javascript they're familiar to write smart contracts for simple maintenance and operation, can also be compiled into Web Assembly, protecting the security and high performance of smart contract. The external interface of the virtual machine is implemented through customized API operations, which can flexibly interact with ledger data and external data, and also implements a general virtual machine mechanism that supports different blockchains. 
+In order to interact with various types of information and assets, Connectome has designed and developed a unique "cross-chain smart contract gateway". It uses a common smart contract protocol to complete cross-chain interoperation between major public chains, and complete cross-chain data exchange and asset circulation with other major public chains Such as: ETH, TRON, EOS, NEO, ONT, etc. 
+
+2. Resource Collaborative Repository 
+core resources including Artificial Intelligence and VHA: data, algorithms (models), and computing power. Both the AI resource side and the demand side can upload, share, obtain benefits, create models, train models, and other behaviors through data resources, algorithms (models), computing power and other AI resources through the collaborative repository of AI resources. 
+1 ) VHA / AI data sharing: 
+Connectome uses blockchain and secure encryption technologies, such as multi-level encryption, partition consensus, zero-knowledge proof, and homomorphic encryption, to protect the privacy and rights of data owners, to prevent the leakage of personal privacy and the infringement of personal data copyrights to alleviate the concerns about data sharing. 
+AI will create a model for big data, and will not retrieve the owners' information of a single piece of data. After deleting / securely encrypting personal privacy information through blockchain and secure encryption technology, after ensuring the uniqueness and anonymity of the data, the data can be Successfully adopted by the AI model, while personal privacy will not be leaked. Connectome will use the following technologies and protocols to solve the privacy and security issues while AI model adopting data: 
+· Full homomorphic encryption 
+In many data transaction scenarios, the data provider simply wants to provide the right to use the data, rather than transferring the data directly to the buyer. It is an extremely urgent need to provide privacy protection for corporates’ data. Full homomorphic encryption technology provides a good solution. First, the company uses its own public key to encrypt the data using a full homomorphic encryption algorithm, and the ciphertext C is provided to the algorithm provider to perform addition or multiplication operations on C (and complex operations composed of addition and multiplication). After these operations, the ciphertext C′ is obtained and returned to the enterprise. 
+The enterprise uses its private key to recover the Plaintext result f（m）. 
+Homomorphic encryption plays an important role in the protection on privacy, data and AI model training. Data owners can provide data to developers of training models after homomorphic encryption to protect the data from being leaked while obtaining training models. 
+· Zero-knowledge proof 
+Zero-knowledge proof refers to the ability of the prover to convince the verifier that the assertion is correct without providing any useful information to the verifier, which is widely used in cryptography. It can fully prove that it is the legal owner of a certain kind of rights and without leaking out relevant information, that is, the “knowledge” given to the outside world is “zero”. "The problem of being able to judge whether one user has enough money to send to another user' without knowing who the user is or how much money they have is one of the main applications of zero-knowledge proofs in the blockchain. With zero-knowledge proofs, the details of the sender, receiver, and third party can remain anonymous, while ensuring that the transaction is valid. 
+· Oblivious Transfer 
+Oblivious Transfer (OT) is a classical encryption protocols, which is an automatic execution protocol and uses asymmetric encryption mode. It can protect the communication privacy of the two-party, and enable the two parties to transfer the message in a manner that is obscure. It is this design that makes the protocol widely used in e-commerce, content protection / data protection and other fields, and the protocol is the basis of other automatic execution protocols, such as bit commitment, zero-knowledge commitment, and electronic payment. It enables the recipient to obliviously accept certain information transmitted by the sender, thereby protecting the recipient's privacy. 
+· Differential privacy technology 
+Differential privacy is an encryption method to allow researchers to analyze the whole (user behavior) of a data set without revealing individual information (user privacy). Using differential privacy, researchers can calculate the behavior patterns of user groups, but cannot analyze the data of each one. Localized differential privacy is to allow each device (data provider) add noise to its own data according to a certain probability. Because the distribution of noise meets a certain probability, when data is aggregated in the cloud, the noise between different records cancels each other out, thereby obtaining statistical characteristics based on large samples. In differential privacy, the added random noise obeys the Laplace distribution. 
+· VHA / AI computing power sharing: 
+Supercomputing centers and cloud companies have strong independent computing power. On the one hand, you can use the idle computing power to obtain benefits, and on the other hand, you can improve the technical level of your own computing platform in the process of providing services. Computing power sharing is mainly used in the model training phase, and the cloud platform solution can be used directly for the model prediction phase. For computing power providers, it is necessary to build a model training platform and explain the supported AI models: 
+· Stand-alone AI models
+· Distributed AI model
+· Deep learning AI models
+Connectome provides an SDK package for centralized sharing of AI computing power. The SDK package has two versions: provide and require version. The computing power provider uses the SDK to expose and receive services. The computing power visitor uses the SDK to initiate AI model training services. It mainly includes the following interfaces: 
+· Data upload interface: upload training data and protect data privacy; 
+· Model training interface: initiate model training; 
+· Model evaluation and derive interface: use this interface to perform model evaluation and derive models. 
+In the case of computing power crowdfunding, a node with strong computing power is pre-built in Connectome as the model aggregation node. The nodes participating in the hash power crowdfunding will receive a small batch of encrypted training data and standard test data. The node uses the training data to build an independent model, such as: tree or neural network. The node classifies the model test data, and sends the generated model and classification results to the model aggregation node. The aggregation node replays the classification result of the small model and compares it with the classification result sent by the crowdfunding node to determine whether the node has actually completed the model training. 
+·  Pre-trained algorithm (model) sharing 
+The number of layers of deep learning models is getting deeper and deeper. In the ImageNet competition, from 8 layers of AlexNet, 16 layers of VGG, 22 layers of GoogleNet, to 152 layers of ResNet. Because the neural network model has a strong generalization ability, as the number of layers increases, the features in the training data can be better expressed, and the classification effect will be better. 
+The number of layers of the neural network model deepens, the training time is longer, and it can take several weeks. In addition, having a small training corpus does not make good use of deep neural networks. Use deeper neural network models by adopting transfer learning. 
+Connectome: Use the blockchain network to organize AI calculations and share pre-trained deep neural network models on the service set. Users can use their own data to retrain the next few layers of the neural network model well. Connectome provides SDK packages for the release and version protection of pre-trained models, as well as the search and download of models. 
+
+Middleware layer-AIaaS 
+AIaaS--AI as a Service, various vertical industries are committed to integrating Artificial Intelligence software tools to implement their data analysis processes and develop their growth strategies. At the same time, the growing demand for Artificial Intelligence as a service (AIaaS) by application programming interfaces (APIs), software development kits (SDKs), and more and more innovative startups, these factors are expected to become the driving force for Artificial Intelligence as a service (AIaaS) . 
+The Connectome Middleware layer will have C-VHA Oracle, C-VHA brain platform, VHA Bots module, Connectome Gateway and other core modules to jointly implement data authenticity verifification, and VHA interaction and AIaaS services in the Connectome VHA / AI ecosystem. 
+
+1. C-VHA Intelligent Brain Platform 
+The C-VHA intelligent brain platform is the main core module of AIaaS services, and is also the main AI product developed by Connectome for VHA. It is an AI service that can access various types of VHA and realize interaction with smart contracts. AI service providers and AI service demanders can complete intelligent collaboration through the C-VHA intelligent brain platform, and realize the collaboration and value exchange of data, AI model and service. 
+The core of the C-VHA intelligent brain platform is a VHA development platform + AI service intelligent service platform. The VHA development platform will release an SDK to provide a "VHA interface" and "VHA Brain" development environment. The AI service intelligent service platform includes C-ID KYC, AI intelligent engine + VHA intelligent service, NLP natural language, and third-party engine tools.
+
+2. The development platform of C-VHA intelligent Brain platform mainly consists of two components: "VHA 
+interface" and "VHA Brain". 
+First, SDK will be released to provide the development environment of “VHA Interface” and “VHA Brain”. By using this SDK, interface creators and AI developers can easily develop components of VHA. 
+VHA Interface：It will be the interface that will directly communicate with users. By visualizing human-like appearance, facial expressions and motion, the interface will allow the model to have a trustful relationship with humans. 
+VHA Brain：It consists of two types of AI models; “Situation Recognition AI”understand the situation of a space by recognizing object, an individual's face and speech, and “Human-like Decision”. 
+“Making AI” make appropriate judgment and decision making in real time based on the results recognized by the situation recognition AIs. 
+Situation Recognition AI 
+·Video Recognition 
+·Voice Recognition 
+·Space Recognition with AR 
+·Identification of Individuals 
+The situational understanding AI uses machine learning to perform real-time detection of multiple inputs like video, audio, and AR. The human-like decision-making AI uses these inputs to make decisions and judgments. In order to develop the above, VHA is developed on Connectome. The Connectome API/SDK are then released, and creators and developers employ this infrastructure to develop VHA. 
+
+3.  The C-VHA intelligent brain platform, as an AI service, is a user-defined program that links all things and communication between smart contracts and AI services. 
+The core is the oracle consensus of the C-Oracle network. Connectome will provide development specifications for the C-VHA module. Users will be able to develop C-VHA modules based on these specifications and publish them on the C-VHA intelligent brain platform. 
+The C-VHA intelligent brain platform consists of a series of C-VHA service groups and runs together. The Relay service group will be hosted by many C-ID accounts registered on the CNTM Network chain. These accounts will be selected by the consensus governance mechanism on the Layer1 (CNTM CHAIN) , and only after authorization of these accounts, the C-VHA server can communicate with CNTM Network. 
+Connectome uses the blockchain network to organize AI calculation and service C-ID registration information, including fingerprints defined by the interface, which are stored on the blockchain for C-VHA's intelligent brain platform to query and verify. Each type of AI service corresponds to a C-VHA service group. All nodes in this group share the same permission management and governance mechanism, and share smart contracts to assist in off-chain consensus. The C-VHA intelligent brain platform platform is responsible for receiving requests from users (including ordinary users, AI or smart contracts), and sending the requests to the corresponding dApps responsible for parsing the requests and distributing them to the C-VHA service group responsible for the corresponding AI services. Each C-VHA service node should actually run the same C-VHA module, which is used to request AI service providers to obtain AI services, and then return to the corresponding DApp and user after the off-chain consensus (oracle). The significance of the existence of the C-VHA system is not only to handle the trusted data verification of the oracle, but also to include the communication and interoperability between the smart contract and the AI service, as well as the part of the enhanced off-chain consensus, which also improves the AI service and AI model. High concurrency requirements. 
+
+4. C-ID KYC 
+Connectome will use artificial intelligence to provide efficient and secure KYC solutions that can perfectly solve these problems. 
+Make full use of artificial intelligence technologies such as face recognition, voiceprint recognition, and device fingerprints to enhance the accuracy and completeness of customer information. Artificial Intelligence has a higher level of global optimization computing capabilities, 
+which enables Connectome to identify and respond to systemic risks well, and redefine KYC. At the same time, use hash encryption to complete digital encryption signatures, which can guarantee the uniqueness and ownership of account ID, thus forming a decentralized account ID system that is simultaneously verifiable, controllable, and has privacy protection. 
+
+5. C-VHA Oracle 
+Considering the pain points of the AI industry for data authenticity, intellectual property infringement, and difficulty in collaboration among AI companies, Connectome will build a hybrid C-VHA Oracle engine as a Oracle network for the reality of the development of the AI industry to verify the data, intellectual property, prices, service providers’ reliability and so on, so as to record real and trusted data, and provide trusted and secure data results for smart contracts, so that smart contracts can properly complete contract execution, and also performs a decentralized screening and allocation mechanism for demand side and providers of AI services. 
+Connectome hybrid Oracle engine will be divided into On-Chain MainCore and Off-Chain Microservice: 
+On-Chain MainCore is the core of the hybrid Oracle engine data business. It is mainly composed of an Oracle integration contract that interacts with CNTM Chain. At the same time, any user’s demand and oracle service can call the Oracle contract API. Its main functions include: Off-Chain node management (Registration, pledge, monitoring, payment), processing Oracle requests, transmitting Oracle data to the block, and providing on-chain data for Off-Chain nodes. 
+Off-Chain Microservice is an external data verifier and provider source P2P network. It can create and exist multiple micro-Date service working groups and DATE operating nodes. Each working group can be responsible for the collection, verification and consensus of different Oracle data types. It will include multiple built-in protocol modules: VRF (Verifiable Random Function), external adapter, hybrid consensus module, sub-task module, etc., can perform tasks of Oracle task list or randomly assigned tasks, the collected data is then formatted and persisted, and consensus is reached on the reliability and consistency of the data, and the consensus results are uploaded to the On-Chain MainCore. 
+In order to ensure the authenticity of the on-chain data and prevent the use of the Oracle network to make false judgments, combined with the credibility of AI patent companies in reality, there will be two work roles in Off-Chain Microservice, one is the micro DATE working group, and the another one is DATE operation node. The micro DATE working group is composed of multiple micro nodes. Any user can apply to create a micro DATE working group. The DATE operating node must pass the Connectome mainnet certification and KYC. 
+If the demand side has more authoritative data, the demand side can manually classify, filter, and select node oracles through the off-chain list service, submit demand orders and prices to the oracle-listing of the On-Chain MainCore, and the DATE Node meet the requirements . 
+The node (pledge authentication node) will make a vote for the demand order, and will eventually complete the random adoption through VRF, confirmed by the final oracle, and complete the processing and calculation of the selected oracle service through the Oracle contract built in the On-Chain MainCore. DATE operation node aggregates the results obtained by the query and transmits it to the demand-side smart contract. The operating node will be a celebrity, enterprise, institution, association, etc. that has passed KYC and has a defined influence, reputation, and credibility in the society. To become a DATE operating node, it is necessary to impawn a certain amount of CNTM security deposit and meet the standards published by the Connectome system. 
+At the same time, in order to meet the efficient coordination of AI services and AI needs in the Connectome ecosystem, the C-VHA intelligent brain platform will work with C-VHA Oracle to form a VHA / AI service network, make the interoperation between AI service providers and AI service demand side more efficient and reliable. 
+
+6.Connectome Gateway
+Gateway is also called internet connector, protocol converter. The gateway realizes network interconnection above the network layer. It is the most complicated network interconnection device and is only used for the interconnection of two networks with different high-level protocols. The gateway can be used for both WAN interconnection and LAN interconnection. A gateway is a computer system or device that acts as a conversion task. Used in different communication protocols, data formats or languages, and even between two systems with completely different architectures, the gateway is a translator. Unlike a bridge that simply conveys information, the gateway repackages the received information to meet the needs of the destination system. 
+The Connectome Gateway will mainly enable VHA and various types of assets to achieve interaction with major public chains and even real-world devices at Layer 2. 
+Through interaction with VHA in a range of contexts, information of each user is gathered and used to create spaces on the linked devices and services and optimized for them. Moreover, when 5G becomes widespread, the system will allow for VHA to freely move between the virtual and the real world. This will create a seamless space in which the VHA owned by automobile manufacturers, telecommunications carriers, real estate agents, and users can freely go anywhere. 
+
+7.Authentication (cloud robotics)  
+In the Connectome system architecture, the topmost application service layer mainly serves various dAPP and AI applications. For the real economy and traditional enterprises, including AI companies without ordinary blockchain technology development capabilities, ordinary users, and VHA developers can easily participate in Connectome's ecosystem. Connectome will create a CNTM open intelligent cloud. 
+Various smart contracts, API & SDK, cross-chain protocols, application frameworks, and data components are integrated on the front end. 
+Applications implemented using HTML + JavaScript + CSS will be available to customers. 
+
+Next, we will develop a blockchain-based distributed marketplace in which the VHA brains and interfaces described above can be purchased. 
+As these are uploaded onto the Connectome Market, unique tokens are issued against each model and interface. The value of tokens changes based on the Curation Market, and the value in turn dictates the ranking given to a model or interface. This allows developers to obtain proper ratings not controlled by a specific playerbase. 
+Furthermore, Non-Fungible Tokens are issued; these contain ownership information like the creator, ownership history, and sale price. This allows for explicitly demonstrating the ownership of an asset. 
+When users purchase a VHA brain or interface, they are issued a Non-Fungible Token that contains data on usage rights. The user with the token can then make use of the corresponding VHA data. 
+At the same time, according to the development of Connectome ecosystem and the accumulation of high-quality data and models, the VHA market will gradually open trading modules including data, algorithms, models, and computing power and realize the value circulation of various AI resources in the market. 
+
+8. Sale of algorithms 
+Furthermore, by allowing algorithms individuals create to be sold on a distributed marketplace the Connectome Market aims to vitalize the entirety of the market. Each VHA employs the strengths of Non-Fungible Tokens to issue tokens on a per-character basis. Use of algorithms and VHA can be restricted to specific users (those granted permission). 
+The aforementioned smart contract-based Curation Market and Token Curated Registry (TCR) can be used to structure and provide proper incentives to VHA token holders selling these algorithms, users, and developers. In this way, it is vastly different from development structures used in the existing game industry. 
+
+9. Container technology and microservices 
+At the lower level of the chain, with distributed database and high-concurrency applications, through container technology, business logic can be abstracted and run on various operating systems to keep the corresponding applications always online. At the same time, XC Container Service (JARS) is built to support automatic boxing, self-healing, horizontal expansion, service discovery and load balancing, automatic rollout and rollback, confidentiality and configuration management, storage business processes, and make it easier to create, configure, and manage deploys that are pre-configured to run a containerized environment. Furthermore, it can make full use of enterprise-level functions and security mechanism on the public cloud platform, and still ensure portability, and it can further support blockchain-based public cloud services such as storj. 
+After containerization, the underlying services of the platform are all micro-serviced. You can choose the appropriate development language or database according to your own business characteristics. You only need to install the operation environment related to the service. It has a small dependency on the deployment environment and a micro-service deployment. Some small mistakes will not affect 
+other running services; when the function is adjusted, if the interface is not adjusted, it will basically not affect other microservices. 
+
+10.  IPFS (Inter Planetary File System) 
+IPFS (Inter Planetary File System) is a content-addressable, point-to-point hypermedia distributed storage and transmission protocol that will complement or even replace the HyperText Transfer Protocol (HTTP) used in the past 20 years. 
 
 ## License
 
-The Ontology source code is available under the [LGPL-3.0](LICENSE) license.
+The Connectome source code is available under the [LGPL-3.0](LICENSE) license.
